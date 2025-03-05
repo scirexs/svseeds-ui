@@ -1,0 +1,26 @@
+{
+	"extends": "./.svelte-kit/tsconfig.json",
+	"compilerOptions": {
+		"allowJs": true,
+		"checkJs": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"sourceMap": true,
+		"strict": true,
+		"types": ["vitest", "@testing-library/jest-dom"],
+		"moduleResolution": "bundler",
+	},
+	"include": [
+		"./components/**/*.js",
+		"./components/**/*.ts",
+		"./components/**/*.svelte",
+		"../tests/**/*.js",
+		"../tests/**/*.ts",
+		"../tests/**/*.svelte",
+	],
+	"exclude": [
+		"../node_modules/**",
+	]
+}
