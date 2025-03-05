@@ -26,3 +26,4 @@ vite.config.ts.timestamp-*
 # VSCode
 .devcontainer/
 .vscode/
+.npmrc
