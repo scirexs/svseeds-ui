@@ -10,7 +10,7 @@ import {
   omit,
   debounce,
   throttle,
-} from "../components/__core";
+} from "../_svseeds/__core";
 
 describe("const vars", () => {
   test("STATE", () => {
