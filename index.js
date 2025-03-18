@@ -10,9 +10,9 @@
  */
 
 console.warn(
-  '⚠️ This package is not meant to be imported directly.\n' +
-  'Please use CLI tool to copy components into your project:\n' +
-  'npx svseeds'
+  "⚠️ This package is not meant to be imported directly.\n" +
+  "Please use CLI tool to copy components into your project:\n" +
+  "npx svseeds"
 );
 
 export { };

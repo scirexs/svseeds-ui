@@ -1,10 +1,10 @@
-import { describe, test, expect, vi, afterEach } from "vitest";
-import { render, within, fireEvent } from "@testing-library/svelte";
+import { afterEach, describe, expect, test, vi } from "vitest";
+import { fireEvent, render, within } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import TextField from "../_svseeds/_TextField.svelte";
 import type TextFieldProps from "../_svseeds/_TextField.svelte";
-import { type StateName, STATE, AREA } from "../_svseeds/__core";
+import { AREA, STATE, type StateName } from "../_svseeds/_core.ts";
 
 type TextFieldElement = HTMLInputElement | HTMLTextAreaElement | undefined;
 const label = "label_text";
@@ -43,7 +43,9 @@ const rightfn = createRawSnippet(
 
 describe("Switching existence of elements", () => {
   const options = ["test1", "test2"];
-  const actionfn = () => { return {}; };
+  const actionfn = () => {
+    return {};
+  };
 
   test("no props", () => {
     const { getByRole } = render(TextField);

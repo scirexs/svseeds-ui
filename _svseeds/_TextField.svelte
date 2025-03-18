@@ -24,7 +24,7 @@
   import { type Snippet } from "svelte";
   import { type Action } from "svelte/action";
   import { type HTMLInputAttributes, type HTMLTextareaAttributes } from "svelte/elements";
-  import { type ClassRuleSet, type StateName, STATE, AREA, elemId, getClassFn, isUndef, omit } from "./__core";
+  import { type ClassRuleSet, type StateName, STATE, AREA, elemId, getClassFn, isUndef, omit } from "./_core";
 </script>
 
 <script lang="ts">

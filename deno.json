@@ -1,0 +1,52 @@
+{
+  "name": "@svseeds/ui",
+  "version": "0.0.2",
+  "license": "MIT",
+  "exports": "./index.js",
+  "publish": {
+    "include": [
+      "index.js",
+      "_svseeds/**/*",
+      "README.md",
+      "LICENSE"
+    ]
+  },
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "dom.asynciterable", "deno.ns"]
+  },
+  "nodeModulesDir": "auto",
+  "lint": {
+    "include": ["src/", "tests/"],
+    "rules": {
+      "tags": ["recommended"],
+      "exclude": ["no-unused-vars"]
+    }
+  },
+  "fmt": {
+    "include": ["src/", "tests/"],
+    "lineWidth": 140
+  },
+  "tasks": {
+    "dev": "deno run -A npm:vite --open",
+    "build": "deno run -A npm:vite build",
+    "preview": "deno run -A npm:vite preview --open",
+    "prepare": "deno run -A npm:@sveltejs/kit/svelte-kit sync || echo ''",
+    "check": "deno run -A npm:@sveltejs/kit/svelte-kit sync && deno run -A npm:svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "deno run -A npm:@sveltejs/kit/svelte-kit sync && deno run -A npm:svelte-check --tsconfig ./tsconfig.json --watch",
+    "test": "deno run -A npm:vitest --run"
+  },
+  "imports": {
+    "@deno/vite-plugin": "npm:@deno/vite-plugin@^1.0.4",
+    "@sveltejs/adapter-auto": "npm:@sveltejs/adapter-auto@^4.0.0",
+    "@sveltejs/kit": "npm:@sveltejs/kit@^2.20.1",
+    "@sveltejs/vite-plugin-svelte": "npm:@sveltejs/vite-plugin-svelte@^5.0.3",
+    "@testing-library/jest-dom": "npm:@testing-library/jest-dom@^6.6.3",
+    "@testing-library/svelte": "npm:@testing-library/svelte@^5.2.7",
+    "@testing-library/user-event": "npm:@testing-library/user-event@^14.6.1",
+    "jsdom": "npm:jsdom@^26.0.0",
+    "svelte": "npm:svelte@^5.23.1",
+    "svelte-check": "npm:svelte-check@^4.1.5",
+    "vite": "npm:vite@^6.2.2",
+    "vitest": "npm:vitest@^3.0.9"
+  }
+}
