@@ -1,12 +1,13 @@
 {
   "name": "@scirexs/svseeds-ui",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Simple headless Svelte components as .svelte files.",
   "type": "module",
   "main": "index.js",
   "files": [
     "_svseeds/**/*",
-    "index.js"
+    "index.js",
+    "dep.json"
   ],
   "keywords": [
     "svelte",

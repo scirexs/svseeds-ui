@@ -1,4 +1,5 @@
 <script module lang="ts">
+  // version: 0.1.0
   export type TextFieldProps = {
     label?: string,
     extra?: string,

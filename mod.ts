@@ -3,7 +3,7 @@
  * into your project rather than used as a traditional dependency.
  *
  * Please use CLI tool to copy the components into your project:
- * npx svseeds
+ * deno run jsr:@svseeds/kit
  *
  * For more information, see the README.md or visit:
  * https://github.com/scirexs/svseeds-ui
@@ -12,7 +12,7 @@
 console.warn(
   "⚠️ This package is not meant to be imported directly.\n" +
   "Please use CLI tool to copy components into your project:\n" +
-  "npx svseeds"
+  "deno run jsr:@svseeds/kit"
 );
 
 export { };

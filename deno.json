@@ -1,11 +1,12 @@
 {
   "name": "@svseeds/ui",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "license": "MIT",
-  "exports": "./index.js",
+  "exports": "./mod.ts",
   "publish": {
     "include": [
-      "index.js",
+      "mod.ts",
+      "dep.json",
       "_svseeds/**/*",
       "README.md",
       "LICENSE"
