@@ -1,5 +1,8 @@
 export { THEME, theme };
 
+// import { type ClassRuleSet } from "./_core.ts";
+// export const TEXT_FIELD: ClassRuleSet = {}
+
 const THEME = Object.freeze({ LIGHT: "light", DARK: "dark" });
 const preset: ThemePreset = {
   [THEME.LIGHT]: {
@@ -37,7 +40,7 @@ class ThemeSwitch {
 
   setPreset(preset: ThemePreset): ThemeSwitch {
     this.#styles = ThemeSwitch.toCSSVarName(preset);
-    if (window) window.document.documentElement.style.colorScheme = Object.keys(preset).join(" ");
+    if (document) document.documentElement.style.colorScheme = Object.keys(preset).join(" ");
     return this;
   }
   toLight() {
@@ -47,13 +50,10 @@ class ThemeSwitch {
     this.current = THEME.DARK;
   }
   #apply() {
-    if (!window) {
-      return;
-    }
-    const style = window.document.documentElement.style;
-    Object.entries(this.#styles[this.#current]).forEach(([name, value]) => {
-      style.setProperty(name, value);
-    });
+    if (!window) return;
+    const style = document.documentElement.style;
+    Object.entries(this.#styles[this.#current])
+      .forEach(([name, value]) => style.setProperty(name, value));
   }
 
   get current() {
@@ -66,24 +66,19 @@ class ThemeSwitch {
 
   static toCSSVarName(styles: ThemePreset): ThemePreset {
     return Object.fromEntries(
-      Object.entries(styles).map(([theme, obj]) => [
-        theme,
-        ThemeSwitch.renameProperties(obj),
-      ]),
+      Object.entries(styles)
+        .map(([theme, obj]) => [theme, ThemeSwitch.renameProperties(obj)]),
     ) as ThemePreset;
   }
   static renameProperties(obj: Record<string, string>): CssVarSet {
     return Object.fromEntries(
-      Object.entries(obj).map(([name, value]) => [
-        `--${name.replaceAll("_", "-")}`,
-        value,
-      ]),
+      Object.entries(obj)
+        .map(([name, value]) => [`--${name.replaceAll("_", "-")}`, value]),
     );
   }
   static setInitialTheme(initial?: ThemeName): ThemeName {
-    if (initial) {
-      return initial;
-    }
+    if (initial) return initial;
+    // deno-lint-ignore no-window
     return window?.matchMedia("(prefers-color-scheme: light)").matches ? THEME.LIGHT : THEME.DARK;
   }
 }

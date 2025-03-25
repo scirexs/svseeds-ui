@@ -19,13 +19,13 @@
   };
 
   const seed = "text-field";
-  const preset: ClassRuleSet = {};
+  const preset: ClassRuleSet = getPreset(seed);
 
   type TextFieldEvent = Event & { currentTarget: EventTarget & HTMLInputElement & HTMLTextAreaElement; };
   import { type Snippet } from "svelte";
   import { type Action } from "svelte/action";
   import { type HTMLInputAttributes, type HTMLTextareaAttributes } from "svelte/elements";
-  import { type ClassRuleSet, type StateName, STATE, AREA, elemId, getClassFn, isUndef, omit } from "./_core";
+  import { type ClassRuleSet, type StateName, STATE, AREA, elemId, getPreset, getClassFn, isUndef, omit } from "./_core";
 </script>
 
 <script lang="ts">

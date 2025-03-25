@@ -17,14 +17,14 @@
   },
   "nodeModulesDir": "auto",
   "lint": {
-    "include": ["src/", "tests/"],
+    "include": ["src/", "tests/", "_svseeds"],
     "rules": {
       "tags": ["recommended"],
       "exclude": ["no-unused-vars"]
     }
   },
   "fmt": {
-    "include": ["src/", "tests/"],
+    "include": ["src/", "tests/", "_svseeds"],
     "lineWidth": 140
   },
   "tasks": {

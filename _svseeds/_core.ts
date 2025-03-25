@@ -1,3 +1,4 @@
+// deno-fmt-ignore
 export {
   type StateName,
   type AreaName,
@@ -7,6 +8,7 @@ export {
   STATE,
   AREA,
   elemId,
+  getPreset,
   getClassFn,
   isUndef,
   omit,
@@ -36,7 +38,7 @@ const AREA = Object.freeze({
 });
 
 class RandomId {
-  #ALPHABETIC = [...Array.from(Array(25).keys(), x => x + 65), ...Array.from(Array(25).keys(), x => x + 97)];
+  #ALPHABETIC = [...Array.from(Array(25).keys(), (x) => x + 65), ...Array.from(Array(25).keys(), (x) => x + 97)];
   #store = new Set<string>();
 
   get(v: unknown): string | undefined {
@@ -44,8 +46,12 @@ class RandomId {
     if (this.#store.size > 10000) this.#store.clear();
     return this.#add();
   }
-  #char(): number { return this.#ALPHABETIC[Math.trunc(Math.random() * this.#ALPHABETIC.length)]; }
-  #gen(): string { return String.fromCharCode(...Array(4).fill(null).map(() => this.#char()), 58); }
+  #char(): number {
+    return this.#ALPHABETIC[Math.trunc(Math.random() * this.#ALPHABETIC.length)];
+  }
+  #gen(): string {
+    return String.fromCharCode(...Array(4).fill(null).map(() => this.#char()), 58);
+  }
   #add(): string {
     let id = this.#gen();
     while (this.#store.has(id)) {
@@ -57,6 +63,17 @@ class RandomId {
 }
 const elemId = new RandomId();
 
+const style = await loadStyleModule();
+function getPreset(name: string): ClassRuleSet {
+  return style?.[name.toUpperCase().replaceAll("-", "_")] ?? {};
+}
+async function loadStyleModule(): Promise<Record<string, unknown>> {
+  try {
+    return await import("./_style.ts") as Record<string, unknown>;
+  } catch (e) {
+    return {};
+  }
+}
 type ClassFn = (area: AreaName, status: StateName) => string | undefined;
 function getClassFn(name: string, preset: ClassRuleSet, style: ClassRuleSet | string): ClassFn {
   const rule = getRule(name, preset, style);
@@ -85,7 +102,7 @@ function mergeRule(preset: ClassRuleSet, style: ClassRuleSet): ClassRuleSet {
   const styleKeys = Object.keys(style) as AreaName[];
   if (styleKeys.length <= 0) return preset;
   const result: ClassRuleSet = {};
-  new Set([...presetKeys, ...styleKeys]).forEach(key => {
+  new Set([...presetKeys, ...styleKeys]).forEach((key) => {
     result[key] = { ...preset[key] ?? {}, ...style[key] ?? {} };
   });
   return result;
@@ -95,7 +112,7 @@ function isUndef(v: unknown): boolean {
 }
 function omit<T extends Record<string, unknown>, K extends keyof T>(obj: T, ...keys: K[]): Omit<T, K> {
   if (Object.isFrozen(obj) || Object.isSealed(obj)) return obj;
-  keys.forEach(key => delete obj[key]);
+  keys.forEach((key) => delete obj[key]);
   return obj;
 }
 function debounce<Args extends unknown[], R>(delay: number, fn: (...args: Args) => R): (...args: Args) => void {
