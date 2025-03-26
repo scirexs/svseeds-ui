@@ -5,14 +5,14 @@
   "exports": "./mod.ts",
   "publish": {
     "include": [
-      "dist/**/*",
+      "_svseeds/",
       "mod.ts",
       "README.md",
       "LICENSE"
     ],
     "exclude": [
-      "dist/core.js",
-      "dist/*.d.ts"
+      "_svseeds/core.js",
+      "_svseeds/*.d.ts"
     ]
   },
   "compilerOptions": {
@@ -31,7 +31,7 @@
     "lineWidth": 140
   },
   "tasks": {
-    "build": "deno run -A npm:@sveltejs/package && cp ./src/lib/core.ts ./dist && deno run -A ./dep_analyzer.ts && mv ./dist/index.* ./" ,
+    "build": "deno run -A npm:@sveltejs/package -o _svseeds && cp ./src/lib/core.ts ./_svseeds && deno run -A ./dep_analyzer.ts && mv ./_svseeds/index.* ./" ,
     "check": "deno run -A npm:@sveltejs/kit/svelte-kit sync && deno run -A npm:svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "deno run -A npm:@sveltejs/kit/svelte-kit sync && deno run -A npm:svelte-check --tsconfig ./tsconfig.json --watch",
     "test": "deno run -A npm:vitest --run"
@@ -52,7 +52,6 @@
     "vitest": "npm:vitest@^3.0.9"
   },
   "exclude": [
-    "dist/",
     "**/index.*"
   ]
 }

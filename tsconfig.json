@@ -4,7 +4,7 @@
     "allowJs": true,
     "checkJs": true,
     "strict": true,
-    "outDir": "./dist",
+    "outDir": "./_svseeds",
   },
-  "exclude": ["dist"]
+  "exclude": ["_svseeds"]
 }

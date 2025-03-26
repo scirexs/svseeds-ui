@@ -1,2 +1,1 @@
-export * from "./dist/core";
-export { default as TextField } from "./dist/_TextField.svelte";
+export { default as TextField } from "./_svseeds/_TextField.svelte";

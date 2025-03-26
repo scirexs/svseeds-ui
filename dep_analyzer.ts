@@ -10,7 +10,7 @@ type DependencyObject = {
 
 async function main() {
   const DIR = "./src/lib";
-  const OUT = "./dist/dep.json";
+  const OUT = "./_svseeds/dep.json";
 
   try {
     const dep = buildDependency(DIR);

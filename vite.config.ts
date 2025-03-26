@@ -8,9 +8,6 @@ export default defineConfig({
     deno(),
     sveltekit(),
   ],
-  build: {
-    minify: "terser",
-  },
   test: {
     workspace: [{
       extends: "./vite.config.ts",

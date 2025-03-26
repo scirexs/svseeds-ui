@@ -14,7 +14,7 @@
   },
   "svelte": "./index.js",
   "files": [
-    "dist",
+    "_svseeds",
     "index.js",
     "index.d.ts",
     "README.md",
