@@ -1,5 +1,5 @@
 {
-  "name": "@scirexs/svseeds-ui",
+  "name": "svseeds",
   "version": "0.0.6",
   "description": "Simple headless Svelte components.",
   "type": "module",

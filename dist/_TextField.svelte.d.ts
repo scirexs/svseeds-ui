@@ -1,0 +1,24 @@
+export type TextFieldProps = {
+    label?: string;
+    extra?: string;
+    aux?: Snippet<[string, StateName, HTMLInputElement | HTMLTextAreaElement | undefined]>;
+    left?: Snippet<[string, StateName, HTMLInputElement | HTMLTextAreaElement | undefined]>;
+    right?: Snippet<[string, StateName, HTMLInputElement | HTMLTextAreaElement | undefined]>;
+    bottom?: string;
+    value?: string;
+    type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url" | "number";
+    options?: string[];
+    status?: StateName;
+    validations?: ((value: string, validity?: ValidityState) => string)[];
+    style?: ClassRuleSet | string;
+    attributes?: HTMLInputAttributes & HTMLTextareaAttributes;
+    action?: Action;
+    element?: HTMLInputElement | HTMLTextAreaElement;
+};
+import { type Snippet } from "svelte";
+import { type Action } from "svelte/action";
+import { type HTMLInputAttributes, type HTMLTextareaAttributes } from "svelte/elements";
+import { type ClassRuleSet, type StateName } from "./core";
+declare const TextField: import("svelte").Component<TextFieldProps, {}, "type" | "bottom" | "value" | "options" | "status" | "element">;
+type TextField = ReturnType<typeof TextField>;
+export default TextField;
