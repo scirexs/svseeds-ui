@@ -1,5 +1,4 @@
 <script module lang="ts">
-  // version: 0.1.0
   export type TextFieldProps = {
     label?: string,
     extra?: string,
@@ -19,13 +18,13 @@
   };
 
   const seed = "text-field";
-  const preset: ClassRuleSet = getPreset(seed);
+  const preset: ClassRuleSet = {};
 
   type TextFieldEvent = Event & { currentTarget: EventTarget & HTMLInputElement & HTMLTextAreaElement; };
   import { type Snippet } from "svelte";
   import { type Action } from "svelte/action";
   import { type HTMLInputAttributes, type HTMLTextareaAttributes } from "svelte/elements";
-  import { type ClassRuleSet, type StateName, STATE, AREA, elemId, getPreset, getClassFn, isUndef, omit } from "./_core";
+  import { type ClassRuleSet, type StateName, STATE, AREA, elemId, getClassFn, isUndef, omit } from "./core";
 </script>
 
 <script lang="ts">

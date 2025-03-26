@@ -4,11 +4,12 @@ export {
   type AreaName,
   type ClassRule,
   type ClassRuleSet,
+  type ThemePreset,
   CONST,
   STATE,
   AREA,
   elemId,
-  getPreset,
+  theme,
   getClassFn,
   isUndef,
   omit,
@@ -21,6 +22,8 @@ type StateName = valueof<typeof STATE>;
 type AreaName = valueof<typeof AREA>;
 type ClassRule = Partial<Record<StateName | typeof CONST, string>>;
 type ClassRuleSet = Partial<Record<AreaName, ClassRule>>;
+type CssVarSet = Record<string, string>;
+type ThemePreset = Record<string, CssVarSet>;
 
 const CONST = "constant";
 const STATE = Object.freeze({ DEFAULT: "default", ACTIVE: "active", INACTIVE: "inactive" });
@@ -38,7 +41,7 @@ const AREA = Object.freeze({
 });
 
 class RandomId {
-  #ALPHABETIC = [...Array.from(Array(25).keys(), (x) => x + 65), ...Array.from(Array(25).keys(), (x) => x + 97)];
+  static #ALPHABETIC = [...Array.from(Array(25).keys(), (x) => x + 65), ...Array.from(Array(25).keys(), (x) => x + 97)];
   #store = new Set<string>();
 
   get(v: unknown): string | undefined {
@@ -47,7 +50,7 @@ class RandomId {
     return this.#add();
   }
   #char(): number {
-    return this.#ALPHABETIC[Math.trunc(Math.random() * this.#ALPHABETIC.length)];
+    return RandomId.#ALPHABETIC[Math.trunc(Math.random() * RandomId.#ALPHABETIC.length)];
   }
   #gen(): string {
     return String.fromCharCode(...Array(4).fill(null).map(() => this.#char()), 58);
@@ -61,19 +64,68 @@ class RandomId {
     return id;
   }
 }
-const elemId = new RandomId();
+class ThemeSwitcher {
+  static #DARK = "dark";
+  static #LIGHT = "light";
+  #styles: ThemePreset = {};
+  #current;
+  get current() {
+    return this.#current;
+  }
 
-const style = await loadStyleModule();
-function getPreset(name: string): ClassRuleSet {
-  return style?.[name.toUpperCase().replaceAll("-", "_")] ?? {};
-}
-async function loadStyleModule(): Promise<Record<string, unknown>> {
-  try {
-    return await import("./_style.ts") as Record<string, unknown>;
-  } catch (e) {
-    return {};
+  constructor() {
+    this.#current = ThemeSwitcher.#setInitialTheme();
+  }
+  setPreset(preset: ThemePreset): ThemeSwitcher {
+    this.#styles = ThemeSwitcher.#toCSSVarName(preset);
+    this.#setColorScheme();
+    return this;
+  }
+  toLight() {
+    this.switch(ThemeSwitcher.#LIGHT);
+  }
+  toDark() {
+    this.switch(ThemeSwitcher.#DARK);
+  }
+  switch(theme: string) {
+    if (!this.#exists(theme)) return;
+    this.#current = theme;
+    this.#apply();
+  }
+  #apply() {
+    if (!window) return;
+    const style = window.document.documentElement.style;
+    Object.entries(this.#styles[this.#current])
+      .forEach(([name, value]) => style.setProperty(name, value));
+  }
+  #exists(theme: string): boolean {
+    return Object.keys(this.#styles).includes(theme);
+  }
+  #setColorScheme() {
+    if (!window) return;
+    const themes = Object.keys(this.#styles).filter((x) => x === ThemeSwitcher.#LIGHT || x === ThemeSwitcher.#DARK);
+    window.document.documentElement.style.colorScheme = themes.join(" ");
+  }
+
+  static #toCSSVarName(styles: ThemePreset): ThemePreset {
+    return Object.fromEntries(
+      Object.entries(styles)
+        .map(([theme, obj]) => [theme, ThemeSwitcher.#renameProperties(obj)]),
+    ) as ThemePreset;
+  }
+  static #renameProperties(obj: Record<string, string>): CssVarSet {
+    return Object.fromEntries(
+      Object.entries(obj)
+        .map(([name, value]) => [`--${name.replaceAll("_", "-")}`, value]),
+    );
+  }
+  static #setInitialTheme(): string {
+    return window?.matchMedia("(prefers-color-scheme: light)").matches ? ThemeSwitcher.#LIGHT : ThemeSwitcher.#DARK;
   }
 }
+const elemId = new RandomId();
+const theme = new ThemeSwitcher();
+
 type ClassFn = (area: AreaName, status: StateName) => string | undefined;
 function getClassFn(name: string, preset: ClassRuleSet, style: ClassRuleSet | string): ClassFn {
   const rule = getRule(name, preset, style);

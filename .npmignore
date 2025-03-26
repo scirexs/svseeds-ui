@@ -1,14 +1,15 @@
 .devcontainer/
 .github/
 .svelte-kit/
+.vite/
 node_modules/
-tests/
+src/
 .gitignore
 .npmignore
 deno.json
 deno.lock
 dep_analyzer.ts
 mod.ts
-svelte.config.mjs
+svelte.config.js
 tsconfig.json
 vite.config.ts

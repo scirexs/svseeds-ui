@@ -8,6 +8,9 @@ export default defineConfig({
     deno(),
     sveltekit(),
   ],
+  build: {
+    minify: "terser",
+  },
   test: {
     workspace: [{
       extends: "./vite.config.ts",
@@ -17,10 +20,10 @@ export default defineConfig({
         environment: "jsdom",
         clearMocks: true,
         include: [
-          "tests/**/*.svelte.test.ts",
-          "tests/**/*.test.ts",
+          "src/tests/**/*.svelte.test.ts",
+          "src/tests/**/*.test.ts",
         ],
-        setupFiles: ["./tests/setup.ts"],
+        setupFiles: ["./src/tests/setup.ts"],
       },
     }],
   },

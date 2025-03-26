@@ -2,9 +2,9 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, within } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
-import TextField from "../_svseeds/_TextField.svelte";
-import type TextFieldProps from "../_svseeds/_TextField.svelte";
-import { AREA, STATE, type StateName } from "../_svseeds/_core.ts";
+import TextField from "../lib/_TextField.svelte";
+import type TextFieldProps from "../lib/_TextField.svelte";
+import { AREA, STATE, type StateName } from "../lib/core.ts";
 
 type TextFieldElement = HTMLInputElement | HTMLTextAreaElement | undefined;
 const label = "label_text";

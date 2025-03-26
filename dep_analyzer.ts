@@ -3,15 +3,14 @@ import * as p from "jsr:@std/path@^1.0.8";
 
 type EachDescription = {
   dependencies: string[];
-  version: string;
 };
 type DependencyObject = {
   components: { [key: string]: EachDescription };
 };
 
 async function main() {
-  const DIR = "./_svseeds";
-  const OUT = "./dep.json";
+  const DIR = "./src/lib";
+  const OUT = "./dist/dep.json";
 
   try {
     const dep = buildDependency(DIR);
@@ -23,7 +22,7 @@ async function main() {
 
 function buildDependency(path: string): DependencyObject {
   const dir = p.resolve(path);
-  if (!existsSync(dir, { isDirectory: true })) Err.error("not exists svseeds dir");
+  if (!existsSync(dir, { isDirectory: true })) Err.error("not exists library dir");
 
   const parser = new SvelteParser();
   const dep: DependencyObject = { components: {} };
@@ -45,8 +44,7 @@ class SvelteParser {
   parse(path: string): EachDescription {
     const code = new TextDecoder("utf-8").decode(Deno.readFileSync(path));
     const dependencies = this.#extractDeps(code);
-    const version = this.#extractVersion(code);
-    return { dependencies, version };
+    return { dependencies };
   }
   #extractDeps(code: string): string[] {
     const ret: string[] = [];
@@ -55,10 +53,6 @@ class SvelteParser {
       ret.push(`${match[1]}.svelte`);
     }
     return ret;
-  }
-  #extractVersion(code: string): string {
-    const match = this.#regex.version.exec(code);
-    return match?.[1] ?? "0.0.0";
   }
 }
 

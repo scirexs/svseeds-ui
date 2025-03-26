@@ -1,13 +1,24 @@
 {
   "name": "@scirexs/svseeds-ui",
-  "version": "0.0.5",
-  "description": "Simple headless Svelte components as .svelte files.",
+  "version": "0.0.6",
+  "description": "Simple headless Svelte components.",
   "type": "module",
-  "main": "index.js",
+  "main": "./index.js",
+  "module": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "svelte": "./index.js"
+    }
+  },
+  "svelte": "./index.js",
   "files": [
-    "_svseeds/**/*",
+    "dist",
     "index.js",
-    "dep.json"
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
   ],
   "keywords": [
     "svelte",
@@ -20,5 +31,8 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/scirexs/svseeds-ui.git"
+  },
+  "peerDependencies": {
+    "svelte": "^5.0.0"
   }
 }

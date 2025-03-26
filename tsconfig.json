@@ -3,6 +3,8 @@
   "compilerOptions": {
     "allowJs": true,
     "checkJs": true,
-    "strict": true
-  }
+    "strict": true,
+    "outDir": "./dist",
+  },
+  "exclude": ["dist"]
 }

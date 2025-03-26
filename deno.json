@@ -1,15 +1,18 @@
 {
   "name": "@svseeds/ui",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "license": "MIT",
   "exports": "./mod.ts",
   "publish": {
     "include": [
+      "dist/**/*",
       "mod.ts",
-      "dep.json",
-      "_svseeds/**/*",
       "README.md",
       "LICENSE"
+    ],
+    "exclude": [
+      "dist/core.js",
+      "dist/*.d.ts"
     ]
   },
   "compilerOptions": {
@@ -17,21 +20,18 @@
   },
   "nodeModulesDir": "auto",
   "lint": {
-    "include": ["src/", "tests/", "_svseeds"],
+    "include": ["src/", "tests/"],
     "rules": {
       "tags": ["recommended"],
-      "exclude": ["no-unused-vars"]
+      "exclude": ["no-unused-vars", "no-window"]
     }
   },
   "fmt": {
-    "include": ["src/", "tests/", "_svseeds"],
+    "include": ["src/", "tests/"],
     "lineWidth": 140
   },
   "tasks": {
-    "dev": "deno run -A npm:vite --open",
-    "build": "deno run -A npm:vite build",
-    "preview": "deno run -A npm:vite preview --open",
-    "prepare": "deno run -A npm:@sveltejs/kit/svelte-kit sync || echo ''",
+    "build": "deno run -A npm:@sveltejs/package && cp ./src/lib/core.ts ./dist && deno run -A ./dep_analyzer.ts && mv ./dist/index.* . && cp ./src/lib/index.ts ./mod.ts" ,
     "check": "deno run -A npm:@sveltejs/kit/svelte-kit sync && deno run -A npm:svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "deno run -A npm:@sveltejs/kit/svelte-kit sync && deno run -A npm:svelte-check --tsconfig ./tsconfig.json --watch",
     "test": "deno run -A npm:vitest --run"
@@ -40,6 +40,7 @@
     "@deno/vite-plugin": "npm:@deno/vite-plugin@^1.0.4",
     "@sveltejs/adapter-auto": "npm:@sveltejs/adapter-auto@^4.0.0",
     "@sveltejs/kit": "npm:@sveltejs/kit@^2.20.1",
+    "@sveltejs/package": "npm:@sveltejs/package@^2.3.10",
     "@sveltejs/vite-plugin-svelte": "npm:@sveltejs/vite-plugin-svelte@^5.0.3",
     "@testing-library/jest-dom": "npm:@testing-library/jest-dom@^6.6.3",
     "@testing-library/svelte": "npm:@testing-library/svelte@^5.2.7",
@@ -49,5 +50,8 @@
     "svelte-check": "npm:svelte-check@^4.1.5",
     "vite": "npm:vite@^6.2.2",
     "vitest": "npm:vitest@^3.0.9"
-  }
+  },
+  "exclude": [
+    "dist/"
+  ]
 }

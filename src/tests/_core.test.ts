@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { AREA, type ClassRuleSet, CONST, debounce, elemId, getClassFn, isUndef, omit, STATE, throttle } from "../_svseeds/_core.ts";
+import { AREA, type ClassRuleSet, CONST, debounce, elemId, getClassFn, isUndef, omit, STATE, throttle } from "../lib/core.ts";
 
 describe("const vars", () => {
   test("STATE", () => {
