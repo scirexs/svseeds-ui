@@ -13,3 +13,5 @@ mod.ts
 svelte.config.js
 tsconfig.json
 vite.config.ts
+_svseeds/core.ts
+_svseeds/dep.json

@@ -10,8 +10,8 @@ console.warn(String.raw`
    1. Add package with npm:
       deno add npm:svseeds
    OR
-   2. Copy component of ".svelte" file by CLI tool:
-      deno run jsr:@svseeds/kit
+   2. Copy components of ".svelte" file by CLI tool:
+      deno run jsr:@svseeds/cli
 `);
 
 export { };

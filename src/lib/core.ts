@@ -93,7 +93,7 @@ class ThemeSwitcher {
     this.#apply();
   }
   #apply() {
-    if (!window) return;
+    if (typeof window === "undefined") return;
     const style = window.document.body.style;
     Object.entries(this.#styles[this.#current])
       .forEach(([name, value]) => style.setProperty(name, value));
@@ -102,7 +102,7 @@ class ThemeSwitcher {
     return Object.keys(this.#styles).includes(theme);
   }
   #setColorScheme() {
-    if (!window) return;
+    if (typeof window === "undefined") return;
     const themes = Object.keys(this.#styles).filter((x) => x === ThemeSwitcher.#LIGHT || x === ThemeSwitcher.#DARK);
     window.document.documentElement.style.colorScheme = themes.join(" ");
   }
@@ -120,7 +120,8 @@ class ThemeSwitcher {
     );
   }
   static #setInitialTheme(): string {
-    return window?.matchMedia("(prefers-color-scheme: light)").matches ? ThemeSwitcher.#LIGHT : ThemeSwitcher.#DARK;
+    if (typeof window === "undefined") return ThemeSwitcher.#LIGHT;
+    return window.matchMedia("(prefers-color-scheme: light)").matches ? ThemeSwitcher.#LIGHT : ThemeSwitcher.#DARK;
   }
 }
 const elemId = new RandomId();
