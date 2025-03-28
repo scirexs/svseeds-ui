@@ -1,6 +1,6 @@
 {
   "name": "@svseeds/ui",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "license": "MIT",
   "exports": "./mod.ts",
   "publish": {
@@ -32,7 +32,7 @@
   },
   "tasks": {
     "build": "deno run -A npm:@sveltejs/package -o _svseeds && deno run -A ./dep_analyzer.ts && deno task prepare" ,
-    "prepare": "cp ./src/lib/core.ts ./_svseeds && mv ./_svseeds/index.* ./ && deno run -A npm:terser ./_svseeds/core.js -m -o ./_svseeds/core.js",
+    "prepare": "cp ./src/lib/core.ts ./_svseeds && mv ./_svseeds/index.* ./ && deno run -A npm:terser --module -m -c -o ./_svseeds/core.js -- ./_svseeds/core.js",
     "check": "deno run -A npm:@sveltejs/kit/svelte-kit sync && deno run -A npm:svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "deno run -A npm:@sveltejs/kit/svelte-kit sync && deno run -A npm:svelte-check --tsconfig ./tsconfig.json --watch",
     "test": "deno run -A npm:vitest --run"
