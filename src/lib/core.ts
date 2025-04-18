@@ -1,8 +1,5 @@
 // deno-fmt-ignore
 export {
-  type StateName,
-  type AreaName,
-  type ClassRule,
   type ClassRuleSet,
   type ThemePreset,
   CONST,
@@ -10,18 +7,15 @@ export {
   AREA,
   elemId,
   theme,
-  getClassFn,
-  isUndef,
+  fnClass,
+  isNeutral,
   omit,
   debounce,
   throttle,
 };
 
-type valueof<T> = T[keyof T];
-type StateName = valueof<typeof STATE>;
-type AreaName = valueof<typeof AREA>;
-type ClassRule = Partial<Record<StateName | typeof CONST, string>>;
-type ClassRuleSet = Partial<Record<AreaName, ClassRule>>;
+type ClassRule = Partial<Record<string, string>>;
+type ClassRuleSet = Partial<Record<string, ClassRule>>;
 type CssVarSet = Record<string, string>;
 type ThemePreset = Record<string, CssVarSet>;
 
@@ -67,7 +61,7 @@ class RandomId {
 class ThemeSwitcher {
   static #DARK = "dark";
   static #LIGHT = "light";
-  #styles: ThemePreset = {};
+  #styles: Map<string, CssVarSet> = new Map();
   #current;
   get current() {
     return this.#current;
@@ -77,7 +71,7 @@ class ThemeSwitcher {
     this.#current = ThemeSwitcher.#setInitialTheme();
   }
   setPreset(preset: ThemePreset): ThemeSwitcher {
-    this.#styles = ThemeSwitcher.#toCSSVarName(preset);
+    this.#setStyleMap(preset);
     this.#setColorScheme();
     return this;
   }
@@ -88,32 +82,25 @@ class ThemeSwitcher {
     this.switch(ThemeSwitcher.#DARK);
   }
   switch(theme: string) {
-    if (!this.#exists(theme)) return;
+    if (!this.#styles.has(theme)) return;
     this.#current = theme;
     this.#apply();
   }
   #apply() {
     if (typeof window === "undefined") return;
     const style = window.document.body.style;
-    Object.entries(this.#styles[this.#current])
+    Object.entries(this.#styles.get(this.#current) ?? {})
       .forEach(([name, value]) => style.setProperty(name, value));
-  }
-  #exists(theme: string): boolean {
-    return Object.keys(this.#styles).includes(theme);
   }
   #setColorScheme() {
     if (typeof window === "undefined") return;
     const themes = Object.keys(this.#styles).filter((x) => x === ThemeSwitcher.#LIGHT || x === ThemeSwitcher.#DARK);
     window.document.documentElement.style.colorScheme = themes.join(" ");
   }
-
-  static #toCSSVarName(styles: ThemePreset): ThemePreset {
-    return Object.fromEntries(
-      Object.entries(styles)
-        .map(([theme, obj]) => [theme, ThemeSwitcher.#renameProperties(obj)]),
-    ) as ThemePreset;
+  #setStyleMap(preset: ThemePreset) {
+    Object.entries(preset).forEach(([theme, obj]) => this.#styles.set(theme, ThemeSwitcher.#renameProperties(obj)));
   }
-  static #renameProperties(obj: Record<string, string>): CssVarSet {
+  static #renameProperties(obj: CssVarSet): CssVarSet {
     return Object.fromEntries(
       Object.entries(obj)
         .map(([name, value]) => [`--${name.replaceAll("_", "-")}`, value]),
@@ -127,13 +114,13 @@ class ThemeSwitcher {
 const elemId = new RandomId();
 const theme = new ThemeSwitcher();
 
-type ClassFn = (area: AreaName, status: StateName) => string | undefined;
-function getClassFn(name: string, preset: ClassRuleSet, style: ClassRuleSet | string): ClassFn {
-  const rule = getRule(name, preset, style);
+type ClassFn = (area: string, status: string) => string | undefined;
+function fnClass(name: string, preset: ClassRuleSet, style?: ClassRuleSet | string): ClassFn {
+  const rule = getRule(name, preset, style ?? {});
   if (typeof rule === "string") {
-    return (area: AreaName, status: StateName) => cssClass(rule, area, status);
+    return (area: string, status: string) => cssClass(rule, area, status);
   } else {
-    return (area: AreaName, status: StateName) => ruleClass(rule, area, status);
+    return (area: string, status: string) => ruleClass(rule, area, status);
   }
 }
 function getRule(name: string, preset: ClassRuleSet, style: ClassRuleSet | string): ClassRuleSet | string {
@@ -141,18 +128,18 @@ function getRule(name: string, preset: ClassRuleSet, style: ClassRuleSet | strin
   const rule = mergeRule(preset, style);
   return Object.keys(rule).length <= 0 ? name : rule;
 }
-function cssClass(name: string, area: AreaName, status: StateName): string {
+function cssClass(name: string, area: string, status: string): string {
   return `${name} ${area}${status === STATE.DEFAULT ? "" : ` ${status}`}`;
 }
-function ruleClass(rule: ClassRuleSet, area: AreaName, status: StateName): string | undefined {
+function ruleClass(rule: ClassRuleSet, area: string, status: string): string | undefined {
   const constant = rule[area]?.constant ?? "";
   const dynamic = rule[area]?.[status] ?? rule[area]?.default ?? "";
   return constant === "" && dynamic === "" ? undefined : `${constant}${constant && dynamic ? " " : ""}${dynamic}`;
 }
 function mergeRule(preset: ClassRuleSet, style: ClassRuleSet): ClassRuleSet {
-  const presetKeys = Object.keys(preset) as AreaName[];
+  const presetKeys = Object.keys(preset) as string[];
   if (presetKeys.length <= 0) return style;
-  const styleKeys = Object.keys(style) as AreaName[];
+  const styleKeys = Object.keys(style) as string[];
   if (styleKeys.length <= 0) return preset;
   const result: ClassRuleSet = {};
   new Set([...presetKeys, ...styleKeys]).forEach((key) => {
@@ -160,13 +147,14 @@ function mergeRule(preset: ClassRuleSet, style: ClassRuleSet): ClassRuleSet {
   });
   return result;
 }
-function isUndef(v: unknown): boolean {
-  return v === void 0;
+function isNeutral(status: string): boolean {
+  return status !== STATE.ACTIVE && status !== STATE.INACTIVE;
 }
-function omit<T extends Record<string, unknown>, K extends keyof T>(obj: T, ...keys: K[]): Omit<T, K> {
-  if (Object.isFrozen(obj) || Object.isSealed(obj)) return obj;
-  keys.forEach((key) => delete obj[key]);
-  return obj;
+function omit<T extends object, K extends keyof T>(obj?: T, ...keys: K[]): Omit<T, K> | Record<string, never> {
+  if (!obj) return {};
+  const ret = { ...obj };
+  keys.forEach((key) => delete ret[key]);
+  return ret;
 }
 function debounce<Args extends unknown[], R>(delay: number, fn: (...args: Args) => R): (...args: Args) => void {
   let timer: number | undefined;

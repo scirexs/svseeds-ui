@@ -1,0 +1,52 @@
+<script module lang="ts">
+  export type ContextMenuProps = {
+    children: Snippet,
+    open?: boolean, // bindable <false>; to observe state, not to control
+    lock?: boolean, // bindable <false>
+    status?: string, // bindable <STATE.DEFAULT>
+    style?: ClassRuleSet | string,
+    element?: HTMLElement, // bindable
+  };
+  export type ContextMenuReqdProps = "children";
+  export type ContextMenuBindProps = "open" | "lock" | "status" | "element";
+
+  const svs = "svs-context-menu";
+  const preset: ClassRuleSet = {};
+
+  import { type Snippet } from "svelte";
+  import { type ClassRuleSet, STATE, AREA, fnClass } from "./core";
+</script>
+
+<!---------------------------------------->
+
+<script lang="ts">
+  let { children, open = $bindable(false), lock = $bindable(false), status = $bindable(""), style, element = $bindable() }: ContextMenuProps = $props();
+
+  // *** Initialize *** //
+  if (!status) status = STATE.DEFAULT;
+  const cls = fnClass(svs, preset, style);
+  let position = $state({ x: 0, y: 0 });
+
+  // *** Bind Handlers *** //
+  let visibility = $derived(open ? "visibility: open;" : "visibility: hidden; z-index: -9999;");
+  let dynStyle = $derived(`position: fixed; left:${position.x}px; top:${position.y}px; ${visibility}`);
+
+  // *** Event Handlers *** //
+  function show(ev: MouseEvent) {
+    if (lock) return;
+    ev.preventDefault();
+
+    const menu = { width: element?.offsetWidth ?? 0, height: element?.offsetHeight ?? 0 };
+    position.x = window.innerWidth-ev.clientX < menu.width ? ev.clientX-menu.width : ev.clientX;
+    position.y = window.innerHeight-ev.clientY < menu.height ? (ev.clientY < menu.height ? ev.clientY : ev.clientY-menu.height) : ev.clientY;
+    open = true;
+  }
+  function hide() { if (!lock) open = false; }
+</script>
+
+<!---------------------------------------->
+<svelte:document oncontextmenu={show} onclick={hide} />
+
+<nav class={cls(AREA.WHOLE, status)} style={dynStyle} bind:this={element}>
+  {@render children()}
+</nav>

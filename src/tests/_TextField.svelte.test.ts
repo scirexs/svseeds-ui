@@ -3,7 +3,6 @@ import { fireEvent, render, within } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import TextField from "../lib/_TextField.svelte";
-import type TextFieldProps from "../lib/_TextField.svelte";
 import { AREA, STATE, type StateName } from "../lib/core.ts";
 
 type TextFieldElement = HTMLInputElement | HTMLTextAreaElement | undefined;
@@ -58,13 +57,13 @@ describe("Switching existence of elements", () => {
     expect(main).not.toHaveAttribute("list");
   });
   test("switch to text area", () => {
-    const props: TextFieldProps = { type: "area" };
+    const props = { type: "area" };
     const { getByRole } = render(TextField, props);
     const main = getByRole("textbox") as HTMLInputElement;
     expect(main.tagName).toBe("TEXTAREA");
   });
   test("w/ label", () => {
-    const props: TextFieldProps = { label };
+    const props = { label };
     const { getByRole, getByLabelText, getByText } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByLabelText(label, { selector: "input" }) as HTMLInputElement;
@@ -76,7 +75,7 @@ describe("Switching existence of elements", () => {
   });
   test("w/ label of action input", () => {
     const action = vi.fn().mockImplementation(actionfn);
-    const props: TextFieldProps = { label, action };
+    const props = { label, action };
     const { getByRole, getByLabelText, getByText } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByLabelText(label, { selector: "input" }) as HTMLInputElement;
@@ -88,7 +87,7 @@ describe("Switching existence of elements", () => {
     expect(action).toHaveBeenCalled();
   });
   test("w/ label of area", () => {
-    const props: TextFieldProps = { label, type: "area" };
+    const props = { label, type: "area" };
     const { getByRole, getByLabelText, getByText } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByLabelText(label, { selector: "textarea" }) as HTMLTextAreaElement;
@@ -100,7 +99,7 @@ describe("Switching existence of elements", () => {
   });
   test("w/ label of action area", () => {
     const action = vi.fn().mockImplementation(actionfn);
-    const props: TextFieldProps = { label, type: "area", action };
+    const props = { label, type: "area", action };
     const { getByRole, getByLabelText, getByText } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByLabelText(label, { selector: "textarea" }) as HTMLTextAreaElement;
@@ -112,7 +111,7 @@ describe("Switching existence of elements", () => {
     expect(action).toHaveBeenCalled();
   });
   test("w/ extra, w/o label", () => {
-    const props: TextFieldProps = { extra };
+    const props = { extra };
     const { getByRole } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
@@ -120,7 +119,7 @@ describe("Switching existence of elements", () => {
     expect(whole.firstElementChild).toBe(main);
   });
   test("w/ label, extra", () => {
-    const props: TextFieldProps = { label, extra };
+    const props = { label, extra };
     const { getByRole, getByText } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
@@ -132,7 +131,7 @@ describe("Switching existence of elements", () => {
   });
   test("w/ label, extra, aux", () => {
     const aux = vi.fn().mockImplementation(auxfn);
-    const props: TextFieldProps = { label, extra, aux };
+    const props = { label, extra, aux };
     const { getByRole, getByTestId, getByText } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
@@ -146,7 +145,7 @@ describe("Switching existence of elements", () => {
   });
   test("w/ left", () => {
     const left = vi.fn().mockImplementation(leftfn);
-    const props: TextFieldProps = { left };
+    const props = { left };
     const { getByRole, getByTestId } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
@@ -158,7 +157,7 @@ describe("Switching existence of elements", () => {
   });
   test("w/ right", () => {
     const right = vi.fn().mockImplementation(rightfn);
-    const props: TextFieldProps = { right };
+    const props = { right };
     const { getByRole, getByTestId } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
@@ -169,7 +168,7 @@ describe("Switching existence of elements", () => {
     expect(right).toHaveBeenCalled();
   });
   test("w/ bottom", () => {
-    const props: TextFieldProps = { bottom };
+    const props = { bottom };
     const { getByRole } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
@@ -181,7 +180,7 @@ describe("Switching existence of elements", () => {
     expect(main).toHaveAttribute("aria-controls");
   });
   test("w/ bottom of action input", () => {
-    const props: TextFieldProps = { bottom, action: actionfn };
+    const props = { bottom, action: actionfn };
     const { getByRole } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
@@ -193,7 +192,7 @@ describe("Switching existence of elements", () => {
     expect(main).toHaveAttribute("aria-controls");
   });
   test("w/ bottom of area", () => {
-    const props: TextFieldProps = { bottom, type: "area" };
+    const props = { bottom, type: "area" };
     const { getByRole } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
@@ -205,7 +204,7 @@ describe("Switching existence of elements", () => {
     expect(main).toHaveAttribute("aria-controls");
   });
   test("w/ bottom of action area", () => {
-    const props: TextFieldProps = { bottom, type: "area", action: actionfn };
+    const props = { bottom, type: "area", action: actionfn };
     const { getByRole } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
@@ -217,7 +216,7 @@ describe("Switching existence of elements", () => {
     expect(main).toHaveAttribute("aria-controls");
   });
   test("w/ blank string", () => {
-    const props: TextFieldProps = { label: " ", bottom: " " };
+    const props = { label: " ", bottom: " " };
     const { getByRole } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
@@ -225,7 +224,7 @@ describe("Switching existence of elements", () => {
     expect(whole.firstElementChild).toBe(main);
   });
   test("w/ options", () => {
-    const props: TextFieldProps = { options };
+    const props = { options };
     const { getByRole } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("combobox") as HTMLInputElement;
@@ -239,7 +238,7 @@ describe("Switching existence of elements", () => {
     expect(list?.children).toHaveLength(2);
   });
   test("w/ options of action input", () => {
-    const props: TextFieldProps = { options, action: actionfn };
+    const props = { options, action: actionfn };
     const { getByRole } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("combobox") as HTMLInputElement;
@@ -253,7 +252,7 @@ describe("Switching existence of elements", () => {
     expect(list?.children).toHaveLength(2);
   });
   test("w/ options of textarea", () => {
-    const props: TextFieldProps = { type: "area", options };
+    const props = { type: "area", options };
     const { getByRole } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLTextAreaElement;
@@ -261,7 +260,7 @@ describe("Switching existence of elements", () => {
     expect(whole.firstElementChild).toBe(main);
   });
   test("w/ empty options", () => {
-    const props: TextFieldProps = { options: [] };
+    const props = { options: [] };
     const { getByRole } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("combobox") as HTMLInputElement;
@@ -277,7 +276,7 @@ describe("Specify attrs & state transition & event handlers", () => {
   const validations = [validationFn];
 
   test("w/ other types", async () => {
-    const props: TextFieldProps = { label: "label", type: "password" };
+    const props = { label: "label", type: "password" };
     const { rerender, getByRole, getByLabelText } = render(TextField, props);
     let main = getByLabelText("label", { selector: "input" }) as HTMLInputElement;
     expect(main).toHaveAttribute("type", "password");
@@ -304,7 +303,7 @@ describe("Specify attrs & state transition & event handlers", () => {
   });
   test("w/ default value", async () => {
     const value = "default_value";
-    const props: TextFieldProps = { value };
+    const props = { value };
     const { rerender, getByRole } = render(TextField, props);
     let main = getByRole("textbox") as HTMLInputElement;
     expect(main).toHaveValue(value);
@@ -315,13 +314,13 @@ describe("Specify attrs & state transition & event handlers", () => {
   });
   test("w/ specify id", () => {
     const id = "id_foo";
-    const props: TextFieldProps = { attributes: { id } };
+    const props = { attributes: { id } };
     const { getByRole } = render(TextField, props);
     const main = getByRole("textbox") as HTMLInputElement;
     expect(main).toHaveAttribute("id", id);
   });
   test("w/ specify ignored attrs", () => {
-    const props: TextFieldProps = { attributes: { value: "v", class: "c", type: "hidden", list: "l" } };
+    const props = { attributes: { value: "v", class: "c", type: "hidden", list: "l" } };
     const { getByRole } = render(TextField, props);
     const main = getByRole("textbox") as HTMLInputElement;
     expect(main).not.toHaveValue("v");
@@ -330,7 +329,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(main).not.toHaveAttribute("list");
   });
   test("w/ specify major attrs", async () => {
-    const props: TextFieldProps = { attributes: { name: "n", placeholder: "p", maxlength: 5, required: true, readonly: true } };
+    const props = { attributes: { name: "n", placeholder: "p", maxlength: 5, required: true, readonly: true } };
     const { rerender, getByPlaceholderText } = render(TextField, props);
     let main: HTMLInputElement | HTMLTextAreaElement = getByPlaceholderText("p") as HTMLInputElement;
     expect(main).toHaveAttribute("name", "n");

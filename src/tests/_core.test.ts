@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { AREA, type ClassRuleSet, CONST, debounce, elemId, getClassFn, isUndef, omit, STATE, throttle } from "../lib/core.ts";
+import { AREA, type ClassRuleSet, CONST, debounce, elemId, fnClass, omit, STATE, theme, throttle } from "../lib/core.ts";
 
 describe("const vars", () => {
   test("STATE", () => {
@@ -56,7 +56,33 @@ describe("elemId (RandomId class)", () => {
   });
 });
 
-describe("getClassFn", () => {
+describe("theme (ThemeSwitcher class)", () => {
+  test("initial", () => {
+    expect(theme.current).toBe("dark");
+  });
+  test("set preset", () => {
+    expect(elemId.get(null)).toBeUndefined();
+  });
+  test("w/ truthly value", () => {
+    expect(typeof elemId.get("test")).toBe("string");
+    expect(typeof elemId.get(1)).toBe("string");
+    expect(typeof elemId.get(true)).toBe("string");
+  });
+  test("id is fixed format", () => {
+    const id = elemId.get("test");
+    expect(id).toMatch(/^[a-zA-Z]{4}:$/);
+  });
+  test("ids are unique until limit", () => {
+    const count = 10000;
+    const ids = new Set();
+    for (let i = 0; i < count; i++) {
+      ids.add(elemId.get(i));
+    }
+    expect(ids.size).toBe(count);
+  });
+});
+
+describe("fnClass", () => {
   const name = "cmp-name";
   const strStyle = "style";
   const preset: ClassRuleSet = {
@@ -78,14 +104,14 @@ describe("getClassFn", () => {
     },
   };
 
-  const noPresetNoStyle = getClassFn(name, {}, {});
-  const noPresetWithStyle = getClassFn(name, {}, style);
-  const noPresetEmptyStyle = getClassFn(name, {}, "");
-  const noPresetStrStyle = getClassFn(name, {}, strStyle);
-  const withPresetNoStyle = getClassFn(name, preset, {});
-  const withPresetWithStyle = getClassFn(name, preset, style);
-  const withPresetEmptyStyle = getClassFn(name, preset, "");
-  const withPresetStrStyle = getClassFn(name, preset, strStyle);
+  const noPresetNoStyle = fnClass(name, {}, {});
+  const noPresetWithStyle = fnClass(name, {}, style);
+  const noPresetEmptyStyle = fnClass(name, {}, "");
+  const noPresetStrStyle = fnClass(name, {}, strStyle);
+  const withPresetNoStyle = fnClass(name, preset, {});
+  const withPresetWithStyle = fnClass(name, preset, style);
+  const withPresetEmptyStyle = fnClass(name, preset, "");
+  const withPresetStrStyle = fnClass(name, preset, strStyle);
   test("noPresetNoStyle", () => {
     const wholeDefault = noPresetNoStyle(AREA.WHOLE, STATE.DEFAULT);
     const wholeActive = noPresetNoStyle(AREA.WHOLE, STATE.ACTIVE);
@@ -184,39 +210,16 @@ describe("getClassFn", () => {
   });
 });
 
-describe("isUndef", () => {
-  test("w/ undefined", () => {
-    expect(isUndef(undefined)).toBe(true);
-  });
-  test("w/ null", () => {
-    expect(isUndef(null)).toBe(false);
-  });
-  test("w/ falsy value", () => {
-    expect(isUndef(0)).toBe(false);
-    expect(isUndef("")).toBe(false);
-    expect(isUndef(false)).toBe(false);
-    expect(isUndef({})).toBe(false);
-  });
-});
-
 describe("omit", () => {
-  test("for normal object", () => {
+  test("return empty object", () => {
+    const result = omit(undefined);
+    expect(result).toStrictEqual({});
+  });
+  test("return shallow copied object", () => {
     const obj = { a: 1, b: 2, c: 3 };
     const result = omit(obj, "a", "c");
     expect(result).toStrictEqual({ b: 2 });
-    expect(obj).toStrictEqual({ b: 2 });
-  });
-  test("for freezed object", () => {
-    const obj = Object.freeze({ a: 1, b: 2, c: 3 });
-    const result = omit(obj, "a", "c");
-    expect(result).toStrictEqual({ a: 1, b: 2, c: 3 });
-    expect(result).toBe(obj);
-  });
-  test("for sealed object", () => {
-    const obj = Object.seal({ a: 1, b: 2, c: 3 });
-    const result = omit(obj, "a", "c");
-    expect(result).toStrictEqual({ a: 1, b: 2, c: 3 });
-    expect(result).toBe(obj);
+    expect(obj).toStrictEqual({ a: 1, b: 2, c: 3 });
   });
 });
 
