@@ -118,7 +118,7 @@
       if (this.#ids.has(id)) this.#current = id;
     }
     register(name?: string): string {
-      const id = name ? name : elemId.get(true)!;
+      const id = name ? name : elemId.id;
       if (this.#ids.has(id)) return "";
       if (!this.#default) this.#default = id;
       this.#ids.add(id);

@@ -39,7 +39,7 @@
   const id = attributes?.id ? attributes.id : elemId.get(label?.trim());
   const idLabel = elemId.get(label?.trim());
   const idDesc = elemId.get(bottom?.trim());
-  const idErr = idDesc ?? elemId.get(true);
+  const idErr = idDesc ?? elemId.id;
   const attrs = omit(attributes, "class", "id", "value", "oninvalid");
   const description = bottom;
 

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { AREA, type ClassRuleSet, CONST, debounce, elemId, fnClass, omit, STATE, theme, throttle } from "../lib/core.ts";
+import { AREA, type ClassRuleSet, CONST, debounce, elemId, fnClass, omit, STATE, theme, throttle, UniqueId } from "../lib/core.ts";
 
 describe("const vars", () => {
   test("STATE", () => {
@@ -26,33 +26,28 @@ describe("const vars", () => {
     expect(Object.isFrozen(AREA)).toBe(true);
   });
   test("CONST", () => {
-    expect(CONST).toBe("constant");
+    expect(CONST).toBe("const");
   });
 });
 
-describe("elemId (RandomId class)", () => {
-  test("w/ undefined", () => {
+describe("elemId (UniqueId class)", () => {
+  test("id", () => {
+    expect(typeof elemId.id).toBe("string");
+  });
+  test("get w/ undefined", () => {
     expect(elemId.get(undefined)).toBeUndefined();
   });
-  test("w/ null", () => {
+  test("get w/ null", () => {
     expect(elemId.get(null)).toBeUndefined();
   });
-  test("w/ truthly value", () => {
+  test("get w/ truthly value", () => {
     expect(typeof elemId.get("test")).toBe("string");
     expect(typeof elemId.get(1)).toBe("string");
     expect(typeof elemId.get(true)).toBe("string");
   });
   test("id is fixed format", () => {
-    const id = elemId.get("test");
-    expect(id).toMatch(/^[a-zA-Z]{4}:$/);
-  });
-  test("ids are unique until limit", () => {
-    const count = 10000;
-    const ids = new Set();
-    for (let i = 0; i < count; i++) {
-      ids.add(elemId.get(i));
-    }
-    expect(ids.size).toBe(count);
+    const id = elemId.id;
+    expect(id).toMatch(/^[a-yA-Y]{4}$/);
   });
 });
 
@@ -60,25 +55,24 @@ describe("theme (ThemeSwitcher class)", () => {
   test("initial", () => {
     expect(theme.current).toBe("dark");
   });
+  test("prevent switch to not set theme", () => {
+    theme.switch("test");
+    expect(theme.current).toBe("dark");
+  });
   test("set preset", () => {
-    expect(elemId.get(null)).toBeUndefined();
+    const preset = {
+      light: {},
+      dark: {},
+    };
+    expect(theme.setPreset(preset)).toBe(theme);
   });
-  test("w/ truthly value", () => {
-    expect(typeof elemId.get("test")).toBe("string");
-    expect(typeof elemId.get(1)).toBe("string");
-    expect(typeof elemId.get(true)).toBe("string");
+  test("to light", () => {
+    theme.toLight();
+    expect(theme.current).toBe("light");
   });
-  test("id is fixed format", () => {
-    const id = elemId.get("test");
-    expect(id).toMatch(/^[a-zA-Z]{4}:$/);
-  });
-  test("ids are unique until limit", () => {
-    const count = 10000;
-    const ids = new Set();
-    for (let i = 0; i < count; i++) {
-      ids.add(elemId.get(i));
-    }
-    expect(ids.size).toBe(count);
+  test("to dark", () => {
+    theme.toDark();
+    expect(theme.current).toBe("dark");
   });
 });
 
@@ -130,11 +124,11 @@ describe("fnClass", () => {
     const wholeInactive = noPresetWithStyle(AREA.WHOLE, STATE.INACTIVE);
     const topDefault = noPresetWithStyle(AREA.TOP, STATE.DEFAULT);
     const mainDefault = noPresetWithStyle(AREA.MAIN, STATE.DEFAULT);
-    expect(wholeDefault).toBe(`${style.whole?.constant}`);
-    expect(wholeActive).toBe(`${style.whole?.constant} ${style.whole?.active}`);
-    expect(wholeInactive).toBe(`${style.whole?.constant}`);
+    expect(wholeDefault).toBe(`${style.whole?.const}`);
+    expect(wholeActive).toBe(`${style.whole?.const} ${style.whole?.active}`);
+    expect(wholeInactive).toBe(`${style.whole?.const}`);
     expect(topDefault).toBeUndefined();
-    expect(mainDefault).toBe(`${style.main?.constant}`);
+    expect(mainDefault).toBe(`${style.main?.const}`);
   });
   test("noPresetEmptyStyle", () => {
     const wholeDefault = noPresetEmptyStyle(AREA.WHOLE, STATE.DEFAULT);
@@ -166,9 +160,9 @@ describe("fnClass", () => {
     const wholeInactive = withPresetNoStyle(AREA.WHOLE, STATE.INACTIVE);
     const topDefault = withPresetNoStyle(AREA.TOP, STATE.DEFAULT);
     const mainDefault = withPresetNoStyle(AREA.MAIN, STATE.DEFAULT);
-    expect(wholeDefault).toBe(`${preset.whole?.constant} ${preset.whole?.default}`);
-    expect(wholeActive).toBe(`${preset.whole?.constant} ${preset.whole?.default}`);
-    expect(wholeInactive).toBe(`${preset.whole?.constant} ${preset.whole?.default}`);
+    expect(wholeDefault).toBe(`${preset.whole?.const} ${preset.whole?.default}`);
+    expect(wholeActive).toBe(`${preset.whole?.const} ${preset.whole?.default}`);
+    expect(wholeInactive).toBe(`${preset.whole?.const} ${preset.whole?.default}`);
     expect(topDefault).toBe(`${preset.top?.default}`);
     expect(mainDefault).toBeUndefined();
   });
@@ -178,11 +172,11 @@ describe("fnClass", () => {
     const wholeInactive = withPresetWithStyle(AREA.WHOLE, STATE.INACTIVE);
     const topDefault = withPresetWithStyle(AREA.TOP, STATE.DEFAULT);
     const mainDefault = withPresetWithStyle(AREA.MAIN, STATE.DEFAULT);
-    expect(wholeDefault).toBe(`${style.whole?.constant} ${preset.whole?.default}`);
-    expect(wholeActive).toBe(`${style.whole?.constant} ${style.whole?.active}`);
-    expect(wholeInactive).toBe(`${style.whole?.constant} ${preset.whole?.default}`);
+    expect(wholeDefault).toBe(`${style.whole?.const} ${preset.whole?.default}`);
+    expect(wholeActive).toBe(`${style.whole?.const} ${style.whole?.active}`);
+    expect(wholeInactive).toBe(`${style.whole?.const} ${preset.whole?.default}`);
     expect(topDefault).toBe(`${preset.top?.default}`);
-    expect(mainDefault).toBe(`${style.main?.constant}`);
+    expect(mainDefault).toBe(`${style.main?.const}`);
   });
   test("withPresetEmptyStyle", () => {
     const wholeDefault = withPresetEmptyStyle(AREA.WHOLE, STATE.DEFAULT);
@@ -311,5 +305,33 @@ describe("throttle", () => {
 
     expect(mockFn).toHaveBeenCalledTimes(1);
     expect(mockFn).toHaveBeenCalledWith("third");
+  });
+});
+
+describe("UniqueId", () => {
+  test("construct without arg", () => {
+    const unique = new UniqueId();
+    expect(unique.id.length).toBe(4);
+  });
+  test("construct with len arg", () => {
+    const unique = new UniqueId(7);
+    expect(unique.id.length).toBe(7);
+  });
+  test("construct with invalid len arg", () => {
+    const unique1 = new UniqueId(NaN);
+    const unique2 = new UniqueId(-10);
+    const unique3 = new UniqueId(2);
+    expect(unique1.id.length).toBe(4);
+    expect(unique2.id.length).toBe(4);
+    expect(unique3.id.length).toBe(4);
+  });
+  test("ids are unique until limit", () => {
+    const unique = new UniqueId();
+    const count = 10000;
+    const ids = new Set();
+    for (let i = 0; i < count; i++) {
+      ids.add(unique.id);
+    }
+    expect(ids.size).toBe(count);
   });
 });

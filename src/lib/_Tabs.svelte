@@ -22,7 +22,7 @@
       .toSorted((x,y) => x.localeCompare(y));
   }
   function toNamedId(names: string[]): NamedId[] {
-    return names.map((x) => ({ id: elemId.get(true)!, name: x }));
+    return names.map((x) => ({ id: elemId.id, name: x }));
   }
   function correctCurrent(active: number, labels: string[]): number {
     if (active <= 0) return 0;

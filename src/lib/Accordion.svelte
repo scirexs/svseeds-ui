@@ -25,7 +25,7 @@
       .toSorted((x,y) => x.localeCompare(y));
   }
   function toNamedId(names: string[]): NamedId[] {
-    return names.map((x) => ({ id: elemId.get(true)!, name: x }));
+    return names.map((x) => ({ id: elemId.id, name: x }));
   }
 
   import { type Snippet, untrack } from "svelte";

@@ -3,7 +3,7 @@ import { fireEvent, render, within } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import TextField from "../lib/_TextField.svelte";
-import { AREA, STATE, type StateName } from "../lib/core.ts";
+import { AREA, STATE } from "../lib/core.ts";
 
 type TextFieldElement = HTMLInputElement | HTMLTextAreaElement | undefined;
 const label = "label_text";
@@ -15,7 +15,7 @@ const rightid = "test-right";
 const auxfn = createRawSnippet(
   (
     value: () => string,
-    status: () => StateName,
+    status: () => string,
     element: () => TextFieldElement,
   ) => {
     return { render: () => `<span data-testid="${auxid}">${value().length},${status.length},${element?.toString()}</span>` };
@@ -24,7 +24,7 @@ const auxfn = createRawSnippet(
 const leftfn = createRawSnippet(
   (
     value: () => string,
-    status: () => StateName,
+    status: () => string,
     element: () => TextFieldElement,
   ) => {
     return { render: () => `<span data-testid="${leftid}">${value().length},${status.length},${element?.toString()}</span>` };
@@ -33,7 +33,7 @@ const leftfn = createRawSnippet(
 const rightfn = createRawSnippet(
   (
     value: () => string,
-    status: () => StateName,
+    status: () => string,
     element: () => TextFieldElement,
   ) => {
     return { render: () => `<span data-testid="${rightid}">${value().length},${status.length},${element?.toString()}</span>` };
@@ -542,7 +542,7 @@ describe("Specify attrs & state transition & event handlers", () => {
   });
   test("w/ obj style of each status", async () => {
     const dynObj = {
-      constant: "const",
+      const: "const",
       default: "dyn_default",
       active: "dyn_active",
       inactive: "dyn_inactive",
@@ -583,40 +583,40 @@ describe("Specify attrs & state transition & event handlers", () => {
     const middle = main.parentElement;
     const btm = getByRole("status") as HTMLOutputElement;
     expect(props.status).toBe(STATE.DEFAULT);
-    expect(whole).toHaveClass(dynObj.constant, dynObj.default);
-    expect(top).toHaveClass(dynObj.constant, dynObj.default);
-    expect(lbl).toHaveClass(dynObj.constant, dynObj.default);
-    expect(ext).toHaveClass(dynObj.constant, dynObj.default);
-    expect(auxdv).toHaveClass(dynObj.constant, dynObj.default);
-    expect(middle).toHaveClass(dynObj.constant, dynObj.default);
-    expect(leftdv).toHaveClass(dynObj.constant, dynObj.default);
-    expect(main).toHaveClass(dynObj.constant, dynObj.default);
-    expect(rightdv).toHaveClass(dynObj.constant, dynObj.default);
-    expect(btm).toHaveClass(dynObj.constant, dynObj.default);
+    expect(whole).toHaveClass(dynObj.const, dynObj.default);
+    expect(top).toHaveClass(dynObj.const, dynObj.default);
+    expect(lbl).toHaveClass(dynObj.const, dynObj.default);
+    expect(ext).toHaveClass(dynObj.const, dynObj.default);
+    expect(auxdv).toHaveClass(dynObj.const, dynObj.default);
+    expect(middle).toHaveClass(dynObj.const, dynObj.default);
+    expect(leftdv).toHaveClass(dynObj.const, dynObj.default);
+    expect(main).toHaveClass(dynObj.const, dynObj.default);
+    expect(rightdv).toHaveClass(dynObj.const, dynObj.default);
+    expect(btm).toHaveClass(dynObj.const, dynObj.default);
     await user.type(main, "a");
     await user.tab();
     expect(props.status).toBe(STATE.INACTIVE);
-    expect(whole).toHaveClass(dynObj.constant, dynObj.inactive);
-    expect(top).toHaveClass(dynObj.constant, dynObj.inactive);
-    expect(lbl).toHaveClass(dynObj.constant, dynObj.inactive);
-    expect(ext).toHaveClass(dynObj.constant, dynObj.inactive);
-    expect(auxdv).toHaveClass(dynObj.constant, dynObj.inactive);
-    expect(middle).toHaveClass(dynObj.constant, dynObj.inactive);
-    expect(leftdv).toHaveClass(dynObj.constant, dynObj.inactive);
-    expect(main).toHaveClass(dynObj.constant, dynObj.inactive);
-    expect(rightdv).toHaveClass(dynObj.constant, dynObj.inactive);
-    expect(btm).toHaveClass(dynObj.constant, dynObj.inactive);
+    expect(whole).toHaveClass(dynObj.const, dynObj.inactive);
+    expect(top).toHaveClass(dynObj.const, dynObj.inactive);
+    expect(lbl).toHaveClass(dynObj.const, dynObj.inactive);
+    expect(ext).toHaveClass(dynObj.const, dynObj.inactive);
+    expect(auxdv).toHaveClass(dynObj.const, dynObj.inactive);
+    expect(middle).toHaveClass(dynObj.const, dynObj.inactive);
+    expect(leftdv).toHaveClass(dynObj.const, dynObj.inactive);
+    expect(main).toHaveClass(dynObj.const, dynObj.inactive);
+    expect(rightdv).toHaveClass(dynObj.const, dynObj.inactive);
+    expect(btm).toHaveClass(dynObj.const, dynObj.inactive);
     await user.type(main, "a");
     expect(props.status).toBe(STATE.ACTIVE);
-    expect(whole).toHaveClass(dynObj.constant, dynObj.active);
-    expect(top).toHaveClass(dynObj.constant, dynObj.active);
-    expect(lbl).toHaveClass(dynObj.constant, dynObj.active);
-    expect(ext).toHaveClass(dynObj.constant, dynObj.active);
-    expect(auxdv).toHaveClass(dynObj.constant, dynObj.active);
-    expect(middle).toHaveClass(dynObj.constant, dynObj.active);
-    expect(leftdv).toHaveClass(dynObj.constant, dynObj.active);
-    expect(main).toHaveClass(dynObj.constant, dynObj.active);
-    expect(rightdv).toHaveClass(dynObj.constant, dynObj.active);
-    expect(btm).toHaveClass(dynObj.constant, dynObj.active);
+    expect(whole).toHaveClass(dynObj.const, dynObj.active);
+    expect(top).toHaveClass(dynObj.const, dynObj.active);
+    expect(lbl).toHaveClass(dynObj.const, dynObj.active);
+    expect(ext).toHaveClass(dynObj.const, dynObj.active);
+    expect(auxdv).toHaveClass(dynObj.const, dynObj.active);
+    expect(middle).toHaveClass(dynObj.const, dynObj.active);
+    expect(leftdv).toHaveClass(dynObj.const, dynObj.active);
+    expect(main).toHaveClass(dynObj.const, dynObj.active);
+    expect(rightdv).toHaveClass(dynObj.const, dynObj.active);
+    expect(btm).toHaveClass(dynObj.const, dynObj.active);
   });
 });

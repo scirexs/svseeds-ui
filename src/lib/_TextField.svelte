@@ -40,7 +40,7 @@
   const idLabel = elemId.get(label?.trim());
   const idDesc = elemId.get(bottom?.trim());
   const idList = elemId.get(options?.size);
-  const idErr = idDesc ?? elemId.get(true);
+  const idErr = idDesc ?? elemId.id;
   const attrs = omit(attributes as any, "class", "id", "type", "value", "list", "onchange", "oninvalid");
   const description = bottom;
 

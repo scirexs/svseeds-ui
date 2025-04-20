@@ -12,6 +12,7 @@ export {
   omit,
   debounce,
   throttle,
+  UniqueId,
 };
 
 type ClassRule = Partial<Record<string, string>>;
@@ -19,7 +20,7 @@ type ClassRuleSet = Partial<Record<string, ClassRule>>;
 type CssVarSet = Record<string, string>;
 type ThemePreset = Record<string, CssVarSet>;
 
-const CONST = "constant";
+const CONST = "const";
 const STATE = Object.freeze({ DEFAULT: "default", ACTIVE: "active", INACTIVE: "inactive" });
 const AREA = Object.freeze({
   WHOLE: "whole",
@@ -34,20 +35,27 @@ const AREA = Object.freeze({
   EXTRA: "extra",
 });
 
-class RandomId {
+class UniqueId {
   static #ALPHABETIC = [...Array.from(Array(25).keys(), (x) => x + 65), ...Array.from(Array(25).keys(), (x) => x + 97)];
   #store = new Set<string>();
+  #LEN = 4;
 
+  get id(): string {
+    return this.get(true)!;
+  }
+  constructor(len: number = 4) {
+    if (len > 2) this.#LEN = len;
+  }
   get(v: unknown): string | undefined {
     if (!v) return;
     if (this.#store.size > 10000) this.#store.clear();
     return this.#add();
   }
   #char(): number {
-    return RandomId.#ALPHABETIC[Math.trunc(Math.random() * RandomId.#ALPHABETIC.length)];
+    return UniqueId.#ALPHABETIC[Math.trunc(Math.random() * UniqueId.#ALPHABETIC.length)];
   }
   #gen(): string {
-    return String.fromCharCode(...Array(4).fill(null).map(() => this.#char()), 58);
+    return String.fromCharCode(...Array(this.#LEN).fill(null).map(() => this.#char()));
   }
   #add(): string {
     let id = this.#gen();
@@ -111,7 +119,7 @@ class ThemeSwitcher {
     return window.matchMedia("(prefers-color-scheme: light)").matches ? ThemeSwitcher.#LIGHT : ThemeSwitcher.#DARK;
   }
 }
-const elemId = new RandomId();
+const elemId = new UniqueId();
 const theme = new ThemeSwitcher();
 
 type ClassFn = (area: string, status: string) => string | undefined;
@@ -132,8 +140,8 @@ function cssClass(name: string, area: string, status: string): string {
   return `${name} ${area}${status === STATE.DEFAULT ? "" : ` ${status}`}`;
 }
 function ruleClass(rule: ClassRuleSet, area: string, status: string): string | undefined {
-  const constant = rule[area]?.constant ?? "";
-  const dynamic = rule[area]?.[status] ?? rule[area]?.default ?? "";
+  const constant = rule[area]?.[CONST] ?? "";
+  const dynamic = rule[area]?.[status] ?? rule[area]?.[STATE.DEFAULT] ?? "";
   return constant === "" && dynamic === "" ? undefined : `${constant}${constant && dynamic ? " " : ""}${dynamic}`;
 }
 function mergeRule(preset: ClassRuleSet, style: ClassRuleSet): ClassRuleSet {

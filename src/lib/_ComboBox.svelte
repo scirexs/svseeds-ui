@@ -30,7 +30,7 @@
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
   const cls = fnClass(svs, preset, style);
-  const idList = elemId.get(true);
+  const idList = elemId.id;
   const attrs = omit(attributes, "class", "type", "value", "list", "role", "aria-haspopup", "aria-autocomplete", "aria-controls", "aria-expanded");
   let selected = $state(NA);
   let overflow = $state({x: false, y: false});

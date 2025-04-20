@@ -36,10 +36,10 @@
   if (!status) status = STATE.DEFAULT;
   const cls = fnClass(svs, preset, style);
   const type = multiple ? "checkbox" : "radio";
-  const name = attributes?.["name"] ? attributes?.["name"] : elemId.get(true);
+  const name = attributes?.["name"] ? attributes?.["name"] : elemId.id;
   const idLabel = elemId.get(label?.trim());
   const idDesc = elemId.get(bottom?.trim());
-  const idErr = idDesc ?? elemId.get(true);
+  const idErr = idDesc ?? elemId.id;
   const attrs = omit(attributes, "class", "id", "type", "name", "value", "onchange", "oninvalid");
   const roleGroup = multiple ? "group" : "radiogroup";
   const description = bottom;

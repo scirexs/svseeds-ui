@@ -38,7 +38,7 @@
   const role = multiple ? "checkbox" : "radio";
   const idLabel = elemId.get(label?.trim());
   const idDesc = elemId.get(bottom?.trim());
-  const idErr = idDesc ?? elemId.get(true);
+  const idErr = idDesc ?? elemId.id;
   const attrs = omit(attributes, "class", "id", "type", "role", "aria-checked", "onclick", "oninvalid");
   const roleGroup = multiple ? "group" : "radiogroup";
   const description = bottom;
