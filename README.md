@@ -1,4 +1,4 @@
-# SvSeeds - Simple Headless Components for Svelte
+# SvSeeds - Simple Components for Svelte
 
 [![npm version](https://img.shields.io/npm/v/svseeds)](https://www.npmjs.com/package/svseeds)
 [![JSR](https://jsr.io/badges/@svseeds/ui)](https://jsr.io/@svseeds/ui)

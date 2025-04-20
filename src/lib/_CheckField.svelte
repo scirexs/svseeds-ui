@@ -48,7 +48,7 @@
   const phase = { change: false, submit: false };
   let neutral = isNeutral(status) ? status : STATE.DEFAULT;
   $effect(() => { neutral = isNeutral(status) ? status : neutral });
-  let alert = $derived(status === STATE.INACTIVE ? "alert" : undefined);
+  let live = $derived(status === STATE.INACTIVE ? "alert" : "status");
   let invalid = $derived(status === STATE.INACTIVE ? true : undefined);
   let errMsg = $derived(status === STATE.INACTIVE ? idErr : undefined);
   const toInvalid = (msg?: string) => shiftStatus(phase.submit ? STATE.INACTIVE : neutral, msg);
@@ -92,23 +92,19 @@
 <!---------------------------------------->
 
 {#if opts.length}
-  {#if label?.trim() || aux || bottom?.trim()}
-    <div class={cls(AREA.WHOLE, status)} role="group" aria-labelledby={idLabel}>
-      {#if aux}
-        <div class={cls(AREA.TOP, status)}>
-          {@render lbl()}
-          <span class={cls(AREA.AUX, status)}>{@render aux(status, values, elements)}</span>
-        </div>
-      {:else}
+  <div class={cls(AREA.WHOLE, status)} role="group" aria-labelledby={idLabel}>
+    {#if aux}
+      <div class={cls(AREA.TOP, status)}>
         {@render lbl()}
-      {/if}
-      {@render desc(descFirst)}
-      {@render main()}
-      {@render desc(!descFirst)}
-    </div>
-  {:else}
+        <span class={cls(AREA.AUX, status)}>{@render aux(status, values, elements)}</span>
+      </div>
+    {:else}
+      {@render lbl()}
+    {/if}
+    {@render desc(descFirst)}
     {@render main()}
-  {/if}
+    {@render desc(!descFirst)}
+  </div>
 {/if}
 
 {#snippet lbl()}
@@ -137,6 +133,6 @@
 {/snippet}
 {#snippet desc(show: boolean)}
   {#if show && bottom?.trim()}
-    <div class={cls(AREA.BOTTOM, status)} id={idDesc ?? idErr} role={alert}>{bottom}</div>
+    <div class={cls(AREA.BOTTOM, status)} id={idDesc ?? idErr} role={live}>{bottom}</div>
   {/if}
 {/snippet}

@@ -46,7 +46,7 @@
   // *** Status *** //
   let neutral = isNeutral(status) ? status : STATE.DEFAULT;
   $effect(() => { neutral = isNeutral(status) ? status : neutral });
-  let alert = $derived(status === STATE.INACTIVE ? "alert" : undefined);
+  let live = $derived(status === STATE.INACTIVE ? "alert" : "status");
   let invalid = $derived(status === STATE.INACTIVE ? true : undefined);
   let errMsg = $derived(status === STATE.INACTIVE ? idErr : undefined);
   const toInvalid = (msg?: string) => shiftStatus(STATE.INACTIVE, msg);
@@ -84,27 +84,23 @@
 <!---------------------------------------->
 
 {#if opts.length}
-  {#if label?.trim() || aux || left || right || bottom?.trim()}
-    <div class={cls(AREA.WHOLE, status)} role="group" aria-labelledby={idLabel}>
-      {#if aux}
-        <div class={cls(AREA.TOP, status)}>
-          {@render lbl()}
-          <span class={cls(AREA.AUX, status)}>{@render aux(status, value, element)}</span>
-        </div>
-      {:else}
+  <div class={cls(AREA.WHOLE, status)} role="group" aria-labelledby={idLabel}>
+    {#if aux}
+      <div class={cls(AREA.TOP, status)}>
         {@render lbl()}
-      {/if}
-      {@render desc(descFirst)}
-      <div class={cls(AREA.MIDDLE, status)}>
-        {@render side(AREA.LEFT, left)}
-        {@render main()}
-        {@render side(AREA.RIGHT, right)}
+        <span class={cls(AREA.AUX, status)}>{@render aux(status, value, element)}</span>
       </div>
-      {@render desc(!descFirst)}
+    {:else}
+      {@render lbl()}
+    {/if}
+    {@render desc(descFirst)}
+    <div class={cls(AREA.MIDDLE, status)}>
+      {@render side(AREA.LEFT, left)}
+      {@render main()}
+      {@render side(AREA.RIGHT, right)}
     </div>
-  {:else}
-    {@render main()}
-  {/if}
+    {@render desc(!descFirst)}
+  </div>
 {/if}
 
 {#snippet lbl()}
@@ -142,6 +138,6 @@
 {/snippet}
 {#snippet desc(show: boolean)}
   {#if show && bottom?.trim()}
-    <div class={cls(AREA.BOTTOM, status)} id={idDesc ?? idErr} role={alert}>{bottom}</div>
+    <div class={cls(AREA.BOTTOM, status)} id={idDesc ?? idErr} role={live}>{bottom}</div>
   {/if}
 {/snippet}
