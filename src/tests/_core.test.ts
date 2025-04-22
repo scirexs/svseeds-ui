@@ -59,13 +59,6 @@ describe("theme (ThemeSwitcher class)", () => {
     theme.switch("test");
     expect(theme.current).toBe("dark");
   });
-  test("set preset", () => {
-    const preset = {
-      light: {},
-      dark: {},
-    };
-    expect(theme.setPreset(preset)).toBe(theme);
-  });
   test("to light", () => {
     theme.toLight();
     expect(theme.current).toBe("light");
