@@ -1,7 +1,6 @@
 // deno-fmt-ignore
 export {
   type ClassRuleSet,
-  type ThemePreset,
   CONST,
   STATE,
   AREA,
@@ -17,8 +16,6 @@ export {
 
 type ClassRule = Partial<Record<string, string>>;
 type ClassRuleSet = Partial<Record<string, ClassRule>>;
-type CssVarSet = Record<string, string>;
-type ThemePreset = Record<string, CssVarSet>;
 
 const CONST = "const";
 const STATE = Object.freeze({ DEFAULT: "default", ACTIVE: "active", INACTIVE: "inactive" });
@@ -69,7 +66,7 @@ class UniqueId {
 class ThemeSwitcher {
   static #DARK = "dark";
   static #LIGHT = "light";
-  #styles: Map<string, CssVarSet> = new Map();
+  #props: Map<string, Record<string, string>> = new Map();
   #current;
   get current() {
     return this.#current;
@@ -77,11 +74,10 @@ class ThemeSwitcher {
 
   constructor() {
     this.#current = ThemeSwitcher.#setInitialTheme();
-  }
-  setPreset(preset: ThemePreset): ThemeSwitcher {
-    this.#setStyleMap(preset);
+    this.#initProps();
     this.#setColorScheme();
-    return this;
+    this.#apply();
+    console.log(this.#props);
   }
   toLight() {
     this.switch(ThemeSwitcher.#LIGHT);
@@ -90,29 +86,68 @@ class ThemeSwitcher {
     this.switch(ThemeSwitcher.#DARK);
   }
   switch(theme: string) {
-    if (!this.#styles.has(theme)) return;
+    if (!this.#props.has(theme)) return;
     this.#current = theme;
     this.#apply();
   }
   #apply() {
     if (typeof window === "undefined") return;
-    const style = window.document.body.style;
-    Object.entries(this.#styles.get(this.#current) ?? {})
+    const style = window.document.documentElement.style;
+    Object.entries(this.#props.get(this.#current) ?? {})
       .forEach(([name, value]) => style.setProperty(name, value));
   }
   #setColorScheme() {
     if (typeof window === "undefined") return;
-    const themes = Object.keys(this.#styles).filter((x) => x === ThemeSwitcher.#LIGHT || x === ThemeSwitcher.#DARK);
+    const themes = Object.keys(this.#props).filter((x) => x === ThemeSwitcher.#LIGHT || x === ThemeSwitcher.#DARK);
     window.document.documentElement.style.colorScheme = themes.join(" ");
   }
-  #setStyleMap(preset: ThemePreset) {
-    Object.entries(preset).forEach(([theme, obj]) => this.#styles.set(theme, ThemeSwitcher.#renameProperties(obj)));
+  #initProps() {
+    if (typeof window === "undefined") return;
+    const sheets = window.document.styleSheets;
+    for (let i = 0; i < sheets.length; i++) {
+      this.#scanGroup(sheets[i]);
+    }
   }
-  static #renameProperties(obj: CssVarSet): CssVarSet {
-    return Object.fromEntries(
-      Object.entries(obj)
-        .map(([name, value]) => [`--${name.replaceAll("_", "-")}`, value]),
-    );
+  #scanGroup(group: CSSStyleSheet | CSSGroupingRule) {
+    const rules = ThemeSwitcher.#getRules(group);
+    if (!rules) return;
+    for (let i = 0; i < rules.length; i++) {
+      this.#scanRule(rules[i]);
+    }
+  }
+  #scanRule(rule: CSSRule) {
+    if (rule instanceof CSSGroupingRule) return this.#scanGroup(rule);
+    if (!(rule instanceof CSSStyleRule) && !(rule instanceof CSSPageRule)) return;
+    if (!rule.selectorText.includes(":root")) return;
+    this.#setProps(rule.style);
+  }
+  #setProps(style: CSSStyleDeclaration) {
+    for (let i = 0; i < style.length; i++) {
+      const prop = style[i];
+      if (prop.startsWith("--")) {
+        const [theme, name] = ThemeSwitcher.#parseProp(prop);
+        const value = theme ? style.getPropertyValue(prop).trim() : "";
+        this.#setEachProp(theme, name, value);
+      }
+    }
+  }
+  #setEachProp(theme: string, name: string, value: string) {
+    if (!theme) return;
+    console.log(value);
+    if (!this.#props.has(theme)) this.#props.set(theme, {});
+    this.#props.get(theme)![name] = value;
+  }
+  static #getRules(sheet: CSSStyleSheet | CSSGroupingRule): CSSRuleList | undefined {
+    try {
+      return sheet.cssRules;
+    } catch (e) { // mainly, due to CORS security
+      return;
+    }
+  }
+  static #parseProp(prop: string): [string, string] {
+    const words = prop.split("--").filter((x) => x);
+    if (words.length <= 1) return ["", ""];
+    return [words.shift()!, `--${words.length > 1 ? words.join("--") : words[0]}`];
   }
   static #setInitialTheme(): string {
     if (typeof window === "undefined") return ThemeSwitcher.#LIGHT;
