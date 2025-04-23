@@ -1,6 +1,5 @@
 <script module lang="ts">
   export type TagsInputProps = {
-    bottom?: string, // bindable
     values?: string[], // bindable
     type?: "left" | "right" | "bottom", // <"left">
     confirm?: string[],
@@ -33,7 +32,7 @@
 </script>
 
 <script lang="ts">
-  let { bottom = $bindable(), values = $bindable([]), type = "left", confirm = [], trim = false, unique = true, min, max, validations = [], status = $bindable(""), style, element = $bindable(), deps }: TagsInputProps = $props();
+  let { values = $bindable([]), type = "left", confirm = [], trim = false, unique = true, min, max, validations = [], status = $bindable(""), style, element = $bindable(), deps }: TagsInputProps = $props();
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
@@ -95,7 +94,7 @@
 
 <!---------------------------------------->
 
-<TextField bind:value bind:status bind:bottom bind:element type="text" {...deps?.svsTextField} {left} {right} />
+<TextField bind:value bind:status bind:element type="text" {...deps?.svsTextField} {left} {right} />
 {#if type === "bottom"}
   <div class={cls(AREA.BOTTOM, status)}>
     {@render tags()}

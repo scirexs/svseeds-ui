@@ -5,7 +5,7 @@
     aux?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>, // Snippet<[status,value,element]>
     left?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>, // Snippet<[status,value,element]>
     right?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>, // Snippet<[status,value,element]>
-    bottom?: string, // bindable
+    bottom?: string,
     value?: string, // bindable
     type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url" | "number",  // bindable <"text">
     options?: SvelteSet<string> | Set<string>,
@@ -18,7 +18,7 @@
     element?: HTMLInputElement | HTMLTextAreaElement, // bindable
   };
   export type TextFieldReqdProps = never;
-  export type TextFieldBindProps = "bottom" | "value" | "type" | "status" | "element";
+  export type TextFieldBindProps = "value" | "type" | "status" | "element";
 
   const svs = "svs-text-field";
   const preset: ClassRuleSet = {};
@@ -31,7 +31,7 @@
 </script>
 
 <script lang="ts">
-  let { label, extra, aux, left, right, bottom = $bindable(), value = $bindable(""), type = $bindable("text"), options, descFirst = false, validations = [], status = $bindable(""), style, attributes, action, element = $bindable() }: TextFieldProps = $props();
+  let { label, extra, aux, left, right, bottom, value = $bindable(""), type = $bindable("text"), options, descFirst = false, validations = [], status = $bindable(""), style, attributes, action, element = $bindable() }: TextFieldProps = $props();
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
@@ -42,7 +42,7 @@
   const idList = elemId.get(options?.size);
   const idErr = idDesc ?? elemId.id;
   const attrs = omit(attributes as any, "class", "id", "type", "value", "list", "onchange", "oninvalid");
-  const description = bottom;
+  let message = $state(bottom);
 
   // *** Status *** //
   let neutral = isNeutral(status) ? status : STATE.DEFAULT;
@@ -54,7 +54,7 @@
   const toNonInvalid = (stat: string) => shiftStatus(stat);
   function shiftStatus(stat: string, msg?: string) {
     status = stat;
-    bottom = msg ?? description;
+    message = msg ?? bottom;
     element?.setCustomValidity(msg ?? "");
   }
   function validate(onchange?: boolean) {
@@ -126,7 +126,7 @@
 {/snippet}
 {#snippet main()}
   {@const c = cls(AREA.MAIN, status)}
-  {@const msg = bottom?.trim() ? errMsg : undefined}
+  {@const msg = message?.trim() ? errMsg : undefined}
   {#if type === "area"}
     {#if action}
       <textarea bind:value bind:this={element} class={c} {id} {onchange} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={msg} use:action></textarea>
@@ -149,7 +149,7 @@
   {/if}
 {/snippet}
 {#snippet desc(show: boolean)}
-  {#if show && bottom?.trim()}
-    <div class={cls(AREA.BOTTOM, status)} id={idDesc ?? idErr} role={live}>{bottom}</div>
+  {#if show && message?.trim()}
+    <div class={cls(AREA.BOTTOM, status)} id={idDesc ?? idErr} role={live}>{message}</div>
   {/if}
 {/snippet}

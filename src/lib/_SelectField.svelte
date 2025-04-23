@@ -6,7 +6,7 @@
     aux?: Snippet<[string, string, HTMLSelectElement | undefined]>, // Snippet<[status,value,element]>
     left?: Snippet<[string, string, HTMLSelectElement | undefined]>, // Snippet<[status,value,element]>
     right?: Snippet<[string, string, HTMLSelectElement | undefined]>, // Snippet<[status,value,element]>
-    bottom?: string, // bindable
+    bottom?: string,
     value?: string, // bindable
     descFirst?: boolean, // <false>
     validations?: ((value: string, validity?: ValidityState) => string)[],
@@ -17,7 +17,7 @@
     element?: HTMLSelectElement, // bindable
   };
   export type SelectFieldReqdProps = "options";
-  export type SelectFieldBindProps = "bottom" | "value" | "status" | "element";
+  export type SelectFieldBindProps = "value" | "status" | "element";
 
   type SelectFieldTarget = { currentTarget: EventTarget & HTMLSelectElement };
   const svs = "svs-select-field";
@@ -31,7 +31,7 @@
 </script>
 
 <script lang="ts">
-  let { options, label, extra, aux, left, right, bottom = $bindable(), value = $bindable(""), descFirst = false, validations = [], status = $bindable(""), style, attributes, action, element = $bindable() }: SelectFieldProps = $props();
+  let { options, label, extra, aux, left, right, bottom, value = $bindable(""), descFirst = false, validations = [], status = $bindable(""), style, attributes, action, element = $bindable() }: SelectFieldProps = $props();
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
@@ -41,7 +41,7 @@
   const idDesc = elemId.get(bottom?.trim());
   const idErr = idDesc ?? elemId.id;
   const attrs = omit(attributes, "class", "id", "value", "oninvalid");
-  const description = bottom;
+  let message = $state(bottom);
 
   // *** Status *** //
   let neutral = isNeutral(status) ? status : STATE.DEFAULT;
@@ -53,7 +53,7 @@
   const toNonInvalid = (stat: string) => shiftStatus(stat);
   function shiftStatus(stat: string, msg?: string) {
     status = stat;
-    bottom = msg ?? description;
+    message = msg ?? bottom;
     element?.setCustomValidity(msg ?? "");
   }
   function validate() {
@@ -120,7 +120,7 @@
 {/snippet}
 {#snippet main()}
   {@const c = cls(AREA.MAIN, status)}
-  {@const msg = bottom?.trim() ? errMsg : undefined}
+  {@const msg = message?.trim() ? errMsg : undefined}
   {#if action}
     <select bind:value bind:this={element} class={c} {id} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={msg} use:action>
       {@render option()}
@@ -137,7 +137,7 @@
   {/each}
 {/snippet}
 {#snippet desc(show: boolean)}
-  {#if show && bottom?.trim()}
-    <div class={cls(AREA.BOTTOM, status)} id={idDesc ?? idErr} role={live}>{bottom}</div>
+  {#if show && message?.trim()}
+    <div class={cls(AREA.BOTTOM, status)} id={idDesc ?? idErr} role={live}>{message}</div>
   {/if}
 {/snippet}

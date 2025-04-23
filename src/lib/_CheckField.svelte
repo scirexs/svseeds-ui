@@ -4,7 +4,7 @@
     label?: string,
     extra?: string,
     aux?: Snippet<[string, string[], HTMLInputElement[] | undefined]>, // Snippet<[status,values,elements]>
-    bottom?: string, // bindable
+    bottom?: string,
     values?: string[], // bindable
     multiple?: boolean, // <true>
     descFirst?: boolean, // <false>
@@ -16,7 +16,7 @@
     elements?: HTMLInputElement[], // bindable
   };
   export type CheckFieldReqdProps = "options";
-  export type CheckFieldBindProps = "bottom" | "values" | "status" | "elements";
+  export type CheckFieldBindProps = "values" | "status" | "elements";
 
   type CheckFieldTarget = { currentTarget: EventTarget & HTMLInputElement };
   const svs = "svs-check-field";
@@ -30,7 +30,7 @@
 </script>
 
 <script lang="ts">
-  let { options, label, extra, aux, bottom = $bindable(), values = $bindable([]), multiple = true, descFirst = false, validations = [], status = $bindable(""), style, attributes, action, elements = $bindable([])}: CheckFieldProps = $props();
+  let { options, label, extra, aux, bottom, values = $bindable([]), multiple = true, descFirst = false, validations = [], status = $bindable(""), style, attributes, action, elements = $bindable([])}: CheckFieldProps = $props();
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
@@ -42,7 +42,7 @@
   const idErr = idDesc ?? elemId.id;
   const attrs = omit(attributes, "class", "id", "type", "name", "value", "onchange", "oninvalid");
   const roleGroup = multiple ? "group" : "radiogroup";
-  const description = bottom;
+  let message = $state(bottom);
 
   // *** Status *** //
   const phase = { change: false, submit: false };
@@ -55,7 +55,7 @@
   const toNonInvalid = () => shiftStatus(phase.change && values.length ? STATE.ACTIVE : neutral);
   function shiftStatus(stat: string, msg?: string) {
     status = stat;
-    bottom = stat === STATE.INACTIVE ? msg ?? description : description;
+    message = stat === STATE.INACTIVE ? msg ?? bottom : bottom;
     elements[0]?.setCustomValidity(msg ?? "");
   }
   function validate() {
@@ -118,7 +118,7 @@
   {/if}
 {/snippet}
 {#snippet main()}
-  <div class={cls(AREA.MIDDLE, status)} role={roleGroup} aria-describedby={idDesc} aria-invalid={!multiple ? invalid : undefined} aria-errormessage={!multiple && bottom?.trim() ? errMsg : undefined}>
+  <div class={cls(AREA.MIDDLE, status)} role={roleGroup} aria-describedby={idDesc} aria-invalid={!multiple ? invalid : undefined} aria-errormessage={!multiple && message?.trim() ? errMsg : undefined}>
     {#each opts as {value, text, checked}, i (value)}
       <label class={cls(AREA.MAIN, status)}>
         {#if action}
@@ -132,7 +132,7 @@
   </div>
 {/snippet}
 {#snippet desc(show: boolean)}
-  {#if show && bottom?.trim()}
-    <div class={cls(AREA.BOTTOM, status)} id={idDesc ?? idErr} role={live}>{bottom}</div>
+  {#if show && message?.trim()}
+    <div class={cls(AREA.BOTTOM, status)} id={idDesc ?? idErr} role={live}>{message}</div>
   {/if}
 {/snippet}

@@ -4,7 +4,7 @@
     label?: string,
     extra?: string,
     aux?: Snippet<[string, string[], HTMLButtonElement[] | undefined]>, // Snippet<[status,values,elements]>
-    bottom?: string, // bindable
+    bottom?: string,
     values?: string[], // bindable
     multiple?: boolean, // <true>
     descFirst?: boolean, // <false>
@@ -16,7 +16,7 @@
     elements?: HTMLButtonElement[], // bindable
   };
   export type TogglesFieldReqdProps = "options";
-  export type TogglesFieldBindProps = "bottom" | "values" | "status" | "elements";
+  export type TogglesFieldBindProps = "values" | "status" | "elements";
 
   type TogglesFieldTarget = { currentTarget: EventTarget & HTMLButtonElement };
   const svs = "svs-toggles-field";
@@ -30,7 +30,7 @@
 </script>
 
 <script lang="ts">
-  let { options, label, extra, aux, bottom = $bindable(), values = $bindable([]), multiple = true, descFirst = false, validations = [], status = $bindable(""), style, attributes, action, elements = $bindable([]) }: TogglesFieldProps = $props();
+  let { options, label, extra, aux, bottom, values = $bindable([]), multiple = true, descFirst = false, validations = [], status = $bindable(""), style, attributes, action, elements = $bindable([]) }: TogglesFieldProps = $props();
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
@@ -41,7 +41,7 @@
   const idErr = idDesc ?? elemId.id;
   const attrs = omit(attributes, "class", "id", "type", "role", "aria-checked", "onclick", "oninvalid");
   const roleGroup = multiple ? "group" : "radiogroup";
-  const description = bottom;
+  let message = $state(bottom);
   let elem: HTMLInputElement | undefined = $state();
 
   // *** Status *** //
@@ -55,7 +55,7 @@
   const toNonInvalid = () => shiftStatus(phase.change && values.length ? STATE.ACTIVE : neutral);
   function shiftStatus(stat: string, msg?: string) {
     status = stat;
-    bottom = stat === STATE.INACTIVE ? msg ?? description : description;
+    message = stat === STATE.INACTIVE ? msg ?? bottom : bottom;
     elem?.setCustomValidity(msg ?? "");
   }
   function validate() {
@@ -123,7 +123,7 @@
 {#snippet main()}
   {@const c = cls(AREA.MAIN, status)}
   <input bind:this={elem} style="display: none;" aria-hidden="true" {oninvalid} />
-  <div class={cls(AREA.MIDDLE, status)} role={roleGroup} aria-describedby={idDesc} aria-invalid={!multiple ? invalid : undefined} aria-errormessage={!multiple && bottom?.trim() ? errMsg : undefined}>
+  <div class={cls(AREA.MIDDLE, status)} role={roleGroup} aria-describedby={idDesc} aria-invalid={!multiple ? invalid : undefined} aria-errormessage={!multiple && message?.trim() ? errMsg : undefined}>
     {#each opts as { value, text, checked }, i (value)}
       {#if action}
         <button bind:this={elements[i]} class={c} aria-checked={checked} aria-invalid={multiple ? invalid : undefined} onclick={updateValues(value)} type="button" {role} {...attrs} use:action>
@@ -138,7 +138,7 @@
   </div>
 {/snippet}
 {#snippet desc(show: boolean)}
-  {#if show && bottom?.trim()}
-    <div class={cls(AREA.BOTTOM, status)} id={idDesc ?? idErr} role={live}>{bottom}</div>
+  {#if show && message?.trim()}
+    <div class={cls(AREA.BOTTOM, status)} id={idDesc ?? idErr} role={live}>{message}</div>
   {/if}
 {/snippet}
