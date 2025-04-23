@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { AREA, type ClassRuleSet, CONST, debounce, elemId, fnClass, omit, STATE, theme, throttle, UniqueId } from "../lib/core.ts";
+import { AREA, type ClassRuleSet, CONST, debounce, elemId, fnClass, omit, STATE, throttle, UniqueId } from "../lib/core.ts";
 
 describe("const vars", () => {
   test("STATE", () => {
@@ -48,24 +48,6 @@ describe("elemId (UniqueId class)", () => {
   test("id is fixed format", () => {
     const id = elemId.id;
     expect(id).toMatch(/^[a-yA-Y]{4}$/);
-  });
-});
-
-describe("theme (ThemeSwitcher class)", () => {
-  test("initial", () => {
-    expect(theme.current).toBe("dark");
-  });
-  test("prevent switch to not set theme", () => {
-    theme.switch("test");
-    expect(theme.current).toBe("dark");
-  });
-  test("to light", () => {
-    theme.toLight();
-    expect(theme.current).toBe("light");
-  });
-  test("to dark", () => {
-    theme.toDark();
-    expect(theme.current).toBe("dark");
   });
 });
 

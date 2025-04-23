@@ -13,8 +13,96 @@
 
   const ariaLabel = "Toggle theme color";
 
-  import { untrack } from "svelte";
-  import { STATE, omit, theme } from "./core";
+  class Theme {
+    static #DARK = "dark";
+    static #LIGHT = "light";
+    static #REGEX = /\(prefers-color-scheme:\s*(light|dark)\s*\)/i;
+    static #SELECTOR = ":root";
+    #props: Map<string, Record<string, string>> = new Map();
+    #dark;
+    set dark(bool: boolean) {
+      this.#switch(bool);
+    }
+    get dark(): boolean {
+      return this.#dark;
+    }
+
+    constructor() {
+      this.#dark = Theme.#isPreferDark();
+      this.#initProps();
+      this.#setColorScheme();
+    }
+    #switch(dark: boolean) {
+      const theme = dark ? Theme.#DARK : Theme.#LIGHT;
+      if (!this.#props.has(theme)) return;
+      this.#dark = dark;
+      this.#apply(theme);
+    }
+    #apply(theme: string) {
+      if (typeof window === "undefined") return;
+      const style = window.document.documentElement.style;
+      Object.entries(this.#props.get(theme) ?? {})
+        .forEach(([name, value]) => style.setProperty(name, value));
+    }
+    #setColorScheme() {
+      if (typeof window === "undefined") return;
+      const themes = Object.keys(this.#props).filter((x) => x === Theme.#LIGHT || x === Theme.#DARK);
+      window.document.documentElement.style.colorScheme = themes.join(" ");
+    }
+    #initProps() {
+      if (typeof window === "undefined") return;
+      const sheets = window.document.styleSheets;
+      for (let i = 0; i < sheets.length; i++) {
+        this.#scanGroup(sheets[i]);
+      }
+    }
+    #scanGroup(group: CSSStyleSheet | CSSGroupingRule, theme?: string) {
+      const rules = Theme.#getRules(group);
+      if (!rules) return;
+      for (let i = 0; i < rules.length; i++) {
+        this.#scanRule(rules[i], theme);
+      }
+    }
+    #scanRule(rule: CSSRule, theme?: string) {
+      if (rule instanceof CSSMediaRule) theme = this.#getTheme(rule.conditionText);
+      if (rule instanceof CSSGroupingRule) return this.#scanGroup(rule, theme);
+      if (!(rule instanceof CSSStyleRule) && !(rule instanceof CSSPageRule)) return;
+      if (rule.selectorText.includes(Theme.#SELECTOR)) this.#setProps(rule.style, theme);
+    }
+    #setProps(style: CSSStyleDeclaration, theme?: string) {
+      if (!theme) return;
+      for (let i = 0; i < style.length; i++) {
+        const prop = style[i];
+        if (prop.startsWith("--")) {
+          const value = theme ? style.getPropertyValue(prop).trim() : "";
+          this.#setEachProp(theme, prop, value);
+        }
+      }
+    }
+    #getTheme(condition: string): string | undefined {
+      const match = condition.match(Theme.#REGEX);
+      return match?.[1]?.toLowerCase();
+    }
+    #setEachProp(theme: string, name: string, value: string) {
+      if (!theme) return;
+      if (!this.#props.has(theme)) this.#props.set(theme, {});
+      this.#props.get(theme)![name] = value;
+    }
+    static #getRules(sheet: CSSStyleSheet | CSSGroupingRule): CSSRuleList | undefined {
+      try {
+        return sheet.cssRules;
+      } catch (e) { // mainly, due to CORS
+        return;
+      }
+    }
+    static #isPreferDark(): boolean {
+      if (typeof window === "undefined") return true;
+      return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+  }
+  const theme = new Theme();
+
+  import { STATE, omit } from "./core";
   import Toggle, { type ToggleProps, type ToggleReqdProps, type ToggleBindProps } from "./_Toggle.svelte";
 </script>
 
@@ -23,12 +111,11 @@
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
+  dark = theme.dark;
   const propsToggle = omit(deps?.svsToggle, "main");
 
   // *** Bind Handlers *** //
-  $effect.pre(() => { dark;
-    untrack(() => theme.switch(dark ? "dark" : "light"));
-  });
+  $effect.pre(() => { theme.dark = dark });
 </script>
 
 <!---------------------------------------->

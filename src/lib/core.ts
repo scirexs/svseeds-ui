@@ -5,7 +5,6 @@ export {
   STATE,
   AREA,
   elemId,
-  theme,
   fnClass,
   isNeutral,
   omit,
@@ -63,99 +62,7 @@ class UniqueId {
     return id;
   }
 }
-class ThemeSwitcher {
-  static #DARK = "dark";
-  static #LIGHT = "light";
-  #props: Map<string, Record<string, string>> = new Map();
-  #current;
-  get current() {
-    return this.#current;
-  }
-
-  constructor() {
-    this.#current = ThemeSwitcher.#setInitialTheme();
-    this.#initProps();
-    this.#setColorScheme();
-    this.#apply();
-    console.log(this.#props);
-  }
-  toLight() {
-    this.switch(ThemeSwitcher.#LIGHT);
-  }
-  toDark() {
-    this.switch(ThemeSwitcher.#DARK);
-  }
-  switch(theme: string) {
-    if (!this.#props.has(theme)) return;
-    this.#current = theme;
-    this.#apply();
-  }
-  #apply() {
-    if (typeof window === "undefined") return;
-    const style = window.document.documentElement.style;
-    Object.entries(this.#props.get(this.#current) ?? {})
-      .forEach(([name, value]) => style.setProperty(name, value));
-  }
-  #setColorScheme() {
-    if (typeof window === "undefined") return;
-    const themes = Object.keys(this.#props).filter((x) => x === ThemeSwitcher.#LIGHT || x === ThemeSwitcher.#DARK);
-    window.document.documentElement.style.colorScheme = themes.join(" ");
-  }
-  #initProps() {
-    if (typeof window === "undefined") return;
-    const sheets = window.document.styleSheets;
-    for (let i = 0; i < sheets.length; i++) {
-      this.#scanGroup(sheets[i]);
-    }
-  }
-  #scanGroup(group: CSSStyleSheet | CSSGroupingRule) {
-    const rules = ThemeSwitcher.#getRules(group);
-    if (!rules) return;
-    for (let i = 0; i < rules.length; i++) {
-      this.#scanRule(rules[i]);
-    }
-  }
-  #scanRule(rule: CSSRule) {
-    if (rule instanceof CSSGroupingRule) return this.#scanGroup(rule);
-    if (!(rule instanceof CSSStyleRule) && !(rule instanceof CSSPageRule)) return;
-    if (!rule.selectorText.includes(":root")) return;
-    this.#setProps(rule.style);
-  }
-  #setProps(style: CSSStyleDeclaration) {
-    for (let i = 0; i < style.length; i++) {
-      const prop = style[i];
-      if (prop.startsWith("--")) {
-        const [theme, name] = ThemeSwitcher.#parseProp(prop);
-        const value = theme ? style.getPropertyValue(prop).trim() : "";
-        this.#setEachProp(theme, name, value);
-      }
-    }
-  }
-  #setEachProp(theme: string, name: string, value: string) {
-    if (!theme) return;
-    console.log(value);
-    if (!this.#props.has(theme)) this.#props.set(theme, {});
-    this.#props.get(theme)![name] = value;
-  }
-  static #getRules(sheet: CSSStyleSheet | CSSGroupingRule): CSSRuleList | undefined {
-    try {
-      return sheet.cssRules;
-    } catch (e) { // mainly, due to CORS security
-      return;
-    }
-  }
-  static #parseProp(prop: string): [string, string] {
-    const words = prop.split("--").filter((x) => x);
-    if (words.length <= 1) return ["", ""];
-    return [words.shift()!, `--${words.length > 1 ? words.join("--") : words[0]}`];
-  }
-  static #setInitialTheme(): string {
-    if (typeof window === "undefined") return ThemeSwitcher.#LIGHT;
-    return window.matchMedia("(prefers-color-scheme: light)").matches ? ThemeSwitcher.#LIGHT : ThemeSwitcher.#DARK;
-  }
-}
 const elemId = new UniqueId();
-const theme = new ThemeSwitcher();
 
 type ClassFn = (area: string, status: string) => string | undefined;
 function fnClass(name: string, preset: ClassRuleSet, style?: ClassRuleSet | string): ClassFn {
