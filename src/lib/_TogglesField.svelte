@@ -10,7 +10,7 @@
     descFirst?: boolean, // <false>
     validations?: ((values: string[], validities?: ValidityState[]) => string)[],
     status?: string, // bindable <STATE.DEFAULT>
-    style?: ClassRuleSet | string,
+    style?: SVSStyle,
     attributes?: HTMLButtonAttributes;
     action?: Action,
     elements?: HTMLButtonElement[], // bindable
@@ -19,14 +19,13 @@
   export type TogglesFieldBindProps = "values" | "status" | "elements";
 
   type TogglesFieldTarget = { currentTarget: EventTarget & HTMLButtonElement };
-  const svs = "svs-toggles-field";
-  const preset: ClassRuleSet = {};
+  const preset = "svs-toggles-field";
 
   import { type Snippet, untrack } from "svelte";
   import { type Action } from "svelte/action";
   import { type SvelteMap } from "svelte/reactivity";
   import { type HTMLButtonAttributes } from "svelte/elements";
-  import { type ClassRuleSet, STATE, AREA, elemId, fnClass, isNeutral, omit } from "./core";
+  import { type SVSStyle, STATE, AREA, elemId, fnClass, isNeutral, omit } from "./core";
 </script>
 
 <script lang="ts">
@@ -34,7 +33,7 @@
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
-  const cls = fnClass(svs, preset, style);
+  const cls = fnClass(preset, style);
   const role = multiple ? "checkbox" : "radio";
   const idLabel = elemId.get(label?.trim());
   const idDesc = elemId.get(bottom?.trim());

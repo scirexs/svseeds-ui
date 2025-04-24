@@ -5,7 +5,7 @@
     open?: boolean, // bindable <false>
     duration?: number, // <400>
     status?: string, // bindable <STATE.DEFAULT>
-    style?: ClassRuleSet | string,
+    style?: SVSStyle,
     attributes?: HTMLDetailsAttributes;
     action?: Action,
     element?: HTMLDetailsElement, // bindable
@@ -14,8 +14,7 @@
   export type DisclosureBindProps = "open" | "status" | "elementent";
 
   type DisclosureTarget = { currentTarget: EventTarget & HTMLDetailsElement };
-  const svs = "svs-disclosure";
-  const preset: ClassRuleSet = {};
+  const preset = "svs-disclosure";
 
   const sleep = (msec: number) => new Promise(resolve => setTimeout(resolve, msec));
   class ToggleGurad {
@@ -33,7 +32,7 @@
   import { type Action } from "svelte/action";
   import { type HTMLDetailsAttributes } from "svelte/elements";
   import { slide } from "svelte/transition";
-  import { type ClassRuleSet, STATE, AREA, fnClass, isNeutral, omit } from "./core";
+  import { type SVSStyle, STATE, AREA, fnClass, isNeutral, omit } from "./core";
 </script>
 
 <script lang="ts">
@@ -41,7 +40,7 @@
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
-  const cls = fnClass(svs, preset, style);
+  const cls = fnClass(preset, style);
   const attrs = omit(attributes, "class", "open", "ontoggle");
   const guard = new ToggleGurad();
   let hidden = $state(!open);

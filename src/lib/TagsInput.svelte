@@ -9,7 +9,7 @@
     max?: TagCountValidation,
     validations?: ((values: string[]) => string)[],
     status?: string, // bindable <STATE.DEFAULT>
-    style?: ClassRuleSet | string,
+    style?: SVSStyle,
     element?: HTMLInputElement, // bindable
     deps?: TagsInputDeps,
   };
@@ -21,12 +21,11 @@
   export type TagsInputBindProps = "dark" | "status" | "element";
   export type TagCountValidation = { value: number, message: string };
 
-  const svs = "svs-tags-input";
-  const preset: ClassRuleSet = {};
+  const preset = "svs-tags-input";
   const CONFIRM_KEY = "Enter";
 
   import { untrack } from "svelte";
-  import { type ClassRuleSet, STATE, AREA, fnClass, omit } from "./core";
+  import { type SVSStyle, STATE, AREA, fnClass, omit } from "./core";
   import TextField, { type TextFieldProps, type TextFieldReqdProps, type TextFieldBindProps } from "./_TextField.svelte";
   import Badge, { type BadgeProps, type BadgeReqdProps, type BadgeBindProps } from "./_Badge.svelte";
 </script>
@@ -36,24 +35,24 @@
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
-  const cls = fnClass(svs, preset, style);
-  initDeps();
+  const cls = fnClass(preset, style);
   const confirmKeys = new Set([CONFIRM_KEY, ...confirm]);
-  const onkeydown = deps!.svsTextField!.attributes!.onkeydown;
-  deps!.svsTextField!.attributes!.onkeydown = confirmTag;
-  const onclick = deps!.svsBadge!.onclick;
-  const svsBadge = omit(deps!.svsBadge, "onclick", "right");
   if (min) validations.push((values) => values.length < min.value ? min.message : "");
-  if (max) deps!.svsTextField!.validations!.push((_) => values.length >= max.value ? max.message : "");
   let value = $state("");
 
-  function initDeps() {
-    if (!deps) deps = {};
-    if (!deps.svsTextField) deps.svsTextField = {};
-    if (!deps.svsTextField.attributes) deps.svsTextField.attributes = {};
-    if (!deps.svsTextField.validations) deps.svsTextField.validations = [];
-    if (!deps.svsBadge) deps.svsBadge = {};
-  }
+  // *** Initialize Deps *** //
+  const svsBadge = {
+    ...omit(deps?.svsBadge, "onclick", "right", "style"),
+    style: deps?.svsBadge?.style ?? `${preset} svs-badge`,
+  };
+  const textValidations = deps?.svsTextField?.validations ?? [];
+  if (max) textValidations.push((values) => values.length >= max.value ? max.message : "");
+  const svsTextField = {
+    ...omit(deps?.svsTextField, "validations", "style", "attributes"),
+    validations: textValidations,
+    style: deps?.svsTextField?.style ?? `${preset} svs-text-field`,
+    attributes: { ...deps?.svsTextField?.attributes, onkeydown },
+  };
 
   // *** Bind Handlers *** //
   $effect.pre(() => {
@@ -69,8 +68,8 @@
 
   // *** Event Handlers *** //
   const change = new Event("change", { bubbles: true, cancelable: true });
-  function confirmTag(ev: KeyboardEvent) {
-    onkeydown?.(ev as any);
+  function onkeydown(ev: KeyboardEvent) {
+    deps?.svsTextField?.attributes?.onkeydown?.(ev as any);
     if (!confirmKeys.has(ev.key) || ev.isComposing) return;
     ev.preventDefault();
     element?.dispatchEvent(change);
@@ -86,7 +85,7 @@
   }
   function removeTag(index: number): (ev: Event) => void {
     return (ev) => {
-      onclick?.(ev as any);
+      deps?.svsBadge?.onclick?.(ev as any);
       values.splice(index, 1);
     };
   }
@@ -94,7 +93,7 @@
 
 <!---------------------------------------->
 
-<TextField bind:value bind:status bind:element type="text" {...deps?.svsTextField} {left} {right} />
+<TextField bind:value bind:status bind:element type="text" {left} {right} {...svsTextField} />
 {#if type === "bottom"}
   <div class={cls(AREA.BOTTOM, status)}>
     {@render tags()}

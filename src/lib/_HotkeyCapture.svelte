@@ -5,14 +5,13 @@
     active?: boolean, // bindable, <false>
     disabled?: boolean, // bindable, <false>
     status?: string, // bindable <STATE.DEFAULT>
-    style?: ClassRuleSet | string,
+    style?: SVSStyle,
     element?: HTMLInputElement, // bindable
   };
   export type HotkeyCaptureReqdProps = never;
   export type HotkeyCaptureBindProps = "value" | "active" | "disable" | "status" | "element";
 
-  const svs = "svs-hotkey-capture";
-  const preset: ClassRuleSet = {};
+  const preset = "svs-hotkey-capture";
   const KEY_MODIFIER = new Set(["Control", "Alt", "Shift", "Meta"]);
   const LABEL_SPACE = "SPACE";
   const LABEL_POINTER = ["BTN_MAIN","BTN_WHEEL","BTN_SUB","BTN_BACK","BTN_FORWARD"] as const;
@@ -22,7 +21,7 @@
   }
 
   import { untrack } from "svelte";
-  import { type ClassRuleSet, STATE, AREA, fnClass, isNeutral } from "./core";
+  import { type SVSStyle, STATE, AREA, fnClass, isNeutral } from "./core";
 </script>
 
 <script lang="ts">
@@ -30,7 +29,7 @@
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
-  const cls = fnClass(svs, preset, style);
+  const cls = fnClass(preset, style);
   let neutral = isNeutral(status) ? status : STATE.DEFAULT;
 
   // *** Bind Handlers *** //

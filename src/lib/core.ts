@@ -1,6 +1,6 @@
 // deno-fmt-ignore
 export {
-  type ClassRuleSet,
+  type SVSStyle,
   CONST,
   STATE,
   AREA,
@@ -13,8 +13,9 @@ export {
   UniqueId,
 };
 
-type ClassRule = Partial<Record<string, string>>;
+type ClassRule = Record<string, string>;
 type ClassRuleSet = Partial<Record<string, ClassRule>>;
+type SVSStyle = ClassRuleSet | ClassRule | string;
 
 const CONST = "const";
 const STATE = Object.freeze({ DEFAULT: "default", ACTIVE: "active", INACTIVE: "inactive" });
@@ -65,37 +66,25 @@ class UniqueId {
 const elemId = new UniqueId();
 
 type ClassFn = (area: string, status: string) => string | undefined;
-function fnClass(name: string, preset: ClassRuleSet, style?: ClassRuleSet | string): ClassFn {
-  const rule = getRule(name, preset, style ?? {});
-  if (typeof rule === "string") {
-    return (area: string, status: string) => cssClass(rule, area, status);
-  } else {
-    return (area: string, status: string) => ruleClass(rule, area, status);
+function fnClass(preset: SVSStyle, style?: SVSStyle): ClassFn {
+  const rule = prepRule(style) ?? prepRule(preset);
+  if (rule == null) return (_, __) => undefined;
+  if (typeof rule === "string") return (area, status) => `${rule} ${area} ${status}`;
+  return (area, status) => ruleClass(rule, area, status);
+}
+function prepRule(rule?: SVSStyle): ClassRuleSet | string | undefined {
+  if (rule == null) return;
+  if (typeof rule == "string") return rule.trim() ? rule : undefined;
+  if (typeof Object.values(rule)[0] == "string") {
+    return Object.fromEntries(Object.entries(rule).map(([k, v]) => [k, { const: v }]));
   }
-}
-function getRule(name: string, preset: ClassRuleSet, style: ClassRuleSet | string): ClassRuleSet | string {
-  if (typeof style === "string") return style.trim() ? style : name;
-  const rule = mergeRule(preset, style);
-  return Object.keys(rule).length <= 0 ? name : rule;
-}
-function cssClass(name: string, area: string, status: string): string {
-  return `${name} ${area}${status === STATE.DEFAULT ? "" : ` ${status}`}`;
+  return rule as ClassRuleSet;
 }
 function ruleClass(rule: ClassRuleSet, area: string, status: string): string | undefined {
   const constant = rule[area]?.[CONST] ?? "";
   const dynamic = rule[area]?.[status] ?? rule[area]?.[STATE.DEFAULT] ?? "";
-  return constant === "" && dynamic === "" ? undefined : `${constant}${constant && dynamic ? " " : ""}${dynamic}`;
-}
-function mergeRule(preset: ClassRuleSet, style: ClassRuleSet): ClassRuleSet {
-  const presetKeys = Object.keys(preset) as string[];
-  if (presetKeys.length <= 0) return style;
-  const styleKeys = Object.keys(style) as string[];
-  if (styleKeys.length <= 0) return preset;
-  const result: ClassRuleSet = {};
-  new Set([...presetKeys, ...styleKeys]).forEach((key) => {
-    result[key] = { ...preset[key] ?? {}, ...style[key] ?? {} };
-  });
-  return result;
+  if (!constant && !dynamic) return;
+  return `${constant}${constant && dynamic ? " " : ""}${dynamic}`;
 }
 function isNeutral(status: string): boolean {
   return status !== STATE.ACTIVE && status !== STATE.INACTIVE;

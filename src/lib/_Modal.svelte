@@ -6,17 +6,16 @@
     closable?: boolean, // <true>
     trigger?: HTMLElement, // bindable
     status?: string, // bindable <STATE.DEFAULT>
-    style?: ClassRuleSet | string,
+    style?: SVSStyle,
     element?: HTMLDialogElement, // bindable
   };
   export type ModalReqdProps = "children";
   export type ModalBindProps = "open" | "status" | "element";
 
-  const svs = "svs-modal";
-  const preset: ClassRuleSet = {};
+  const preset = "svs-modal";
 
   import { type Snippet, untrack } from "svelte";
-  import { type ClassRuleSet, STATE, AREA, fnClass } from "./core";
+  import { type SVSStyle, STATE, AREA, fnClass } from "./core";
 </script>
 
 <script lang="ts">
@@ -24,7 +23,7 @@
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
-  const cls = fnClass(svs, preset, style);
+  const cls = fnClass(preset, style);
 
   // *** Bind Handlers *** //
   $effect(() => {

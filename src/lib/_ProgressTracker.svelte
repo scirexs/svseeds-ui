@@ -6,17 +6,16 @@
     extra?: Snippet<[string, number]>, // Snippet<[status,index]>
     status?: string, // bindable <STATE.DEFAULT>
     eachStatus?: SvelteMap<number, string> | Map<number, string>,
-    style?: ClassRuleSet | string,
+    style?: SVSStyle,
   };
   export type ProgressTrackerReqdProps = "current" | "labels";
   export type ProgressTrackerBindProps = "current" | "status";
 
-  const svs = "svs-progress-tracker";
-  const preset: ClassRuleSet = {};
+  const preset = "svs-progress-tracker";
 
   import { type Snippet } from "svelte";
   import { type SvelteMap } from "svelte/reactivity";
-  import { type ClassRuleSet, STATE, AREA, fnClass } from "./core";
+  import { type SVSStyle, STATE, AREA, fnClass } from "./core";
 </script>
 
 <script lang="ts">
@@ -24,7 +23,7 @@
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
-  const cls = fnClass(svs, preset, style);
+  const cls = fnClass(preset, style);
 
   // *** Status *** //
   function getEachStatus(index: number): string {

@@ -7,7 +7,7 @@
     onclick?: MouseEventHandler<HTMLButtonElement> | null,
     form?: HTMLFormElement, // bindable
     status?: string, // bindable <STATE.DEFAULT>
-    style?: ClassRuleSet | string,
+    style?: SVSStyle,
     attributes?: HTMLButtonAttributes,
     action?: Action,
     element?: HTMLButtonElement, // bindable
@@ -15,20 +15,19 @@
   export type ButtonReqdProps = "children";
   export type ButtonBindProps = "form" | "status" | "element";
 
-  const svs = "svs-button";
-  const preset: ClassRuleSet = {};
+  const preset = "svs-button";
 
   import { type Snippet } from "svelte";
   import { type Action } from "svelte/action";
   import { type HTMLButtonAttributes, type MouseEventHandler } from "svelte/elements";
-  import { type ClassRuleSet, STATE, AREA, fnClass, omit } from "./core";
+  import { type SVSStyle, STATE, AREA, fnClass, omit } from "./core";
 </script>
 
 <script lang="ts">
   let { children, left, right, type = "button", onclick, form = $bindable(), status = $bindable(STATE.DEFAULT), style, attributes, action, element = $bindable()}: ButtonProps = $props();
 
   // *** Initialize *** //
-  const cls = fnClass(svs, preset, style);
+  const cls = fnClass(preset, style);
   const click = onclick ?? attributes?.["onclick"];
   const attrs = omit(attributes, "class", "type", "onclick");
 

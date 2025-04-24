@@ -4,15 +4,14 @@
     labels?: string[],
     current?: number, // bindable <0>
     status?: string, // bindable <STATE.DEFAULT>
-    style?: ClassRuleSet | string,
+    style?: SVSStyle,
     [key: string]: unknown | Snippet,
   };
   export type TabsReqdProps = never;
   export type TabsBindProps = "current" | "status";
 
   type NamedId = { id: string, name: string };
-  const svs = "svs-tabs";
-  const preset: ClassRuleSet = {};
+  const preset = "svs-tabs";
   const roleLabel = "label";
   const rolePanel = "panel";
 
@@ -31,7 +30,7 @@
   }
 
   import { type Snippet } from "svelte";
-  import { type ClassRuleSet, STATE, AREA, elemId, fnClass } from "./core";
+  import { type SVSStyle, STATE, AREA, elemId, fnClass } from "./core";
 </script>
 
 <script lang="ts">
@@ -39,7 +38,7 @@
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
-  const cls = fnClass(svs, preset, style);
+  const cls = fnClass(preset, style);
   const isStrLabel = labels.length > 0;
   const tabs = toNamedId(isStrLabel ? labels : getSnippetNames(roleLabel, rest));
   const panels = toNamedId(getSnippetNames(rolePanel, rest));

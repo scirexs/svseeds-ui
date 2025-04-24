@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { AREA, type ClassRuleSet, CONST, debounce, elemId, fnClass, omit, STATE, throttle, UniqueId } from "../lib/core.ts";
+import { AREA, CONST, debounce, elemId, fnClass, omit, STATE, type SVSStyle, throttle, UniqueId } from "../lib/core.ts";
 
 describe("const vars", () => {
   test("STATE", () => {
@@ -54,7 +54,7 @@ describe("elemId (UniqueId class)", () => {
 describe("fnClass", () => {
   const name = "cmp-name";
   const strStyle = "style";
-  const preset: ClassRuleSet = {
+  const preset: SVSStyle = {
     [AREA.WHOLE]: {
       [CONST]: "preset-wc",
       [STATE.DEFAULT]: "preset-wd",
@@ -63,7 +63,7 @@ describe("fnClass", () => {
       [STATE.DEFAULT]: "preset-tc",
     },
   };
-  const style: ClassRuleSet = {
+  const style: SVSStyle = {
     [AREA.WHOLE]: {
       [CONST]: "style-wc",
       [STATE.ACTIVE]: "style-wa",

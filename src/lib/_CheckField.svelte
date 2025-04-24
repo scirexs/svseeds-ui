@@ -10,7 +10,7 @@
     descFirst?: boolean, // <false>
     validations?: ((values: string[], validities?: ValidityState[]) => string)[],
     status?: string, // bindable <STATE.DEFAULT>
-    style?: ClassRuleSet | string,
+    style?: SVSStyle,
     attributes?: HTMLInputAttributes,
     action?: Action,
     elements?: HTMLInputElement[], // bindable
@@ -19,14 +19,13 @@
   export type CheckFieldBindProps = "values" | "status" | "elements";
 
   type CheckFieldTarget = { currentTarget: EventTarget & HTMLInputElement };
-  const svs = "svs-check-field";
-  const preset: ClassRuleSet = {};
+  const preset = "svs-check-field";
 
   import { type Snippet, untrack } from "svelte";
   import { type Action } from "svelte/action";
   import { type SvelteMap } from "svelte/reactivity";
   import { type HTMLInputAttributes } from "svelte/elements";
-  import { type ClassRuleSet, STATE, AREA, elemId, fnClass, isNeutral, omit } from "./core";
+  import { type SVSStyle, STATE, AREA, elemId, fnClass, isNeutral, omit } from "./core";
 </script>
 
 <script lang="ts">
@@ -34,7 +33,7 @@
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
-  const cls = fnClass(svs, preset, style);
+  const cls = fnClass(preset, style);
   const type = multiple ? "checkbox" : "radio";
   const name = attributes?.["name"] ? attributes?.["name"] : elemId.id;
   const idLabel = elemId.get(label?.trim());

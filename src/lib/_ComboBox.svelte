@@ -4,7 +4,7 @@
     value?: string, // bindable
     expanded?: boolean, // bindable
     status?: string, // bindable <STATE.DEFAULT>
-    style?: ClassRuleSet | string,
+    style?: SVSStyle,
     attributes?: HTMLInputAttributes,
     action?: Action,
     element?: HTMLInputElement, // bindable
@@ -12,8 +12,7 @@
   export type ComboBoxReqdProps = "options";
   export type ComboBoxBindProps = "value" | "expanded" | "status" | "element";
 
-  const svs = "svs-combo-box";
-  const preset: ClassRuleSet = {};
+  const preset = "svs-combo-box";
   const NA = -1;
   const optionStyle = "cursor: default; user-select: none;";
 
@@ -21,7 +20,7 @@
   import { type Action } from "svelte/action";
   import { type SvelteSet } from "svelte/reactivity";
   import { type HTMLInputAttributes } from "svelte/elements";
-  import { type ClassRuleSet, STATE, AREA, elemId, fnClass, omit } from "./core";
+  import { type SVSStyle, STATE, AREA, elemId, fnClass, omit } from "./core";
 </script>
 
 <script lang="ts">
@@ -29,7 +28,7 @@
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
-  const cls = fnClass(svs, preset, style);
+  const cls = fnClass(preset, style);
   const idList = elemId.id;
   const attrs = omit(attributes, "class", "type", "value", "list", "role", "aria-haspopup", "aria-autocomplete", "aria-controls", "aria-expanded");
   let selected = $state(NA);

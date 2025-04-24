@@ -8,7 +8,7 @@
     options?: SvelteSet<number> | Set<number>,
     background?: Range, // <{ min: 5, max: 95 }>
     status?: string, // bindable <STATE.DEFAULT>
-    style?: ClassRuleSet | string,
+    style?: SVSStyle,
     attributes?: HTMLInputAttributes,
     action?: Action,
     element?: HTMLInputElement, // bindable
@@ -17,14 +17,13 @@
   export type SliderBindProps = "min" | "max" | "value" | "status" | "element";
   export type Range = { min: number, max: number };
 
-  const svs = "svs-slider";
-  const preset: ClassRuleSet = {};
+  const preset = "svs-slider";
 
   import { type Snippet } from "svelte";
   import { type Action } from "svelte/action";
   import { type SvelteSet } from "svelte/reactivity";
   import { type HTMLInputAttributes } from "svelte/elements";
-  import { type ClassRuleSet, STATE, AREA, elemId, fnClass, omit } from "./core";
+  import { type SVSStyle, STATE, AREA, elemId, fnClass, omit } from "./core";
 </script>
 
 <script lang="ts">
@@ -32,7 +31,7 @@
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
-  const cls = fnClass(svs, preset, style);
+  const cls = fnClass(preset, style);
   const idList = elemId.get(options?.size);
   const attrs = omit(attributes, "class", "type", "value", "min", "max", "step", "list");
   if (range.min > range.max) range = { min: range.max, max: range.min };

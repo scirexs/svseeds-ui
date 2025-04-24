@@ -40,7 +40,7 @@
   },
   "imports": {
     "@deno/vite-plugin": "npm:@deno/vite-plugin@^1.0.4",
-    "@sveltejs/adapter-auto": "npm:@sveltejs/adapter-auto@^4.0.0",
+    "@sveltejs/adapter-auto": "npm:@sveltejs/adapter-auto@^6.0.0",
     "@sveltejs/kit": "npm:@sveltejs/kit@^2.20.1",
     "@sveltejs/vite-plugin-svelte": "npm:@sveltejs/vite-plugin-svelte@^5.0.3",
     "@testing-library/jest-dom": "npm:@testing-library/jest-dom@^6.6.3",

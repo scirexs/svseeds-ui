@@ -7,17 +7,16 @@
     href?: string,
     onclick?: MouseEventHandler<HTMLButtonElement> | null,
     status?: string, // bindable <STATE.DEFAULT>
-    style?: ClassRuleSet | string,
+    style?: SVSStyle,
   };
   export type BadgeReqdProps = "children";
   export type BadgeBindProps = "status";
 
-  const svs = "svs-badge";
-  const preset: ClassRuleSet = {};
+  const preset = "svs-badge";
 
   import { type Snippet } from "svelte";
   import { type MouseEventHandler } from "svelte/elements";
-  import { type ClassRuleSet, STATE, AREA, fnClass } from "./core";
+  import { type SVSStyle, STATE, AREA, fnClass } from "./core";
 </script>
 
 <script lang="ts">
@@ -25,7 +24,7 @@
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
-  const cls = fnClass(svs, preset, style);
+  const cls = fnClass(preset, style);
 </script>
 
 <!---------------------------------------->

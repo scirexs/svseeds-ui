@@ -4,17 +4,16 @@
     open?: boolean, // bindable <false>; to observe state, not to control
     lock?: boolean, // bindable <false>
     status?: string, // bindable <STATE.DEFAULT>
-    style?: ClassRuleSet | string,
+    style?: SVSStyle,
     element?: HTMLElement, // bindable
   };
   export type ContextMenuReqdProps = "children";
   export type ContextMenuBindProps = "open" | "lock" | "status" | "element";
 
-  const svs = "svs-context-menu";
-  const preset: ClassRuleSet = {};
+  const preset = "svs-context-menu";
 
   import { type Snippet } from "svelte";
-  import { type ClassRuleSet, STATE, AREA, fnClass } from "./core";
+  import { type SVSStyle, STATE, AREA, fnClass } from "./core";
 </script>
 
 <!---------------------------------------->
@@ -24,7 +23,7 @@
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
-  const cls = fnClass(svs, preset, style);
+  const cls = fnClass(preset, style);
   let position = $state({ x: 0, y: 0 });
 
   // *** Bind Handlers *** //

@@ -1,4 +1,4 @@
-export { type ClassRuleSet, type ThemePreset, CONST, STATE, AREA, elemId, fnClass, isNeutral, omit, debounce, throttle, UniqueId } from "./_svseeds/core"
+export { type SVSStyle, CONST, STATE, AREA, elemId, fnClass, isNeutral, omit, debounce, throttle, UniqueId } from "./_svseeds/core"
 export { default as Accordion, type AccordionProps, type AccordionReqdProps, type AccordionBindProps, type AccordionDeps } from "./_svseeds/Accordion.svelte";
 export { default as Badge, type BadgeProps, type BadgeReqdProps, type BadgeBindProps } from "./_svseeds/_Badge.svelte";
 export { default as Button, type ButtonProps, type ButtonReqdProps, type ButtonBindProps } from "./_svseeds/_Button.svelte";

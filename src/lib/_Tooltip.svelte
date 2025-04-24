@@ -6,7 +6,7 @@
     align?: Align, // "center"
     offset?: Vector, // <{ x: 0, y: 0 }>
     status?: string, // bindable <STATE.DEFAULT>
-    style?: ClassRuleSet | string,
+    style?: SVSStyle,
     element?: HTMLDivElement, // bindable
   };
   export type TooltipReqdProps = never;
@@ -23,8 +23,7 @@
 
   type valueof<T> = T[keyof T];
   type Unlisten = () => void;
-  const svs = "svs-tooltip";
-  const preset: ClassRuleSet = {};
+  const preset = "svs-tooltip";
   const INIT_VEC = { x: 0, y: 0 };
   const VISIBLE = {
     NONE: 0,
@@ -229,7 +228,7 @@
   import { type Snippet, untrack } from "svelte";
   import { on } from "svelte/events";
   import { type Action, type ActionReturn } from "svelte/action";
-  import { type ClassRuleSet, STATE, AREA, elemId, fnClass, throttle } from "./core";
+  import { type SVSStyle, STATE, AREA, elemId, fnClass, throttle } from "./core";
 </script>
 
 <script lang="ts">
@@ -237,7 +236,7 @@
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
-  const cls = fnClass(svs, preset, style);
+  const cls = fnClass(preset, style);
   const id = core.register(name);
   let point: Vector = $state.raw(INIT_VEC);
 

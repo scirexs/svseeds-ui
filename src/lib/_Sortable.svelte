@@ -6,8 +6,7 @@
   const confirmTime = 500 // (ms) define how long to hover on item to confirm
   const triggerDrag: TriggerButton[] = ["main"]; // define draggable by which buttons
   const triggerSelect: TriggerButton[] = ["main"]; // define selectable by which buttons (for multi select)
-  const svs = "svs-sortable";
-  const preset: ClassRuleSet = {};
+  const preset = "svs-sortable";
 
   /***************************************************************/
 
@@ -25,7 +24,7 @@
     appendable?: boolean, // enable append when enter group area <false>
     confirm?: boolean     // enable confirm interval time to move items <false>
     status?: string, // bindable <STATE.DEFAULT>
-    style?: ClassRuleSet | string,
+    style?: SVSStyle,
   };
   export type SortableReqdProps = "items" | "item";
   export type SortableBindProps = "status";
@@ -604,7 +603,7 @@
   import { on } from "svelte/events";
   import { type EasingFunction, crossfade } from "svelte/transition";
   import { flip } from "svelte/animate";
-  import { type ClassRuleSet, STATE, AREA, fnClass, throttle } from "./core";
+  import { type SVSStyle, STATE, AREA, fnClass, throttle } from "./core";
 </script>
 
 <script lang="ts">
@@ -612,7 +611,7 @@
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
-  const cls = fnClass(svs, preset, style);
+  const cls = fnClass(preset, style);
   const group: KeyValue = SortableItems._newItem(name);
   const elems: HTMLElement[] = [];
   const shadow = new Shadow(ghost);

@@ -7,7 +7,7 @@
     value?: boolean, // bindable <true>
     type?: "button" | "switch", // <"button">
     status?: string, // bindable <STATE.DEFAULT>
-    style?: ClassRuleSet | string,
+    style?: SVSStyle,
     attributes?: HTMLButtonAttributes;
     action?: Action,
     element?: HTMLButtonElement, // bindable
@@ -16,13 +16,12 @@
   export type ToggleBindProps = "value" | "status" | "element";
 
   type ToggleTarget = { currentTarget: EventTarget & HTMLButtonElement };
-  const svs = "svs-toggle";
-  const preset: ClassRuleSet = {};
+  const preset = "svs-toggle";
 
   import { type Snippet, untrack } from "svelte";
   import { type Action } from "svelte/action";
   import { type HTMLButtonAttributes } from "svelte/elements";
-  import { type ClassRuleSet, STATE, AREA, fnClass, isNeutral, omit } from "./core";
+  import { type SVSStyle, STATE, AREA, fnClass, isNeutral, omit } from "./core";
 </script>
 
 <script lang="ts">
@@ -30,7 +29,7 @@
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
-  const cls = fnClass(svs, preset, style);
+  const cls = fnClass(preset, style);
   const attrs = omit(attributes, "class", "id", "type", "role", "aria-checked", "onclick");
   let neutral = isNeutral(status) ? status : STATE.DEFAULT;
 

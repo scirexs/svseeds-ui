@@ -3,7 +3,7 @@
     value?: string, // bindable <"#000">
     alpha?: number, // bindable <1>
     status?: string, // bindable <STATE.DEFAULT>
-    style?: ClassRuleSet | string,
+    style?: SVSStyle,
     attributes?: HTMLInputAttributes;
     action?: Action,
     element?: HTMLInputElement, // bindable
@@ -16,8 +16,7 @@
   }
 
   type RgbColor = [number, number, number];
-  const svs = "svs-color-picker";
-  const preset: ClassRuleSet = {};
+  const preset = "svs-color-picker";
 
   function isValidHex(hex: string): boolean {
     return Boolean(formatHex(hex));
@@ -42,7 +41,7 @@
 
   import { type Action } from "svelte/action";
   import { type HTMLInputAttributes } from "svelte/elements";
-  import { type ClassRuleSet, STATE, AREA, fnClass, omit } from "./core";
+  import { type SVSStyle, STATE, AREA, fnClass, omit } from "./core";
 </script>
 
 <script lang="ts">
@@ -50,7 +49,7 @@
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
-  const cls = fnClass(svs, preset, style);
+  const cls = fnClass(preset, style);
   const attrs = omit(attributes, "type");
   if (!isValidHex(value)) value = "#000";
 

@@ -3,7 +3,7 @@
     labels?: string[],
     current?: number, // bindable <-1>
     status?: string, // bindable <STATE.DEFAULT>
-    style?: ClassRuleSet | string,
+    style?: SVSStyle,
     deps?: AccordionDeps,
     [key: string]: unknown | Snippet,
   };
@@ -14,8 +14,7 @@
   export type AccordionBindProps = "current" | "status";
 
   type NamedId = { id: string, name: string };
-  const svs = "svs-accordion";
-  const preset: ClassRuleSet = {};
+  const preset = "svs-accordion";
   const roleLabel = "label";
   const rolePanel = "panel";
 
@@ -29,7 +28,7 @@
   }
 
   import { type Snippet, untrack } from "svelte";
-  import { type ClassRuleSet, STATE, AREA, elemId, fnClass, omit } from "./core";
+  import { type SVSStyle, STATE, AREA, elemId, fnClass, omit } from "./core";
   import Disclosure, { type DisclosureProps, type DisclosureReqdProps, type DisclosureBindProps } from "./_Disclosure.svelte";
 </script>
 
@@ -38,8 +37,7 @@
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
-  const cls = fnClass(svs, preset, style);
-  const propsDisclosure = omit(deps?.svsDisclosure, "attributes");
+  const cls = fnClass(preset, style);
   const isStrLabel = labels.length > 0;
   const lbls = toNamedId(isStrLabel ? labels : getSnippetNames(roleLabel, rest));
   const panels = getSnippetNames(rolePanel, rest);
@@ -48,6 +46,12 @@
   let event = false;
   let opens = $state(Array(lbls.length).fill(false));
   let elems: HTMLDetailsElement[] = $state([]);
+
+  // *** Initialize Deps *** //
+  const svsDisclosure = {
+    ...omit(deps?.svsDisclosure, "attributes", "style"),
+    style: deps?.svsDisclosure?.style ?? `${preset} svs-disclosure`,
+  };
 
   // *** Bind Handlers *** //
   $effect.pre(() => {
@@ -83,7 +87,7 @@
   <div class={cls(AREA.WHOLE, status)} role="group">
     {#each lbls as { id, name }, i (id)}
       {@const ontoggle = exclusiveToggle(i)}
-      <Disclosure bind:open={opens[i]} bind:element={elems[i]} label={isStrLabel ? name : (rest[name] as Snippet)} attributes={{...deps?.svsDisclosure?.attributes, ontoggle}} {...propsDisclosure}>
+      <Disclosure bind:open={opens[i]} bind:element={elems[i]} label={isStrLabel ? name : (rest[name] as Snippet)} attributes={{...deps?.svsDisclosure?.attributes, ontoggle}} {...svsDisclosure}>
         {@render (rest[panels[i]] as Snippet)()}
       </Disclosure>
     {/each}

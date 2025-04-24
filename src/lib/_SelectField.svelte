@@ -11,7 +11,7 @@
     descFirst?: boolean, // <false>
     validations?: ((value: string, validity?: ValidityState) => string)[],
     status?: string, // bindable <STATE.DEFAULT>
-    style?: ClassRuleSet | string,
+    style?: SVSStyle,
     attributes?: HTMLSelectAttributes;
     action?: Action,
     element?: HTMLSelectElement, // bindable
@@ -20,14 +20,13 @@
   export type SelectFieldBindProps = "value" | "status" | "element";
 
   type SelectFieldTarget = { currentTarget: EventTarget & HTMLSelectElement };
-  const svs = "svs-select-field";
-  const preset: ClassRuleSet = {};
+  const preset = "svs-select-field";
 
   import { type Snippet, untrack } from "svelte";
   import { type Action } from "svelte/action";
   import { type SvelteMap } from "svelte/reactivity";
   import { type HTMLSelectAttributes } from "svelte/elements";
-  import { type ClassRuleSet, STATE, AREA, elemId, fnClass, isNeutral, omit } from "./core";
+  import { type SVSStyle, STATE, AREA, elemId, fnClass, isNeutral, omit } from "./core";
 </script>
 
 <script lang="ts">
@@ -35,7 +34,7 @@
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
-  const cls = fnClass(svs, preset, style);
+  const cls = fnClass(preset, style);
   const id = attributes?.id ? attributes.id : elemId.get(label?.trim());
   const idLabel = elemId.get(label?.trim());
   const idDesc = elemId.get(bottom?.trim());
