@@ -15,7 +15,7 @@ export { default as SelectField, type SelectFieldProps, type SelectFieldReqdProp
 export { default as Slider, type SliderProps, type SliderReqdProps, type SliderBindProps, type Range } from "./_svseeds/_Slider.svelte";
 export { default as Sortable, type SortableProps, type SortableReqdProps, type SortableBindProps, SortableItems } from "./_svseeds/_Sortable.svelte";
 export { default as Tabs, type TabsProps, type TabsReqdProps, type TabsBindProps } from "./_svseeds/_Tabs.svelte";
-export { default as TagsInput, type TagsInputProps, type TagsInputReqdProps, type TagsInputBindProps, type TagsInputDeps } from "./_svseeds/TagsInput.svelte";
+export { default as TagsInput, type TagsInputProps, type TagsInputReqdProps, type TagsInputBindProps, type TagsInputDeps, type TagCountValidation } from "./_svseeds/TagsInput.svelte";
 export { default as TextField, type TextFieldProps, type TextFieldReqdProps, type TextFieldBindProps } from "./_svseeds/_TextField.svelte";
 export { default as TogglesField, type TogglesFieldProps, type TogglesFieldReqdProps, type TogglesFieldBindProps } from "./_svseeds/_TogglesField.svelte";
 export { default as Toggle, type ToggleProps, type ToggleReqdProps, type ToggleBindProps } from "./_svseeds/_Toggle.svelte";

@@ -57,8 +57,8 @@
     message = msg ?? bottom;
     element?.setCustomValidity(msg ?? "");
   }
-  function validate(onchange?: boolean) {
-    if (!value && onchange) return toNonInvalid(neutral);
+  function validate() {
+    if (!value) return toNonInvalid(neutral);
     for (const v of validations) {
       const msg = v(value, element?.validity);
       if (msg) return toInvalid(msg);
@@ -79,7 +79,7 @@
   // *** Event Handlers *** //
   function onchange(ev: Event) {
     attributes?.onchange?.(ev as any);
-    validate(true);
+    validate();
   }
   function oninvalid(ev: Event) {
     attributes?.oninvalid?.(ev as any);

@@ -2,8 +2,8 @@
   export type TagsInputProps = {
     values?: string[], // bindable
     type?: "left" | "right" | "bottom", // <"left">
-    confirm?: string[],
-    trim?: boolean, // <false>
+    confirm?: string[], // <["Enter"]>
+    trim?: boolean, // <true>
     unique?: boolean, // <true>
     min?: TagCountValidation,
     max?: TagCountValidation,
@@ -32,7 +32,7 @@
 </script>
 
 <script lang="ts">
-  let { values = $bindable([]), type = "left", confirm = [], trim = false, unique = true, min, max, validations = [], status = $bindable(""), style, element = $bindable(), deps }: TagsInputProps = $props();
+  let { values = $bindable([]), type = "left", confirm = [], trim = true, unique = true, min, max, validations = [], status = $bindable(""), style, element = $bindable(), deps }: TagsInputProps = $props();
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
