@@ -1,3 +1,5 @@
+export { makeDep };
+
 import { existsSync } from "jsr:@std/fs@^1.0.14";
 import * as p from "jsr:@std/path@^1.0.8";
 
@@ -8,7 +10,7 @@ type DependencyObject = {
   components: { [key: string]: EachDescription };
 };
 
-async function main() {
+function makeDep() {
   const DIR = "./src/lib/_svseeds";
   const OUT = `${DIR}/dep.json`;
 
@@ -26,13 +28,13 @@ function buildDependency(path: string): DependencyObject {
 
   const parser = new SvelteParser();
   const dep: DependencyObject = { components: {} };
-  findDependFiles(dir).forEach(file => {
-    dep.components[file] = parser.parse(p.join(dir, file))
+  findDependFiles(dir).forEach((file) => {
+    dep.components[file] = parser.parse(p.join(dir, file));
   });
   return dep;
 }
 function findDependFiles(path: string): string[] {
-  return [...Deno.readDirSync(path).filter(x => x.isFile && x.name.endsWith(".svelte")).map(x => x.name)];
+  return [...Deno.readDirSync(path).filter((x) => x.isFile && x.name.endsWith(".svelte")).map((x) => x.name)];
 }
 
 class SvelteParser {
@@ -82,5 +84,3 @@ class Err {
     }
   }
 }
-
-await main();

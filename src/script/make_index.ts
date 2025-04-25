@@ -1,7 +1,9 @@
+export { makeIndex };
+
 import { existsSync } from "jsr:@std/fs@^1.0.14";
 import * as p from "jsr:@std/path@^1.0.8";
 
-async function main() {
+function makeIndex() {
   const DIR = "./src/lib/_svseeds";
   const OUT = "./src/lib/index.ts";
 
@@ -21,7 +23,7 @@ function extractExports(path: string, out: string): string {
   return findFiles(path).map((file) => parser.parse(file)).join("");
 }
 function findFiles(path: string): string[] {
-  const files = [...Deno.readDirSync(path).filter(x => x.isFile).map(x => x.name)];
+  const files = [...Deno.readDirSync(path).filter((x) => x.isFile).map((x) => x.name)];
   return [
     ...getExtPath(files, path, ExportParser.EXT.ts),
     ...getExtPath(files, path, ExportParser.EXT.svelte),
@@ -30,7 +32,7 @@ function findFiles(path: string): string[] {
 function getExtPath(files: string[], path: string, ext: string): string[] {
   return files.filter((x) => p.extname(x) == ext)
     .map((x) => p.join(path, x))
-    .toSorted((x,y) => x.localeCompare(y));
+    .toSorted((x, y) => x.localeCompare(y));
 }
 
 class ExportParser {
@@ -122,5 +124,3 @@ class Err {
     }
   }
 }
-
-await main();
