@@ -11,7 +11,7 @@ export {
   debounce,
   throttle,
   UniqueId,
-};
+}
 
 type ClassRule = Record<string, string>;
 type ClassRuleSet = Partial<Record<string, ClassRule>>;
@@ -75,10 +75,10 @@ function fnClass(preset: SVSStyle, style?: SVSStyle): ClassFn {
 function prepRule(rule?: SVSStyle): ClassRuleSet | string | undefined {
   if (rule == null) return;
   if (typeof rule == "string") return rule.trim() ? rule : undefined;
-  if (typeof Object.values(rule)[0] == "string") {
-    return Object.fromEntries(Object.entries(rule).map(([k, v]) => [k, { const: v }]));
-  }
-  return rule as ClassRuleSet;
+  const values = Object.values(rule);
+  if (!values.length) return;
+  if (typeof values[0] !== "string") return rule as ClassRuleSet;
+  return Object.fromEntries(Object.entries(rule).map(([k, v]) => [k, { const: v }]));
 }
 function ruleClass(rule: ClassRuleSet, area: string, status: string): string | undefined {
   const constant = rule[area]?.[CONST] ?? "";

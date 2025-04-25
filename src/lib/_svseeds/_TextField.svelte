@@ -56,8 +56,8 @@
     message = msg ?? bottom;
     element?.setCustomValidity(msg ?? "");
   }
-  function validate() {
-    if (!value) return toNonInvalid(neutral);
+  function validate(oninvalid?: boolean) {
+    if (!value && !oninvalid) return toNonInvalid(neutral);
     for (const v of validations) {
       const msg = v(value, element?.validity);
       if (msg) return toInvalid(msg);
@@ -83,7 +83,7 @@
   function oninvalid(ev: Event) {
     attributes?.oninvalid?.(ev as any);
     ev.preventDefault();
-    validate();
+    validate(true);
     if (status !== STATE.INACTIVE) toInvalid(element?.validationMessage);
   }
 </script>

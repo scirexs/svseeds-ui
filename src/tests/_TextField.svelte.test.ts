@@ -2,8 +2,8 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
-import TextField from "../lib/_TextField.svelte";
-import { AREA, STATE } from "../lib/core.ts";
+import TextField from "../lib/_svseeds/_TextField.svelte";
+import { AREA, STATE } from "../lib/_svseeds/core.ts";
 
 type TextFieldElement = HTMLInputElement | HTMLTextAreaElement | undefined;
 const label = "label_text";
@@ -374,9 +374,13 @@ describe("Specify attrs & state transition & event handlers", () => {
     await user.type(main, "a");
     expect(props.status).toBe(STATE.ACTIVE);
     await user.clear(main);
-    expect(props.status).toBe(STATE.INACTIVE);
-    await user.tab();
     expect(props.status).toBe(STATE.DEFAULT);
+    await user.type(main, "a");
+    expect(props.status).toBe(STATE.DEFAULT);
+    await user.type(main, "a");
+    expect(props.status).toBe(STATE.DEFAULT);
+    await user.tab();
+    expect(props.status).toBe(STATE.ACTIVE);
   });
   test("w/ required and no validations", async () => {
     const props = $state({

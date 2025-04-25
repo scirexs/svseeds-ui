@@ -2,6 +2,7 @@
 .github/
 .svelte-kit/
 .vite/
+dist/
 node_modules/
 src/
 .gitignore

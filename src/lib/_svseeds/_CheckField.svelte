@@ -57,8 +57,8 @@
     message = stat === STATE.INACTIVE ? msg ?? bottom : bottom;
     elements[0]?.setCustomValidity(msg ?? "");
   }
-  function validate() {
-    if (!values.length) return toNonInvalid();
+  function validate(oninvalid?: boolean) {
+    if (!values.length && !oninvalid) return toNonInvalid();
     const validities = elements.map((x) => x.validity);
     for (const v of validations) {
       const msg = v(values, validities);
@@ -84,6 +84,7 @@
     attributes?.oninvalid?.(ev);
     ev.preventDefault();
     phase.submit = true;
+    validate(true);
     if (status !== STATE.INACTIVE) toInvalid(elements[0]?.validationMessage);
   }
 </script>

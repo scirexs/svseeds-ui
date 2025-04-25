@@ -9,8 +9,8 @@ type DependencyObject = {
 };
 
 async function main() {
-  const DIR = "./src/lib";
-  const OUT = "./_svseeds/dep.json";
+  const DIR = "./src/lib/_svseeds";
+  const OUT = `${DIR}/dep.json`;
 
   try {
     const dep = buildDependency(DIR);
@@ -36,20 +36,20 @@ function findDependFiles(path: string): string[] {
 }
 
 class SvelteParser {
-  #regex = {
-    import: /import\s+(?:{[^}]*}|\w+)\s+from\s+['"]\.\/([^'"]+)\.svelte['"];/g,
+  #REGEX = {
+    import: /import.+from\s+['"]\.\/([^'"]+)\.svelte['"];/g,
     version: /\/\/ version: (\d+.\d+.\d+)/,
   };
 
   parse(path: string): EachDescription {
-    const code = new TextDecoder("utf-8").decode(Deno.readFileSync(path));
+    const code = Deno.readTextFileSync(path);
     const dependencies = this.#extractDeps(code);
     return { dependencies };
   }
   #extractDeps(code: string): string[] {
     const ret: string[] = [];
     let match;
-    while ((match = this.#regex.import.exec(code)) !== null) {
+    while ((match = this.#REGEX.import.exec(code)) != null) {
       ret.push(`${match[1]}.svelte`);
     }
     return ret;

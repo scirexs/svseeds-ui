@@ -1,6 +1,6 @@
 {
   "name": "@svseeds/ui",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "license": "MIT",
   "exports": "./mod.ts",
   "publish": {
@@ -32,8 +32,9 @@
     "lineWidth": 140
   },
   "tasks": {
-    "build": "deno run -A npm:@sveltejs/package -o _svseeds && deno run -A ./dep_analyzer.ts && deno task prepare" ,
-    "prepare": "cp ./src/lib/core.ts ./_svseeds && mv ./_svseeds/index.* ./ && deno run -A npm:terser --module -m -c -o ./_svseeds/core.js -- ./_svseeds/core.js",
+    "build": "deno task pre && deno run -A npm:@sveltejs/package && deno task move && deno task post" ,
+    "pre": "deno run -A ./export_extractor.ts && deno run -A ./dep_analyzer.ts",
+    "post": "mv ./dist/* ./ && cp ./src/lib/core.ts ./_svseeds && deno run -A npm:terser --module -m -c -o ./_svseeds/core.js -- ./_svseeds/core.js",
     "check": "deno run -A npm:@sveltejs/kit/svelte-kit sync && deno run -A npm:svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "deno run -A npm:@sveltejs/kit/svelte-kit sync && deno run -A npm:svelte-check --tsconfig ./tsconfig.json --watch",
     "test": "deno run -A npm:vitest --run"
