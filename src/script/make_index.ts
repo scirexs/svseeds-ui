@@ -89,10 +89,11 @@ class ExportParser {
     return result.map((x) => x.split(",").map((x) => x.trim()).filter((x) => x)).flat(Infinity) as string[];
   }
   #getTemplate(exports: string[]): string {
-    return `export { ${exports.join(", ")} } from "${this.#getRelative()}";\n`;
+    return `export { ${exports.join(", ")} } from "${this.#getFromPath()}";\n`;
   }
-  #getRelative(): string {
-    const path = p.relative(this.#out, this.#path);
+  #getFromPath(): string {
+    const file = this.#path.endsWith(ExportParser.EXT.ts) ? this.#path.replace(ExportParser.EXT.ts, "") : this.#path;
+    const path = p.relative(this.#out, file);
     if (["/", ".", ".."].some((x) => path.startsWith(x))) return path;
     return `./${path}`;
   }
