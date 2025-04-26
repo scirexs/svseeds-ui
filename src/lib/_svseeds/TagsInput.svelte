@@ -38,6 +38,8 @@
   const cls = fnClass(preset, style);
   const confirmKeys = new Set([CONFIRM_KEY, ...confirm]);
   if (min) validations.push((values) => values.length < min.value ? min.message : "");
+  const left = type === "left" || deps?.svsTextField?.left ? sideLeft : undefined;
+  const right = type === "right" || deps?.svsTextField?.right ? sideRight : undefined;
   let value = $state("");
 
   // *** Initialize Deps *** //
@@ -46,7 +48,7 @@
     style: deps?.svsBadge?.style ?? `${preset} svs-badge`,
   };
   const textValidations = deps?.svsTextField?.validations ?? [];
-  if (max) textValidations.push((values) => values.length >= max.value ? max.message : "");
+  if (max) textValidations.push((_) => values.length >= max.value ? max.message : "");
   const svsTextField = {
     ...omit(deps?.svsTextField, "validations", "style", "attributes"),
     validations: textValidations,
@@ -89,6 +91,7 @@
       values.splice(index, 1);
     };
   }
+  $effect(() => untrack(() => validate()))
 </script>
 
 <!---------------------------------------->
@@ -100,7 +103,7 @@
   </div>
 {/if}
 
-{#snippet left(status: string)}
+{#snippet sideLeft(status: string)}
   {#if type === "left"}
     {@render tags()}
   {:else}
@@ -109,7 +112,7 @@
     {/if}
   {/if}
 {/snippet}
-{#snippet right(status: string)}
+{#snippet sideRight(status: string)}
   {#if type === "right"}
     {@render tags()}
   {:else}
