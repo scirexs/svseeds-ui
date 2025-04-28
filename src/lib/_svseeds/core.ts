@@ -13,9 +13,9 @@ export {
   UniqueId,
 }
 
-type ClassRule = Record<string, string>;
-type ClassRuleSet = Partial<Record<string, ClassRule>>;
-type SVSStyle = ClassRuleSet | ClassRule | string;
+type ClassRule = Record<string, string> | string;
+type ClassRuleSet = Record<string, Record<string, string>>;
+type SVSStyle = Record<string, ClassRule> | string;
 
 const CONST = "const";
 const STATE = Object.freeze({ DEFAULT: "default", ACTIVE: "active", INACTIVE: "inactive" });
@@ -74,11 +74,10 @@ function fnClass(preset: SVSStyle, style?: SVSStyle): ClassFn {
 }
 function prepRule(rule?: SVSStyle): ClassRuleSet | string | undefined {
   if (rule == null) return;
-  if (typeof rule == "string") return rule.trim() ? rule : undefined;
-  const values = Object.values(rule);
-  if (!values.length) return;
-  if (typeof values[0] !== "string") return rule as ClassRuleSet;
-  return Object.fromEntries(Object.entries(rule).map(([k, v]) => [k, { const: v }]));
+  if (typeof rule === "string") return rule.trim() ? rule : undefined;
+  const entries = Object.entries(rule);
+  if (!entries.length) return;
+  return Object.fromEntries(entries.map(([k, v]) => typeof v === "string" ? [k, { const: v }] : [k, v]));
 }
 function ruleClass(rule: ClassRuleSet, area: string, status: string): string | undefined {
   const constant = rule[area]?.[CONST] ?? "";
