@@ -8,7 +8,7 @@
     values?: string[], // bindable
     multiple?: boolean, // <true>
     descFirst?: boolean, // <false>
-    validations?: ((values: string[], validities?: ValidityState[]) => string)[],
+    validations?: CheckFieldValidation[],
     status?: string, // bindable <STATE.DEFAULT>
     style?: SVSStyle,
     attributes?: HTMLInputAttributes,
@@ -17,6 +17,7 @@
   };
   export type CheckFieldReqdProps = "options";
   export type CheckFieldBindProps = "values" | "status" | "elements";
+  export type CheckFieldValidation = (values: string[], validities?: ValidityState[]) => string;
 
   type CheckFieldTarget = { currentTarget: EventTarget & HTMLInputElement };
   const preset = "svs-check-field";
@@ -59,6 +60,7 @@
   }
   function validate(oninvalid?: boolean) {
     if (!values.length && !oninvalid) return toNonInvalid();
+    if (!elements[0] || !validations.length) return;
     const validities = elements.map((x) => x.validity);
     for (const v of validations) {
       const msg = v(values, validities);
@@ -85,7 +87,7 @@
     ev.preventDefault();
     phase.submit = true;
     validate(true);
-    if (status !== STATE.INACTIVE) toInvalid(elements[0]?.validationMessage);
+    toInvalid(elements[0]?.validationMessage);
   }
 </script>
 

@@ -9,7 +9,7 @@
     bottom?: string,
     value?: string, // bindable
     descFirst?: boolean, // <false>
-    validations?: ((value: string, validity?: ValidityState) => string)[],
+    validations?: SelectFieldValidation[],
     status?: string, // bindable <STATE.DEFAULT>
     style?: SVSStyle,
     attributes?: HTMLSelectAttributes;
@@ -18,6 +18,7 @@
   };
   export type SelectFieldReqdProps = "options";
   export type SelectFieldBindProps = "value" | "status" | "element";
+  export type SelectFieldValidation = (value: string, validity?: ValidityState) => string;
 
   type SelectFieldTarget = { currentTarget: EventTarget & HTMLSelectElement };
   const preset = "svs-select-field";
@@ -57,6 +58,7 @@
   }
   function validate(oninvalid?: boolean) {
     if (!value && !oninvalid) return toNonInvalid(neutral);
+    if (!element || !validations.length) return;
     for (const v of validations) {
       const msg = v(value, element?.validity);
       if (msg) return toInvalid(msg);
@@ -76,7 +78,7 @@
     attributes?.oninvalid?.(ev);
     ev.preventDefault();
     validate(true);
-    if (status !== STATE.INACTIVE) toInvalid(element?.validationMessage);
+    toInvalid(element?.validationMessage);
   }
 </script>
 

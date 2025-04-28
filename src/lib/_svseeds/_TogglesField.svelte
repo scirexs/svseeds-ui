@@ -8,7 +8,7 @@
     values?: string[], // bindable
     multiple?: boolean, // <true>
     descFirst?: boolean, // <false>
-    validations?: ((values: string[], validities?: ValidityState[]) => string)[],
+    validations?: TogglesFieldValidation[],
     status?: string, // bindable <STATE.DEFAULT>
     style?: SVSStyle,
     attributes?: HTMLButtonAttributes;
@@ -17,6 +17,7 @@
   };
   export type TogglesFieldReqdProps = "options";
   export type TogglesFieldBindProps = "values" | "status" | "elements";
+  export type TogglesFieldValidation = (values: string[], validities?: ValidityState[]) => string;
 
   type TogglesFieldTarget = { currentTarget: EventTarget & HTMLButtonElement };
   const preset = "svs-toggles-field";
@@ -59,6 +60,7 @@
   }
   function validate(oninvalid?: boolean) {
     if (!values.length && !oninvalid) return toNonInvalid();
+    if (!elem || !validations.length) return;
     const validities = elements.map((x) => x.validity);
     for (const v of validations) {
       const msg = v(values, validities);
@@ -88,7 +90,7 @@
     ev.preventDefault();
     phase.submit = true;
     validate(true);
-    if (status !== STATE.INACTIVE) toInvalid(elem?.validationMessage);
+    toInvalid(elem?.validationMessage);
   }
 </script>
 

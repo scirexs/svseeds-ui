@@ -10,7 +10,7 @@
     type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url" | "number",  // bindable <"text">
     options?: SvelteSet<string> | Set<string>,
     descFirst?: boolean, // <false>
-    validations?: ((value: string, validity?: ValidityState) => string)[],
+    validations?: TextFieldValidation[],
     status?: string, // bindable <STATE.DEFAULT>
     style?: SVSStyle,
     attributes?: HTMLInputAttributes | HTMLTextareaAttributes,
@@ -19,6 +19,7 @@
   };
   export type TextFieldReqdProps = never;
   export type TextFieldBindProps = "value" | "type" | "status" | "element";
+  export type TextFieldValidation = (value: string, validity?: ValidityState) => string;
 
   const preset = "svs-text-field";
 
@@ -58,6 +59,7 @@
   }
   function validate(oninvalid?: boolean) {
     if (!value && !oninvalid) return toNonInvalid(neutral);
+    if (!element || !validations.length) return;
     for (const v of validations) {
       const msg = v(value, element?.validity);
       if (msg) return toInvalid(msg);
@@ -84,7 +86,7 @@
     attributes?.oninvalid?.(ev as any);
     ev.preventDefault();
     validate(true);
-    if (status !== STATE.INACTIVE) toInvalid(element?.validationMessage);
+    toInvalid(element?.validationMessage);
   }
 </script>
 
