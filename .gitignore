@@ -15,4 +15,4 @@ deno.lock
 /_svseeds/
 /index.js
 /index.d.ts
-/commit.sh
+/publish.sh
