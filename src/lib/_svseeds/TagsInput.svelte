@@ -7,7 +7,7 @@
     unique?: boolean, // <true>
     min?: TagCountValidation,
     max?: TagCountValidation,
-    validations?: ((values: string[]) => string)[],
+    validations?: TagsInputValidation[],
     status?: string, // bindable <STATE.DEFAULT>
     style?: SVSStyle,
     element?: HTMLInputElement, // bindable
@@ -19,6 +19,7 @@
   };
   export type TagsInputReqdProps = never;
   export type TagsInputBindProps = "dark" | "status" | "element";
+  export type TagsInputValidation = (values: string[]) => string;
   export type TagCountValidation = { value: number, message: string };
 
   const preset = "svs-tags-input";
@@ -37,7 +38,10 @@
   if (!status) status = STATE.DEFAULT;
   const cls = fnClass(preset, style);
   const confirmKeys = new Set([CONFIRM_KEY, ...confirm]);
-  if (min) validations.push((values) => values.length < min.value ? min.message : "");
+  const textValidations = deps?.svsTextField?.validations ?? [];
+  if (max) textValidations.unshift((_) => values.length >= max.value ? max.message : "");
+  if (min) validations.unshift((values) => values.length < min.value ? min.message : "");
+
   const left = type === "left" || deps?.svsTextField?.left ? sideLeft : undefined;
   const right = type === "right" || deps?.svsTextField?.right ? sideRight : undefined;
   let value = $state("");
@@ -47,11 +51,8 @@
     ...omit(deps?.svsBadge, "onclick", "right", "style"),
     style: deps?.svsBadge?.style ?? `${preset} svs-badge`,
   };
-  const textValidations = deps?.svsTextField?.validations ?? [];
-  if (max) textValidations.push((_) => values.length >= max.value ? max.message : "");
   const svsTextField = {
     ...omit(deps?.svsTextField, "validations", "style", "attributes"),
-    validations: textValidations,
     style: deps?.svsTextField?.style ?? `${preset} svs-text-field`,
     attributes: { ...deps?.svsTextField?.attributes, onkeydown },
   };
@@ -59,28 +60,42 @@
   // *** Bind Handlers *** //
   $effect.pre(() => {
     values;
-    untrack(() => validate());
+    untrack(() => validateTags());
   });
-  function validate() {
+  function validateText(): boolean {
+    if (!element) return false;
+    for (const v of textValidations) {
+      const msg = v(value);
+      if (msg) return showMessageTemporarily(msg);
+    }
+    return true;
+  }
+  function showMessageTemporarily(msg: string): boolean {
+    element?.setCustomValidity(msg);
+    element?.checkValidity();
+    element?.setCustomValidity("");
+    return false;
+  }
+  function validateTags() {
+    if (!element) return;
     for (const v of validations) {
       const msg = v(values);
-      if (msg) return element?.setCustomValidity(msg);
+      if (msg) return element.setCustomValidity(msg);
     }
   }
 
   // *** Event Handlers *** //
-  const change = new Event("change", { bubbles: true, cancelable: true });
   function onkeydown(ev: KeyboardEvent) {
     deps?.svsTextField?.attributes?.onkeydown?.(ev as any);
     if (!confirmKeys.has(ev.key) || ev.isComposing) return;
     ev.preventDefault();
-    element?.dispatchEvent(change);
-    if (status === STATE.INACTIVE) return;
-    addTag();
+    if (trim) value = value.trim();
+    const valid = validateText();
+    if (valid) addTag();
+    validateTags();
   }
   function addTag() {
     if (unique && values.includes(value)) value = "";
-    if (trim) value = value.trim();
     if (!value) return;
     values.push(value);
     value = "";
@@ -89,9 +104,10 @@
     return (ev) => {
       deps?.svsBadge?.onclick?.(ev as any);
       values.splice(index, 1);
+      validateTags();
     };
   }
-  $effect(() => untrack(() => validate()))
+  $effect(() => untrack(() => validateTags()))
 </script>
 
 <!---------------------------------------->
