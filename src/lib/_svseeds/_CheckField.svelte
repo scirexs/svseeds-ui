@@ -17,7 +17,7 @@
   };
   export type CheckFieldReqdProps = "options";
   export type CheckFieldBindProps = "values" | "status" | "elements";
-  export type CheckFieldValidation = (values?: string[], validities?: ValidityState[]) => string;
+  export type CheckFieldValidation = (values: string[], validities: ValidityState[]) => string;
 
   type CheckFieldTarget = { currentTarget: EventTarget & HTMLInputElement };
   const preset = "svs-check-field";

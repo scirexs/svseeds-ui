@@ -18,7 +18,7 @@
   };
   export type SelectFieldReqdProps = "options";
   export type SelectFieldBindProps = "value" | "status" | "element";
-  export type SelectFieldValidation = (value?: string, validity?: ValidityState) => string;
+  export type SelectFieldValidation = (value: string, validity: ValidityState) => string;
 
   type SelectFieldTarget = { currentTarget: EventTarget & HTMLSelectElement };
   const preset = "svs-select-field";

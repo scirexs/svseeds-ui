@@ -19,7 +19,7 @@
   };
   export type TogglesFieldReqdProps = "options";
   export type TogglesFieldBindProps = "values" | "status" | "elements";
-  export type TogglesFieldValidation = (values?: string[], validities?: ValidityState[]) => string;
+  export type TogglesFieldValidation = (values: string[], validities: ValidityState[]) => string;
 
   type TogglesFieldTarget = { currentTarget: EventTarget & HTMLButtonElement };
   const preset = "svs-toggles-field";

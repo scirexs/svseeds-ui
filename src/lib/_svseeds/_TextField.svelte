@@ -19,7 +19,7 @@
   };
   export type TextFieldReqdProps = never;
   export type TextFieldBindProps = "value" | "type" | "status" | "element";
-  export type TextFieldValidation = (value?: string, validity?: ValidityState) => string;
+  export type TextFieldValidation = (value: string, validity: ValidityState) => string;
 
   const preset = "svs-text-field";
 
