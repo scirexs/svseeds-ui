@@ -46,7 +46,7 @@
 
   // *** Status *** //
   const phase = { change: false, submit: false };
-  let neutral = isNeutral(status) ? status : STATE.DEFAULT;
+  let neutral = $state(isNeutral(status) ? status : STATE.DEFAULT);
   $effect(() => { neutral = isNeutral(status) ? status : neutral });
   let live = $derived(status === STATE.INACTIVE ? "alert" : "status");
   let invalid = $derived(status === STATE.INACTIVE ? true : undefined);
@@ -122,13 +122,14 @@
 {#snippet main()}
   <div class={cls(AREA.MIDDLE, status)} role={roleGroup} aria-describedby={idDesc} aria-invalid={!multiple ? invalid : undefined} aria-errormessage={!multiple && message?.trim() ? errMsg : undefined}>
     {#each opts as {value, text, checked}, i (value)}
-      <label class={cls(AREA.MAIN, status)}>
+      {@const stat = checked ? STATE.ACTIVE : neutral}
+      <label class={cls(AREA.MAIN, stat)}>
         {#if action}
-          <input bind:this={elements[i]} class={cls(AREA.LEFT, status)} aria-invalid={multiple ? invalid : undefined} {value} {name} {type} {checked} {onchange} {oninvalid} {...attrs} use:action />
+          <input bind:this={elements[i]} class={cls(AREA.LEFT, stat)} aria-invalid={multiple ? invalid : undefined} {value} {name} {type} {checked} {onchange} {oninvalid} {...attrs} use:action />
         {:else}
-          <input bind:this={elements[i]} class={cls(AREA.LEFT, status)} aria-invalid={multiple ? invalid : undefined} {value} {name} {type} {checked} {onchange} {oninvalid} {...attrs} />
+          <input bind:this={elements[i]} class={cls(AREA.LEFT, stat)} aria-invalid={multiple ? invalid : undefined} {value} {name} {type} {checked} {onchange} {oninvalid} {...attrs} />
         {/if}
-        <span class={cls(AREA.RIGHT, status)}>{text}</span>
+        <span class={cls(AREA.RIGHT, stat)}>{text}</span>
       </label>
     {/each}
   </div>

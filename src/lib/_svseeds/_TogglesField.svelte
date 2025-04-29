@@ -48,7 +48,7 @@
 
   // *** Status *** //
   const phase = { change: false, submit: false };
-  let neutral = isNeutral(status) ? status : STATE.DEFAULT;
+  let neutral = $state(isNeutral(status) ? status : STATE.DEFAULT);
   $effect(() => { neutral = isNeutral(status) ? status : neutral });
   let live = $derived(status === STATE.INACTIVE ? "alert" : "status");
   let invalid = $derived(status === STATE.INACTIVE ? true : undefined);
@@ -81,10 +81,10 @@
   // *** Event Handlers *** //
   function updateValues(value: string): (ev: MouseEvent & TogglesFieldTarget) => void {
     return (ev) => {
+      phase.change = true;
       if (!multiple) return values = [value];
       values = values.includes(value) ? values.filter((x) => x !== value) : opts.map((x) => x.value).filter((x) => [...values, value].includes(x));
       attributes?.onclick?.(ev);
-      phase.change = true;
     };
   }
   function oninvalid(ev: Event) {
@@ -130,11 +130,11 @@
   {/if}
 {/snippet}
 {#snippet main()}
-  {@const c = cls(AREA.MAIN, status)}
   <input bind:this={elem} style="display: none;" aria-hidden="true" {oninvalid} />
   <div class={cls(AREA.MIDDLE, status)} role={roleGroup} aria-describedby={idDesc} aria-invalid={!multiple ? invalid : undefined} aria-errormessage={!multiple && message?.trim() ? errMsg : undefined}>
     {@render side(AREA.LEFT, left)}
     {#each opts as { value, text, checked }, i (value)}
+      {@const c = cls(AREA.MAIN, checked ? STATE.ACTIVE : neutral)}
       {#if action}
         <button bind:this={elements[i]} class={c} aria-checked={checked} aria-invalid={multiple ? invalid : undefined} onclick={updateValues(value)} type="button" {role} {...attrs} use:action>
           {text}
