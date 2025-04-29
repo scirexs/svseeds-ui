@@ -82,6 +82,7 @@
       const msg = v(values);
       if (msg) return element.setCustomValidity(msg);
     }
+    element.setCustomValidity("");
   }
 
   // *** Event Handlers *** //
