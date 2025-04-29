@@ -4,6 +4,8 @@
     label?: string,
     extra?: string,
     aux?: Snippet<[string, string[], HTMLButtonElement[] | undefined]>, // Snippet<[status,values,elements]>
+    left?: Snippet<[string, string[], HTMLButtonElement[] | undefined]>, // Snippet<[status,values,element]>
+    right?: Snippet<[string, string[], HTMLButtonElement[] | undefined]>, // Snippet<[status,values,element]>
     bottom?: string,
     values?: string[], // bindable
     multiple?: boolean, // <true>
@@ -30,7 +32,7 @@
 </script>
 
 <script lang="ts">
-  let { options, label, extra, aux, bottom, values = $bindable([]), multiple = true, descFirst = false, validations = [], status = $bindable(""), style, attributes, action, elements = $bindable([]) }: TogglesFieldProps = $props();
+  let { options, label, extra, aux, left, right, bottom, values = $bindable([]), multiple = true, descFirst = false, validations = [], status = $bindable(""), style, attributes, action, elements = $bindable([]) }: TogglesFieldProps = $props();
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
@@ -122,10 +124,16 @@
     </span>
   {/if}
 {/snippet}
+{#snippet side(area: string, body?: Snippet<[string, string[], HTMLButtonElement[] | undefined]>)}
+  {#if body}
+    <span class={cls(area, status)}>{@render body(status, values, elements)}</span>
+  {/if}
+{/snippet}
 {#snippet main()}
   {@const c = cls(AREA.MAIN, status)}
   <input bind:this={elem} style="display: none;" aria-hidden="true" {oninvalid} />
   <div class={cls(AREA.MIDDLE, status)} role={roleGroup} aria-describedby={idDesc} aria-invalid={!multiple ? invalid : undefined} aria-errormessage={!multiple && message?.trim() ? errMsg : undefined}>
+    {@render side(AREA.LEFT, left)}
     {#each opts as { value, text, checked }, i (value)}
       {#if action}
         <button bind:this={elements[i]} class={c} aria-checked={checked} aria-invalid={multiple ? invalid : undefined} onclick={updateValues(value)} type="button" {role} {...attrs} use:action>
@@ -137,6 +145,7 @@
         </button>
       {/if}
     {/each}
+    {@render side(AREA.RIGHT, right)}
   </div>
 {/snippet}
 {#snippet desc(show: boolean)}
