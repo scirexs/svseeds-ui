@@ -1,6 +1,5 @@
 <script module lang="ts">
   export type ToggleProps = {
-    label?: string, // for aria-label; should be used if no label tag or no text in main
     main?: Snippet<[string, boolean, HTMLButtonElement | undefined]>, // Snippet<[status,value,element]>
     left?: Snippet<[string, boolean, HTMLButtonElement | undefined]>, // Snippet<[status,value,element]>
     right?: Snippet<[string, boolean, HTMLButtonElement | undefined]>, // Snippet<[status,value,element]>
@@ -25,7 +24,7 @@
 </script>
 
 <script lang="ts">
-  let { label, main, left, right, value = $bindable(false), type = "button", status = $bindable(""), style, attributes, action, element = $bindable() }: ToggleProps = $props();
+  let { main, left, right, value = $bindable(false), type = "button", status = $bindable(""), style, attributes, action, element = $bindable() }: ToggleProps = $props();
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
@@ -75,22 +74,22 @@
   {@const c = cls(AREA.MAIN, status)}
   {#if role === "button"}
     {#if action}
-      <button bind:this={element} class={c} type="button" aria-pressed={value} aria-label={label} {onclick} {...attrs} use:action>
+      <button bind:this={element} class={c} type="button" aria-pressed={value} {onclick} {...attrs} use:action>
         {@render contents()}
       </button>
     {:else}
-      <button bind:this={element} class={c} type="button" aria-pressed={value} aria-label={label} {onclick} {...attrs}>
+      <button bind:this={element} class={c} type="button" aria-pressed={value} {onclick} {...attrs}>
         {@render contents()}
       </button>
     {/if}
   {:else}
     {@const style = "position: relative;"}
     {#if action}
-      <button bind:this={element} class={c} {style} type="button" {role} aria-checked={value} aria-label={label} {onclick} {...attrs} use:action>
+      <button bind:this={element} class={c} {style} type="button" {role} aria-checked={value} {onclick} {...attrs} use:action>
         {@render thumb()}
       </button>
     {:else}
-      <button bind:this={element} class={c} {style} type="button" {role} aria-checked={value} aria-label={label} {onclick} {...attrs}>
+      <button bind:this={element} class={c} {style} type="button" {role} aria-checked={value} {onclick} {...attrs}>
         {@render thumb()}
       </button>
     {/if}
