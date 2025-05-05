@@ -3,11 +3,11 @@
     options: SvelteMap<string, string> | Map<string, string>,
     label?: string,
     extra?: string,
-    aux?: Snippet<[string, string[], HTMLInputElement[] | undefined]>, // Snippet<[status,values,elements]>
+    aux?: Snippet<[string, string[], HTMLInputElement[]]>, // Snippet<[status,values,elements]>
     bottom?: string,
+    descFirst?: boolean, // <false>
     values?: string[], // bindable
     multiple?: boolean, // <true>
-    descFirst?: boolean, // <false>
     validations?: CheckFieldValidation[],
     status?: string, // bindable <STATE.DEFAULT>
     style?: SVSStyle,
@@ -17,9 +17,8 @@
   };
   export type CheckFieldReqdProps = "options";
   export type CheckFieldBindProps = "values" | "status" | "elements";
-  export type CheckFieldValidation = (values: string[], validities: ValidityState[]) => string;
+  export type CheckFieldValidation = (values: string[], validity: ValidityState) => string;
 
-  type CheckFieldTarget = { currentTarget: EventTarget & HTMLInputElement };
   const preset = "svs-check-field";
 
   import { type Snippet, untrack } from "svelte";
@@ -45,28 +44,23 @@
   let message = $state(bottom);
 
   // *** Status *** //
-  const phase = { change: false, submit: false };
   let neutral = $state(isNeutral(status) ? status : STATE.DEFAULT);
   $effect(() => { neutral = isNeutral(status) ? status : neutral });
   let live = $derived(status === STATE.INACTIVE ? "alert" : "status");
   let invalid = $derived(status === STATE.INACTIVE ? true : undefined);
-  let errMsg = $derived(status === STATE.INACTIVE ? idErr : undefined);
-  const toInvalid = (msg?: string) => shiftStatus(phase.submit ? STATE.INACTIVE : neutral, msg);
-  const toNonInvalid = () => shiftStatus(phase.change && values.length ? STATE.ACTIVE : neutral);
-  function shiftStatus(stat: string, msg?: string) {
-    status = stat;
-    message = stat === STATE.INACTIVE ? msg ?? bottom : bottom;
-    elements[0]?.setCustomValidity(msg ?? "");
+  let idMsg = $derived(status === STATE.INACTIVE && message?.trim() ? idErr : undefined);
+  function shift(oninvalid?: boolean) {
+    const vmsg = elements[0]?.validationMessage ?? "";
+    status = oninvalid && vmsg ? STATE.INACTIVE : (!values.length || vmsg) ? neutral : STATE.ACTIVE;
+    message = status === STATE.INACTIVE ? vmsg ? vmsg : bottom : bottom;
   }
-  function validate(oninvalid?: boolean) {
-    if (!values.length && !oninvalid) return toNonInvalid();
-    if (!elements[0] || !validations.length) return;
-    const validities = elements.map((x) => x.validity);
+  function verify() {
+    if (!elements[0]) return;
     for (const v of validations) {
-      const msg = v(values, validities);
-      if (msg) return toInvalid(msg);
+      const msg = v(values, elements[0].validity);
+      if (msg) return elements[0].setCustomValidity(msg);
     }
-    toNonInvalid();
+    elements[0].setCustomValidity("");
   }
 
   // *** Bind Handlers *** //
@@ -75,19 +69,20 @@
     values;
     untrack(() => validate());
   });
+  function validate() {
+    verify();
+    shift();
+  }
 
   // *** Event Handlers *** //
-  function onchange(ev: Event & CheckFieldTarget) {
-    attributes?.onchange?.(ev);
-    values = elements.filter((elem) => elem.checked).map((elem) => elem.value);
-    phase.change = true;
+  function onchange(ev: Event) {
+    attributes?.onchange?.(ev as any);
+    values = elements.filter((el) => el.checked).map((el) => el.value);
   }
-  function oninvalid(ev: Event & CheckFieldTarget) {
-    attributes?.oninvalid?.(ev);
+  function oninvalid(ev: Event) {
+    attributes?.oninvalid?.(ev as any);
     ev.preventDefault();
-    phase.submit = true;
-    validate(true);
-    toInvalid(elements[0]?.validationMessage);
+    shift(true);
   }
 </script>
 
@@ -120,14 +115,14 @@
   {/if}
 {/snippet}
 {#snippet main()}
-  <div class={cls(AREA.MIDDLE, status)} role={roleGroup} aria-describedby={idDesc} aria-invalid={!multiple ? invalid : undefined} aria-errormessage={!multiple && message?.trim() ? errMsg : undefined}>
+  <div class={cls(AREA.MIDDLE, status)} role={roleGroup} aria-describedby={idDesc} aria-invalid={!multiple ? invalid : undefined} aria-errormessage={!multiple ? idMsg : undefined}>
     {#each opts as {value, text, checked}, i (value)}
       {@const stat = checked ? STATE.ACTIVE : neutral}
       <label class={cls(AREA.MAIN, stat)}>
         {#if action}
-          <input bind:this={elements[i]} class={cls(AREA.LEFT, stat)} aria-invalid={multiple ? invalid : undefined} {value} {name} {type} {checked} {onchange} {oninvalid} {...attrs} use:action />
+          <input bind:this={elements[i]} class={cls(AREA.LEFT, stat)} aria-invalid={multiple ? invalid : undefined} aria-errormessage={multiple ? idMsg : undefined} {value} {name} {type} {checked} {onchange} {oninvalid} {...attrs} use:action />
         {:else}
-          <input bind:this={elements[i]} class={cls(AREA.LEFT, stat)} aria-invalid={multiple ? invalid : undefined} {value} {name} {type} {checked} {onchange} {oninvalid} {...attrs} />
+          <input bind:this={elements[i]} class={cls(AREA.LEFT, stat)} aria-invalid={multiple ? invalid : undefined} aria-errormessage={multiple ? idMsg : undefined} {value} {name} {type} {checked} {onchange} {oninvalid} {...attrs} />
         {/if}
         <span class={cls(AREA.RIGHT, stat)}>{text}</span>
       </label>

@@ -6,10 +6,10 @@
     left?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>, // Snippet<[status,value,element]>
     right?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>, // Snippet<[status,value,element]>
     bottom?: string,
+    descFirst?: boolean, // <false>
     value?: string, // bindable
     type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url" | "number",  // bindable <"text">
     options?: SvelteSet<string> | Set<string>,
-    descFirst?: boolean, // <false>
     validations?: TextFieldValidation[],
     status?: string, // bindable <STATE.DEFAULT>
     style?: SVSStyle,
@@ -31,7 +31,7 @@
 </script>
 
 <script lang="ts">
-  let { label, extra, aux, left, right, bottom, value = $bindable(""), type = $bindable("text"), options, descFirst = false, validations = [], status = $bindable(""), style, attributes, action, element = $bindable() }: TextFieldProps = $props();
+  let { label, extra, aux, left, right, bottom, descFirst = false, value = $bindable(""), type = $bindable("text"), options, validations = [], status = $bindable(""), style, attributes, action, element = $bindable() }: TextFieldProps = $props();
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
@@ -49,32 +49,30 @@
   $effect(() => { neutral = isNeutral(status) ? status : neutral });
   let live = $derived(status === STATE.INACTIVE ? "alert" : "status");
   let invalid = $derived(status === STATE.INACTIVE ? true : undefined);
-  let errMsg = $derived(status === STATE.INACTIVE ? idErr : undefined);
-  const toInvalid = (msg?: string) => shiftStatus(STATE.INACTIVE, msg);
-  const toNonInvalid = (stat: string) => shiftStatus(stat);
-  function shiftStatus(stat: string, msg?: string) {
-    status = stat;
-    message = msg ?? bottom;
-    element?.setCustomValidity(msg ?? "");
+  let idMsg = $derived(status === STATE.INACTIVE && message?.trim() ? idErr : undefined);
+  function shift(oninvalid?: boolean) {
+    const vmsg = element?.validationMessage ?? "";
+    status = !value && !oninvalid ? neutral : vmsg ? STATE.INACTIVE : STATE.ACTIVE;
+    message = status === STATE.INACTIVE ? vmsg ? vmsg : bottom : bottom;
   }
-  function validate(oninvalid?: boolean) {
-    if (!value && !oninvalid) return toNonInvalid(neutral);
-    if (!element || !validations.length) return;
+  function verify() {
+    if (!element) return;
     for (const v of validations) {
-      const msg = v(value, element?.validity);
-      if (msg) return toInvalid(msg);
+      const msg = v(value, element.validity);
+      if (msg) return element.setCustomValidity(msg);
     }
-    toNonInvalid(STATE.ACTIVE);
+    element.setCustomValidity("");
   }
 
   // *** Bind Handlers *** //
   $effect.pre(() => {
     value;
-    untrack(() => conditionalValidate());
+    untrack(() => validate(true));
   });
-  function conditionalValidate() {
-    if (isNeutral(status)) return;
-    validate();
+  function validate(effect?: boolean) {
+    if (effect && isNeutral(status)) return;
+    verify();
+    shift();
   }
 
   // *** Event Handlers *** //
@@ -85,9 +83,9 @@
   function oninvalid(ev: Event) {
     attributes?.oninvalid?.(ev as any);
     ev.preventDefault();
-    validate(true);
-    toInvalid(element?.validationMessage);
+    shift(true);
   }
+  $effect(() => untrack(() => verify()));
 </script>
 
 <!---------------------------------------->
@@ -127,18 +125,17 @@
 {/snippet}
 {#snippet main()}
   {@const c = cls(AREA.MAIN, status)}
-  {@const msg = message?.trim() ? errMsg : undefined}
   {#if type === "area"}
     {#if action}
-      <textarea bind:value bind:this={element} class={c} {id} {onchange} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={msg} use:action></textarea>
+      <textarea bind:value bind:this={element} class={c} {id} {onchange} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={idMsg} use:action></textarea>
     {:else}
-      <textarea bind:value bind:this={element} class={c} {id} {onchange} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={msg}></textarea>
+      <textarea bind:value bind:this={element} class={c} {id} {onchange} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={idMsg}></textarea>
     {/if}
   {:else}
     {#if action}
-      <input bind:value bind:this={element} class={c} list={idList} {id} {type} {onchange} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={msg} use:action />
+      <input bind:value bind:this={element} class={c} list={idList} {id} {type} {onchange} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={idMsg} use:action />
     {:else}
-      <input bind:value bind:this={element} class={c} list={idList} {id} {type} {onchange} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={msg} />
+      <input bind:value bind:this={element} class={c} list={idList} {id} {type} {onchange} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={idMsg} />
     {/if}
     {#if options?.size}
       <datalist id={idList}>

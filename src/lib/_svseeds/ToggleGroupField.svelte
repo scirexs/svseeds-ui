@@ -56,7 +56,7 @@
   let neutral = $state(isNeutral(status) ? status : STATE.DEFAULT);
   $effect(() => { neutral = isNeutral(status) ? status : neutral });
   let live = $derived(status === STATE.INACTIVE ? "alert" : "status");
-  let idMsg = $derived(status === STATE.INACTIVE ? idErr : undefined);
+  let idMsg = $derived(status === STATE.INACTIVE && message?.trim() ? idErr : undefined);
   function shift(oninvalid?: boolean) {
     const vmsg = element?.validationMessage ?? "";
     status = oninvalid && vmsg ? STATE.INACTIVE : (!values.length || vmsg) ? neutral : STATE.ACTIVE;

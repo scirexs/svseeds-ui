@@ -7,8 +7,8 @@
     left?: Snippet<[string, string, HTMLSelectElement | undefined]>, // Snippet<[status,value,element]>
     right?: Snippet<[string, string, HTMLSelectElement | undefined]>, // Snippet<[status,value,element]>
     bottom?: string,
-    value?: string, // bindable
     descFirst?: boolean, // <false>
+    value?: string, // bindable
     validations?: SelectFieldValidation[],
     status?: string, // bindable <STATE.DEFAULT>
     style?: SVSStyle,
@@ -20,7 +20,6 @@
   export type SelectFieldBindProps = "value" | "status" | "element";
   export type SelectFieldValidation = (value: string, validity: ValidityState) => string;
 
-  type SelectFieldTarget = { currentTarget: EventTarget & HTMLSelectElement };
   const preset = "svs-select-field";
 
   import { type Snippet, untrack } from "svelte";
@@ -31,7 +30,7 @@
 </script>
 
 <script lang="ts">
-  let { options, label, extra, aux, left, right, bottom, value = $bindable(""), descFirst = false, validations = [], status = $bindable(""), style, attributes, action, element = $bindable() }: SelectFieldProps = $props();
+  let { options, label, extra, aux, left, right, bottom, descFirst = false, value = $bindable(""), validations = [], status = $bindable(""), style, attributes, action, element = $bindable() }: SelectFieldProps = $props();
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
@@ -45,25 +44,22 @@
 
   // *** Status *** //
   let neutral = isNeutral(status) ? status : STATE.DEFAULT;
-  $effect(() => { neutral = isNeutral(status) ? status : neutral });
+  $effect(() => { neutral = isNeutral(status) ? status : neutral; });
   let live = $derived(status === STATE.INACTIVE ? "alert" : "status");
   let invalid = $derived(status === STATE.INACTIVE ? true : undefined);
-  let errMsg = $derived(status === STATE.INACTIVE ? idErr : undefined);
-  const toInvalid = (msg?: string) => shiftStatus(STATE.INACTIVE, msg);
-  const toNonInvalid = (stat: string) => shiftStatus(stat);
-  function shiftStatus(stat: string, msg?: string) {
-    status = stat;
-    message = msg ?? bottom;
-    element?.setCustomValidity(msg ?? "");
+  let idMsg = $derived(status === STATE.INACTIVE && message?.trim() ? idErr : undefined);
+  function shift(oninvalid?: boolean) {
+    const vmsg = element?.validationMessage ?? "";
+    status = !value && !oninvalid ? neutral : vmsg ? STATE.INACTIVE : STATE.ACTIVE;
+    message = status === STATE.INACTIVE ? vmsg ? vmsg : bottom : bottom;
   }
-  function validate(oninvalid?: boolean) {
-    if (!value && !oninvalid) return toNonInvalid(neutral);
-    if (!element || !validations.length) return;
+  function verify() {
+    if (!element) return;
     for (const v of validations) {
-      const msg = v(value, element?.validity);
-      if (msg) return toInvalid(msg);
+      const msg = v(value, element.validity);
+      if (msg) return element.setCustomValidity(msg);
     }
-    toNonInvalid(STATE.ACTIVE);
+    element.setCustomValidity("");
   }
 
   // *** Bind Handlers *** //
@@ -72,14 +68,18 @@
     value;
     untrack(() => validate());
   });
+  function validate() {
+    verify();
+    shift();
+  }
 
   /*** Handle events ***/
-  function oninvalid(ev: Event & SelectFieldTarget) {
-    attributes?.oninvalid?.(ev);
+  function oninvalid(ev: Event) {
+    attributes?.oninvalid?.(ev as any);
     ev.preventDefault();
-    validate(true);
-    toInvalid(element?.validationMessage);
+    shift(true);
   }
+  $effect(() => untrack(() => verify()));
 </script>
 
 <!---------------------------------------->
@@ -121,13 +121,12 @@
 {/snippet}
 {#snippet main()}
   {@const c = cls(AREA.MAIN, status)}
-  {@const msg = message?.trim() ? errMsg : undefined}
   {#if action}
-    <select bind:value bind:this={element} class={c} {id} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={msg} use:action>
+    <select bind:value bind:this={element} class={c} {id} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={idMsg} use:action>
       {@render option()}
     </select>
   {:else}
-    <select bind:value bind:this={element} class={c} {id} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={msg}>
+    <select bind:value bind:this={element} class={c} {id} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={idMsg}>
       {@render option()}
     </select>
   {/if}
