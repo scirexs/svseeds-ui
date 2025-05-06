@@ -11,7 +11,7 @@
   export type DarkToggleReqdProps = never;
   export type DarkToggleBindProps = "dark" | "status" | "element";
 
-  const label = "Toggle theme color";
+  const ariaLabel = "Toggle theme color";
   const preset = "svs-dark-toggle";
 
   class Theme {
@@ -116,17 +116,21 @@
 
   // *** Initialize Deps *** //
   const svsToggle = {
-    ...omit(deps?.svsToggle, "main", "style"),
+    ...omit(deps?.svsToggle, "main", "style", "attributes"),
     style: deps?.svsToggle?.style ?? `${preset} svs-toggle`,
+    attributes: {
+      ...deps?.svsToggle?.attributes,
+      "aria-label": deps?.svsToggle?.attributes?.["aria-label"] ?? ariaLabel,
+    },
   };
 
   // *** Bind Handlers *** //
-  $effect.pre(() => { theme.dark = dark });
+  $effect.pre(() => { theme.dark = dark; });
 </script>
 
 <!---------------------------------------->
 
-<Toggle bind:value={dark} bind:status bind:element {label} {main} {...svsToggle} />
+<Toggle bind:value={dark} bind:status bind:element {main} {...svsToggle} />
 
 {#snippet svgDark()}
   <svg style="width: 100%; height: 100%;" viewBox="0 0 24 24" aria-hidden="true">
