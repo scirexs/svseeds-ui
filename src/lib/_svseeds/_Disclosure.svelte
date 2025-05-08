@@ -11,7 +11,7 @@
     element?: HTMLDetailsElement, // bindable
   };
   export type DisclosureReqdProps = "label" | "children";
-  export type DisclosureBindProps = "open" | "status" | "elementent";
+  export type DisclosureBindProps = "open" | "status" | "element";
 
   type DisclosureTarget = { currentTarget: EventTarget & HTMLDetailsElement };
   const preset = "svs-disclosure";
