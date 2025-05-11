@@ -41,7 +41,7 @@
 
   import { type Action } from "svelte/action";
   import { type HTMLInputAttributes } from "svelte/elements";
-  import { type SVSStyle, STATE, AREA, fnClass, omit } from "./core";
+  import { type SVSStyle, STATE, PARTS, fnClass, omit } from "./core";
 </script>
 
 <script lang="ts">
@@ -60,9 +60,9 @@
 
 <!---------------------------------------->
 
-<label class={cls(AREA.WHOLE, status)}>
+<label class={cls(PARTS.WHOLE, status)}>
   <div style="display: inline-block; background-image: linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%); background-size: 20px 20px; background-position: 0 0,0 10px,10px -10px,-10px 0px;">
-    <div class={cls(AREA.MAIN, status)} style={`background-color: rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alp})`}>
+    <div class={cls(PARTS.MAIN, status)} style={`background-color: rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alp})`}>
       {#if action}
         <input bind:value bind:this={element} type="color" style="visibility: hidden;" {...attrs} use:action />
       {:else}

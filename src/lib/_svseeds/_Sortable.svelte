@@ -603,7 +603,7 @@
   import { on } from "svelte/events";
   import { type EasingFunction, crossfade } from "svelte/transition";
   import { flip } from "svelte/animate";
-  import { type SVSStyle, STATE, AREA, fnClass, throttle } from "./core";
+  import { type SVSStyle, STATE, PARTS, fnClass, throttle } from "./core";
 </script>
 
 <script lang="ts">
@@ -719,14 +719,14 @@
 
 <!---------------------------------------->
 
-<ul class={cls(AREA.WHOLE, status)} onpointerenter={drag.active ? groupenter : undefined} onpointerleave={drag.active ? groupleave : undefined}>
+<ul class={cls(PARTS.WHOLE, status)} onpointerenter={drag.active ? groupenter : undefined} onpointerleave={drag.active ? groupleave : undefined}>
   {#each items._inner as {key, value}, i (key)}
     {@const style = "touch-action:none;"}
     {@const itemStatus = isSelected(key) ? STATE.ACTIVE : status}
     {@const onpointerdown = draggable ? downF(key, elems[i]) : undefined}
     {@const onpointerenter = drag.active ? enterF(key) : undefined}
     {@const onpointerleave = drag.active ? leave : undefined}
-    <li bind:this={elems[i]} class={cls(AREA.MAIN, itemStatus)} in:s={{key}} out:r={{key}} animate:flip={tp} {style} {onpointerdown} {onpointerenter} {onpointerleave} {ondragstart}>
+    <li bind:this={elems[i]} class={cls(PARTS.MAIN, itemStatus)} in:s={{key}} out:r={{key}} animate:flip={tp} {style} {onpointerdown} {onpointerenter} {onpointerleave} {ondragstart}>
       {@render item(itemStatus, value, downF(key, elems[i]))}
     </li>
   {/each}
@@ -734,7 +734,7 @@
 {#if shadow.rendering}
   {@const style = `opacity: 0.5; pointer-events: none; position: fixed; left: ${shadow.pt.x}px; top: ${shadow.pt.y}px; ${shadow.cssVisibility} ${shadow.cssSize}`}
   <ul style="display: contents;">
-    <li bind:this={shadow.elem} class={shadow.isGhost ? undefined : cls(AREA.MAIN, status)} {style}>
+    <li bind:this={shadow.elem} class={shadow.isGhost ? undefined : cls(PARTS.MAIN, status)} {style}>
       {#if shadow.isGhost}
         {@render ghost!(items._value(drag.key))}
       {:else}

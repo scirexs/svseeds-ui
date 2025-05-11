@@ -228,7 +228,7 @@
   import { type Snippet, untrack } from "svelte";
   import { on } from "svelte/events";
   import { type Action, type ActionReturn } from "svelte/action";
-  import { type SVSStyle, STATE, AREA, elemId, fnClass, throttle } from "./core";
+  import { type SVSStyle, STATE, PARTS, elemId, fnClass, throttle } from "./core";
 </script>
 
 <script lang="ts">
@@ -256,7 +256,7 @@
 <!---------------------------------------->
 
 {#if core.mount(id)}
-  <div bind:this={element} class={cls(AREA.WHOLE, status)} style={dynStyle} {id} role="tooltip">
+  <div bind:this={element} class={cls(PARTS.WHOLE, status)} style={dynStyle} {id} role="tooltip">
     {#if main}
       {@render main(status, core.text, core.flipped)}
     {:else}

@@ -28,7 +28,7 @@
   }
 
   import { type Snippet, untrack } from "svelte";
-  import { type SVSStyle, STATE, AREA, elemId, fnClass, omit } from "./core";
+  import { type SVSStyle, STATE, PARTS, elemId, fnClass, omit } from "./core";
   import Disclosure, { type DisclosureProps, type DisclosureReqdProps, type DisclosureBindProps } from "./_Disclosure.svelte";
 </script>
 
@@ -84,7 +84,7 @@
 <!---------------------------------------->
 
 {#if isValidAccordion}
-  <div class={cls(AREA.WHOLE, status)} role="group">
+  <div class={cls(PARTS.WHOLE, status)} role="group">
     {#each lbls as { id, name }, i (id)}
       {@const ontoggle = exclusiveToggle(i)}
       <Disclosure bind:open={opens[i]} bind:element={elems[i]} label={isStrLabel ? name : (rest[name] as Snippet)} attributes={{...deps?.svsDisclosure?.attributes, ontoggle}} {...svsDisclosure}>

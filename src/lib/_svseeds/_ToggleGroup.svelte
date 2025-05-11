@@ -24,7 +24,7 @@
   import { type Snippet } from "svelte";
   import { type Action } from "svelte/action";
   import { type SvelteMap } from "svelte/reactivity";
-  import { type SVSStyle, STATE, AREA, fnClass } from "./core";
+  import { type SVSStyle, STATE, PARTS, fnClass } from "./core";
 </script>
 
 <script lang="ts">
@@ -52,9 +52,9 @@
 <!---------------------------------------->
 
 {#if opts.length}
-  <span class={cls(AREA.WHOLE, status)} role={roleGroup} aria-describedby={ariaDescId} aria-invalid={!multiple ? invalid : undefined} aria-errormessage={!multiple ? ariaErrMsgId : undefined}>
+  <span class={cls(PARTS.WHOLE, status)} role={roleGroup} aria-describedby={ariaDescId} aria-invalid={!multiple ? invalid : undefined} aria-errormessage={!multiple ? ariaErrMsgId : undefined}>
     {#each opts as { value, text, checked } (value)}
-      {@const c = cls(AREA.MAIN, checked ? STATE.ACTIVE : status)}
+      {@const c = cls(PARTS.MAIN, checked ? STATE.ACTIVE : status)}
       {#if action}
         <button class={c} aria-checked={checked} aria-invalid={multiple ? invalid : undefined} aria-errormessage={multiple ? ariaErrMsgId : undefined} onclick={updateValues(value)} type="button" {role} use:action>
           {@render content(value, text)}

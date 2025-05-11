@@ -25,7 +25,7 @@
   import { type Action } from "svelte/action";
   import { type SvelteMap } from "svelte/reactivity";
   import { type HTMLInputAttributes } from "svelte/elements";
-  import { type SVSStyle, STATE, AREA, elemId, fnClass, isNeutral, omit } from "./core";
+  import { type SVSStyle, STATE, PARTS, elemId, fnClass, isNeutral, omit } from "./core";
 </script>
 
 <script lang="ts">
@@ -89,11 +89,11 @@
 <!---------------------------------------->
 
 {#if opts.length}
-  <div class={cls(AREA.WHOLE, status)} role="group" aria-labelledby={idLabel}>
+  <div class={cls(PARTS.WHOLE, status)} role="group" aria-labelledby={idLabel}>
     {#if aux}
-      <div class={cls(AREA.TOP, status)}>
+      <div class={cls(PARTS.TOP, status)}>
         {@render lbl()}
-        <span class={cls(AREA.AUX, status)}>{@render aux(status, values, elements)}</span>
+        <span class={cls(PARTS.AUX, status)}>{@render aux(status, values, elements)}</span>
       </div>
     {:else}
       {@render lbl()}
@@ -106,31 +106,31 @@
 
 {#snippet lbl()}
   {#if label?.trim()}
-    <span class={cls(AREA.LABEL, status)} id={idLabel}>
+    <span class={cls(PARTS.LABEL, status)} id={idLabel}>
       {label}
       {#if extra?.trim()}
-        <span class={cls(AREA.EXTRA, status)}>{extra}</span>
+        <span class={cls(PARTS.EXTRA, status)}>{extra}</span>
       {/if}
     </span>
   {/if}
 {/snippet}
 {#snippet main()}
-  <div class={cls(AREA.MIDDLE, status)} role={roleGroup} aria-describedby={idDesc} aria-invalid={!multiple ? invalid : undefined} aria-errormessage={!multiple ? idMsg : undefined}>
+  <div class={cls(PARTS.MIDDLE, status)} role={roleGroup} aria-describedby={idDesc} aria-invalid={!multiple ? invalid : undefined} aria-errormessage={!multiple ? idMsg : undefined}>
     {#each opts as {value, text, checked}, i (value)}
       {@const stat = checked ? STATE.ACTIVE : neutral}
-      <label class={cls(AREA.MAIN, stat)}>
+      <label class={cls(PARTS.MAIN, stat)}>
         {#if action}
-          <input bind:this={elements[i]} class={cls(AREA.LEFT, stat)} aria-invalid={multiple ? invalid : undefined} aria-errormessage={multiple ? idMsg : undefined} {value} {name} {type} {checked} {onchange} {oninvalid} {...attrs} use:action />
+          <input bind:this={elements[i]} class={cls(PARTS.LEFT, stat)} aria-invalid={multiple ? invalid : undefined} aria-errormessage={multiple ? idMsg : undefined} {value} {name} {type} {checked} {onchange} {oninvalid} {...attrs} use:action />
         {:else}
-          <input bind:this={elements[i]} class={cls(AREA.LEFT, stat)} aria-invalid={multiple ? invalid : undefined} aria-errormessage={multiple ? idMsg : undefined} {value} {name} {type} {checked} {onchange} {oninvalid} {...attrs} />
+          <input bind:this={elements[i]} class={cls(PARTS.LEFT, stat)} aria-invalid={multiple ? invalid : undefined} aria-errormessage={multiple ? idMsg : undefined} {value} {name} {type} {checked} {onchange} {oninvalid} {...attrs} />
         {/if}
-        <span class={cls(AREA.RIGHT, stat)}>{text}</span>
+        <span class={cls(PARTS.RIGHT, stat)}>{text}</span>
       </label>
     {/each}
   </div>
 {/snippet}
 {#snippet desc(show: boolean)}
   {#if show && message?.trim()}
-    <div class={cls(AREA.BOTTOM, status)} id={idDesc ?? idErr} role={live}>{message}</div>
+    <div class={cls(PARTS.BOTTOM, status)} id={idDesc ?? idErr} role={live}>{message}</div>
   {/if}
 {/snippet}

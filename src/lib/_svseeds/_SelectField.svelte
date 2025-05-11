@@ -26,7 +26,7 @@
   import { type Action } from "svelte/action";
   import { type SvelteMap } from "svelte/reactivity";
   import { type HTMLSelectAttributes } from "svelte/elements";
-  import { type SVSStyle, STATE, AREA, elemId, fnClass, isNeutral, omit } from "./core";
+  import { type SVSStyle, STATE, PARTS, elemId, fnClass, isNeutral, omit } from "./core";
 </script>
 
 <script lang="ts">
@@ -85,20 +85,20 @@
 <!---------------------------------------->
 
 {#if opts.length}
-  <div class={cls(AREA.WHOLE, status)} role="group" aria-labelledby={idLabel}>
+  <div class={cls(PARTS.WHOLE, status)} role="group" aria-labelledby={idLabel}>
     {#if aux}
-      <div class={cls(AREA.TOP, status)}>
+      <div class={cls(PARTS.TOP, status)}>
         {@render lbl()}
-        <span class={cls(AREA.AUX, status)}>{@render aux(status, value, element)}</span>
+        <span class={cls(PARTS.AUX, status)}>{@render aux(status, value, element)}</span>
       </div>
     {:else}
       {@render lbl()}
     {/if}
     {@render desc(descFirst)}
-    <div class={cls(AREA.MIDDLE, status)}>
-      {@render side(AREA.LEFT, left)}
+    <div class={cls(PARTS.MIDDLE, status)}>
+      {@render side(PARTS.LEFT, left)}
       {@render main()}
-      {@render side(AREA.RIGHT, right)}
+      {@render side(PARTS.RIGHT, right)}
     </div>
     {@render desc(!descFirst)}
   </div>
@@ -106,10 +106,10 @@
 
 {#snippet lbl()}
   {#if label?.trim()}
-    <span class={cls(AREA.LABEL, status)} id={idLabel}>
+    <span class={cls(PARTS.LABEL, status)} id={idLabel}>
       {label}
       {#if extra?.trim()}
-        <span class={cls(AREA.EXTRA, status)}>{extra}</span>
+        <span class={cls(PARTS.EXTRA, status)}>{extra}</span>
       {/if}
     </span>
   {/if}
@@ -120,7 +120,7 @@
   {/if}
 {/snippet}
 {#snippet main()}
-  {@const c = cls(AREA.MAIN, status)}
+  {@const c = cls(PARTS.MAIN, status)}
   {#if action}
     <select bind:value bind:this={element} class={c} {id} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={idMsg} use:action>
       {@render option()}
@@ -138,6 +138,6 @@
 {/snippet}
 {#snippet desc(show: boolean)}
   {#if show && message?.trim()}
-    <div class={cls(AREA.BOTTOM, status)} id={idDesc ?? idErr} role={live}>{message}</div>
+    <div class={cls(PARTS.BOTTOM, status)} id={idDesc ?? idErr} role={live}>{message}</div>
   {/if}
 {/snippet}

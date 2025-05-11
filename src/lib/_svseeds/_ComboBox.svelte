@@ -20,7 +20,7 @@
   import { type Action } from "svelte/action";
   import { type SvelteSet } from "svelte/reactivity";
   import { type HTMLInputAttributes } from "svelte/elements";
-  import { type SVSStyle, STATE, AREA, elemId, fnClass, omit } from "./core";
+  import { type SVSStyle, STATE, PARTS, elemId, fnClass, omit } from "./core";
 </script>
 
 <script lang="ts">
@@ -92,19 +92,19 @@
 <!---------------------------------------->
 
 {#if options.size}
-  <div class={cls(AREA.WHOLE, status)}>
+  <div class={cls(PARTS.WHOLE, status)}>
     <div style="position: relative; width: fit-content; height: fit-content;">
       {#if action}
-        <input bind:value bind:this={element} class={cls(AREA.MAIN, status)} type="text" role="combobox" aria-haspopup="listbox" aria-autocomplete="none" aria-controls={idList} aria-expanded={expanded} onfocus={() => open()} onblur={close} {onkeydown} {...attrs} use:action />
+        <input bind:value bind:this={element} class={cls(PARTS.MAIN, status)} type="text" role="combobox" aria-haspopup="listbox" aria-autocomplete="none" aria-controls={idList} aria-expanded={expanded} onfocus={() => open()} onblur={close} {onkeydown} {...attrs} use:action />
       {:else}
-        <input bind:value bind:this={element} class={cls(AREA.MAIN, status)} type="text" role="combobox" aria-haspopup="listbox" aria-autocomplete="none" aria-controls={idList} aria-expanded={expanded} onfocus={() => open()} onblur={close} {onkeydown} {...attrs} />
+        <input bind:value bind:this={element} class={cls(PARTS.MAIN, status)} type="text" role="combobox" aria-haspopup="listbox" aria-autocomplete="none" aria-controls={idList} aria-expanded={expanded} onfocus={() => open()} onblur={close} {onkeydown} {...attrs} />
       {/if}
-      <ul bind:this={listElem} class={cls(AREA.BOTTOM, status)} id={idList} role="listbox" style={listboxStyle}>
+      <ul bind:this={listElem} class={cls(PARTS.BOTTOM, status)} id={idList} role="listbox" style={listboxStyle}>
         {#each opts as opt, i (opt)}
           {@const isSelected = i === selected}
           {@const labelStatus = isSelected ? STATE.ACTIVE : status}
           {@const onpointerenter = () => selected = i}
-          <li class={cls(AREA.LABEL, labelStatus)} aria-selected={isSelected} role="option" style={optionStyle} onpointerdown={apply} {onpointerenter}>
+          <li class={cls(PARTS.LABEL, labelStatus)} aria-selected={isSelected} role="option" style={optionStyle} onpointerdown={apply} {onpointerenter}>
             {opt}
           </li>
         {/each}

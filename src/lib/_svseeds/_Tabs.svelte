@@ -30,7 +30,7 @@
   }
 
   import { type Snippet } from "svelte";
-  import { type SVSStyle, STATE, AREA, elemId, fnClass } from "./core";
+  import { type SVSStyle, STATE, PARTS, elemId, fnClass } from "./core";
 </script>
 
 <script lang="ts">
@@ -65,12 +65,12 @@
 <!---------------------------------------->
 
 {#if isValidTabs}
-  <div class={cls(AREA.WHOLE, status)}>
-    <div class={cls(AREA.TOP, status)} role="tablist" aria-orientation={orientation}>
+  <div class={cls(PARTS.WHOLE, status)}>
+    <div class={cls(PARTS.TOP, status)} role="tablist" aria-orientation={orientation}>
       {#each tabs as { id, name }, i (id)}
         {@const selected = i === current}
         {@const tabStatus = selected ? STATE.ACTIVE : status}
-        <button bind:this={elems[i]} class={cls(AREA.LABEL, tabStatus)} onclick={activate(i)} onkeydown={moveFocus(i)} tabindex={selected ? 0 : -1} aria-selected={selected} aria-controls={panels[i].id} type="button" role="tab" {id}>
+        <button bind:this={elems[i]} class={cls(PARTS.LABEL, tabStatus)} onclick={activate(i)} onkeydown={moveFocus(i)} tabindex={selected ? 0 : -1} aria-selected={selected} aria-controls={panels[i].id} type="button" role="tab" {id}>
           {#if isStrLabel}
             {name}
           {:else}
@@ -82,7 +82,7 @@
     {#each panels as { id, name }, i (id)}
       {@const selected = i === current}
       {@const style = selected ? undefined : "display: none;"}
-      <div class={cls(AREA.MAIN, status)} aria-labelledby={tabs[i].id} role="tabpanel" tabindex={0} hidden={!selected} {id} {style}>
+      <div class={cls(PARTS.MAIN, status)} aria-labelledby={tabs[i].id} role="tabpanel" tabindex={0} hidden={!selected} {id} {style}>
         {@render (rest[name] as Snippet)()}
       </div>
     {/each}

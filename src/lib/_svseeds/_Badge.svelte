@@ -16,7 +16,7 @@
 
   import { type Snippet } from "svelte";
   import { type MouseEventHandler } from "svelte/elements";
-  import { type SVSStyle, STATE, AREA, fnClass } from "./core";
+  import { type SVSStyle, STATE, PARTS, fnClass } from "./core";
 </script>
 
 <script lang="ts">
@@ -30,11 +30,11 @@
 <!---------------------------------------->
 
 {#if type === "link"}
-  <a class={cls(AREA.WHOLE, status)} {href}>
+  <a class={cls(PARTS.WHOLE, status)} {href}>
     {@render whole()}
   </a>
 {:else}
-  <span class={cls(AREA.WHOLE, status)}>
+  <span class={cls(PARTS.WHOLE, status)}>
     {@render whole()}
   </span>
 {/if}
@@ -49,9 +49,9 @@
   {/if}
 {/snippet}
 {#snippet whole()}
-  {@render side(AREA.LEFT, type === "left", left)}
-  <span class={cls(AREA.MAIN, status)}>
+  {@render side(PARTS.LEFT, type === "left", left)}
+  <span class={cls(PARTS.MAIN, status)}>
     {@render children()}
   </span>
-  {@render side(AREA.RIGHT, type === "right", right)}
+  {@render side(PARTS.RIGHT, type === "right", right)}
 {/snippet}

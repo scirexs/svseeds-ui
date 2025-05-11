@@ -32,7 +32,7 @@
 
   import { type Action } from "svelte/action";
   import { type HTMLInputAttributes } from "svelte/elements";
-  import { type SVSStyle, STATE, AREA, fnClass, omit } from "./core";
+  import { type SVSStyle, STATE, PARTS, fnClass, omit } from "./core";
   import Badge, { type BadgeProps, type BadgeReqdProps, type BadgeBindProps } from "./_Badge.svelte";
 </script>
 
@@ -77,12 +77,12 @@
 
 <!---------------------------------------->
 
-<div class={cls(AREA.WHOLE, status)}>
+<div class={cls(PARTS.WHOLE, status)}>
   {@render tags(type === "left")}
   {#if action}
-    <input bind:value bind:this={element} class={cls(AREA.MAIN, status)} type="text" {onkeydown} {...attrs} use:action />
+    <input bind:value bind:this={element} class={cls(PARTS.MAIN, status)} type="text" {onkeydown} {...attrs} use:action />
   {:else}
-    <input bind:value bind:this={element} class={cls(AREA.MAIN, status)} type="text" {onkeydown} {...attrs} />
+    <input bind:value bind:this={element} class={cls(PARTS.MAIN, status)} type="text" {onkeydown} {...attrs} />
   {/if}
   {@render tags(type === "right")}
 </div>

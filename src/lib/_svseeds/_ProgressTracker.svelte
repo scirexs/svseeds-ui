@@ -15,7 +15,7 @@
 
   import { type Snippet } from "svelte";
   import { type SvelteMap } from "svelte/reactivity";
-  import { type SVSStyle, STATE, AREA, fnClass } from "./core";
+  import { type SVSStyle, STATE, PARTS, fnClass } from "./core";
 </script>
 
 <script lang="ts">
@@ -37,19 +37,19 @@
 <!---------------------------------------->
 
 {#if labels.length}
-  <ol class={cls(AREA.WHOLE, status)}>
+  <ol class={cls(PARTS.WHOLE, status)}>
     {#each labels as label, i}
       {@const stat = getEachStatus(i)}
       {#if i > current}
         {@render separator(i)}
       {/if}
-      <li class={cls(AREA.MAIN, stat)} aria-current={i === current ? "step" : false}>
+      <li class={cls(PARTS.MAIN, stat)} aria-current={i === current ? "step" : false}>
         {#if aux}
-          <div class={cls(AREA.AUX, stat)}>
+          <div class={cls(PARTS.AUX, stat)}>
             {@render aux(stat, i)}
           </div>
         {/if}
-        <div class={cls(AREA.LABEL, stat)}>
+        <div class={cls(PARTS.LABEL, stat)}>
           {label}
         </div>
       </li>
@@ -63,7 +63,7 @@
 {#snippet separator(i: number)}
   {#if extra}
     {@const stat = i < current ? STATE.ACTIVE : STATE.INACTIVE}
-    <li class={cls(AREA.EXTRA, stat)} role="separator">
+    <li class={cls(PARTS.EXTRA, stat)} role="separator">
       {@render extra(stat, i)}
     </li>
   {/if}

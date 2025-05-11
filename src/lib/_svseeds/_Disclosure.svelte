@@ -32,7 +32,7 @@
   import { type Action } from "svelte/action";
   import { type HTMLDetailsAttributes } from "svelte/elements";
   import { slide } from "svelte/transition";
-  import { type SVSStyle, STATE, AREA, fnClass, isNeutral, omit } from "./core";
+  import { type SVSStyle, STATE, PARTS, fnClass, isNeutral, omit } from "./core";
 </script>
 
 <script lang="ts">
@@ -88,17 +88,17 @@
 <!---------------------------------------->
 
 {#if action}
-  <details bind:this={element} class={cls(AREA.WHOLE, status)} {ontoggle} {...attrs} use:action>
+  <details bind:this={element} class={cls(PARTS.WHOLE, status)} {ontoggle} {...attrs} use:action>
     {@render inner()}
   </details>
 {:else}
-  <details bind:this={element} class={cls(AREA.WHOLE, status)} {ontoggle} {...attrs}>
+  <details bind:this={element} class={cls(PARTS.WHOLE, status)} {ontoggle} {...attrs}>
     {@render inner()}
   </details>
 {/if}
 
 {#snippet inner()}
-  <summary class={cls(AREA.LABEL, status)} {onclick}>
+  <summary class={cls(PARTS.LABEL, status)} {onclick}>
     {#if typeof label === "string"}
       {label}
     {:else if typeof label === "function"}
@@ -106,12 +106,12 @@
     {/if}
   </summary>
   {#if open}
-    <div class={cls(AREA.MAIN, status)} transition:slide={{ duration }}>
+    <div class={cls(PARTS.MAIN, status)} transition:slide={{ duration }}>
       {@render children()}
     </div>
   {/if}
   {#if hidden}
-    <div class={cls(AREA.MAIN, status)}>
+    <div class={cls(PARTS.MAIN, status)}>
       {@render children()}
     </div>
   {/if}

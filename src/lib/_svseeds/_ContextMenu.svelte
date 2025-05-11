@@ -13,7 +13,7 @@
   const preset = "svs-context-menu";
 
   import { type Snippet } from "svelte";
-  import { type SVSStyle, STATE, AREA, fnClass } from "./core";
+  import { type SVSStyle, STATE, PARTS, fnClass } from "./core";
 </script>
 
 <!---------------------------------------->
@@ -46,6 +46,6 @@
 <!---------------------------------------->
 <svelte:document oncontextmenu={show} onclick={hide} />
 
-<nav class={cls(AREA.WHOLE, status)} style={dynStyle} bind:this={element}>
+<nav class={cls(PARTS.WHOLE, status)} style={dynStyle} bind:this={element}>
   {@render children()}
 </nav>

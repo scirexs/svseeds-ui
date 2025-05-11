@@ -15,7 +15,7 @@
   const preset = "svs-modal";
 
   import { type Snippet, untrack } from "svelte";
-  import { type SVSStyle, STATE, AREA, fnClass } from "./core";
+  import { type SVSStyle, STATE, PARTS, fnClass } from "./core";
 </script>
 
 <script lang="ts">
@@ -53,8 +53,8 @@
 <!---------------------------------------->
 
 <!-- svelte-ignore a11y_autofocus -->
-<dialog bind:this={element} class={cls(AREA.WHOLE, status)} aria-label={label} {onclick} {onkeydown} {onclose} autofocus={true}>
-  <div class={cls(AREA.MAIN, status)}>
+<dialog bind:this={element} class={cls(PARTS.WHOLE, status)} aria-label={label} {onclick} {onkeydown} {onclose} autofocus={true}>
+  <div class={cls(PARTS.MAIN, status)}>
     {@render children()}
   </div>
 </dialog>

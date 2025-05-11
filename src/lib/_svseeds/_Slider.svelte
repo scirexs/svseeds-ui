@@ -23,7 +23,7 @@
   import { type Action } from "svelte/action";
   import { type SvelteSet } from "svelte/reactivity";
   import { type HTMLInputAttributes } from "svelte/elements";
-  import { type SVSStyle, STATE, AREA, elemId, fnClass, omit } from "./core";
+  import { type SVSStyle, STATE, PARTS, elemId, fnClass, omit } from "./core";
 </script>
 
 <script lang="ts">
@@ -44,12 +44,12 @@
 
 <!---------------------------------------->
 
-<span class={cls(AREA.WHOLE, status)}>
-  {@render side(AREA.LEFT, left)}
+<span class={cls(PARTS.WHOLE, status)}>
+  {@render side(PARTS.LEFT, left)}
   {#if action}
-    <input bind:value bind:this={element} class={cls(AREA.MAIN, status)} style={dynStyle} list={idList} type="range" min={range.min} max={range.max} {step} {...attrs} use:action />
+    <input bind:value bind:this={element} class={cls(PARTS.MAIN, status)} style={dynStyle} list={idList} type="range" min={range.min} max={range.max} {step} {...attrs} use:action />
   {:else}
-    <input bind:value bind:this={element} class={cls(AREA.MAIN, status)} style={dynStyle} list={idList} type="range" min={range.min} max={range.max} {step} {...attrs} />
+    <input bind:value bind:this={element} class={cls(PARTS.MAIN, status)} style={dynStyle} list={idList} type="range" min={range.min} max={range.max} {step} {...attrs} />
   {/if}
   {#if options?.size}
     <datalist id={idList}>
@@ -58,7 +58,7 @@
       {/each}
     </datalist>
   {/if}
-  {@render side(AREA.RIGHT, right)}
+  {@render side(PARTS.RIGHT, right)}
 </span>
 
 {#snippet side(area: string, body?: Snippet<[string, number, HTMLInputElement | undefined]>)}

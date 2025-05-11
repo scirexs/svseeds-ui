@@ -3,7 +3,7 @@ export {
   type SVSStyle,
   CONST,
   STATE,
-  AREA,
+  PARTS,
   elemId,
   fnClass,
   isNeutral,
@@ -19,7 +19,7 @@ type SVSStyle = Record<string, ClassRule> | string;
 
 const CONST = "const";
 const STATE = Object.freeze({ DEFAULT: "default", ACTIVE: "active", INACTIVE: "inactive" });
-const AREA = Object.freeze({
+const PARTS = Object.freeze({
   WHOLE: "whole",
   MIDDLE: "middle",
   MAIN: "main",
@@ -65,12 +65,12 @@ class UniqueId {
 }
 const elemId = new UniqueId();
 
-type ClassFn = (area: string, status: string) => string | undefined;
+type ClassFn = (part: string, status: string) => string | undefined;
 function fnClass(preset: SVSStyle, style?: SVSStyle): ClassFn {
   const rule = prepRule(style) ?? prepRule(preset);
   if (rule == null) return (_, __) => undefined;
-  if (typeof rule === "string") return (area, status) => `${rule} ${area} ${status}`;
-  return (area, status) => ruleClass(rule, area, status);
+  if (typeof rule === "string") return (part, status) => `${rule} ${part} ${status}`;
+  return (part, status) => ruleClass(rule, part, status);
 }
 function prepRule(rule?: SVSStyle): ClassRuleSet | string | undefined {
   if (rule == null) return;
@@ -79,9 +79,9 @@ function prepRule(rule?: SVSStyle): ClassRuleSet | string | undefined {
   if (!entries.length) return;
   return Object.fromEntries(entries.map(([k, v]) => typeof v === "string" ? [k, { const: v }] : [k, v]));
 }
-function ruleClass(rule: ClassRuleSet, area: string, status: string): string | undefined {
-  const constant = rule[area]?.[CONST] ?? "";
-  const dynamic = rule[area]?.[status] ?? rule[area]?.[STATE.DEFAULT] ?? "";
+function ruleClass(rule: ClassRuleSet, part: string, status: string): string | undefined {
+  const constant = rule[part]?.[CONST] ?? "";
+  const dynamic = rule[part]?.[status] ?? rule[part]?.[STATE.DEFAULT] ?? "";
   if (!constant && !dynamic) return;
   return `${constant}${constant && dynamic ? " " : ""}${dynamic}`;
 }

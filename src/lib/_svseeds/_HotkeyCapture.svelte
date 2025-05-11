@@ -21,7 +21,7 @@
   }
 
   import { untrack } from "svelte";
-  import { type SVSStyle, STATE, AREA, fnClass, isNeutral } from "./core";
+  import { type SVSStyle, STATE, PARTS, fnClass, isNeutral } from "./core";
 </script>
 
 <script lang="ts">
@@ -90,4 +90,4 @@
 
 <!---------------------------------------->
 
-<input bind:value bind:this={element} class={cls(AREA.MAIN, status)} type="text" readonly={true} {placeholder} {disabled} {onkeydown} {onpointerdown} {onwheel} {oncontextmenu} {onfocus} {onblur} />
+<input bind:value bind:this={element} class={cls(PARTS.MAIN, status)} type="text" readonly={true} {placeholder} {disabled} {onkeydown} {onpointerdown} {onwheel} {oncontextmenu} {onfocus} {onblur} />

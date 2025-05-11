@@ -20,7 +20,7 @@
   import { type Snippet } from "svelte";
   import { type Action } from "svelte/action";
   import { type HTMLButtonAttributes, type MouseEventHandler } from "svelte/elements";
-  import { type SVSStyle, STATE, AREA, fnClass, omit } from "./core";
+  import { type SVSStyle, STATE, PARTS, fnClass, omit } from "./core";
 </script>
 
 <script lang="ts">
@@ -40,11 +40,11 @@
 <!---------------------------------------->
 
 {#if action}
-  <button bind:this={element} class={cls(AREA.WHOLE, status)} {type} {onclick} {...attrs} use:action>
+  <button bind:this={element} class={cls(PARTS.WHOLE, status)} {type} {onclick} {...attrs} use:action>
     {@render whole()}
   </button>
 {:else}
-  <button bind:this={element} class={cls(AREA.WHOLE, status)} {type} {onclick} {...attrs}>
+  <button bind:this={element} class={cls(PARTS.WHOLE, status)} {type} {onclick} {...attrs}>
     {@render whole()}
   </button>
 {/if}
@@ -55,9 +55,9 @@
   {/if}
 {/snippet}
 {#snippet whole()}
-  {@render side(AREA.LEFT, left)}
-  <span class={cls(AREA.MAIN, status)}>
+  {@render side(PARTS.LEFT, left)}
+  <span class={cls(PARTS.MAIN, status)}>
     {@render children()}
   </span>
-  {@render side(AREA.RIGHT, right)}
+  {@render side(PARTS.RIGHT, right)}
 {/snippet}
