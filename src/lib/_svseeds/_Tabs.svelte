@@ -1,8 +1,8 @@
 <script module lang="ts">
   export type TabsProps = {
-    orientation?: "horizontal" | "vertical", // for aria-orientation
     labels?: string[],
     current?: number, // bindable <0>
+    ariaOrientation?: "horizontal" | "vertical",
     status?: string, // bindable <STATE.DEFAULT>
     style?: SVSStyle,
     [key: string]: unknown | Snippet,
@@ -34,7 +34,7 @@
 </script>
 
 <script lang="ts">
-  let { orientation, labels = [], current = $bindable(0), status = $bindable(""), style, ...rest }: TabsProps = $props();
+  let { labels = [], current = $bindable(0), ariaOrientation, status = $bindable(""), style, ...rest }: TabsProps = $props();
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
@@ -66,7 +66,7 @@
 
 {#if isValidTabs}
   <div class={cls(PARTS.WHOLE, status)}>
-    <div class={cls(PARTS.TOP, status)} role="tablist" aria-orientation={orientation}>
+    <div class={cls(PARTS.TOP, status)} role="tablist" aria-orientation={ariaOrientation}>
       {#each tabs as { id, name }, i (id)}
         {@const selected = i === current}
         {@const tabStatus = selected ? STATE.ACTIVE : status}
