@@ -11,43 +11,56 @@
   export type DarkToggleReqdProps = never;
   export type DarkToggleBindProps = "dark" | "status" | "element";
 
+  export const THEME = { LIGHT: "light", DARK: "dark" } as const;
+  export function setThemeToRoot(theme?: string) {
+    if (typeof window === "undefined") return;
+    if (!theme) theme = Theme.getPreferTheme();
+    window.document.documentElement.classList.add(theme);
+  }
+
   const ariaLabel = "Toggle theme color";
   const preset = "svs-dark-toggle";
 
   class Theme {
-    static #DARK = "dark";
-    static #LIGHT = "light";
+    static #MEDIA_PREFER_DARK = "(prefers-color-scheme: dark)";
     static #REGEX = /\(prefers-color-scheme:\s*(light|dark)\s*\)/i;
     static #SELECTOR = ":root";
     #props: Map<string, Record<string, string>> = new Map();
-    #dark;
+    #theme;
     set dark(bool: boolean) {
       this.#switch(bool);
     }
     get dark(): boolean {
-      return this.#dark;
+      return this.#theme === THEME.DARK;
     }
 
     constructor() {
-      this.#dark = Theme.#isPreferDark();
+      this.#theme = Theme.getPreferTheme();
       this.#initProps();
       this.#setColorScheme();
+      setThemeToRoot(this.#theme);
     }
     #switch(dark: boolean) {
-      const theme = dark ? Theme.#DARK : Theme.#LIGHT;
+      const theme = Theme.#getThemeString(dark);
+      if (this.#theme === theme) return;
       if (!this.#props.has(theme)) return;
-      this.#dark = dark;
-      this.#apply(theme);
+      this.#apply(theme, this.#theme);
+      this.#theme = theme;
     }
-    #apply(theme: string) {
+    #apply(to: string, from: string) {
       if (typeof window === "undefined") return;
-      const style = window.document.documentElement.style;
-      Object.entries(this.#props.get(theme) ?? {})
-        .forEach(([name, value]) => style.setProperty(name, value));
+      const html = window.document.documentElement;
+      Object.entries(this.#props.get(to) ?? {})
+        .forEach(([name, value]) => html.style.setProperty(name, value));
+      if (html.classList.contains(from)) {
+        html.classList.replace(from, to);
+      } else {
+        html.classList.add(to);
+      }
     }
     #setColorScheme() {
       if (typeof window === "undefined") return;
-      const themes = Object.keys(this.#props).filter((x) => x === Theme.#LIGHT || x === Theme.#DARK);
+      const themes = Object.keys(this.#props).filter((x) => x === THEME.LIGHT || x === THEME.DARK);
       window.document.documentElement.style.colorScheme = themes.join(" ");
     }
     #initProps() {
@@ -98,7 +111,13 @@
     }
     static #isPreferDark(): boolean {
       if (typeof window === "undefined") return true;
-      return window.matchMedia("(prefers-color-scheme: dark)").matches;
+      return window.matchMedia(Theme.#MEDIA_PREFER_DARK).matches;
+    }
+    static #getThemeString(dark: boolean): string {
+      return dark ? THEME.DARK : THEME.LIGHT;
+    }
+    static getPreferTheme(): string {
+      return Theme.#getThemeString(Theme.#isPreferDark());
     }
   }
   const theme = new Theme();
@@ -119,8 +138,8 @@
     ...omit(deps?.svsToggle, "main", "style", "attributes"),
     style: deps?.svsToggle?.style ?? `${preset} svs-toggle`,
     attributes: {
+      ariaLabel,
       ...deps?.svsToggle?.attributes,
-      "aria-label": deps?.svsToggle?.attributes?.["aria-label"] ?? ariaLabel,
     },
   };
 
