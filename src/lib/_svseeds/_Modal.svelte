@@ -1,10 +1,10 @@
 <script module lang="ts">
   export type ModalProps = {
     children: Snippet,
-    label?: string, // for aria-label
     open?: boolean, // bindable <false>
     closable?: boolean, // <true>
     trigger?: HTMLElement, // bindable
+    ariaLabel?: string,
     status?: string, // bindable <STATE.DEFAULT>
     style?: SVSStyle,
     element?: HTMLDialogElement, // bindable
@@ -19,7 +19,7 @@
 </script>
 
 <script lang="ts">
-  let { children, label, open = $bindable(false), closable = true, trigger = $bindable(), status = $bindable(""), style, element = $bindable() }: ModalProps = $props();
+  let { children, open = $bindable(false), closable = true, trigger = $bindable(), ariaLabel, status = $bindable(""), style, element = $bindable() }: ModalProps = $props();
 
   // *** Initialize *** //
   if (!status) status = STATE.DEFAULT;
@@ -53,7 +53,7 @@
 <!---------------------------------------->
 
 <!-- svelte-ignore a11y_autofocus -->
-<dialog bind:this={element} class={cls(PARTS.WHOLE, status)} aria-label={label} {onclick} {onkeydown} {onclose} autofocus={true}>
+<dialog bind:this={element} class={cls(PARTS.WHOLE, status)} aria-label={ariaLabel} {onclick} {onkeydown} {onclose} autofocus={true}>
   <div class={cls(PARTS.MAIN, status)}>
     {@render children()}
   </div>
