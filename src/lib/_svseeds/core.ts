@@ -32,20 +32,85 @@ const PARTS = Object.freeze({
   EXTRA: "extra",
 });
 
+/**
+ * Generates unique random alphabetic ID strings with collision detection.
+ * Uses a carefully selected character set of 50 letters (A-Y, a-y) to ensure
+ * uniform distribution when using Math.random(), and provides a reserved
+ * character space (Z, z) for manual ID injection without conflicts.
+ *
+ * In default, internal store for detecting collision is automatically cleared
+ * when it exceeds 100,000 entries to manage memory usage in long-running.
+ *
+ * @example
+ * ```typescript
+ * const idGen = new UniqueId(5);
+ * const id1 = idGen.id; // "AbCdE"
+ * const id2 = idGen.id; // "XyaBc" (guaranteed to be different from id1)
+ *
+ * // Conditional generation
+ * const conditionalId = idGen.get(someCondition); // string | undefined
+ *
+ * // Manual injection with reserved characters
+ * const manualId = "zTest"; // Will never conflict with generated IDs
+ * ```
+ */
 class UniqueId {
   static #ALPHABETIC = [...Array.from(Array(25).keys(), (x) => x + 65), ...Array.from(Array(25).keys(), (x) => x + 97)];
   #store = new Set<string>();
-  #LEN = 4;
+  #LEN = 3;
+  #LIMIT = 100000;
 
+  /**
+   * Gets a new unique ID string. Always returns a string (never undefined).
+   *
+   * @returns A unique alphabetic ID string
+   *
+   * @example
+   * ```typescript
+   * const generator = new UniqueId();
+   * const myId = generator.id; // "AbC"
+   * ```
+   */
   get id(): string {
     return this.get(true)!;
   }
-  constructor(len: number = 4) {
+  /**
+   * Creates a new UniqueId generator instance.
+   *
+   * @param len   - The length of generated ID strings (minimum 3, defaults to 3)
+   * @param limit - Maximum number of IDs to store before clearing the internal store (defaults to 100,000)
+   *
+   * @example
+   * ```typescript
+   * const shortIds = new UniqueId(4); // Generates 4-character IDs
+   * const longIds = new UniqueId(8);  // Generates 8-character IDs
+   * ```
+   */
+  constructor(len: number = 3, limit: number = 100000) {
     if (len > 2) this.#LEN = len;
+    limit = Math.trunc(limit);
+    if (limit > 0 && limit < Math.min(Math.pow(50, this.#LEN), Number.MAX_SAFE_INTEGER)) this.#LIMIT = limit;
   }
+  /**
+   * Conditionally generates a unique ID string based on the provided value.
+   * Returns undefined if the value is falsy. The internal store is automatically
+   * cleared if it exceeds 100,000 entries to prevent excessive memory usage.
+   *
+   * @param v - A value to check for truthiness
+   * @returns A unique ID string if the value is truthy, undefined otherwise
+   *
+   * @example
+   * ```typescript
+   * const generator = new UniqueId();
+   * const id1 = generator.get(true);        // "AbCd"
+   * const id2 = generator.get(false);       // undefined
+   * const id3 = generator.get("hello");     // "XyZa"
+   * const id4 = generator.get(null);        // undefined
+   * ```
+   */
   get(v: unknown): string | undefined {
     if (!v) return;
-    if (this.#store.size > 10000) this.#store.clear();
+    if (this.#store.size > this.#LIMIT) this.#store.clear();
     return this.#add();
   }
   #char(): number {
