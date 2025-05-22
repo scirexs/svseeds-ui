@@ -85,15 +85,62 @@ function ruleClass(rule: ClassRuleSet, part: string, status: string): string | u
   if (!constant && !dynamic) return;
   return `${constant}${constant && dynamic ? " " : ""}${dynamic}`;
 }
+/**
+ * Determines whether a status is in a neutral state (neither ACTIVE nor INACTIVE).
+ *
+ * @param status - The status string to check
+ * @returns false if the status is ACTIVE or INACTIVE, true otherwise
+ *
+ * @example
+ * ```typescript
+ * isNeutral(STATE.DEFAULT); // true
+ * isNeutral("custom state"); // true
+ * isNeutral(STATE.ACTIVE); // false
+ * isNeutral(STATE.INACTIVE); // false
+ * ```
+ */
 function isNeutral(status: string): boolean {
   return status !== STATE.ACTIVE && status !== STATE.INACTIVE;
 }
+/**
+ * Creates a new object with specified keys omitted from the original object.
+ * Returns an empty object if the input object is undefined or null.
+ *
+ * @param obj - The source object to omit keys from
+ * @param keys - The keys to omit from the object
+ * @returns A new object with the specified keys removed, or an empty object if input is falsy
+ *
+ * @example
+ * ```typescript
+ * const user = { id: 1, name: "John", email: "john@example.com" };
+ * const publicUser = omit(user, "email"); // { id: 1, name: "John" }
+ * const empty = omit(undefined, "key"); // {}
+ * ```
+ */
 function omit<T extends object, K extends keyof T>(obj?: T, ...keys: K[]): Omit<T, K> | Record<string, never> {
   if (!obj) return {};
   const ret = { ...obj };
   keys.forEach((key) => delete ret[key]);
   return ret;
 }
+/**
+ * Creates a debounced function that delays invoking the provided function until after
+ * the specified delay has elapsed since the last time it was invoked.
+ *
+ * @param delay - The number of milliseconds to delay
+ * @param fn - The function to debounce
+ * @returns A debounced version of the function
+ *
+ * @example
+ * ```typescript
+ * const debouncedSearch = debounce(300, (query: string) => {
+ *   console.log("Searching for:", query);
+ * });
+ *
+ * debouncedSearch("hello"); // Will only execute after 300ms of no further calls
+ * debouncedSearch("hello world"); // Cancels previous call, waits another 300ms
+ * ```
+ */
 function debounce<Args extends unknown[], R>(delay: number, fn: (...args: Args) => R): (...args: Args) => void {
   let timer: number | undefined;
   return (...args: Args) => {
@@ -103,6 +150,25 @@ function debounce<Args extends unknown[], R>(delay: number, fn: (...args: Args) 
     }, delay);
   };
 }
+/**
+ * Creates a throttled function that only invokes the provided function at most once
+ * per specified interval. Subsequent calls within the interval are queued and executed
+ * at the next available interval boundary.
+ *
+ * @param interval - The number of milliseconds to throttle invocations to
+ * @param fn - The function to throttle
+ * @returns A throttled version of the function
+ *
+ * @example
+ * ```typescript
+ * const throttledScroll = throttle(100, (event: Event) => {
+ *   console.log("Scroll event handled");
+ * });
+ *
+ * window.addEventListener("scroll", throttledScroll);
+ * // Will execute at most once every 100ms, even if scroll events fire more frequently
+ * ```
+ */
 function throttle<Args extends unknown[], R>(interval: number, fn: (...args: Args) => R): (...args: Args) => void {
   let timer: number | undefined;
   let last: number = 0;

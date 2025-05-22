@@ -1,14 +1,30 @@
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface ModalProps {
+    children: Snippet;
+    open?: boolean; // bindable <false>
+    closable?: boolean; // <true>
+    trigger?: HTMLElement; // bindable
+    ariaLabel?: string;
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    element?: HTMLDialogElement; // bindable
+  }
+  ```
+-->
 <script module lang="ts">
-  export type ModalProps = {
-    children: Snippet,
-    open?: boolean, // bindable <false>
-    closable?: boolean, // <true>
-    trigger?: HTMLElement, // bindable
-    ariaLabel?: string,
-    status?: string, // bindable <STATE.DEFAULT>
-    style?: SVSStyle,
-    element?: HTMLDialogElement, // bindable
-  };
+  export interface ModalProps {
+    children: Snippet;
+    open?: boolean; // bindable <false>
+    closable?: boolean; // <true>
+    trigger?: HTMLElement; // bindable
+    ariaLabel?: string;
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    element?: HTMLDialogElement; // bindable
+  }
   export type ModalReqdProps = "children";
   export type ModalBindProps = "open" | "status" | "element";
 

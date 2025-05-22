@@ -1,20 +1,43 @@
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface CheckFieldProps {
+    options: SvelteMap<string, string> | Map<string, string>;
+    label?: string;
+    extra?: string;
+    aux?: Snippet<[string, string[], HTMLInputElement[]]>; // Snippet<[status,values,elements]>
+    bottom?: string;
+    descFirst?: boolean; // <false>
+    values?: string[]; // bindable
+    multiple?: boolean; // <true>
+    validations?: CheckFieldValidation[];
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    attributes?: HTMLInputAttributes;
+    action?: Action;
+    elements?: HTMLInputElement[]; // bindable
+  }
+  type CheckFieldValidation = (values: string[], validity: ValidityState) => string;
+  ```
+-->
 <script module lang="ts">
-  export type CheckFieldProps = {
-    options: SvelteMap<string, string> | Map<string, string>,
-    label?: string,
-    extra?: string,
-    aux?: Snippet<[string, string[], HTMLInputElement[]]>, // Snippet<[status,values,elements]>
-    bottom?: string,
-    descFirst?: boolean, // <false>
-    values?: string[], // bindable
-    multiple?: boolean, // <true>
-    validations?: CheckFieldValidation[],
-    status?: string, // bindable <STATE.DEFAULT>
-    style?: SVSStyle,
-    attributes?: HTMLInputAttributes,
-    action?: Action,
-    elements?: HTMLInputElement[], // bindable
-  };
+  export interface CheckFieldProps {
+    options: SvelteMap<string, string> | Map<string, string>;
+    label?: string;
+    extra?: string;
+    aux?: Snippet<[string, string[], HTMLInputElement[]]>; // Snippet<[status,values,elements]>
+    bottom?: string;
+    descFirst?: boolean; // <false>
+    values?: string[]; // bindable
+    multiple?: boolean; // <true>
+    validations?: CheckFieldValidation[];
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    attributes?: HTMLInputAttributes;
+    action?: Action;
+    elements?: HTMLInputElement[]; // bindable
+  }
   export type CheckFieldReqdProps = "options";
   export type CheckFieldBindProps = "values" | "status" | "elements";
   export type CheckFieldValidation = (values: string[], validity: ValidityState) => string;

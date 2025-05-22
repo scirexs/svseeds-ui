@@ -1,13 +1,28 @@
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface DarkToggleProps {
+    dark?: boolean; // bindable <true>
+    status?: string; // bindable <STATE.DEFAULT>
+    element?: HTMLButtonElement; // bindable
+    deps?: DarkToggleDeps;
+  }
+  export interface DarkToggleDeps {
+    svsToggle?: Omit<ToggleProps, ToggleReqdProps | ToggleBindProps>;
+  }
+  ```
+-->
 <script module lang="ts">
-  export type DarkToggleProps = {
-    dark?: boolean, // bindable <true>
-    status?: string, // bindable <STATE.DEFAULT>
-    element?: HTMLButtonElement, // bindable
-    deps?: DarkToggleDeps,
-  };
-  export type DarkToggleDeps = {
-    svsToggle?: Omit<ToggleProps, ToggleReqdProps | ToggleBindProps>,
-  };
+  export interface DarkToggleProps {
+    dark?: boolean; // bindable <true>
+    status?: string; // bindable <STATE.DEFAULT>
+    element?: HTMLButtonElement; // bindable
+    deps?: DarkToggleDeps;
+  }
+  export interface DarkToggleDeps {
+    svsToggle?: Omit<ToggleProps, ToggleReqdProps | ToggleBindProps>;
+  }
   export type DarkToggleReqdProps = never;
   export type DarkToggleBindProps = "dark" | "status" | "element";
 

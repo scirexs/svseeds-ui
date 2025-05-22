@@ -1,25 +1,58 @@
-<script module lang="ts">
-  export type TagsInputFieldProps = {
-    label?: string,
-    extra?: string,
-    aux?: Snippet<[string, string[], HTMLInputElement | undefined]>, // Snippet<[status,values,element]>
-    left?: Snippet<[string, string[], HTMLInputElement | undefined]>, // Snippet<[status,values,element]>
-    right?: Snippet<[string, string[], HTMLInputElement | undefined]>, // Snippet<[status,values,element]>
-    bottom?: string,
-    descFirst?: boolean, // <false>
-    values?: string[], // bindable
-    min?: TagsInputFieldCountValidation,
-    max?: TagsInputFieldCountValidation,
-    constraints?: TagsInputFieldConstraint[],
-    validations?: TagsInputFieldValidation[],
-    status?: string, // bindable <STATE.DEFAULT>
-    style?: SVSStyle,
-    element?: HTMLInputElement, // bindable
-    deps?: TagsInputFieldDeps,
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface TagsInputFieldProps {
+    label?: string;
+    extra?: string;
+    aux?: Snippet<[string, string[], HTMLInputElement | undefined]>; // Snippet<[status,values,element]>
+    left?: Snippet<[string, string[], HTMLInputElement | undefined]>; // Snippet<[status,values,element]>
+    right?: Snippet<[string, string[], HTMLInputElement | undefined]>; // Snippet<[status,values,element]>
+    bottom?: string;
+    descFirst?: boolean; // <false>
+    values?: string[]; // bindable
+    min?: TagsInputFieldCountValidation;
+    max?: TagsInputFieldCountValidation;
+    constraints?: TagsInputFieldConstraint[];
+    validations?: TagsInputFieldValidation[];
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    element?: HTMLInputElement; // bindable
+    deps?: TagsInputFieldDeps;
+  }
+  interface TagsInputFieldDeps extends TagsInputDeps {
+    svsTagsInput?: Omit<TagsInputProps, TagsInputReqdProps | TagsInputBindProps | "deps">;
+  }
+  type TagsInputFieldConstraint = (value: string, validity: ValidityState) => string;
+  type TagsInputFieldValidation = (values: string[], validity: ValidityState) => string;
+  type TagsInputFieldCountValidation = {
+    value: number;
+    message: string;
   };
-  export type TagsInputFieldDeps = {
-    svsTagsInput?: Omit<TagsInputProps, TagsInputReqdProps | TagsInputBindProps | "deps">,
-  } & TagsInputDeps;
+  ```
+-->
+<script module lang="ts">
+  export interface TagsInputFieldProps {
+    label?: string;
+    extra?: string;
+    aux?: Snippet<[string, string[], HTMLInputElement | undefined]>; // Snippet<[status,values,element]>
+    left?: Snippet<[string, string[], HTMLInputElement | undefined]>; // Snippet<[status,values,element]>
+    right?: Snippet<[string, string[], HTMLInputElement | undefined]>; // Snippet<[status,values,element]>
+    bottom?: string;
+    descFirst?: boolean; // <false>
+    values?: string[]; // bindable
+    min?: TagsInputFieldCountValidation;
+    max?: TagsInputFieldCountValidation;
+    constraints?: TagsInputFieldConstraint[];
+    validations?: TagsInputFieldValidation[];
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    element?: HTMLInputElement; // bindable
+    deps?: TagsInputFieldDeps;
+  }
+  export interface TagsInputFieldDeps extends TagsInputDeps {
+    svsTagsInput?: Omit<TagsInputProps, TagsInputReqdProps | TagsInputBindProps | "deps">;
+  }
   export type TagsInputFieldReqdProps = never;
   export type TagsInputFieldBindProps = "values" | "status" | "element";
   export type TagsInputFieldConstraint = (value: string, validity: ValidityState) => string;

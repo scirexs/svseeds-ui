@@ -1,29 +1,58 @@
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface TagsInputProps {
+    values?: string[]; // bindable
+    value?: string; // bindable
+    type?: "left" | "right"; // <"left">
+    confirm?: string[]; // <["Enter"]>
+    trim?: boolean; // <true>
+    unique?: boolean; // <true>
+    ariaErrMsgId?: string; // bindable
+    events?: TagsInputEvents;
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    attributes?: HTMLInputAttributes;
+    action?: Action;
+    element?: HTMLInputElement; // bindable
+    deps?: TagsInputDeps;
+  }
+  interface TagsInputDeps {
+    svsBadge?: Omit<BadgeProps, BadgeReqdProps | BadgeBindProps | "type" | "href">;
+  }
+  interface TagsInputEvents { // cancel if true
+    onadd?: (values: string[], value: string) => void | boolean;
+    onremove?: (values: string[], value: string, index: number) => void | boolean;
+  }
+  ```
+-->
 <script module lang="ts">
-  export type TagsInputProps = {
-    values?: string[], // bindable
-    value?: string, // bindable
-    type?: "left" | "right", // <"left">
-    confirm?: string[], // <["Enter"]>
-    trim?: boolean, // <true>
-    unique?: boolean, // <true>
-    ariaErrMsgId?: string, // bindable
-    events?: TagsInputEvents,
-    status?: string, // bindable <STATE.DEFAULT>
-    style?: SVSStyle,
-    attributes?: HTMLInputAttributes,
-    action?: Action,
-    element?: HTMLInputElement, // bindable
-    deps?: TagsInputDeps,
-  };
-  export type TagsInputDeps = {
-    svsBadge?: Omit<BadgeProps, BadgeReqdProps | BadgeBindProps | "type" | "href">,
-  };
+  export interface TagsInputProps {
+    values?: string[]; // bindable
+    value?: string; // bindable
+    type?: "left" | "right"; // <"left">
+    confirm?: string[]; // <["Enter"]>
+    trim?: boolean; // <true>
+    unique?: boolean; // <true>
+    ariaErrMsgId?: string; // bindable
+    events?: TagsInputEvents;
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    attributes?: HTMLInputAttributes;
+    action?: Action;
+    element?: HTMLInputElement; // bindable
+    deps?: TagsInputDeps;
+  }
+  export interface TagsInputDeps {
+    svsBadge?: Omit<BadgeProps, BadgeReqdProps | BadgeBindProps | "type" | "href">;
+  }
   export type TagsInputReqdProps = never;
   export type TagsInputBindProps = "values" | "value" | "ariaErrMsgId" | "status" | "element";
-  export type TagsInputEvents = { // cancel if true
-    onadd?: (values: string[], value: string) => void | boolean,
-    onremove?: (values: string[], value: string, index: number) => void | boolean,
-  };
+  export interface TagsInputEvents { // cancel if true
+    onadd?: (values: string[], value: string) => void | boolean;
+    onremove?: (values: string[], value: string, index: number) => void | boolean;
+  }
 
   type TagsInputTarget = { currentTarget: EventTarget & HTMLInputElement };
   type BadgeTarget = { currentTarget: EventTarget & HTMLButtonElement; };

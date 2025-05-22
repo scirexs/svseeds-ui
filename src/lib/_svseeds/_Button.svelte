@@ -1,17 +1,36 @@
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface ButtonProps {
+    children: Snippet;
+    left?: Snippet<[string, HTMLButtonElement | undefined]>; // Snippet<[status,element]>
+    right?: Snippet<[string, HTMLButtonElement | undefined]>; // Snippet<[status,element]>
+    type?: "submit" | "reset" | "button"; // <"button">
+    onclick?: MouseEventHandler<HTMLButtonElement> | null;
+    form?: HTMLFormElement; // bindable
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    attributes?: HTMLButtonAttributes;
+    action?: Action;
+    element?: HTMLButtonElement; // bindable
+  }
+  ```
+-->
 <script module lang="ts">
-  export type ButtonProps = {
-    children: Snippet,
-    left?: Snippet<[string, HTMLButtonElement | undefined]>, // Snippet<[status,element]>
-    right?: Snippet<[string, HTMLButtonElement | undefined]>, // Snippet<[status,element]>
-    type?: "submit" | "reset" | "button", // <"button">
-    onclick?: MouseEventHandler<HTMLButtonElement> | null,
-    form?: HTMLFormElement, // bindable
-    status?: string, // bindable <STATE.DEFAULT>
-    style?: SVSStyle,
-    attributes?: HTMLButtonAttributes,
-    action?: Action,
-    element?: HTMLButtonElement, // bindable
-  };
+  export interface ButtonProps {
+    children: Snippet;
+    left?: Snippet<[string, HTMLButtonElement | undefined]>; // Snippet<[status,element]>
+    right?: Snippet<[string, HTMLButtonElement | undefined]>; // Snippet<[status,element]>
+    type?: "submit" | "reset" | "button"; // <"button">
+    onclick?: MouseEventHandler<HTMLButtonElement> | null;
+    form?: HTMLFormElement; // bindable
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    attributes?: HTMLButtonAttributes;
+    action?: Action;
+    element?: HTMLButtonElement; // bindable
+  }
   export type ButtonReqdProps = "children";
   export type ButtonBindProps = "form" | "status" | "element";
 

@@ -1,14 +1,33 @@
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface TooltipProps {
+    main?: Snippet<[string, string, boolean]>; // Snippet<[status,text,isFlipped]>
+    name?: string;
+    position?: Position; // "top"
+    align?: Align; // "center"
+    offset?: Vector; // <{ x: 0, y: 0 }>
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    element?: HTMLDivElement; // bindable
+  }
+  type Vector = { x: number, y: number };
+  type Position = "top" | "left" | "bottom" | "right";
+  type Align = "start" | "center" | "end";
+  ```
+-->
 <script module lang="ts">
-  export type TooltipProps = {
-    main?: Snippet<[string, string, boolean]>, // Snippet<[status,text,isFlipped]>
-    name?: string,
-    position?: Position, // "top"
-    align?: Align, // "center"
-    offset?: Vector, // <{ x: 0, y: 0 }>
-    status?: string, // bindable <STATE.DEFAULT>
-    style?: SVSStyle,
-    element?: HTMLDivElement, // bindable
-  };
+  export interface TooltipProps {
+    main?: Snippet<[string, string, boolean]>; // Snippet<[status,text,isFlipped]>
+    name?: string;
+    position?: Position; // "top"
+    align?: Align; // "center"
+    offset?: Vector; // <{ x: 0, y: 0 }>
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    element?: HTMLDivElement; // bindable
+  }
   export type TooltipReqdProps = never;
   export type TooltipBindProps = "status" | "element";
   export function tooltip(node: HTMLElement, params: { text: string, delay?: number, cursor?: boolean, name?: string }): ActionReturn {

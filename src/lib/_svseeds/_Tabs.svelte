@@ -1,12 +1,26 @@
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface TabsProps {
+    labels?: string[];
+    current?: number; // bindable <0>
+    ariaOrientation?: "horizontal" | "vertical";
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    [key: string]: unknown | Snippet;
+  }
+  ```
+-->
 <script module lang="ts">
-  export type TabsProps = {
-    labels?: string[],
-    current?: number, // bindable <0>
-    ariaOrientation?: "horizontal" | "vertical",
-    status?: string, // bindable <STATE.DEFAULT>
-    style?: SVSStyle,
-    [key: string]: unknown | Snippet,
-  };
+  export interface TabsProps {
+    labels?: string[];
+    current?: number; // bindable <0>
+    ariaOrientation?: "horizontal" | "vertical";
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    [key: string]: unknown | Snippet;
+  }
   export type TabsReqdProps = never;
   export type TabsBindProps = "current" | "status";
 

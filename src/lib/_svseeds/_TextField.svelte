@@ -1,22 +1,47 @@
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface TextFieldProps {
+    label?: string;
+    extra?: string;
+    aux?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[status,value,element]>
+    left?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[status,value,element]>
+    right?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[status,value,element]>
+    bottom?: string;
+    descFirst?: boolean; // <false>
+    value?: string; // bindable
+    type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url" | "number";  // bindable <"text">
+    options?: SvelteSet<string> | Set<string>;
+    validations?: TextFieldValidation[];
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    attributes?: HTMLInputAttributes | HTMLTextareaAttributes;
+    action?: Action;
+    element?: HTMLInputElement | HTMLTextAreaElement; // bindable
+  }
+  type TextFieldValidation = (value: string, validity: ValidityState) => string;
+  ```
+-->
 <script module lang="ts">
-  export type TextFieldProps = {
-    label?: string,
-    extra?: string,
-    aux?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>, // Snippet<[status,value,element]>
-    left?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>, // Snippet<[status,value,element]>
-    right?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>, // Snippet<[status,value,element]>
-    bottom?: string,
-    descFirst?: boolean, // <false>
-    value?: string, // bindable
-    type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url" | "number",  // bindable <"text">
-    options?: SvelteSet<string> | Set<string>,
-    validations?: TextFieldValidation[],
-    status?: string, // bindable <STATE.DEFAULT>
-    style?: SVSStyle,
-    attributes?: HTMLInputAttributes | HTMLTextareaAttributes,
-    action?: Action,
-    element?: HTMLInputElement | HTMLTextAreaElement, // bindable
-  };
+  export interface TextFieldProps {
+    label?: string;
+    extra?: string;
+    aux?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[status,value,element]>
+    left?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[status,value,element]>
+    right?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[status,value,element]>
+    bottom?: string;
+    descFirst?: boolean; // <false>
+    value?: string; // bindable
+    type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url" | "number";  // bindable <"text">
+    options?: SvelteSet<string> | Set<string>;
+    validations?: TextFieldValidation[];
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    attributes?: HTMLInputAttributes | HTMLTextareaAttributes;
+    action?: Action;
+    element?: HTMLInputElement | HTMLTextAreaElement; // bindable
+  }
   export type TextFieldReqdProps = never;
   export type TextFieldBindProps = "value" | "type" | "status" | "element";
   export type TextFieldValidation = (value: string, validity: ValidityState) => string;

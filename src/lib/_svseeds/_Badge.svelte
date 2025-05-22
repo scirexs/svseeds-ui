@@ -1,14 +1,30 @@
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface BadgeProps {
+    children: Snippet;
+    left?: Snippet<[string]>; // Snippet<[status]>
+    right?: Snippet<[string]>; // Snippet<[status]>
+    type?: "plain" | "link" | "left" | "right"; // <"plain">
+    href?: string;
+    onclick?: MouseEventHandler<HTMLButtonElement> | null;
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+  }
+  ```
+-->
 <script module lang="ts">
-  export type BadgeProps = {
-    children: Snippet,
-    left?: Snippet<[string]>, // Snippet<[status]>
-    right?: Snippet<[string]>, // Snippet<[status]>
-    type?: "plain" | "link" | "left" | "right", // <"plain">
-    href?: string,
-    onclick?: MouseEventHandler<HTMLButtonElement> | null,
-    status?: string, // bindable <STATE.DEFAULT>
-    style?: SVSStyle,
-  };
+  export interface BadgeProps {
+    children: Snippet;
+    left?: Snippet<[string]>; // Snippet<[status]>
+    right?: Snippet<[string]>; // Snippet<[status]>
+    type?: "plain" | "link" | "left" | "right"; // <"plain">
+    href?: string;
+    onclick?: MouseEventHandler<HTMLButtonElement> | null;
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+  }
   export type BadgeReqdProps = "children";
   export type BadgeBindProps = "status";
 

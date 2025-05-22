@@ -1,14 +1,30 @@
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface ComboBoxProps {
+    options: SvelteSet<string> | Set<string>;
+    value?: string; // bindable
+    expanded?: boolean; // bindable
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    attributes?: HTMLInputAttributes;
+    action?: Action;
+    element?: HTMLInputElement; // bindable
+  }
+  ```
+-->
 <script module lang="ts">
-  export type ComboBoxProps = {
-    options: SvelteSet<string> | Set<string>,
-    value?: string, // bindable
-    expanded?: boolean, // bindable
-    status?: string, // bindable <STATE.DEFAULT>
-    style?: SVSStyle,
-    attributes?: HTMLInputAttributes,
-    action?: Action,
-    element?: HTMLInputElement, // bindable
-  };
+  export interface ComboBoxProps {
+    options: SvelteSet<string> | Set<string>;
+    value?: string; // bindable
+    expanded?: boolean; // bindable
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    attributes?: HTMLInputAttributes;
+    action?: Action;
+    element?: HTMLInputElement; // bindable
+  }
   export type ComboBoxReqdProps = "options";
   export type ComboBoxBindProps = "value" | "expanded" | "status" | "element";
 

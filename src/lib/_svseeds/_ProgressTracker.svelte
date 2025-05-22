@@ -1,13 +1,28 @@
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface ProgressTrackerProps {
+    current: number; // bindable <0>
+    labels: string[];
+    aux?: Snippet<[string, number]>; // Snippet<[status,index]>
+    extra?: Snippet<[string, number]>; // Snippet<[status,index]>
+    status?: string; // bindable <STATE.DEFAULT>
+    eachStatus?: SvelteMap<number, string> | Map<number, string>;
+    style?: SVSStyle;
+  }
+  ```
+-->
 <script module lang="ts">
-  export type ProgressTrackerProps = {
-    current: number, // bindable <0>
-    labels: string[],
-    aux?: Snippet<[string, number]>, // Snippet<[status,index]>
-    extra?: Snippet<[string, number]>, // Snippet<[status,index]>
-    status?: string, // bindable <STATE.DEFAULT>
-    eachStatus?: SvelteMap<number, string> | Map<number, string>,
-    style?: SVSStyle,
-  };
+  export interface ProgressTrackerProps {
+    current: number; // bindable <0>
+    labels: string[];
+    aux?: Snippet<[string, number]>; // Snippet<[status,index]>
+    extra?: Snippet<[string, number]>; // Snippet<[status,index]>
+    status?: string; // bindable <STATE.DEFAULT>
+    eachStatus?: SvelteMap<number, string> | Map<number, string>;
+    style?: SVSStyle;
+  }
   export type ProgressTrackerReqdProps = "current" | "labels";
   export type ProgressTrackerBindProps = "current" | "status";
 

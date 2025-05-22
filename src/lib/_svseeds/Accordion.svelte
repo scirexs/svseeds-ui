@@ -1,15 +1,32 @@
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface AccordionProps {
+    labels?: string[];
+    current?: number; // bindable <-1>
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    deps?: AccordionDeps;
+    [key: string]: unknown | Snippet;
+  }
+  interface AccordionDeps {
+    svsDisclosure?: Omit<DisclosureProps, DisclosureReqdProps | DisclosureBindProps>;
+  }
+  ```
+-->
 <script module lang="ts">
-  export type AccordionProps = {
-    labels?: string[],
-    current?: number, // bindable <-1>
-    status?: string, // bindable <STATE.DEFAULT>
-    style?: SVSStyle,
-    deps?: AccordionDeps,
-    [key: string]: unknown | Snippet,
-  };
-  export type AccordionDeps = {
-    svsDisclosure?: Omit<DisclosureProps, DisclosureReqdProps | DisclosureBindProps>,
-  };
+  export interface AccordionProps {
+    labels?: string[];
+    current?: number; // bindable <-1>
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    deps?: AccordionDeps;
+    [key: string]: unknown | Snippet;
+  }
+  export interface AccordionDeps {
+    svsDisclosure?: Omit<DisclosureProps, DisclosureReqdProps | DisclosureBindProps>;
+  }
   export type AccordionReqdProps = never;
   export type AccordionBindProps = "current" | "status";
 

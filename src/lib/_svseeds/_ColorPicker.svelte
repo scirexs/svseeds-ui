@@ -1,13 +1,28 @@
-<script module lang="ts">
-  export type ColorPickerProps = {
-    value?: string, // bindable <"#000">
-    alpha?: number, // bindable <1>
-    status?: string, // bindable <STATE.DEFAULT>
-    style?: SVSStyle,
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface ColorPickerProps {
+    value?: string; // bindable <"#000">
+    alpha?: number; // bindable <1>
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
     attributes?: HTMLInputAttributes;
-    action?: Action,
-    element?: HTMLInputElement, // bindable
-  };
+    action?: Action;
+    element?: HTMLInputElement; // bindable
+  }
+  ```
+-->
+<script module lang="ts">
+  export interface ColorPickerProps {
+    value?: string; // bindable <"#000">
+    alpha?: number; // bindable <1>
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    attributes?: HTMLInputAttributes;
+    action?: Action;
+    element?: HTMLInputElement; // bindable
+  }
   export type ColorPickerReqdProps = never;
   export type ColorPickerBindProps = "value" | "alpha" | "status" | "element";
   export function getHex(rgb: RgbColor): string {

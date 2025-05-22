@@ -1,15 +1,32 @@
-<script module lang="ts">
-  export type DisclosureProps = {
-    label: string | Snippet<[string]>, // Snippet<[status]>
-    children: Snippet,
-    open?: boolean, // bindable <false>
-    duration?: number, // <400>
-    status?: string, // bindable <STATE.DEFAULT>
-    style?: SVSStyle,
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface DisclosureProps {
+    label: string | Snippet<[string]>; // Snippet<[status]>
+    children: Snippet;
+    open?: boolean; // bindable <false>
+    duration?: number; // <400>
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
     attributes?: HTMLDetailsAttributes;
-    action?: Action,
-    element?: HTMLDetailsElement, // bindable
-  };
+    action?: Action;
+    element?: HTMLDetailsElement; // bindable
+  }
+  ```
+-->
+<script module lang="ts">
+  export interface DisclosureProps {
+    label: string | Snippet<[string]>; // Snippet<[status]>
+    children: Snippet;
+    open?: boolean; // bindable <false>
+    duration?: number; // <400>
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    attributes?: HTMLDetailsAttributes;
+    action?: Action;
+    element?: HTMLDetailsElement; // bindable
+  }
   export type DisclosureReqdProps = "label" | "children";
   export type DisclosureBindProps = "open" | "status" | "element";
 

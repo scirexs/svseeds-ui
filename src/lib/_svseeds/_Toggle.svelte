@@ -1,17 +1,36 @@
-<script module lang="ts">
-  export type ToggleProps = {
-    main?: Snippet<[string, boolean, HTMLButtonElement | undefined]>, // Snippet<[status,value,element]>
-    left?: Snippet<[string, boolean, HTMLButtonElement | undefined]>, // Snippet<[status,value,element]>
-    right?: Snippet<[string, boolean, HTMLButtonElement | undefined]>, // Snippet<[status,value,element]>
-    value?: boolean, // bindable <true>
-    type?: "button" | "switch", // <"button">
-    ariaLabel?: string,
-    status?: string, // bindable <STATE.DEFAULT>
-    style?: SVSStyle,
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface ToggleProps {
+    main?: Snippet<[string, boolean, HTMLButtonElement | undefined]>; // Snippet<[status,value,element]>
+    left?: Snippet<[string, boolean, HTMLButtonElement | undefined]>; // Snippet<[status,value,element]>
+    right?: Snippet<[string, boolean, HTMLButtonElement | undefined]>; // Snippet<[status,value,element]>
+    value?: boolean; // bindable <false>
+    type?: "button" | "switch"; // <"button">
+    ariaLabel?: string;
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
     attributes?: HTMLButtonAttributes;
-    action?: Action,
-    element?: HTMLButtonElement, // bindable
-  };
+    action?: Action;
+    element?: HTMLButtonElement; // bindable
+  }
+  ```
+-->
+<script module lang="ts">
+  export interface ToggleProps {
+    main?: Snippet<[string, boolean, HTMLButtonElement | undefined]>; // Snippet<[status,value,element]>
+    left?: Snippet<[string, boolean, HTMLButtonElement | undefined]>; // Snippet<[status,value,element]>
+    right?: Snippet<[string, boolean, HTMLButtonElement | undefined]>; // Snippet<[status,value,element]>
+    value?: boolean; // bindable <false>
+    type?: "button" | "switch"; // <"button">
+    ariaLabel?: string;
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    attributes?: HTMLButtonAttributes;
+    action?: Action;
+    element?: HTMLButtonElement; // bindable
+  }
   export type ToggleReqdProps = never;
   export type ToggleBindProps = "value" | "status" | "element";
 

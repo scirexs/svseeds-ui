@@ -1,21 +1,45 @@
-<script module lang="ts">
-  export type SelectFieldProps = {
-    options: SvelteMap<string, string> | Map<string, string>,
-    label?: string,
-    extra?: string,
-    aux?: Snippet<[string, string, HTMLSelectElement | undefined]>, // Snippet<[status,value,element]>
-    left?: Snippet<[string, string, HTMLSelectElement | undefined]>, // Snippet<[status,value,element]>
-    right?: Snippet<[string, string, HTMLSelectElement | undefined]>, // Snippet<[status,value,element]>
-    bottom?: string,
-    descFirst?: boolean, // <false>
-    value?: string, // bindable
-    validations?: SelectFieldValidation[],
-    status?: string, // bindable <STATE.DEFAULT>
-    style?: SVSStyle,
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface SelectFieldProps {
+    options: SvelteMap<string, string> | Map<string, string>;
+    label?: string;
+    extra?: string;
+    aux?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[status,value,element]>
+    left?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[status,value,element]>
+    right?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[status,value,element]>
+    bottom?: string;
+    descFirst?: boolean; // <false>
+    value?: string; // bindable
+    validations?: SelectFieldValidation[];
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
     attributes?: HTMLSelectAttributes;
-    action?: Action,
-    element?: HTMLSelectElement, // bindable
-  };
+    action?: Action;
+    element?: HTMLSelectElement; // bindable
+  }
+  type SelectFieldValidation = (value: string, validity: ValidityState) => string;
+  ```
+-->
+<script module lang="ts">
+  export interface SelectFieldProps {
+    options: SvelteMap<string, string> | Map<string, string>;
+    label?: string;
+    extra?: string;
+    aux?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[status,value,element]>
+    left?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[status,value,element]>
+    right?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[status,value,element]>
+    bottom?: string;
+    descFirst?: boolean; // <false>
+    value?: string; // bindable
+    validations?: SelectFieldValidation[];
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    attributes?: HTMLSelectAttributes;
+    action?: Action;
+    element?: HTMLSelectElement; // bindable
+  }
   export type SelectFieldReqdProps = "options";
   export type SelectFieldBindProps = "value" | "status" | "element";
   export type SelectFieldValidation = (value: string, validity: ValidityState) => string;

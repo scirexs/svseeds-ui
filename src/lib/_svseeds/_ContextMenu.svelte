@@ -1,12 +1,26 @@
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface ContextMenuProps {
+    children: Snippet;
+    open?: boolean; // bindable <false>; to observe state, not to control
+    lock?: boolean; // bindable <false>
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    element?: HTMLElement; // bindable
+  }
+  ```
+-->
 <script module lang="ts">
-  export type ContextMenuProps = {
-    children: Snippet,
-    open?: boolean, // bindable <false>; to observe state, not to control
-    lock?: boolean, // bindable <false>
-    status?: string, // bindable <STATE.DEFAULT>
-    style?: SVSStyle,
-    element?: HTMLElement, // bindable
-  };
+  export interface ContextMenuProps {
+    children: Snippet;
+    open?: boolean; // bindable <false>; to observe state, not to control
+    lock?: boolean; // bindable <false>
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    element?: HTMLElement; // bindable
+  }
   export type ContextMenuReqdProps = "children";
   export type ContextMenuBindProps = "open" | "lock" | "status" | "element";
 

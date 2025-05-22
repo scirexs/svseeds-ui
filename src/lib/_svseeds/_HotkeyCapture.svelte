@@ -1,13 +1,28 @@
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface HotkeyCaptureProps {
+    value?: string; // bindable
+    placeholder?: string;
+    active?: boolean; // bindable, <false>
+    disabled?: boolean; // bindable, <false>
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    element?: HTMLInputElement; // bindable
+  }
+  ```
+-->
 <script module lang="ts">
-  export type HotkeyCaptureProps = {
-    value?: string, // bindable
-    placeholder?: string,
-    active?: boolean, // bindable, <false>
-    disabled?: boolean, // bindable, <false>
-    status?: string, // bindable <STATE.DEFAULT>
-    style?: SVSStyle,
-    element?: HTMLInputElement, // bindable
-  };
+  export interface HotkeyCaptureProps {
+    value?: string; // bindable
+    placeholder?: string;
+    active?: boolean; // bindable, <false>
+    disabled?: boolean; // bindable, <false>
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    element?: HTMLInputElement; // bindable
+  }
   export type HotkeyCaptureReqdProps = never;
   export type HotkeyCaptureBindProps = "value" | "active" | "disable" | "status" | "element";
 

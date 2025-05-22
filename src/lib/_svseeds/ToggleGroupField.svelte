@@ -1,24 +1,51 @@
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface ToggleGroupFieldProps {
+    options: SvelteMap<string, string> | Map<string, string>;
+    label?: string;
+    extra?: string;
+    aux?: Snippet<[string, string[]]>; // Snippet<[status,values]>
+    left?: Snippet<[string, string[]]>; // Snippet<[status,values]>
+    right?: Snippet<[string, string[]]>; // Snippet<[status,values]>
+    bottom?: string;
+    descFirst?: boolean; // <false>
+    values?: string[]; // bindable
+    multiple?: boolean; // <true>
+    validations?: ToggleGroupFieldValidation[];
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    deps?: ToggleGroupFieldDeps;
+    [key: string]: unknown | Snippet;
+  }
+  interface ToggleGroupFieldDeps {
+    svsToggleGroup?: Omit<ToggleGroupProps, ToggleGroupReqdProps | ToggleGroupBindProps | "ariaDescId" | "multiple">;
+  }
+  type ToggleGroupFieldValidation = (values: string[]) => string;
+  ```
+-->
 <script module lang="ts">
-  export type ToggleGroupFieldProps = {
-    options: SvelteMap<string, string> | Map<string, string>,
-    label?: string,
-    extra?: string,
-    aux?: Snippet<[string, string[]]>, // Snippet<[status,values]>
-    left?: Snippet<[string, string[]]>, // Snippet<[status,values]>
-    right?: Snippet<[string, string[]]>, // Snippet<[status,values]>
-    bottom?: string,
-    descFirst?: boolean, // <false>
-    values?: string[], // bindable
-    multiple?: boolean, // <true>
-    validations?: ToggleGroupFieldValidation[],
-    status?: string, // bindable <STATE.DEFAULT>
-    style?: SVSStyle,
-    deps?: ToggleGroupFieldDeps,
-    [key: string]: unknown | Snippet,
-  };
-  export type ToggleGroupFieldDeps = {
-    svsToggleGroup?: Omit<ToggleGroupProps, ToggleGroupReqdProps | ToggleGroupBindProps | "ariaDescId" | "multiple">,
-  };
+  export interface ToggleGroupFieldProps {
+    options: SvelteMap<string, string> | Map<string, string>;
+    label?: string;
+    extra?: string;
+    aux?: Snippet<[string, string[]]>; // Snippet<[status,values]>
+    left?: Snippet<[string, string[]]>; // Snippet<[status,values]>
+    right?: Snippet<[string, string[]]>; // Snippet<[status,values]>
+    bottom?: string;
+    descFirst?: boolean; // <false>
+    values?: string[]; // bindable
+    multiple?: boolean; // <true>
+    validations?: ToggleGroupFieldValidation[];
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    deps?: ToggleGroupFieldDeps;
+    [key: string]: unknown | Snippet;
+  }
+  export interface ToggleGroupFieldDeps {
+    svsToggleGroup?: Omit<ToggleGroupProps, ToggleGroupReqdProps | ToggleGroupBindProps | "ariaDescId" | "multiple">;
+  }
   export type ToggleGroupFieldReqdProps = "options";
   export type ToggleGroupFieldBindProps = "values" | "status";
   export type ToggleGroupFieldValidation = (values: string[]) => string;

@@ -1,3 +1,41 @@
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface SortableProps {
+    items: SortableItems; // wrapper of string array as items to handle DnD
+    item: Snippet<[string, string, PointerEventHandler]>; // Snippet<[status, value, onpointerdown]>
+    ghost?: Snippet<[string]>; // custom shadow while dragging <the translucent item>; Snippet<[value]>
+    name?: string;        // name of this group <random string>
+    mode?: SortableMode;  // sort mode <"std">;
+    accept?: string[];    // list of accept group names <undefined>; undefined=any,[]=none
+    sort?: boolean;       // enable sort within same group <true>
+    multiple?: boolean;   // enable multiple select & drag with them <false>
+    draggable?: boolean;  // enable default pointerdown handler <true>
+    appendable?: boolean; // enable append when enter group area <false>
+    confirm?: boolean     // enable confirm interval time to move items <false>
+    status?: string;      // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+  }
+  type SortableMode = "std" | "clone" | "swap";
+  class SortableItems { // methods are same with array's
+    constructor(values: string[])
+    at(index: number): string | undefined
+    replace(index: number, value: string): boolean
+    push(value: string)
+    pop(): string | undefined
+    unshift(value: string)
+    shift(): string | undefined
+    insert(index: number, value: string) // instead of splice
+    extract(index: number): string | undefined // instead of splice
+    isEmpty(): boolean
+    clear(): void
+    get length(): number
+    get values(): string[]
+    set values(values: string[])
+  }
+  ```
+-->
 <script module lang="ts">
   import { cubicOut } from "svelte/easing";
   const tp: TransitionParams = { duration: 300, easing: cubicOut }; // config of transition
@@ -11,21 +49,21 @@
   /***************************************************************/
 
   type SortableMode = "std" | "clone" | "swap";
-  export type SortableProps = {
-    items: SortableItems, // wrapper of string array as items to handle DnD
-    item: Snippet<[string, string, PointerEventHandler]>, // Snippet<[status, value, onpointerdown]>
-    ghost?: Snippet<[string]>, // custom shadow while dragging <the translucent item>; Snippet<[value]>
-    name?: string,        // name of this group <random string>
-    mode?: SortableMode,  // sort mode <"std">; "std","clone","swap"
-    accept?: string[],    // list of accept group names <undefined>; undefined=any,[]=none
-    sort?: boolean,       // enable sort within same group <true>
-    multiple?: boolean,   // enable multiple select & drag with them <false>
-    draggable?: boolean,  // enable default pointerdown handler <true>
-    appendable?: boolean, // enable append when enter group area <false>
+  export interface SortableProps {
+    items: SortableItems; // wrapper of string array as items to handle DnD
+    item: Snippet<[string, string, PointerEventHandler]>; // Snippet<[status, value, onpointerdown]>
+    ghost?: Snippet<[string]>; // custom shadow while dragging <the translucent item>; Snippet<[value]>
+    name?: string;        // name of this group <random string>
+    mode?: SortableMode;  // sort mode <"std">; "std","clone","swap"
+    accept?: string[];    // list of accept group names <undefined>; undefined=any,[]=none
+    sort?: boolean;       // enable sort within same group <true>
+    multiple?: boolean;   // enable multiple select & drag with them <false>
+    draggable?: boolean;  // enable default pointerdown handler <true>
+    appendable?: boolean; // enable append when enter group area <false>
     confirm?: boolean     // enable confirm interval time to move items <false>
-    status?: string, // bindable <STATE.DEFAULT>
-    style?: SVSStyle,
-  };
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+  }
   export type SortableReqdProps = "items" | "item";
   export type SortableBindProps = "status";
 

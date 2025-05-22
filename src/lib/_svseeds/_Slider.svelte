@@ -1,18 +1,39 @@
+<!--
+  @component
+  default value: `<value>`
+  ```ts
+  interface SliderProps {
+    range: Range; // bindable
+    left?: Snippet<[string, number, HTMLInputElement | undefined]>; // Snippet<[status,value,element]>
+    right?: Snippet<[string, number, HTMLInputElement | undefined]>; // Snippet<[status,value,element]>
+    value?: number; // bindable <min+((max-min)/2)>
+    step?: number | "any"; // <1>
+    options?: SvelteSet<number> | Set<number>;
+    background?: Range; // <{ min: 5, max: 95 }>
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    attributes?: HTMLInputAttributes;
+    action?: Action;
+    element?: HTMLInputElement; // bindable
+  }
+  type Range = { min: number, max: number };
+  ```
+-->
 <script module lang="ts">
-  export type SliderProps = {
-    range: Range, // bindable
-    left?: Snippet<[string, number, HTMLInputElement | undefined]>, // Snippet<[status,value,element]>
-    right?: Snippet<[string, number, HTMLInputElement | undefined]>, // Snippet<[status,value,element]>
-    value?: number, // bindable <min+((max-min)/2)>
-    step?: number | "any", // <1>
-    options?: SvelteSet<number> | Set<number>,
-    background?: Range, // <{ min: 5, max: 95 }>
-    status?: string, // bindable <STATE.DEFAULT>
-    style?: SVSStyle,
-    attributes?: HTMLInputAttributes,
-    action?: Action,
-    element?: HTMLInputElement, // bindable
-  };
+  export interface SliderProps {
+    range: Range; // bindable
+    left?: Snippet<[string, number, HTMLInputElement | undefined]>; // Snippet<[status,value,element]>
+    right?: Snippet<[string, number, HTMLInputElement | undefined]>; // Snippet<[status,value,element]>
+    value?: number; // bindable <min+((max-min)/2)>
+    step?: number | "any"; // <1>
+    options?: SvelteSet<number> | Set<number>;
+    background?: Range; // <{ min: 5, max: 95 }>
+    status?: string; // bindable <STATE.DEFAULT>
+    style?: SVSStyle;
+    attributes?: HTMLInputAttributes;
+    action?: Action;
+    element?: HTMLInputElement; // bindable
+  }
   export type SliderReqdProps = "min" | "max";
   export type SliderBindProps = "min" | "max" | "value" | "status" | "element";
   export type Range = { min: number, max: number };
