@@ -13,9 +13,14 @@ export {
   UniqueId,
 }
 
-type ClassRule = Record<string, string> | string;
-type ClassRuleSet = Record<string, Record<string, string>>;
+type ClassDictionary = Record<string, unknown>;
+type ClassArray = (ClassArray | ClassDictionary | string | number | bigint | null | boolean | undefined)[];
+type ClassPartialValue = string | ClassArray;
+type ClassValue = ClassPartialValue | ClassDictionary;
+type ClassRule = Record<string, ClassValue> | ClassPartialValue;
+type ClassRuleSet = Record<string, Record<string, ClassValue>>;
 type SVSStyle = Record<string, ClassRule> | string;
+type ClassFn = (part: string, status: string) => ClassValue | undefined;
 
 const CONST = "const";
 const STATE = Object.freeze({ DEFAULT: "default", ACTIVE: "active", INACTIVE: "inactive" });
@@ -130,7 +135,6 @@ class UniqueId {
 }
 const elemId = new UniqueId();
 
-type ClassFn = (part: string, status: string) => string | undefined;
 function fnClass(preset: SVSStyle, style?: SVSStyle): ClassFn {
   const rule = prepRule(style) ?? prepRule(preset);
   if (rule == null) return (_, __) => undefined;
@@ -142,13 +146,16 @@ function prepRule(rule?: SVSStyle): ClassRuleSet | string | undefined {
   if (typeof rule === "string") return rule.trim() ? rule : undefined;
   const entries = Object.entries(rule);
   if (!entries.length) return;
-  return Object.fromEntries(entries.map(([k, v]) => typeof v === "string" ? [k, { const: v }] : [k, v]));
+  return Object.fromEntries(entries.map(([k, v]) => {
+    return v !== null && typeof v === "object" && !Array.isArray(v) ? [k, v] : [k, { const: v }];
+  }));
 }
-function ruleClass(rule: ClassRuleSet, part: string, status: string): string | undefined {
+function ruleClass(rule: ClassRuleSet, part: string, status: string): ClassValue | undefined {
   const constant = rule[part]?.[CONST] ?? "";
   const dynamic = rule[part]?.[status] ?? rule[part]?.[STATE.DEFAULT] ?? "";
   if (!constant && !dynamic) return;
-  return `${constant}${constant && dynamic ? " " : ""}${dynamic}`;
+  if (constant && dynamic) return [constant, dynamic];
+  return constant ? constant : dynamic;
 }
 /**
  * Determines whether a status is in a neutral state (neither ACTIVE nor INACTIVE).
