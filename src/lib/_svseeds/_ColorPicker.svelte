@@ -3,7 +3,7 @@
   default value: `<value>`
   ```ts
   interface ColorPickerProps {
-    value?: string; // bindable <"#000">
+    value?: string; // bindable <"#000000">
     alpha?: number; // bindable <1>
     status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
@@ -20,7 +20,7 @@
 -->
 <script module lang="ts">
   export interface ColorPickerProps {
-    value?: string; // bindable <"#000">
+    value?: string; // bindable <"#000000">
     alpha?: number; // bindable <1>
     status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
@@ -31,15 +31,16 @@
   export type ColorPickerReqdProps = never;
   export type ColorPickerBindProps = "value" | "alpha" | "status" | "element";
   export function getHex(rgb: RgbColor): string {
-    if (!isValidRgb(rgb)) return "#000";
+    if (!isValidRgb(rgb)) return DEFAULT_COLOR;
     return "#" + (1 << 24 | rgb[0] << 16 | rgb[1] << 8 | rgb[2]).toString(16).slice(1);
   }
 
   type RgbColor = [number, number, number];
+  const DEFAULT_COLOR = "#000000";
   const preset = "svs-color-picker";
 
-  function isValidHex(hex: string): boolean {
-    return Boolean(formatHex(hex));
+  function castValidHex(hex: string): string | undefined {
+    return `#${formatHex(hex)?.filter((x) => x.length === 2).join("")}`;
   }
   function castHexToRgb(hex: string): RgbColor {
     const rgb = formatHex(hex)?.filter((x) => x.length === 2);
@@ -65,13 +66,13 @@
 </script>
 
 <script lang="ts">
-  let { value = $bindable("#000"), alpha = $bindable(1), status = $bindable(""), style, attributes, action, element = $bindable() }: ColorPickerProps = $props();
+  let { value = $bindable(DEFAULT_COLOR), alpha = $bindable(1), status = $bindable(""), style, attributes, action, element = $bindable() }: ColorPickerProps = $props();
 
   // *** Initialize *** //
   if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
   const attrs = omit(attributes, "type");
-  if (!isValidHex(value)) value = "#000";
+  value = castValidHex(value) ?? DEFAULT_COLOR;
 
   // *** Bind Handlers *** //
   let rgb = $derived(castHexToRgb(value));
