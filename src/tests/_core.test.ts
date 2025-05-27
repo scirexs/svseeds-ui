@@ -62,6 +62,13 @@ describe("fnClass", () => {
     [PARTS.WHOLE]: "style-rule-w",
     [PARTS.MAIN]: "style-rule-m",
   };
+  const srulex = {
+    [PARTS.WHOLE]: {
+      [BASE]: ["style-rule-w1", "style-rule-w2"],
+      [STATE.ACTIVE]: { stylerulewa: "style-rule-wa" },
+    },
+    [PARTS.MAIN]: [{ stylerulem: "style-rule-m" }],
+  };
   const prules = {
     [PARTS.WHOLE]: {
       [BASE]: "preset-rules-wc",
@@ -86,6 +93,7 @@ describe("fnClass", () => {
   // preset_style
   const str_str = fnClass(pstr, sstr);
   const str_rule = fnClass(pstr, srule);
+  const str_rulex = fnClass(pstr, srulex);
   const str_rules = fnClass(pstr, srules);
   const str_blank = fnClass(pstr, "");
   const str_empty = fnClass(pstr, {});
@@ -138,6 +146,18 @@ describe("fnClass", () => {
     expect(wholeInactive).toBe(`${srule[PARTS.WHOLE]}`);
     expect(topNeutral).toBeUndefined();
     expect(mainNeutral).toBe(`${srule[PARTS.MAIN]}`);
+  });
+  test("str_rulex", () => {
+    const wholeNeutral = str_rulex(PARTS.WHOLE, STATE.NEUTRAL);
+    const wholeActive = str_rulex(PARTS.WHOLE, STATE.ACTIVE);
+    const wholeInactive = str_rulex(PARTS.WHOLE, STATE.INACTIVE);
+    const topNeutral = str_rulex(PARTS.TOP, STATE.NEUTRAL);
+    const mainNeutral = str_rulex(PARTS.MAIN, STATE.NEUTRAL);
+    expect(wholeNeutral).toEqual(srulex[PARTS.WHOLE][BASE]);
+    expect(wholeActive).toEqual([srulex[PARTS.WHOLE][BASE], srulex[PARTS.WHOLE][STATE.ACTIVE]]);
+    expect(wholeInactive).toEqual(srulex[PARTS.WHOLE][BASE]);
+    expect(topNeutral).toBeUndefined();
+    expect(mainNeutral).toEqual(srulex[PARTS.MAIN]);
   });
   test("str_rules", () => {
     const wholeNeutral = str_rules(PARTS.WHOLE, STATE.NEUTRAL);
