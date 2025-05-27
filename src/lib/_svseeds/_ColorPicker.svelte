@@ -12,6 +12,11 @@
     element?: HTMLInputElement; // bindable
   }
   ```
+  ```ts
+  type RgbColor = [number, number, number];
+  export function getHex(rgb: RgbColor): string
+  // getHex([255, 123, 34]) => "#ff7b22"
+  ```
 -->
 <script module lang="ts">
   export interface ColorPickerProps {
