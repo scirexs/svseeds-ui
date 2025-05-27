@@ -107,6 +107,7 @@
     ev.preventDefault();
     shift(true);
   }
+  $effect(() => untrack(() => verify()));
 </script>
 
 <!---------------------------------------->
