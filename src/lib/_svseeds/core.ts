@@ -36,7 +36,52 @@ const PARTS = Object.freeze({
   AUX: "aux",
   EXTRA: "extra",
 });
-
+/**
+ * Creates a function that dynamically generates CSS classes based on component parts and status.
+ *
+ * Compatible with ClassValue type available in Svelte 5.16+ class attributes,
+ * this function generates a ClassFn that returns appropriate CSS classes
+ * based on the combination of component parts and their states.
+ *
+ * @param preset - Preset style definition. Can be a string or style rule object
+ * @param style - Optional style definition. Takes precedence over preset when provided
+ *
+ * @returns Function that takes part and status parameters and returns ClassValue
+ *
+ * @example
+ * // String preset case
+ * const classFn = fnClass("my-preset");
+ * classFn("whole", "active"); // "my-preset whole active"
+ *
+ * @example
+ * // Rule-based case
+ * const rules = {
+ *   whole: {
+ *     base: "container",
+ *     active: "container-active"
+ *   },
+ *   main: {
+ *     base: "main-content"
+ *   }
+ * };
+ * const classFn = fnClass(rules);
+ * classFn("whole", "neutral"); // "container"
+ * classFn("whole", "active");  // ["container", "container-active"]
+ * classFn("main", "neutral");  // "main-content"
+ * classFn("unknown", "active"); // undefined
+ *
+ * @example
+ * // Overriding preset with style
+ * const preset = "default-style";
+ * const customStyle = {
+ *   button: {
+ *     base: "btn",
+ *     active: "btn-active"
+ *   }
+ * };
+ * const classFn = fnClass(preset, customStyle);
+ * classFn("button", "active"); // ["btn", "btn-active"]
+ */
 function fnClass(preset: SVSStyle, style?: SVSStyle): ClassFn {
   const rule = prepRule(style) ?? prepRule(preset);
   if (rule == null) return (_, __) => undefined;
