@@ -6,7 +6,7 @@
     children: Snippet;
     open?: boolean; // bindable <false>; to observe state, not to control
     lock?: boolean; // bindable <false>
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     element?: HTMLElement; // bindable
   }
@@ -17,7 +17,7 @@
     children: Snippet;
     open?: boolean; // bindable <false>; to observe state, not to control
     lock?: boolean; // bindable <false>
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     element?: HTMLElement; // bindable
   }
@@ -36,7 +36,7 @@
   let { children, open = $bindable(false), lock = $bindable(false), status = $bindable(""), style, element = $bindable() }: ContextMenuProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.DEFAULT;
+  if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
   let position = $state({ x: 0, y: 0 });
 

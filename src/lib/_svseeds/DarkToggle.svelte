@@ -4,7 +4,7 @@
   ```ts
   interface DarkToggleProps {
     dark?: boolean; // bindable <true>
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     element?: HTMLButtonElement; // bindable
     deps?: DarkToggleDeps;
   }
@@ -16,7 +16,7 @@
 <script module lang="ts">
   export interface DarkToggleProps {
     dark?: boolean; // bindable <true>
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     element?: HTMLButtonElement; // bindable
     deps?: DarkToggleDeps;
   }
@@ -145,7 +145,7 @@
   let { dark = $bindable(false), status = $bindable(""), element = $bindable(), deps }: DarkToggleProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.DEFAULT;
+  if (!status) status = STATE.NEUTRAL;
   dark = theme.dark;
 
   // *** Initialize Deps *** //

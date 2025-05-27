@@ -6,7 +6,7 @@
     options: SvelteSet<string> | Set<string>;
     value?: string; // bindable
     expanded?: boolean; // bindable
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;
@@ -19,7 +19,7 @@
     options: SvelteSet<string> | Set<string>;
     value?: string; // bindable
     expanded?: boolean; // bindable
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;
@@ -43,7 +43,7 @@
   let { options, value = $bindable(""), expanded = $bindable(false), status = $bindable(""), style, attributes, action, element = $bindable() }: ComboBoxProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.DEFAULT;
+  if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
   const idList = elemId.id;
   const attrs = omit(attributes, "class", "type", "value", "list", "role", "aria-haspopup", "aria-autocomplete", "aria-controls", "aria-expanded");

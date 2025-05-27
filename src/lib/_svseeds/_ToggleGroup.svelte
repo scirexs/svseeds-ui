@@ -8,7 +8,7 @@
     multiple?: boolean; // <true>
     ariaDescId?: string;
     ariaErrMsgId?: string; // bindable
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     action?: Action;
     [key: string]: unknown | Snippet<[string]>;
@@ -22,7 +22,7 @@
     multiple?: boolean; // <true>
     ariaDescId?: string;
     ariaErrMsgId?: string; // bindable
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     action?: Action;
     [key: string]: unknown | Snippet<[string]>;
@@ -48,7 +48,7 @@
   let { options, values = $bindable([]), multiple = true, ariaDescId, ariaErrMsgId = $bindable(), status = $bindable(""), style, attributes, action, ...rest }: ToggleGroupProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.DEFAULT;
+  if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
   const role = multiple ? "checkbox" : "radio";
   const roleGroup = multiple ? "group" : "radiogroup";

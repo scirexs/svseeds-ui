@@ -357,14 +357,14 @@ describe("Specify attrs & state transition & event handlers", () => {
   test("major state transition", async () => {
     const mockValidation = vi.fn().mockImplementation(validationFn);
     const props = $state({
-      status: STATE.DEFAULT,
+      status: STATE.NEUTRAL,
       validations: [mockValidation],
     });
     const user = userEvent.setup();
     const { getByRole } = render(TextField, props);
     const main = getByRole("textbox") as HTMLInputElement;
     await user.type(main, "a");
-    expect(props.status).toBe(STATE.DEFAULT);
+    expect(props.status).toBe(STATE.NEUTRAL);
     await user.tab();
     expect(mockValidation).toHaveBeenCalled();
     expect(props.status).toBe(STATE.INACTIVE);
@@ -374,17 +374,17 @@ describe("Specify attrs & state transition & event handlers", () => {
     await user.type(main, "a");
     expect(props.status).toBe(STATE.ACTIVE);
     await user.clear(main);
-    expect(props.status).toBe(STATE.DEFAULT);
+    expect(props.status).toBe(STATE.NEUTRAL);
     await user.type(main, "a");
-    expect(props.status).toBe(STATE.DEFAULT);
+    expect(props.status).toBe(STATE.NEUTRAL);
     await user.type(main, "a");
-    expect(props.status).toBe(STATE.DEFAULT);
+    expect(props.status).toBe(STATE.NEUTRAL);
     await user.tab();
     expect(props.status).toBe(STATE.ACTIVE);
   });
   test("w/ required and no validations", async () => {
     const props = $state({
-      status: STATE.DEFAULT,
+      status: STATE.NEUTRAL,
       attributes: { required: true },
     });
     const { getByRole } = render(TextField, props);
@@ -398,7 +398,7 @@ describe("Specify attrs & state transition & event handlers", () => {
   test("w/ required and custom validations", async () => {
     const props = $state({
       bottom,
-      status: STATE.DEFAULT,
+      status: STATE.NEUTRAL,
       validations,
       attributes: { required: true },
     });
@@ -415,7 +415,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const oninput = vi.fn();
     const oninvalid = vi.fn();
     const props = $state({
-      status: STATE.DEFAULT,
+      status: STATE.NEUTRAL,
       validations,
       attributes: { onchange, oninput, oninvalid, required: true },
     });
@@ -439,7 +439,7 @@ describe("Specify attrs & state transition & event handlers", () => {
       left: leftfn,
       right: rightfn,
       bottom,
-      status: STATE.DEFAULT,
+      status: STATE.NEUTRAL,
       validations,
     });
     const user = userEvent.setup();
@@ -454,7 +454,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const rightdv = getByTestId(rightid).parentElement;
     const middle = main.parentElement;
     const btm = getByRole("status") as HTMLDivElement;
-    expect(props.status).toBe(STATE.DEFAULT);
+    expect(props.status).toBe(STATE.NEUTRAL);
     expect(whole).toHaveClass(seed, PARTS.WHOLE);
     expect(top).toHaveClass(seed, PARTS.TOP);
     expect(lbl).toHaveClass(seed, PARTS.LABEL);
@@ -500,7 +500,7 @@ describe("Specify attrs & state transition & event handlers", () => {
       left: leftfn,
       right: rightfn,
       bottom,
-      status: STATE.DEFAULT,
+      status: STATE.NEUTRAL,
       validations,
       style: clsid,
     });
@@ -516,7 +516,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const rightdv = getByTestId(rightid).parentElement;
     const middle = main.parentElement;
     const btm = getByRole("status") as HTMLDivElement;
-    expect(props.status).toBe(STATE.DEFAULT);
+    expect(props.status).toBe(STATE.NEUTRAL);
     expect(whole).toHaveClass(clsid, PARTS.WHOLE);
     expect(top).toHaveClass(clsid, PARTS.TOP);
     expect(lbl).toHaveClass(clsid, PARTS.LABEL);
@@ -555,8 +555,8 @@ describe("Specify attrs & state transition & event handlers", () => {
   });
   test("w/ obj style of each status", async () => {
     const dynObj = {
-      const: "const",
-      default: "dyn_default",
+      base: "base",
+      neutral: "dyn_neutral",
       active: "dyn_active",
       inactive: "dyn_inactive",
     };
@@ -579,7 +579,7 @@ describe("Specify attrs & state transition & event handlers", () => {
       left: leftfn,
       right: rightfn,
       bottom,
-      status: STATE.DEFAULT,
+      status: STATE.NEUTRAL,
       validations,
       style,
     });
@@ -595,41 +595,41 @@ describe("Specify attrs & state transition & event handlers", () => {
     const rightdv = getByTestId(rightid).parentElement;
     const middle = main.parentElement;
     const btm = getByRole("status") as HTMLDivElement;
-    expect(props.status).toBe(STATE.DEFAULT);
-    expect(whole).toHaveClass(dynObj.const, dynObj.default);
-    expect(top).toHaveClass(dynObj.const, dynObj.default);
-    expect(lbl).toHaveClass(dynObj.const, dynObj.default);
-    expect(ext).toHaveClass(dynObj.const, dynObj.default);
-    expect(auxdv).toHaveClass(dynObj.const, dynObj.default);
-    expect(middle).toHaveClass(dynObj.const, dynObj.default);
-    expect(leftdv).toHaveClass(dynObj.const, dynObj.default);
-    expect(main).toHaveClass(dynObj.const, dynObj.default);
-    expect(rightdv).toHaveClass(dynObj.const, dynObj.default);
-    expect(btm).toHaveClass(dynObj.const, dynObj.default);
+    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(whole).toHaveClass(dynObj.base, dynObj.neutral);
+    expect(top).toHaveClass(dynObj.base, dynObj.neutral);
+    expect(lbl).toHaveClass(dynObj.base, dynObj.neutral);
+    expect(ext).toHaveClass(dynObj.base, dynObj.neutral);
+    expect(auxdv).toHaveClass(dynObj.base, dynObj.neutral);
+    expect(middle).toHaveClass(dynObj.base, dynObj.neutral);
+    expect(leftdv).toHaveClass(dynObj.base, dynObj.neutral);
+    expect(main).toHaveClass(dynObj.base, dynObj.neutral);
+    expect(rightdv).toHaveClass(dynObj.base, dynObj.neutral);
+    expect(btm).toHaveClass(dynObj.base, dynObj.neutral);
     await user.type(main, "a");
     await user.tab();
     expect(props.status).toBe(STATE.INACTIVE);
-    expect(whole).toHaveClass(dynObj.const, dynObj.inactive);
-    expect(top).toHaveClass(dynObj.const, dynObj.inactive);
-    expect(lbl).toHaveClass(dynObj.const, dynObj.inactive);
-    expect(ext).toHaveClass(dynObj.const, dynObj.inactive);
-    expect(auxdv).toHaveClass(dynObj.const, dynObj.inactive);
-    expect(middle).toHaveClass(dynObj.const, dynObj.inactive);
-    expect(leftdv).toHaveClass(dynObj.const, dynObj.inactive);
-    expect(main).toHaveClass(dynObj.const, dynObj.inactive);
-    expect(rightdv).toHaveClass(dynObj.const, dynObj.inactive);
-    expect(btm).toHaveClass(dynObj.const, dynObj.inactive);
+    expect(whole).toHaveClass(dynObj.base, dynObj.inactive);
+    expect(top).toHaveClass(dynObj.base, dynObj.inactive);
+    expect(lbl).toHaveClass(dynObj.base, dynObj.inactive);
+    expect(ext).toHaveClass(dynObj.base, dynObj.inactive);
+    expect(auxdv).toHaveClass(dynObj.base, dynObj.inactive);
+    expect(middle).toHaveClass(dynObj.base, dynObj.inactive);
+    expect(leftdv).toHaveClass(dynObj.base, dynObj.inactive);
+    expect(main).toHaveClass(dynObj.base, dynObj.inactive);
+    expect(rightdv).toHaveClass(dynObj.base, dynObj.inactive);
+    expect(btm).toHaveClass(dynObj.base, dynObj.inactive);
     await user.type(main, "a");
     expect(props.status).toBe(STATE.ACTIVE);
-    expect(whole).toHaveClass(dynObj.const, dynObj.active);
-    expect(top).toHaveClass(dynObj.const, dynObj.active);
-    expect(lbl).toHaveClass(dynObj.const, dynObj.active);
-    expect(ext).toHaveClass(dynObj.const, dynObj.active);
-    expect(auxdv).toHaveClass(dynObj.const, dynObj.active);
-    expect(middle).toHaveClass(dynObj.const, dynObj.active);
-    expect(leftdv).toHaveClass(dynObj.const, dynObj.active);
-    expect(main).toHaveClass(dynObj.const, dynObj.active);
-    expect(rightdv).toHaveClass(dynObj.const, dynObj.active);
-    expect(btm).toHaveClass(dynObj.const, dynObj.active);
+    expect(whole).toHaveClass(dynObj.base, dynObj.active);
+    expect(top).toHaveClass(dynObj.base, dynObj.active);
+    expect(lbl).toHaveClass(dynObj.base, dynObj.active);
+    expect(ext).toHaveClass(dynObj.base, dynObj.active);
+    expect(auxdv).toHaveClass(dynObj.base, dynObj.active);
+    expect(middle).toHaveClass(dynObj.base, dynObj.active);
+    expect(leftdv).toHaveClass(dynObj.base, dynObj.active);
+    expect(main).toHaveClass(dynObj.base, dynObj.active);
+    expect(rightdv).toHaveClass(dynObj.base, dynObj.active);
+    expect(btm).toHaveClass(dynObj.base, dynObj.active);
   });
 });

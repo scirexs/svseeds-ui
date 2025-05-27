@@ -14,7 +14,7 @@
     draggable?: boolean;  // enable default pointerdown handler <true>
     appendable?: boolean; // enable append when enter group area <false>
     confirm?: boolean     // enable confirm interval time to move items <false>
-    status?: string;      // bindable <STATE.DEFAULT>
+    status?: string;      // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
   }
   type SortableMode = "std" | "clone" | "swap";
@@ -61,7 +61,7 @@
     draggable?: boolean;  // enable default pointerdown handler <true>
     appendable?: boolean; // enable append when enter group area <false>
     confirm?: boolean     // enable confirm interval time to move items <false>
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
   }
   export type SortableReqdProps = "items" | "item";
@@ -648,7 +648,7 @@
   let { items, item, ghost, name, mode = "std", accept, sort = true, multiple = false, draggable = true, appendable = false, confirm = false, status = $bindable(""), style }: SortableProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.DEFAULT;
+  if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
   const group: KeyValue = SortableItems._newItem(name);
   const elems: HTMLElement[] = [];

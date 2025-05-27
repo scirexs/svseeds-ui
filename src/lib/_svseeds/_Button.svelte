@@ -9,7 +9,7 @@
     type?: "submit" | "reset" | "button"; // <"button">
     onclick?: MouseEventHandler<HTMLButtonElement> | null;
     form?: HTMLFormElement; // bindable
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     attributes?: HTMLButtonAttributes;
     action?: Action;
@@ -25,7 +25,7 @@
     type?: "submit" | "reset" | "button"; // <"button">
     onclick?: MouseEventHandler<HTMLButtonElement> | null;
     form?: HTMLFormElement; // bindable
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     attributes?: HTMLButtonAttributes;
     action?: Action;
@@ -43,7 +43,7 @@
 </script>
 
 <script lang="ts">
-  let { children, left, right, type = "button", onclick, form = $bindable(), status = $bindable(STATE.DEFAULT), style, attributes, action, element = $bindable()}: ButtonProps = $props();
+  let { children, left, right, type = "button", onclick, form = $bindable(), status = $bindable(STATE.NEUTRAL), style, attributes, action, element = $bindable()}: ButtonProps = $props();
 
   // *** Initialize *** //
   const cls = fnClass(preset, style);

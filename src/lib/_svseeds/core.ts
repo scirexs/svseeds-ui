@@ -1,7 +1,7 @@
 // deno-fmt-ignore
 export {
   type SVSStyle,
-  CONST,
+  BASE,
   STATE,
   PARTS,
   elemId,
@@ -22,8 +22,8 @@ type ClassRuleSet = Record<string, Record<string, ClassValue>>;
 type SVSStyle = Record<string, ClassRule> | string;
 type ClassFn = (part: string, status: string) => ClassValue | undefined;
 
-const CONST = "const";
-const STATE = Object.freeze({ DEFAULT: "default", ACTIVE: "active", INACTIVE: "inactive" });
+const BASE = "base";
+const STATE = Object.freeze({ NEUTRAL: "neutral", ACTIVE: "active", INACTIVE: "inactive" });
 const PARTS = Object.freeze({
   WHOLE: "whole",
   MIDDLE: "middle",
@@ -37,6 +37,28 @@ const PARTS = Object.freeze({
   EXTRA: "extra",
 });
 
+function fnClass(preset: SVSStyle, style?: SVSStyle): ClassFn {
+  const rule = prepRule(style) ?? prepRule(preset);
+  if (rule == null) return (_, __) => undefined;
+  if (typeof rule === "string") return (part, status) => `${rule} ${part} ${status}`;
+  return (part, status) => ruleClass(rule, part, status);
+}
+function prepRule(rule?: SVSStyle): ClassRuleSet | string | undefined {
+  if (rule == null) return;
+  if (typeof rule === "string") return rule.trim() ? rule : undefined;
+  const entries = Object.entries(rule);
+  if (!entries.length) return;
+  return Object.fromEntries(entries.map(([k, v]) => {
+    return v !== null && typeof v === "object" && !Array.isArray(v) ? [k, v] : [k, { base: v }];
+  }));
+}
+function ruleClass(rule: ClassRuleSet, part: string, status: string): ClassValue | undefined {
+  const base = rule[part]?.[BASE] ?? "";
+  const dyn = rule[part]?.[status] ?? rule[part]?.[STATE.NEUTRAL] ?? "";
+  if (!base && !dyn) return;
+  if (base && dyn) return [base, dyn];
+  return base ? base : dyn;
+}
 /**
  * Generates unique random alphabetic ID strings with collision detection.
  * Uses a carefully selected character set of 50 letters (A-Y, a-y) to ensure
@@ -109,7 +131,7 @@ class UniqueId {
    * const generator = new UniqueId();
    * const id1 = generator.get(true);        // "AbCd"
    * const id2 = generator.get(false);       // undefined
-   * const id3 = generator.get("hello");     // "XyZa"
+   * const id3 = generator.get("hello");     // "XyAb"
    * const id4 = generator.get(null);        // undefined
    * ```
    */
@@ -134,29 +156,6 @@ class UniqueId {
   }
 }
 const elemId = new UniqueId();
-
-function fnClass(preset: SVSStyle, style?: SVSStyle): ClassFn {
-  const rule = prepRule(style) ?? prepRule(preset);
-  if (rule == null) return (_, __) => undefined;
-  if (typeof rule === "string") return (part, status) => `${rule} ${part} ${status}`;
-  return (part, status) => ruleClass(rule, part, status);
-}
-function prepRule(rule?: SVSStyle): ClassRuleSet | string | undefined {
-  if (rule == null) return;
-  if (typeof rule === "string") return rule.trim() ? rule : undefined;
-  const entries = Object.entries(rule);
-  if (!entries.length) return;
-  return Object.fromEntries(entries.map(([k, v]) => {
-    return v !== null && typeof v === "object" && !Array.isArray(v) ? [k, v] : [k, { const: v }];
-  }));
-}
-function ruleClass(rule: ClassRuleSet, part: string, status: string): ClassValue | undefined {
-  const constant = rule[part]?.[CONST] ?? "";
-  const dynamic = rule[part]?.[status] ?? rule[part]?.[STATE.DEFAULT] ?? "";
-  if (!constant && !dynamic) return;
-  if (constant && dynamic) return [constant, dynamic];
-  return constant ? constant : dynamic;
-}
 /**
  * Determines whether a status is in a neutral state (neither ACTIVE nor INACTIVE).
  *
@@ -165,7 +164,7 @@ function ruleClass(rule: ClassRuleSet, part: string, status: string): ClassValue
  *
  * @example
  * ```typescript
- * isNeutral(STATE.DEFAULT); // true
+ * isNeutral(STATE.NEUTRAL); // true
  * isNeutral("custom state"); // true
  * isNeutral(STATE.ACTIVE); // false
  * isNeutral(STATE.INACTIVE); // false

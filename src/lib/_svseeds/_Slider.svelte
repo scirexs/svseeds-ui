@@ -10,7 +10,7 @@
     step?: number | "any"; // <1>
     options?: SvelteSet<number> | Set<number>;
     background?: Range; // <{ min: 5, max: 95 }>
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;
@@ -28,7 +28,7 @@
     step?: number | "any"; // <1>
     options?: SvelteSet<number> | Set<number>;
     background?: Range; // <{ min: 5, max: 95 }>
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;
@@ -51,7 +51,7 @@
   let { range = $bindable(), left, right, value = $bindable(), step = 1, options, background = { min: 5, max: 95 }, status = $bindable(""), style, attributes, action, element = $bindable()}: SliderProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.DEFAULT;
+  if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
   const idList = elemId.get(options?.size);
   const attrs = omit(attributes, "class", "type", "value", "min", "max", "step", "list");

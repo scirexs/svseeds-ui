@@ -5,7 +5,7 @@
   interface AccordionProps {
     labels?: string[];
     current?: number; // bindable <-1>
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     deps?: AccordionDeps;
     [key: string]: unknown | Snippet;
@@ -19,7 +19,7 @@
   export interface AccordionProps {
     labels?: string[];
     current?: number; // bindable <-1>
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     deps?: AccordionDeps;
     [key: string]: unknown | Snippet;
@@ -53,7 +53,7 @@
   let { labels = [], current = $bindable(-1), status = $bindable(""), style, deps, ...rest }: AccordionProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.DEFAULT;
+  if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
   const isStrLabel = labels.length > 0;
   const lbls = toNamedId(isStrLabel ? labels : getSnippetNames(roleLabel, rest));

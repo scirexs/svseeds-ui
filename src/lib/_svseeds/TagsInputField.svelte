@@ -15,7 +15,7 @@
     max?: TagsInputFieldCountValidation;
     constraints?: TagsInputFieldConstraint[];
     validations?: TagsInputFieldValidation[];
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     element?: HTMLInputElement; // bindable
     deps?: TagsInputFieldDeps;
@@ -45,7 +45,7 @@
     max?: TagsInputFieldCountValidation;
     constraints?: TagsInputFieldConstraint[];
     validations?: TagsInputFieldValidation[];
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     element?: HTMLInputElement; // bindable
     deps?: TagsInputFieldDeps;
@@ -70,7 +70,7 @@
   let { label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), min, max, constraints = [], validations = [], status = $bindable(""), style, element = $bindable(), deps }: TagsInputFieldProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.DEFAULT;
+  if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
   const id = deps?.svsTagsInput?.attributes?.id ? deps.svsTagsInput.attributes.id : elemId.get(label?.trim());
   const idLabel = elemId.get(label?.trim());
@@ -100,7 +100,7 @@
   };
 
   // *** Status *** //
-  let neutral = isNeutral(status) ? status : STATE.DEFAULT;
+  let neutral = isNeutral(status) ? status : STATE.NEUTRAL;
   $effect(() => { neutral = isNeutral(status) ? status : neutral });
   let live = $derived(status === STATE.INACTIVE ? "alert" : "status");
   let idMsg = $derived(status === STATE.INACTIVE && message?.trim() ? idErr : undefined);

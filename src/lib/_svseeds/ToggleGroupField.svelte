@@ -14,7 +14,7 @@
     values?: string[]; // bindable
     multiple?: boolean; // <true>
     validations?: ToggleGroupFieldValidation[];
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     deps?: ToggleGroupFieldDeps;
     [key: string]: unknown | Snippet;
@@ -38,7 +38,7 @@
     values?: string[]; // bindable
     multiple?: boolean; // <true>
     validations?: ToggleGroupFieldValidation[];
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     deps?: ToggleGroupFieldDeps;
     [key: string]: unknown | Snippet;
@@ -63,7 +63,7 @@
   let { options, label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), multiple = true, validations = [], status = $bindable(""), style, attributes, elements = $bindable([]), deps, ...rest }: ToggleGroupFieldProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.DEFAULT;
+  if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
   const idLabel = elemId.get(label?.trim());
   const idDesc = elemId.get(bottom?.trim());
@@ -80,7 +80,7 @@
   };
 
   // *** Status *** //
-  let neutral = $state(isNeutral(status) ? status : STATE.DEFAULT);
+  let neutral = $state(isNeutral(status) ? status : STATE.NEUTRAL);
   $effect(() => { neutral = isNeutral(status) ? status : neutral });
   let live = $derived(status === STATE.INACTIVE ? "alert" : "status");
   let idMsg = $derived(status === STATE.INACTIVE && message?.trim() ? idErr : undefined);

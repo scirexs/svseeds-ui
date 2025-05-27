@@ -7,7 +7,7 @@
     labels: string[];
     aux?: Snippet<[string, number]>; // Snippet<[status,index]>
     extra?: Snippet<[string, number]>; // Snippet<[status,index]>
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     eachStatus?: SvelteMap<number, string> | Map<number, string>;
     style?: SVSStyle;
   }
@@ -19,7 +19,7 @@
     labels: string[];
     aux?: Snippet<[string, number]>; // Snippet<[status,index]>
     extra?: Snippet<[string, number]>; // Snippet<[status,index]>
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     eachStatus?: SvelteMap<number, string> | Map<number, string>;
     style?: SVSStyle;
   }
@@ -37,7 +37,7 @@
   let { current = $bindable(0), labels, aux, extra, status = $bindable(""), eachStatus, style }: ProgressTrackerProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.DEFAULT;
+  if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
 
   // *** Status *** //

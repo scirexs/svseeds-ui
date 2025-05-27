@@ -8,7 +8,7 @@
     position?: Position; // "top"
     align?: Align; // "center"
     offset?: Vector; // <{ x: 0, y: 0 }>
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     element?: HTMLDivElement; // bindable
   }
@@ -24,7 +24,7 @@
     position?: Position; // "top"
     align?: Align; // "center"
     offset?: Vector; // <{ x: 0, y: 0 }>
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     element?: HTMLDivElement; // bindable
   }
@@ -254,7 +254,7 @@
   let { main, name, position = "top", align = "center", offset = { ...INIT_VEC }, status = $bindable(""), style, element = $bindable() }: TooltipProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.DEFAULT;
+  if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
   const id = core.register(name);
   let point: Vector = $state.raw(INIT_VEC);

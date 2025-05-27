@@ -7,7 +7,7 @@
     children: Snippet;
     open?: boolean; // bindable <false>
     duration?: number; // <400>
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     attributes?: HTMLDetailsAttributes;
     action?: Action;
@@ -21,7 +21,7 @@
     children: Snippet;
     open?: boolean; // bindable <false>
     duration?: number; // <400>
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     attributes?: HTMLDetailsAttributes;
     action?: Action;
@@ -56,12 +56,12 @@
   let { label, children, open = $bindable(false), duration = 400, status = $bindable(""), style, attributes, action, element = $bindable() }: DisclosureProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.DEFAULT;
+  if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
   const attrs = omit(attributes, "class", "open", "ontoggle");
   const guard = new ToggleGurad();
   let hidden = $state(!open);
-  let neutral = isNeutral(status) ? status : STATE.DEFAULT;
+  let neutral = isNeutral(status) ? status : STATE.NEUTRAL;
   const initOpen = () => { if (element) element.open = open };
   $effect(() => untrack(() => initOpen()));
 

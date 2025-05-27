@@ -9,7 +9,7 @@
     type?: "plain" | "link" | "left" | "right"; // <"plain">
     href?: string;
     onclick?: MouseEventHandler<HTMLButtonElement> | null;
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
   }
   ```
@@ -22,7 +22,7 @@
     type?: "plain" | "link" | "left" | "right"; // <"plain">
     href?: string;
     onclick?: MouseEventHandler<HTMLButtonElement> | null;
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
   }
   export type BadgeReqdProps = "children";
@@ -39,7 +39,7 @@
   let { children, left, right, type = "plain", href = "", onclick, status = $bindable(""), style }: BadgeProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.DEFAULT;
+  if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
 </script>
 

@@ -14,7 +14,7 @@
     type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url" | "number";  // bindable <"text">
     options?: SvelteSet<string> | Set<string>;
     validations?: TextFieldValidation[];
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     attributes?: HTMLInputAttributes | HTMLTextareaAttributes;
     action?: Action;
@@ -36,7 +36,7 @@
     type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url" | "number";  // bindable <"text">
     options?: SvelteSet<string> | Set<string>;
     validations?: TextFieldValidation[];
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     attributes?: HTMLInputAttributes | HTMLTextareaAttributes;
     action?: Action;
@@ -59,7 +59,7 @@
   let { label, extra, aux, left, right, bottom, descFirst = false, value = $bindable(""), type = $bindable("text"), options, validations = [], status = $bindable(""), style, attributes, action, element = $bindable() }: TextFieldProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.DEFAULT;
+  if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
   const id = attributes?.id ? attributes.id : elemId.get(label?.trim());
   const idLabel = elemId.get(label?.trim());
@@ -70,7 +70,7 @@
   let message = $state(bottom);
 
   // *** Status *** //
-  let neutral = isNeutral(status) ? status : STATE.DEFAULT;
+  let neutral = isNeutral(status) ? status : STATE.NEUTRAL;
   $effect(() => { neutral = isNeutral(status) ? status : neutral });
   let live = $derived(status === STATE.INACTIVE ? "alert" : "status");
   let invalid = $derived(status === STATE.INACTIVE ? true : undefined);

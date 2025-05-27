@@ -7,7 +7,7 @@
     placeholder?: string;
     active?: boolean; // bindable, <false>
     disabled?: boolean; // bindable, <false>
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     element?: HTMLInputElement; // bindable
   }
@@ -19,7 +19,7 @@
     placeholder?: string;
     active?: boolean; // bindable, <false>
     disabled?: boolean; // bindable, <false>
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     element?: HTMLInputElement; // bindable
   }
@@ -43,9 +43,9 @@
   let { value = $bindable(""), placeholder, active = $bindable(false), disabled = $bindable(false), status = $bindable(""), style, element = $bindable() }: HotkeyCaptureProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.DEFAULT;
+  if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
-  let neutral = isNeutral(status) ? status : STATE.DEFAULT;
+  let neutral = isNeutral(status) ? status : STATE.NEUTRAL;
 
   // *** Bind Handlers *** //
   $effect(() => { neutral = isNeutral(status) ? status : neutral });

@@ -5,7 +5,7 @@
   interface ColorPickerProps {
     value?: string; // bindable <"#000">
     alpha?: number; // bindable <1>
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;
@@ -17,7 +17,7 @@
   export interface ColorPickerProps {
     value?: string; // bindable <"#000">
     alpha?: number; // bindable <1>
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;
@@ -63,7 +63,7 @@
   let { value = $bindable("#000"), alpha = $bindable(1), status = $bindable(""), style, attributes, action, element = $bindable() }: ColorPickerProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.DEFAULT;
+  if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
   const attrs = omit(attributes, "type");
   if (!isValidHex(value)) value = "#000";

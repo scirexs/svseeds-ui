@@ -9,7 +9,7 @@
     value?: boolean; // bindable <false>
     type?: "button" | "switch"; // <"button">
     ariaLabel?: string;
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     attributes?: HTMLButtonAttributes;
     action?: Action;
@@ -25,7 +25,7 @@
     value?: boolean; // bindable <false>
     type?: "button" | "switch"; // <"button">
     ariaLabel?: string;
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     attributes?: HTMLButtonAttributes;
     action?: Action;
@@ -47,10 +47,10 @@
   let { main, left, right, value = $bindable(false), type = "button", ariaLabel, status = $bindable(""), style, attributes, action, element = $bindable() }: ToggleProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.DEFAULT;
+  if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
   const attrs = omit(attributes, "class", "id", "type", "role", "aria-checked", "onclick");
-  let neutral = isNeutral(status) ? status : STATE.DEFAULT;
+  let neutral = isNeutral(status) ? status : STATE.NEUTRAL;
 
   // *** Bind Handlers *** //
   $effect(() => { neutral = isNeutral(status) ? status : neutral });

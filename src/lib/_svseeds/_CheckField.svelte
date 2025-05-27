@@ -12,7 +12,7 @@
     values?: string[]; // bindable
     multiple?: boolean; // <true>
     validations?: CheckFieldValidation[];
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;
@@ -32,7 +32,7 @@
     values?: string[]; // bindable
     multiple?: boolean; // <true>
     validations?: CheckFieldValidation[];
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;
@@ -55,7 +55,7 @@
   let { options, label, extra, aux, bottom, values = $bindable([]), multiple = true, descFirst = false, validations = [], status = $bindable(""), style, attributes, action, elements = $bindable([])}: CheckFieldProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.DEFAULT;
+  if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
   const type = multiple ? "checkbox" : "radio";
   const name = attributes?.["name"] ? attributes?.["name"] : elemId.id;
@@ -67,7 +67,7 @@
   let message = $state(bottom);
 
   // *** Status *** //
-  let neutral = $state(isNeutral(status) ? status : STATE.DEFAULT);
+  let neutral = $state(isNeutral(status) ? status : STATE.NEUTRAL);
   $effect(() => { neutral = isNeutral(status) ? status : neutral });
   let live = $derived(status === STATE.INACTIVE ? "alert" : "status");
   let invalid = $derived(status === STATE.INACTIVE ? true : undefined);

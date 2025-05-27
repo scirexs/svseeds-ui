@@ -11,7 +11,7 @@
     unique?: boolean; // <true>
     ariaErrMsgId?: string; // bindable
     events?: TagsInputEvents;
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;
@@ -37,7 +37,7 @@
     unique?: boolean; // <true>
     ariaErrMsgId?: string; // bindable
     events?: TagsInputEvents;
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;
@@ -69,7 +69,7 @@
   let { values = $bindable([]), value = $bindable(""), type = "left", confirm = [], trim = true, unique = true, ariaErrMsgId = $bindable(), events, status = $bindable(""), style, attributes, action, element = $bindable(), deps }: TagsInputProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.DEFAULT;
+  if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
   const attrs = omit(attributes, "class", "type", "onkeydown");
   const confirmKeys = new Set([CONFIRM_KEY, ...confirm]);

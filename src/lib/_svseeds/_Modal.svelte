@@ -8,7 +8,7 @@
     closable?: boolean; // <true>
     trigger?: HTMLElement; // bindable
     ariaLabel?: string;
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     element?: HTMLDialogElement; // bindable
   }
@@ -21,7 +21,7 @@
     closable?: boolean; // <true>
     trigger?: HTMLElement; // bindable
     ariaLabel?: string;
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     element?: HTMLDialogElement; // bindable
   }
@@ -38,7 +38,7 @@
   let { children, open = $bindable(false), closable = true, trigger = $bindable(), ariaLabel, status = $bindable(""), style, element = $bindable() }: ModalProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.DEFAULT;
+  if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
 
   // *** Bind Handlers *** //

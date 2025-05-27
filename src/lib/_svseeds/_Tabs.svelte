@@ -6,7 +6,7 @@
     labels?: string[];
     current?: number; // bindable <0>
     ariaOrientation?: "horizontal" | "vertical";
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     [key: string]: unknown | Snippet;
   }
@@ -17,7 +17,7 @@
     labels?: string[];
     current?: number; // bindable <0>
     ariaOrientation?: "horizontal" | "vertical";
-    status?: string; // bindable <STATE.DEFAULT>
+    status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
     [key: string]: unknown | Snippet;
   }
@@ -51,7 +51,7 @@
   let { labels = [], current = $bindable(0), ariaOrientation, status = $bindable(""), style, ...rest }: TabsProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.DEFAULT;
+  if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
   const isStrLabel = labels.length > 0;
   const tabs = toNamedId(isStrLabel ? labels : getSnippetNames(roleLabel, rest));
