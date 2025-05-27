@@ -68,7 +68,7 @@
   function open(activate: boolean = false, bottom: boolean = false) {
     if (expanded) return;
     selected = opts.indexOf(value);
-    if (activate && selected === NA) selected = bottom ? opts.length-- : 0;
+    if (activate && selected === NA) selected = bottom ? opts.length - 1 : 0;
     expanded = true;
   }
   function apply() {
@@ -95,13 +95,15 @@
     if (alt && !expanded) return open();
     if (alt && expanded) return;
     if (!alt && !expanded) return open(true);
-    if (selected + 1 < opts.length) selected++;
+    if (selected < opts.length - 1) selected++;
+    if (selected === NA) selected = 0;
   }
   function caseArrowUp(alt: boolean) {
     if (alt && !expanded) return;
     if (alt && expanded) return close();
     if (!alt && !expanded) return open(true, true);
-    if (selected - 1 >= 0) selected--;
+    if (selected > 0) selected--;
+    if (selected === NA) selected = opts.length - 1;
   }
 </script>
 
