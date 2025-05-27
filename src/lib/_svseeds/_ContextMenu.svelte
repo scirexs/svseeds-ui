@@ -41,7 +41,7 @@
   let position = $state({ x: 0, y: 0 });
 
   // *** Bind Handlers *** //
-  let visibility = $derived(open ? "visibility: open;" : "visibility: hidden; z-index: -9999;");
+  let visibility = $derived(open ? "visibility: visible;" : "visibility: hidden; z-index: -9999;");
   let dynStyle = $derived(`position: fixed; left:${position.x}px; top:${position.y}px; ${visibility}`);
 
   // *** Event Handlers *** //
