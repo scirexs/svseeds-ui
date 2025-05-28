@@ -62,8 +62,6 @@
   const guard = new ToggleGurad();
   let hidden = $state(!open);
   let neutral = isNeutral(status) ? status : STATE.NEUTRAL;
-  const initOpen = () => { if (element) element.open = open };
-  $effect(() => untrack(() => initOpen()));
 
   // *** Bind Handlers *** //
   $effect(() => { neutral = isNeutral(status) ? status : neutral });
@@ -100,6 +98,7 @@
       open = true;
     }
   }
+  $effect(() => untrack(() => toggle(open)));
 </script>
 
 <!---------------------------------------->
