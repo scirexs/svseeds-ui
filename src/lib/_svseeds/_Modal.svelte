@@ -64,6 +64,7 @@
   function onclose() {
     open = false;
   }
+  $effect(() => untrack(() => { if (open) element?.showModal(); }));
 </script>
 
 <!---------------------------------------->
