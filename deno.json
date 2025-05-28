@@ -47,7 +47,7 @@
     "@testing-library/svelte": "npm:@testing-library/svelte@^5.2.7",
     "@testing-library/user-event": "npm:@testing-library/user-event@^14.6.1",
     "jsdom": "npm:jsdom@^26.0.0",
-    "svelte": "npm:svelte@^5.23.1",
+    "svelte": "npm:svelte@^5.33.4",
     "svelte-check": "npm:svelte-check@^4.1.5",
     "vite": "npm:vite@^6.2.2",
     "vitest": "npm:vitest@^3.0.9"
