@@ -49,7 +49,7 @@
   // *** Initialize *** //
   if (!status) status = STATE.NEUTRAL;
   const cls = fnClass(preset, style);
-  const attrs = omit(attributes, "class", "id", "type", "role", "aria-checked", "onclick");
+  const attrs = omit(attributes, "class", "type", "role", "aria-checked", "aria-pressed", "onclick");
   let neutral = isNeutral(status) ? status : STATE.NEUTRAL;
 
   // *** Bind Handlers *** //
