@@ -73,6 +73,7 @@
   const cls = fnClass(preset, style);
   const attrs = omit(attributes, "class", "type", "onkeydown");
   const confirmKeys = new Set([CONFIRM_KEY, ...confirm]);
+  let invalid = $derived(ariaErrMsgId ? true : undefined);
 
   // *** Initialize Deps *** //
   const svsBadge = {
@@ -109,9 +110,9 @@
 <div class={cls(PARTS.WHOLE, status)}>
   {@render tags(type === "left")}
   {#if action}
-    <input bind:value bind:this={element} class={cls(PARTS.MAIN, status)} type="text" {onkeydown} {...attrs} use:action />
+    <input bind:value bind:this={element} class={cls(PARTS.MAIN, status)} type="text" {onkeydown} aria-invalid={invalid} aria-errormessage={ariaErrMsgId} {...attrs} use:action />
   {:else}
-    <input bind:value bind:this={element} class={cls(PARTS.MAIN, status)} type="text" {onkeydown} {...attrs} />
+    <input bind:value bind:this={element} class={cls(PARTS.MAIN, status)} type="text" {onkeydown} aria-invalid={invalid} aria-errormessage={ariaErrMsgId} {...attrs} />
   {/if}
   {@render tags(type === "right")}
 </div>
