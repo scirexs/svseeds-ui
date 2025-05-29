@@ -60,7 +60,7 @@
 
   // *** Bind Handlers *** //
   let rate = $derived(Math.trunc(background.min + ((value - range.min) / (range.max - range.min)) * (background.max - background.min)));
-  let dynStyle = $derived(`background:linear-gradient(to right, var(--color-active) ${rate}%, var(--color-inactive) ${rate}%);`);
+  let dynStyle = $derived(`background: linear-gradient(to right, var(--color-active) ${rate}%, var(--color-inactive) ${rate}%);`);
 </script>
 
 <!---------------------------------------->
