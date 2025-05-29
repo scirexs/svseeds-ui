@@ -66,8 +66,8 @@
   }
   const isNextKey = (key: string) => key === "ArrowRight" || key === "ArrowDown";
   const isPrevKey = (key: string) => key === "ArrowLeft" || key === "ArrowUp";
-  const nextTabElem = (i: number) => i++ >= tabs.length ? elems[0] : elems[i++];
-  const prevTabElem = (i: number) => i-- < 0 ? elems[tabs.length--] : elems[i--];
+  const nextTabElem = (i: number) => i + 1 >= tabs.length ? elems[0] : elems[i + 1];
+  const prevTabElem = (i: number) => i - 1 < 0 ? elems[tabs.length - 1] : elems[i - 1];
   function moveFocus(index: number): (ev: KeyboardEvent) => void {
     return (ev: KeyboardEvent) => {
       if (isNextKey(ev.key)) nextTabElem(index)?.focus();
