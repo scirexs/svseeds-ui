@@ -1,6 +1,6 @@
 {
   "name": "svseeds",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "Simple components for Svelte.",
   "type": "module",
   "main": "./index.js",
