@@ -1,11 +1,12 @@
-import { describe, expect, test, vi } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
-import TextField from "../lib/_svseeds/_TextField.svelte";
+import { SvelteMap } from "svelte/reactivity";
+import SelectField from "../lib/_svseeds/_SelectField.svelte";
 import { PARTS, STATE } from "../lib/_svseeds/core.ts";
 
-type TextFieldElement = HTMLInputElement | HTMLTextAreaElement | undefined;
+type SelectFieldElement = HTMLSelectElement | undefined;
 const label = "label_text";
 const extra = "(optional)";
 const bottom = "bottom_text";
@@ -14,60 +15,65 @@ const leftid = "test-left";
 const rightid = "test-right";
 const auxfn = createRawSnippet(
   (
-    value: () => string,
     status: () => string,
-    element: () => TextFieldElement,
+    value: () => string,
+    element: () => SelectFieldElement,
   ) => {
-    return { render: () => `<span data-testid="${auxid}">${value().length},${status.length},${element?.toString()}</span>` };
+    return { render: () => `<span data-testid="${auxid}">${status().length},${value().length},${element?.toString()}</span>` };
   },
 );
 const leftfn = createRawSnippet(
   (
-    value: () => string,
     status: () => string,
-    element: () => TextFieldElement,
+    value: () => string,
+    element: () => SelectFieldElement,
   ) => {
-    return { render: () => `<span data-testid="${leftid}">${value().length},${status.length},${element?.toString()}</span>` };
+    return { render: () => `<span data-testid="${leftid}">${status().length},${value().length},${element?.toString()}</span>` };
   },
 );
 const rightfn = createRawSnippet(
   (
-    value: () => string,
     status: () => string,
-    element: () => TextFieldElement,
+    value: () => string,
+    element: () => SelectFieldElement,
   ) => {
-    return { render: () => `<span data-testid="${rightid}">${value().length},${status.length},${element?.toString()}</span>` };
+    return { render: () => `<span data-testid="${rightid}">${status().length},${value().length},${element?.toString()}</span>` };
   },
 );
 
 describe("Switching existence of elements", () => {
-  const options = new Set(["test1", "test2"]);
+  const options = new SvelteMap([["value1", "Option 1"], ["value2", "Option 2"], ["value3", "Option 3"]]);
   const actionfn = () => {
     return {};
   };
 
-  test("no props", () => {
-    const { getByRole } = render(TextField);
+  test("minimum props (options only)", () => {
+    const { getByRole } = render(SelectField, { options });
     const whole = getByRole("group") as HTMLDivElement;
-    const main = getByRole("textbox") as HTMLInputElement;
+    const main = getByRole("combobox") as HTMLSelectElement;
     expect(whole.children).toHaveLength(1);
     expect(whole.firstElementChild?.tagName).toBe("DIV");
     expect(whole.firstElementChild).toBe(main.parentElement);
-    expect(main.tagName).toBe("INPUT");
-    expect(main).toHaveAttribute("type", "text");
-    expect(main).not.toHaveAttribute("list");
+    expect(main.tagName).toBe("SELECT");
+    expect(main.children).toHaveLength(3);
   });
-  test("switch to text area", () => {
-    const props = { type: "area" };
-    const { getByRole } = render(TextField, props);
-    const main = getByRole("textbox") as HTMLInputElement;
-    expect(main.tagName).toBe("TEXTAREA");
+  test("w/ Map options", () => {
+    const mapOptions = new Map([["val1", "Text 1"], ["val2", "Text 2"]]);
+    const { getByRole } = render(SelectField, { options: mapOptions });
+    const main = getByRole("combobox") as HTMLSelectElement;
+    expect(main.children).toHaveLength(2);
+    const option1 = main.children[0] as HTMLOptionElement;
+    const option2 = main.children[1] as HTMLOptionElement;
+    expect(option1.value).toBe("val1");
+    expect(option1.textContent).toBe("Text 1");
+    expect(option2.value).toBe("val2");
+    expect(option2.textContent).toBe("Text 2");
   });
   test("w/ label", () => {
-    const props = { label };
-    const { getByRole, getByLabelText, getByText } = render(TextField, props);
+    const props = { options, label };
+    const { getByRole, getByText } = render(SelectField, props);
     const whole = getByRole("group") as HTMLDivElement;
-    const main = getByLabelText(label, { selector: "input" }) as HTMLInputElement;
+    const main = getByRole("combobox") as HTMLSelectElement;
     const lbl = getByText(label);
     expect(whole).toHaveAttribute("aria-labelledby");
     expect(whole.children).toHaveLength(2);
@@ -75,38 +81,12 @@ describe("Switching existence of elements", () => {
     expect(whole.lastElementChild?.tagName).toBe("DIV");
     expect(whole.lastElementChild).toBe(main.parentElement);
   });
-  test("w/ label of action input", () => {
+  test("w/ label of action select", () => {
     const action = vi.fn().mockImplementation(actionfn);
-    const props = { label, action };
-    const { getByRole, getByLabelText, getByText } = render(TextField, props);
+    const props = { options, label, action };
+    const { getByRole, getByText } = render(SelectField, props);
     const whole = getByRole("group") as HTMLDivElement;
-    const main = getByLabelText(label, { selector: "input" }) as HTMLInputElement;
-    const lbl = getByText(label);
-    expect(whole).toHaveAttribute("aria-labelledby");
-    expect(whole.children).toHaveLength(2);
-    expect(whole.firstElementChild).toBe(lbl);
-    expect(whole.lastElementChild?.tagName).toBe("DIV");
-    expect(whole.lastElementChild).toBe(main.parentElement);
-    expect(action).toHaveBeenCalled();
-  });
-  test("w/ label of area", () => {
-    const props = { label, type: "area" };
-    const { getByRole, getByLabelText, getByText } = render(TextField, props);
-    const whole = getByRole("group") as HTMLDivElement;
-    const main = getByLabelText(label, { selector: "textarea" }) as HTMLTextAreaElement;
-    const lbl = getByText(label);
-    expect(whole).toHaveAttribute("aria-labelledby");
-    expect(whole.children).toHaveLength(2);
-    expect(whole.firstElementChild).toBe(lbl);
-    expect(whole.lastElementChild?.tagName).toBe("DIV");
-    expect(whole.lastElementChild).toBe(main.parentElement);
-  });
-  test("w/ label of action area", () => {
-    const action = vi.fn().mockImplementation(actionfn);
-    const props = { label, type: "area", action };
-    const { getByRole, getByLabelText, getByText } = render(TextField, props);
-    const whole = getByRole("group") as HTMLDivElement;
-    const main = getByLabelText(label, { selector: "textarea" }) as HTMLTextAreaElement;
+    const main = getByRole("combobox") as HTMLSelectElement;
     const lbl = getByText(label);
     expect(whole).toHaveAttribute("aria-labelledby");
     expect(whole.children).toHaveLength(2);
@@ -116,19 +96,19 @@ describe("Switching existence of elements", () => {
     expect(action).toHaveBeenCalled();
   });
   test("w/ extra, w/o label", () => {
-    const props = { extra };
-    const { getByRole } = render(TextField, props);
+    const props = { options, extra };
+    const { getByRole } = render(SelectField, props);
     const whole = getByRole("group") as HTMLDivElement;
-    const main = getByRole("textbox") as HTMLInputElement;
+    const main = getByRole("combobox") as HTMLSelectElement;
     expect(whole.children).toHaveLength(1);
     expect(whole.firstElementChild?.tagName).toBe("DIV");
     expect(whole.firstElementChild).toBe(main.parentElement);
   });
   test("w/ label, extra", () => {
-    const props = { label, extra };
-    const { getByRole, getByText } = render(TextField, props);
+    const props = { options, label, extra };
+    const { getByRole, getByText } = render(SelectField, props);
     const whole = getByRole("group") as HTMLDivElement;
-    const main = getByRole("textbox") as HTMLInputElement;
+    const main = getByRole("combobox") as HTMLSelectElement;
     const lbl = getByText(label);
     within(lbl).getByText(extra);
     expect(whole.children).toHaveLength(2);
@@ -138,10 +118,10 @@ describe("Switching existence of elements", () => {
   });
   test("w/ label, extra, aux", () => {
     const aux = vi.fn().mockImplementation(auxfn);
-    const props = { label, extra, aux };
-    const { getByRole, getByTestId, getByText } = render(TextField, props);
+    const props = { options, label, extra, aux };
+    const { getByRole, getByTestId, getByText } = render(SelectField, props);
     const whole = getByRole("group") as HTMLDivElement;
-    const main = getByRole("textbox") as HTMLInputElement;
+    const main = getByRole("combobox") as HTMLSelectElement;
     const lbl = getByText(label);
     const auxsp = getByTestId(auxid);
     expect(whole.children).toHaveLength(2);
@@ -153,10 +133,10 @@ describe("Switching existence of elements", () => {
   });
   test("w/ left", () => {
     const left = vi.fn().mockImplementation(leftfn);
-    const props = { left };
-    const { getByRole, getByTestId } = render(TextField, props);
+    const props = { options, left };
+    const { getByRole, getByTestId } = render(SelectField, props);
     const whole = getByRole("group") as HTMLDivElement;
-    const main = getByRole("textbox") as HTMLInputElement;
+    const main = getByRole("combobox") as HTMLSelectElement;
     const leftsp = getByTestId(leftid);
     expect(whole.children).toHaveLength(1);
     expect(whole.firstElementChild).toBe(main.parentElement);
@@ -165,10 +145,10 @@ describe("Switching existence of elements", () => {
   });
   test("w/ right", () => {
     const right = vi.fn().mockImplementation(rightfn);
-    const props = { right };
-    const { getByRole, getByTestId } = render(TextField, props);
+    const props = { options, right };
+    const { getByRole, getByTestId } = render(SelectField, props);
     const whole = getByRole("group") as HTMLDivElement;
-    const main = getByRole("textbox") as HTMLInputElement;
+    const main = getByRole("combobox") as HTMLSelectElement;
     const rightsp = getByTestId(rightid);
     expect(whole.children).toHaveLength(1);
     expect(whole.firstElementChild).toBe(main.parentElement);
@@ -176,43 +156,21 @@ describe("Switching existence of elements", () => {
     expect(right).toHaveBeenCalled();
   });
   test("w/ bottom", () => {
-    const props = { bottom };
-    const { getByRole } = render(TextField, props);
+    const props = { options, bottom };
+    const { getByRole } = render(SelectField, props);
     const whole = getByRole("group") as HTMLDivElement;
-    const main = getByRole("textbox") as HTMLInputElement;
+    const main = getByRole("combobox") as HTMLSelectElement;
     const btm = getByRole("status") as HTMLDivElement;
     expect(whole.children).toHaveLength(2);
     expect(whole.firstElementChild).toBe(main.parentElement);
     expect(whole.lastElementChild).toBe(btm);
     expect(main).toHaveAccessibleDescription(bottom);
   });
-  test("w/ bottom of action input", () => {
-    const props = { bottom, action: actionfn };
-    const { getByRole } = render(TextField, props);
+  test("w/ bottom of action select", () => {
+    const props = { options, bottom, action: actionfn };
+    const { getByRole } = render(SelectField, props);
     const whole = getByRole("group") as HTMLDivElement;
-    const main = getByRole("textbox") as HTMLInputElement;
-    const btm = getByRole("status") as HTMLDivElement;
-    expect(whole.children).toHaveLength(2);
-    expect(whole.firstElementChild).toBe(main.parentElement);
-    expect(whole.lastElementChild).toBe(btm);
-    expect(main).toHaveAccessibleDescription(bottom);
-  });
-  test("w/ bottom of area", () => {
-    const props = { bottom, type: "area" };
-    const { getByRole } = render(TextField, props);
-    const whole = getByRole("group") as HTMLDivElement;
-    const main = getByRole("textbox") as HTMLInputElement;
-    const btm = getByRole("status") as HTMLDivElement;
-    expect(whole.children).toHaveLength(2);
-    expect(whole.firstElementChild).toBe(main.parentElement);
-    expect(whole.lastElementChild).toBe(btm);
-    expect(main).toHaveAccessibleDescription(bottom);
-  });
-  test("w/ bottom of action area", () => {
-    const props = { bottom, type: "area", action: actionfn };
-    const { getByRole } = render(TextField, props);
-    const whole = getByRole("group") as HTMLDivElement;
-    const main = getByRole("textbox") as HTMLInputElement;
+    const main = getByRole("combobox") as HTMLSelectElement;
     const btm = getByRole("status") as HTMLDivElement;
     expect(whole.children).toHaveLength(2);
     expect(whole.firstElementChild).toBe(main.parentElement);
@@ -220,176 +178,103 @@ describe("Switching existence of elements", () => {
     expect(main).toHaveAccessibleDescription(bottom);
   });
   test("w/ blank string", () => {
-    const props = { label: " ", bottom: " " };
-    const { getByRole } = render(TextField, props);
+    const props = { options, label: " ", bottom: " " };
+    const { getByRole } = render(SelectField, props);
     const whole = getByRole("group") as HTMLDivElement;
-    const main = getByRole("textbox") as HTMLInputElement;
+    const main = getByRole("combobox") as HTMLSelectElement;
     expect(whole.children).toHaveLength(1);
     expect(whole.firstElementChild).toBe(main.parentElement);
   });
-  test("w/ options", () => {
-    const props = { options };
-    const { getByRole } = render(TextField, props);
+  test("w/ descFirst", () => {
+    const props = { options, bottom, descFirst: true };
+    const { getByRole } = render(SelectField, props);
     const whole = getByRole("group") as HTMLDivElement;
-    const main = getByRole("combobox") as HTMLInputElement;
-    // const list = getByRole("listbox") as HTMLDataListElement; is implicit role BUT FAILED
-    const list = main.nextElementSibling;
-    expect(whole.children).toHaveLength(1);
-    expect(whole.firstElementChild?.children).toHaveLength(2);
-    expect(whole.firstElementChild?.firstElementChild).toBe(main);
-    expect(whole.firstElementChild?.lastElementChild).toBe(list);
-    const listid = list?.getAttribute("id");
-    expect(main).toHaveAttribute("list", listid);
-    expect(list?.children).toHaveLength(2);
-  });
-  test("w/ options of action input", () => {
-    const props = { options, action: actionfn };
-    const { getByRole } = render(TextField, props);
-    const whole = getByRole("group") as HTMLDivElement;
-    const main = getByRole("combobox") as HTMLInputElement;
-    // const list = getByRole("listbox") as HTMLDataListElement; is implicit role BUT FAILED
-    const list = main.nextElementSibling;
-    expect(whole.children).toHaveLength(1);
-    expect(whole.firstElementChild?.children).toHaveLength(2);
-    expect(whole.firstElementChild?.firstElementChild).toBe(main);
-    expect(whole.firstElementChild?.lastElementChild).toBe(list);
-    const listid = list?.getAttribute("id");
-    expect(main).toHaveAttribute("list", listid);
-    expect(list?.children).toHaveLength(2);
-  });
-  test("w/ options of textarea", () => {
-    const props = { type: "area", options };
-    const { getByRole } = render(TextField, props);
-    const whole = getByRole("group") as HTMLDivElement;
-    const main = getByRole("textbox") as HTMLTextAreaElement;
-    expect(whole.children).toHaveLength(1);
-    expect(whole.firstElementChild?.tagName).toBe("DIV");
-    expect(whole.firstElementChild?.lastElementChild).toBe(main);
-  });
-  test("w/ empty options", () => {
-    const props = { options: [] };
-    const { getByRole } = render(TextField, props);
-    const whole = getByRole("group") as HTMLDivElement;
-    const main = getByRole("textbox") as HTMLInputElement;
-    expect(whole.children).toHaveLength(1);
-    expect(whole.firstElementChild?.tagName).toBe("DIV");
-    expect(whole.firstElementChild?.lastElementChild).toBe(main);
-    expect(main).not.toHaveAttribute("list");
+    const main = getByRole("combobox") as HTMLSelectElement;
+    const btm = getByRole("status") as HTMLDivElement;
+    expect(whole.children).toHaveLength(2);
+    expect(whole.firstElementChild).toBe(btm);
+    expect(whole.lastElementChild).toBe(main.parentElement);
+    expect(main).toHaveAccessibleDescription(bottom);
   });
 });
 
 describe("Specify attrs & state transition & event handlers", () => {
-  const seed = "svs-text-field";
-  const errmsg = "invalid";
-  const validationFn = (value: string) => (value.length < 2 ? errmsg : "");
+  const seed = "svs-select-field";
+  const options = new SvelteMap([["val1", "Option 1"], ["val2", "Option 2"]]);
+  const errmsg = "invalid selection";
+  const validationFn = (value: string) => (value === "val1" ? errmsg : "");
   const validations = [validationFn];
 
-  test("w/ other types", async () => {
-    const props = { label: "label", type: "password" };
-    const { rerender, getByRole, getByLabelText } = render(TextField, props);
-    let main = getByLabelText("label", { selector: "input" }) as HTMLInputElement;
-    expect(main).toHaveAttribute("type", "password");
-
-    await rerender({ type: "search" });
-    main = getByRole("searchbox") as HTMLInputElement;
-    expect(main).toHaveAttribute("type", "search");
-
-    await rerender({ type: "number" });
-    main = getByRole("spinbutton") as HTMLInputElement;
-    expect(main).toHaveAttribute("type", "number");
-
-    await rerender({ type: "email" });
-    main = getByRole("textbox") as HTMLInputElement;
-    expect(main).toHaveAttribute("type", "email");
-
-    await rerender({ type: "url" });
-    main = getByRole("textbox") as HTMLInputElement;
-    expect(main).toHaveAttribute("type", "url");
-
-    await rerender({ type: "tel" });
-    main = getByRole("textbox") as HTMLInputElement;
-    expect(main).toHaveAttribute("type", "tel");
-  });
-  test("w/ default value", async () => {
-    const value = "default_value";
-    const props = { value };
-    const { rerender, getByRole } = render(TextField, props);
-    let main = getByRole("textbox") as HTMLInputElement;
+  test("w/ default value", () => {
+    const value = "val2";
+    const props = { options, value };
+    const { getByRole } = render(SelectField, props);
+    const main = getByRole("combobox") as HTMLSelectElement;
     expect(main).toHaveValue(value);
-
-    await rerender({ type: "area", value });
-    main = getByRole("textbox") as HTMLInputElement;
-    expect(main).toHaveValue(value);
+    const selectedOption = main.querySelector("option[selected]") as HTMLOptionElement;
+    expect(selectedOption.value).toBe(value);
+    expect(selectedOption.textContent).toBe("Option 2");
   });
   test("w/ specify id", () => {
     const id = "id_foo";
-    const props = { attributes: { id } };
-    const { getByRole } = render(TextField, props);
-    const main = getByRole("textbox") as HTMLInputElement;
+    const props = { options, attributes: { id } };
+    const { getByRole } = render(SelectField, props);
+    const main = getByRole("combobox") as HTMLSelectElement;
     expect(main).toHaveAttribute("id", id);
   });
   test("w/ specify ignored attrs", () => {
-    const props = { attributes: { value: "v", class: "c", type: "hidden", list: "l" } };
-    const { getByRole } = render(TextField, props);
-    const main = getByRole("textbox") as HTMLInputElement;
-    expect(main).not.toHaveValue("v");
-    expect(main).not.toHaveAttribute("class", "c");
-    expect(main).not.toHaveAttribute("type", "hidden");
-    expect(main).not.toHaveAttribute("list");
+    const props = { options, attributes: { value: "ignored", class: "ignored-class" } };
+    const { getByRole } = render(SelectField, props);
+    const main = getByRole("combobox") as HTMLSelectElement;
+    expect(main).not.toHaveValue("ignored");
+    expect(main).not.toHaveAttribute("class", "ignored-class");
   });
-  test("w/ specify major attrs", async () => {
-    const props = { attributes: { name: "n", placeholder: "p", maxlength: 5, required: true, readonly: true } };
-    const { rerender, getByPlaceholderText } = render(TextField, props);
-    let main: HTMLInputElement | HTMLTextAreaElement = getByPlaceholderText("p") as HTMLInputElement;
-    expect(main).toHaveAttribute("name", "n");
-    expect(main).toHaveAttribute("maxlength", "5");
+  test("w/ specify major attrs", () => {
+    const props = { options, attributes: { name: "select-name", required: true, disabled: true } };
+    const { getByRole } = render(SelectField, props);
+    const main = getByRole("combobox") as HTMLSelectElement;
+    expect(main).toHaveAttribute("name", "select-name");
     expect(main).toHaveAttribute("required");
-    expect(main).toHaveAttribute("readonly");
-
-    await rerender({ type: "area", ...props });
-    main = getByPlaceholderText("p") as HTMLTextAreaElement;
-    expect(main).toHaveAttribute("name", "n");
-    expect(main).toHaveAttribute("maxlength", "5");
-    expect(main).toHaveAttribute("required");
-    expect(main).toHaveAttribute("readonly");
+    expect(main).toHaveAttribute("disabled");
   });
 
   test("major state transition", async () => {
     const mockValidation = vi.fn().mockImplementation(validationFn);
+    const options = new SvelteMap([["", ""], ["val1", "Option 1"], ["val2", "Option 2"]]);
     const props = $state({
+      options,
       status: STATE.NEUTRAL,
       validations: [mockValidation],
     });
     const user = userEvent.setup();
-    const { getByRole } = render(TextField, props);
-    const main = getByRole("textbox") as HTMLInputElement;
-    await user.type(main, "a");
+    const { getByRole } = render(SelectField, props);
+    const main = getByRole("combobox") as HTMLSelectElement;
+
     expect(props.status).toBe(STATE.NEUTRAL);
-    await user.tab();
+
+    await user.selectOptions(main, "val1");
     expect(mockValidation).toHaveBeenCalled();
     expect(props.status).toBe(STATE.INACTIVE);
     getByRole("alert") as HTMLDivElement;
     expect(main).toHaveAttribute("aria-invalid", "true");
     expect(main).toHaveAccessibleErrorMessage(errmsg);
-    await user.type(main, "a");
+
+    await user.selectOptions(main, "val2");
     expect(props.status).toBe(STATE.ACTIVE);
-    await user.clear(main);
+
+    await user.selectOptions(main, "");
     expect(props.status).toBe(STATE.NEUTRAL);
-    await user.type(main, "a");
-    expect(props.status).toBe(STATE.NEUTRAL);
-    await user.type(main, "a");
-    expect(props.status).toBe(STATE.NEUTRAL);
-    await user.tab();
-    expect(props.status).toBe(STATE.ACTIVE);
   });
   test("w/ required and no validations", async () => {
+    const optionsWithEmpty = new SvelteMap([["", "Select Option"], ["val1", "Option 1"]]);
     const props = $state({
+      options: optionsWithEmpty,
       status: STATE.NEUTRAL,
       attributes: { required: true },
     });
-    const { getByRole } = render(TextField, props);
-    const main = getByRole("textbox") as HTMLInputElement;
-    await fireEvent.invalid(main); // simulation of main.checkValidity() with empty
+    const { getByRole } = render(SelectField, props);
+    const main = getByRole("combobox") as HTMLSelectElement;
+    await fireEvent.invalid(main);
     getByRole("alert") as HTMLDivElement;
     expect(main).toHaveAttribute("aria-invalid", "true");
     expect(main).toHaveAccessibleErrorMessage();
@@ -397,42 +282,42 @@ describe("Specify attrs & state transition & event handlers", () => {
   });
   test("w/ required and custom validations", async () => {
     const props = $state({
+      options,
       bottom,
       status: STATE.NEUTRAL,
-      validations,
+      validations: [(value: string) => value === "" ? "required" : ""],
       attributes: { required: true },
     });
-    const { getByRole } = render(TextField, props);
-    const main = getByRole("textbox") as HTMLInputElement;
-    await fireEvent.invalid(main); // simulation of main.checkValidity() with empty
+    const { getByRole } = render(SelectField, props);
+    const main = getByRole("combobox") as HTMLSelectElement;
+    await fireEvent.invalid(main);
     getByRole("alert") as HTMLDivElement;
     expect(main).toHaveAttribute("aria-invalid", "true");
-    expect(main).toHaveAccessibleErrorMessage(errmsg);
+    expect(main).toHaveAccessibleErrorMessage("required");
     expect(props.status).toBe(STATE.INACTIVE);
   });
   test("w/ custom events used internally", async () => {
-    const onchange = vi.fn();
-    const oninput = vi.fn();
     const oninvalid = vi.fn();
     const props = $state({
+      options,
       status: STATE.NEUTRAL,
       validations,
-      attributes: { onchange, oninput, oninvalid, required: true },
+      attributes: { oninvalid, required: true },
     });
     const user = userEvent.setup();
-    const { getByRole } = render(TextField, props);
-    const main = getByRole("textbox") as HTMLInputElement;
-    await fireEvent.invalid(main); // simulation of main.checkValidity() with empty
+    const { getByRole } = render(SelectField, props);
+    const main = getByRole("combobox") as HTMLSelectElement;
+
+    await fireEvent.invalid(main);
     expect(oninvalid).toHaveBeenCalledTimes(1);
     expect(props.status).toBe(STATE.INACTIVE);
-    await user.type(main, "aa");
-    expect(oninput).toHaveBeenCalledTimes(2);
+
+    await user.selectOptions(main, "val2");
     expect(props.status).toBe(STATE.ACTIVE);
-    await user.tab();
-    expect(onchange).toHaveBeenCalledTimes(1);
   });
   test("default class of each status", async () => {
     const props = $state({
+      options,
       label,
       extra,
       aux: auxfn,
@@ -443,17 +328,18 @@ describe("Specify attrs & state transition & event handlers", () => {
       validations,
     });
     const user = userEvent.setup();
-    const { getByRole, getByTestId, getByText } = render(TextField, props);
+    const { getByRole, getByTestId, getByText } = render(SelectField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const lbl = getByText(label);
     const ext = within(lbl).getByText(extra);
     const auxdv = getByTestId(auxid).parentElement;
     const top = lbl.parentElement;
     const leftdv = getByTestId(leftid).parentElement;
-    const main = getByRole("textbox") as HTMLInputElement;
+    const main = getByRole("combobox") as HTMLSelectElement;
     const rightdv = getByTestId(rightid).parentElement;
     const middle = main.parentElement;
     const btm = getByRole("status") as HTMLDivElement;
+
     expect(props.status).toBe(STATE.NEUTRAL);
     expect(whole).toHaveClass(seed, PARTS.WHOLE);
     expect(top).toHaveClass(seed, PARTS.TOP);
@@ -465,8 +351,8 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(main).toHaveClass(seed, PARTS.MAIN);
     expect(rightdv).toHaveClass(seed, PARTS.RIGHT);
     expect(btm).toHaveClass(seed, PARTS.BOTTOM);
-    await user.type(main, "a");
-    await user.tab();
+
+    await user.selectOptions(main, "val1");
     expect(props.status).toBe(STATE.INACTIVE);
     expect(whole).toHaveClass(seed, PARTS.WHOLE, STATE.INACTIVE);
     expect(top).toHaveClass(seed, PARTS.TOP, STATE.INACTIVE);
@@ -478,7 +364,8 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(main).toHaveClass(seed, PARTS.MAIN, STATE.INACTIVE);
     expect(rightdv).toHaveClass(seed, PARTS.RIGHT, STATE.INACTIVE);
     expect(btm).toHaveClass(seed, PARTS.BOTTOM, STATE.INACTIVE);
-    await user.type(main, "a");
+
+    await user.selectOptions(main, "val2");
     expect(props.status).toBe(STATE.ACTIVE);
     expect(whole).toHaveClass(seed, PARTS.WHOLE, STATE.ACTIVE);
     expect(top).toHaveClass(seed, PARTS.TOP, STATE.ACTIVE);
@@ -494,6 +381,7 @@ describe("Specify attrs & state transition & event handlers", () => {
   test("w/ string style class of each status", async () => {
     const clsid = "style_id";
     const props = $state({
+      options,
       label,
       extra,
       aux: auxfn,
@@ -505,17 +393,18 @@ describe("Specify attrs & state transition & event handlers", () => {
       style: clsid,
     });
     const user = userEvent.setup();
-    const { getByRole, getByTestId, getByText } = render(TextField, props);
+    const { getByRole, getByTestId, getByText } = render(SelectField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const lbl = getByText(label);
     const ext = within(lbl).getByText(extra);
     const auxdv = getByTestId(auxid).parentElement;
     const top = lbl.parentElement;
     const leftdv = getByTestId(leftid).parentElement;
-    const main = getByRole("textbox") as HTMLInputElement;
+    const main = getByRole("combobox") as HTMLSelectElement;
     const rightdv = getByTestId(rightid).parentElement;
     const middle = main.parentElement;
     const btm = getByRole("status") as HTMLDivElement;
+
     expect(props.status).toBe(STATE.NEUTRAL);
     expect(whole).toHaveClass(clsid, PARTS.WHOLE);
     expect(top).toHaveClass(clsid, PARTS.TOP);
@@ -527,8 +416,8 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(main).toHaveClass(clsid, PARTS.MAIN);
     expect(rightdv).toHaveClass(clsid, PARTS.RIGHT);
     expect(btm).toHaveClass(clsid, PARTS.BOTTOM);
-    await user.type(main, "a");
-    await user.tab();
+
+    await user.selectOptions(main, "val1");
     expect(props.status).toBe(STATE.INACTIVE);
     expect(whole).toHaveClass(clsid, PARTS.WHOLE, STATE.INACTIVE);
     expect(top).toHaveClass(clsid, PARTS.TOP, STATE.INACTIVE);
@@ -540,7 +429,8 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(main).toHaveClass(clsid, PARTS.MAIN, STATE.INACTIVE);
     expect(rightdv).toHaveClass(clsid, PARTS.RIGHT, STATE.INACTIVE);
     expect(btm).toHaveClass(clsid, PARTS.BOTTOM, STATE.INACTIVE);
-    await user.type(main, "a");
+
+    await user.selectOptions(main, "val2");
     expect(props.status).toBe(STATE.ACTIVE);
     expect(whole).toHaveClass(clsid, PARTS.WHOLE, STATE.ACTIVE);
     expect(top).toHaveClass(clsid, PARTS.TOP, STATE.ACTIVE);
@@ -573,6 +463,7 @@ describe("Specify attrs & state transition & event handlers", () => {
       extra: dynObj,
     };
     const props = $state({
+      options,
       label,
       extra,
       aux: auxfn,
@@ -584,17 +475,18 @@ describe("Specify attrs & state transition & event handlers", () => {
       style,
     });
     const user = userEvent.setup();
-    const { getByRole, getByTestId, getByText } = render(TextField, props);
+    const { getByRole, getByTestId, getByText } = render(SelectField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const lbl = getByText(label);
     const ext = within(lbl).getByText(extra);
     const auxdv = getByTestId(auxid).parentElement;
     const top = lbl.parentElement;
     const leftdv = getByTestId(leftid).parentElement;
-    const main = getByRole("textbox") as HTMLInputElement;
+    const main = getByRole("combobox") as HTMLSelectElement;
     const rightdv = getByTestId(rightid).parentElement;
     const middle = main.parentElement;
     const btm = getByRole("status") as HTMLDivElement;
+
     expect(props.status).toBe(STATE.NEUTRAL);
     expect(whole).toHaveClass(dynObj.base, dynObj.neutral);
     expect(top).toHaveClass(dynObj.base, dynObj.neutral);
@@ -606,8 +498,8 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(main).toHaveClass(dynObj.base, dynObj.neutral);
     expect(rightdv).toHaveClass(dynObj.base, dynObj.neutral);
     expect(btm).toHaveClass(dynObj.base, dynObj.neutral);
-    await user.type(main, "a");
-    await user.tab();
+
+    await user.selectOptions(main, "val1");
     expect(props.status).toBe(STATE.INACTIVE);
     expect(whole).toHaveClass(dynObj.base, dynObj.inactive);
     expect(top).toHaveClass(dynObj.base, dynObj.inactive);
@@ -619,7 +511,8 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(main).toHaveClass(dynObj.base, dynObj.inactive);
     expect(rightdv).toHaveClass(dynObj.base, dynObj.inactive);
     expect(btm).toHaveClass(dynObj.base, dynObj.inactive);
-    await user.type(main, "a");
+
+    await user.selectOptions(main, "val2");
     expect(props.status).toBe(STATE.ACTIVE);
     expect(whole).toHaveClass(dynObj.base, dynObj.active);
     expect(top).toHaveClass(dynObj.base, dynObj.active);
