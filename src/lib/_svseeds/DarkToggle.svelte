@@ -8,7 +8,7 @@
     element?: HTMLButtonElement; // bindable
     deps?: DarkToggleDeps;
   }
-  export interface DarkToggleDeps {
+  interface DarkToggleDeps {
     svsToggle?: Omit<ToggleProps, ToggleReqdProps | ToggleBindProps>;
   }
   ```

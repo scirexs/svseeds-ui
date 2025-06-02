@@ -14,7 +14,7 @@
   ```
   ```ts
   type RgbColor = [number, number, number];
-  export function getHex(rgb: RgbColor): string
+  function getHex(rgb: RgbColor): string
   // getHex([255, 123, 34]) => "#ff7b22"
   ```
 -->
