@@ -14,6 +14,7 @@
     attributes?: HTMLButtonAttributes;
     action?: Action;
     element?: HTMLButtonElement; // bindable
+    children?: Snippet;
   }
   ```
 -->
@@ -30,6 +31,7 @@
     attributes?: HTMLButtonAttributes;
     action?: Action;
     element?: HTMLButtonElement; // bindable
+    children?: Snippet;
   }
   export type ToggleReqdProps = never;
   export type ToggleBindProps = "value" | "status" | "element";
@@ -44,7 +46,7 @@
 </script>
 
 <script lang="ts">
-  let { main, left, right, value = $bindable(false), type = "button", ariaLabel, status = $bindable(""), style, attributes, action, element = $bindable() }: ToggleProps = $props();
+  let { main, left, right, value = $bindable(false), type = "button", ariaLabel, status = $bindable(""), style, attributes, action, element = $bindable(), children }: ToggleProps = $props();
 
   // *** Initialize *** //
   if (!status) status = STATE.NEUTRAL;
@@ -88,6 +90,8 @@
 {#snippet contents()}
   {#if main}
     {@render main(status, value, element)}
+  {:else if children}
+    {@render children()}
   {/if}
 {/snippet}
 {#snippet button(role: string)}
