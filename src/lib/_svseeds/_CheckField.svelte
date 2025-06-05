@@ -18,7 +18,7 @@
     action?: Action;
     elements?: HTMLInputElement[]; // bindable
   }
-  type CheckFieldValidation = (values: string[], validity: ValidityState) => string;
+  type CheckFieldValidation = (values: string[], validity: ValidityState) => string | undefined;
   ```
 -->
 <script module lang="ts">
@@ -40,7 +40,7 @@
   }
   export type CheckFieldReqdProps = "options";
   export type CheckFieldBindProps = "values" | "status" | "elements";
-  export type CheckFieldValidation = (values: string[], validity: ValidityState) => string;
+  export type CheckFieldValidation = (values: string[], validity: ValidityState) => string | undefined;
 
   const preset = "svs-check-field";
 

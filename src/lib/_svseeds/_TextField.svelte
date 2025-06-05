@@ -20,7 +20,7 @@
     action?: Action;
     element?: HTMLInputElement | HTMLTextAreaElement; // bindable
   }
-  type TextFieldValidation = (value: string, validity: ValidityState) => string;
+  type TextFieldValidation = (value: string, validity: ValidityState) => string | undefined;
   ```
 -->
 <script module lang="ts">
@@ -44,7 +44,7 @@
   }
   export type TextFieldReqdProps = never;
   export type TextFieldBindProps = "value" | "type" | "status" | "element";
-  export type TextFieldValidation = (value: string, validity: ValidityState) => string;
+  export type TextFieldValidation = (value: string, validity: ValidityState) => string | undefined;
 
   const preset = "svs-text-field";
 

@@ -23,7 +23,7 @@
   interface ToggleGroupFieldDeps {
     svsToggleGroup?: Omit<ToggleGroupProps, ToggleGroupReqdProps | ToggleGroupBindProps | "ariaDescId" | "multiple">;
   }
-  type ToggleGroupFieldValidation = (values: string[]) => string;
+  type ToggleGroupFieldValidation = (values: string[]) => string | undefined;
   ```
 -->
 <script module lang="ts">
@@ -50,7 +50,7 @@
   }
   export type ToggleGroupFieldReqdProps = "options";
   export type ToggleGroupFieldBindProps = "values" | "status";
-  export type ToggleGroupFieldValidation = (values: string[]) => string;
+  export type ToggleGroupFieldValidation = (values: string[]) => string | undefined;
 
   const preset = "svs-toggle-group-field";
 

@@ -19,7 +19,7 @@
     action?: Action;
     element?: HTMLSelectElement; // bindable
   }
-  type SelectFieldValidation = (value: string, validity: ValidityState) => string;
+  type SelectFieldValidation = (value: string, validity: ValidityState) => string | undefined;
   ```
 -->
 <script module lang="ts">
@@ -42,7 +42,7 @@
   }
   export type SelectFieldReqdProps = "options";
   export type SelectFieldBindProps = "value" | "status" | "element";
-  export type SelectFieldValidation = (value: string, validity: ValidityState) => string;
+  export type SelectFieldValidation = (value: string, validity: ValidityState) => string | undefined;
 
   const preset = "svs-select-field";
 

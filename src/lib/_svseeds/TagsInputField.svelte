@@ -23,8 +23,8 @@
   interface TagsInputFieldDeps extends TagsInputDeps {
     svsTagsInput?: Omit<TagsInputProps, TagsInputReqdProps | TagsInputBindProps | "deps">;
   }
-  type TagsInputFieldConstraint = (value: string, validity: ValidityState) => string;
-  type TagsInputFieldValidation = (values: string[], validity: ValidityState) => string;
+  type TagsInputFieldConstraint = (value: string, validity: ValidityState) => string | undefined;
+  type TagsInputFieldValidation = (values: string[], validity: ValidityState) => string | undefined;
   type TagsInputFieldCountValidation = {
     value: number;
     message: string;
@@ -55,8 +55,8 @@
   }
   export type TagsInputFieldReqdProps = never;
   export type TagsInputFieldBindProps = "values" | "status" | "element";
-  export type TagsInputFieldConstraint = (value: string, validity: ValidityState) => string;
-  export type TagsInputFieldValidation = (values: string[], validity: ValidityState) => string;
+  export type TagsInputFieldConstraint = (value: string, validity: ValidityState) => string | undefined;
+  export type TagsInputFieldValidation = (values: string[], validity: ValidityState) => string | undefined;
   export type TagsInputFieldCountValidation = { value: number, message: string };
 
   const preset = "svs-tags-input-field";
