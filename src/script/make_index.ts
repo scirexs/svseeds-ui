@@ -38,7 +38,7 @@ function getExtPath(files: string[], path: string, ext: string): string[] {
 class ExportParser {
   static EXT = { svelte: ".svelte", ts: ".ts" };
   #REGEX = {
-    type: /export\s+(?:type|interface)\s+(\w+)\s*[=|{]/g,
+    type: /export\s+(?:type|interface)\s+(\w+)\s*[=|{|e]/g,
     each: /export\s+(?:function|class|const|let|var)\s+(\w+)\s*[\s|=|{|(]/g,
     bulk: /export\s*{([^}]*)}/g,
   };
