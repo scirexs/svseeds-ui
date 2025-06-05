@@ -173,7 +173,7 @@ class UniqueId {
    *
    * @example
    * ```typescript
-   * const generator = new UniqueId();
+   * const generator = new UniqueId(4);
    * const id1 = generator.get(true);        // "AbCd"
    * const id2 = generator.get(false);       // undefined
    * const id3 = generator.get("hello");     // "XyAb"
