@@ -16,6 +16,7 @@
     validations?: ToggleGroupFieldValidation[];
     status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
+    name?: string;
     deps?: ToggleGroupFieldDeps;
     [key: string]: unknown | Snippet;
   }
@@ -40,6 +41,7 @@
     validations?: ToggleGroupFieldValidation[];
     status?: string; // bindable <STATE.NEUTRAL>
     style?: SVSStyle;
+    name?: string;
     deps?: ToggleGroupFieldDeps;
     [key: string]: unknown | Snippet;
   }
@@ -60,7 +62,7 @@
 </script>
 
 <script lang="ts">
-  let { options, label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), multiple = true, validations = [], status = $bindable(""), style, attributes, elements = $bindable([]), deps, ...rest }: ToggleGroupFieldProps = $props();
+  let { options, label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), multiple = true, validations = [], status = $bindable(""), style, name, deps, ...rest }: ToggleGroupFieldProps = $props();
 
   // *** Initialize *** //
   if (!status) status = STATE.NEUTRAL;
@@ -131,7 +133,7 @@
     {@render desc(descFirst)}
     <div class={cls(PARTS.MIDDLE, status)}>
       {@render side(PARTS.LEFT, left)}
-      <input bind:this={element} style="display: none;" aria-hidden="true" {oninvalid} />
+      {@render fnForm()}
       <ToggleGroup bind:values bind:ariaErrMsgId={idMsg} bind:status={neutral} {options} {multiple} {...svsToggleGroup} />
       {@render side(PARTS.RIGHT, right)}
     </div>
@@ -158,4 +160,10 @@
   {#if show && message?.trim()}
     <div class={cls(PARTS.BOTTOM, status)} id={idDesc ?? idErr} role={live}>{message}</div>
   {/if}
+{/snippet}
+{#snippet fnForm()}
+  <input bind:this={element} style="display: none;" aria-hidden="true" {oninvalid} />
+  {#each values as value}
+    <input type="hidden" {name} {value} />
+  {/each}
 {/snippet}
