@@ -3,6 +3,8 @@
   default value: `<value>`
   ```ts
   interface TagsInputProps {
+    label?: Snippet<[string, string]>; // Snippet<[value,status]>
+    aux?: Snippet<[string, string]>; // Snippet<[value,status]>
     values?: string[]; // bindable
     value?: string; // bindable
     type?: "left" | "right"; // <"left">
@@ -16,10 +18,6 @@
     attributes?: HTMLInputAttributes;
     action?: Action;
     element?: HTMLInputElement; // bindable
-    deps?: TagsInputDeps;
-  }
-  interface TagsInputDeps {
-    svsBadge?: Omit<BadgeProps, BadgeReqdProps | BadgeBindProps | "type" | "href">;
   }
   interface TagsInputEvents { // cancel if true
     onadd?: (values: string[], value: string) => void | boolean;
@@ -29,6 +27,8 @@
 -->
 <script module lang="ts">
   export interface TagsInputProps {
+    label?: Snippet<[string, string]>; // Snippet<[value,status]>
+    aux?: Snippet<[string, string]>; // Snippet<[value,status]>
     values?: string[]; // bindable
     value?: string; // bindable
     type?: "left" | "right"; // <"left">
@@ -42,10 +42,6 @@
     attributes?: HTMLInputAttributes;
     action?: Action;
     element?: HTMLInputElement; // bindable
-    deps?: TagsInputDeps;
-  }
-  export interface TagsInputDeps {
-    svsBadge?: Omit<BadgeProps, BadgeReqdProps | BadgeBindProps | "type" | "href">;
   }
   export type TagsInputReqdProps = never;
   export type TagsInputBindProps = "values" | "value" | "ariaErrMsgId" | "status" | "element";
@@ -59,14 +55,14 @@
   const preset = "svs-tags-input";
   const CONFIRM_KEY = "Enter";
 
+  import { type Snippet } from "svelte";
   import { type Action } from "svelte/action";
   import { type HTMLInputAttributes } from "svelte/elements";
   import { type SVSStyle, STATE, PARTS, fnClass, omit } from "./core";
-  import Badge, { type BadgeProps, type BadgeReqdProps, type BadgeBindProps } from "./_Badge.svelte";
 </script>
 
 <script lang="ts">
-  let { values = $bindable([]), value = $bindable(""), type = "left", confirm = [], trim = true, unique = true, ariaErrMsgId = $bindable(), events, status = $bindable(""), style, attributes, action, element = $bindable(), deps }: TagsInputProps = $props();
+  let { label, aux, values = $bindable([]), value = $bindable(""), type = "left", confirm = [], trim = true, unique = true, ariaErrMsgId = $bindable(), events, status = $bindable(""), style, attributes, action, element = $bindable() }: TagsInputProps = $props();
 
   // *** Initialize *** //
   if (!status) status = STATE.NEUTRAL;
@@ -74,12 +70,6 @@
   const attrs = omit(attributes, "class", "type", "onkeydown");
   const confirmKeys = new Set([CONFIRM_KEY, ...confirm]);
   let invalid = $derived(ariaErrMsgId ? true : undefined);
-
-  // *** Initialize Deps *** //
-  const svsBadge = {
-    ...omit(deps?.svsBadge, "onclick", "right", "style"),
-    style: deps?.svsBadge?.style ?? `${preset} svs-badge`,
-  };
 
   // *** Event Handlers *** //
   function onkeydown(ev: KeyboardEvent & TagsInputTarget) {
@@ -97,8 +87,7 @@
     value = "";
   }
   function remove(index: number): (ev: MouseEvent & BadgeTarget) => void {
-    return (ev) => {
-      deps?.svsBadge?.onclick?.(ev);
+    return () => {
       if (events?.onremove?.(values, values[index], index)) return;
       values = values.filter((_, i) => i !== index);
     };
@@ -121,16 +110,20 @@
   {#if render}
     <span class={cls(type, status)}>
       {#each values as value, i}
-        <Badge bind:status type="right" onclick={remove(i)} {...svsBadge}>
-          {value}
-          {#snippet right(status)}
-            {#if deps?.svsBadge?.right}
-              {@render deps.svsBadge.right(status)}
+        <span class={cls(PARTS.LABEL, status)}>
+          {#if label}
+            {@render label(value, status)}
+          {:else}
+            {value}
+          {/if}
+          <button class={cls(PARTS.AUX, status)} onclick={remove(i)}>
+            {#if aux}
+              {@render aux(value, status)}
             {:else}
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" style="min-width: 5px; min-height: 5px;"><path d="M511.998 70.682 441.315 0 256.002 185.313 70.685 0 .002 70.692l185.314 185.314L.002 441.318 70.69 512l185.312-185.312L441.315 512l70.683-70.682-185.314-185.312z" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="10" height="10"><path d="M511.998 70.682 441.315 0 256.002 185.313 70.685 0 .002 70.692l185.314 185.314L.002 441.318 70.69 512l185.312-185.312L441.315 512l70.683-70.682-185.314-185.312z" /></svg>
             {/if}
-          {/snippet}
-        </Badge>
+          </button>
+        </span>
       {/each}
     </span>
   {/if}

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, waitFor, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
-import TagsInput from "../lib/_svseeds/TagsInput.svelte";
+import TagsInput from "../lib/_svseeds/_TagsInput.svelte";
 import { PARTS, STATE } from "../lib/_svseeds/core.ts";
 
 const preset = "svs-tags-input";
@@ -79,141 +79,141 @@ describe("Basic rendering and structure", () => {
   });
 });
 
-// describe("Tag addition functionality", () => {
-//   test("adds tag on Enter key", async () => {
-//     const props = $state({ values: [] as string[], value: "" });
-//     const user = userEvent.setup();
-//     const { container } = render(TagsInput, props);
-//     const input = container.querySelector("input") as HTMLInputElement;
+describe("Tag addition functionality", () => {
+  test("adds tag on Enter key", async () => {
+    const props = $state({ values: [] as string[], value: "" });
+    const user = userEvent.setup();
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
 
-//     await user.type(input, "new tag");
-//     await user.keyboard("{Enter}");
+    await user.type(input, "new tag");
+    await user.keyboard("{Enter}");
 
-//     expect(props.values).toEqual(["new tag"]);
-//     expect(props.value).toBe("");
-//   });
+    expect(props.values).toEqual(["new tag"]);
+    expect(props.value).toBe("");
+  });
 
-//   test("adds tag on custom confirm key", async () => {
-//     const props = $state({ values: [] as string[], value: "", confirm: ["Tab"] });
-//     const user = userEvent.setup();
-//     const { container } = render(TagsInput, props);
-//     const input = container.querySelector("input") as HTMLInputElement;
+  test("adds tag on custom confirm key", async () => {
+    const props = $state({ values: [] as string[], value: "", confirm: ["Tab"] });
+    const user = userEvent.setup();
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
 
-//     await user.type(input, "new tag");
-//     await user.keyboard("{Tab}");
+    await user.type(input, "new tag");
+    await user.keyboard("{Tab}");
 
-//     expect(props.values).toEqual(["new tag"]);
-//     expect(props.value).toBe("");
-//   });
+    expect(props.values).toEqual(["new tag"]);
+    expect(props.value).toBe("");
+  });
 
-//   test("trims whitespace by default", async () => {
-//     const props = $state({ values: [] as string[], value: "" });
-//     const user = userEvent.setup();
-//     const { container } = render(TagsInput, props);
-//     const input = container.querySelector("input") as HTMLInputElement;
+  test("trims whitespace by default", async () => {
+    const props = $state({ values: [] as string[], value: "" });
+    const user = userEvent.setup();
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
 
-//     await user.type(input, "  spaced tag  ");
-//     await user.keyboard("{Enter}");
+    await user.type(input, "  spaced tag  ");
+    await user.keyboard("{Enter}");
 
-//     expect(props.values).toEqual(["spaced tag"]);
-//   });
+    expect(props.values).toEqual(["spaced tag"]);
+  });
 
-//   test("does not trim when trim=false", async () => {
-//     const props = $state({ values: [] as string[], value: "", trim: false });
-//     const user = userEvent.setup();
-//     const { container } = render(TagsInput, props);
-//     const input = container.querySelector("input") as HTMLInputElement;
+  test("does not trim when trim=false", async () => {
+    const props = $state({ values: [] as string[], value: "", trim: false });
+    const user = userEvent.setup();
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
 
-//     await user.type(input, "  spaced tag  ");
-//     await user.keyboard("{Enter}");
+    await user.type(input, "  spaced tag  ");
+    await user.keyboard("{Enter}");
 
-//     expect(props.values).toEqual(["  spaced tag  "]);
-//   });
+    expect(props.values).toEqual(["  spaced tag  "]);
+  });
 
-//   test("prevents duplicate tags by default", async () => {
-//     const props = $state({ values: ["existing"], value: "" });
-//     const user = userEvent.setup();
-//     const { container } = render(TagsInput, props);
-//     const input = container.querySelector("input") as HTMLInputElement;
+  test("prevents duplicate tags by default", async () => {
+    const props = $state({ values: ["existing"], value: "" });
+    const user = userEvent.setup();
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
 
-//     await user.type(input, "existing");
-//     await user.keyboard("{Enter}");
+    await user.type(input, "existing");
+    await user.keyboard("{Enter}");
 
-//     expect(props.values).toEqual(["existing"]);
-//     expect(props.value).toBe("");
-//   });
+    expect(props.values).toEqual(["existing"]);
+    expect(props.value).toBe("");
+  });
 
-//   test("allows duplicate tags when unique=false", async () => {
-//     const props = $state({ values: ["existing"], value: "", unique: false });
-//     const user = userEvent.setup();
-//     const { container } = render(TagsInput, props);
-//     const input = container.querySelector("input") as HTMLInputElement;
+  test("allows duplicate tags when unique=false", async () => {
+    const props = $state({ values: ["existing"], value: "", unique: false });
+    const user = userEvent.setup();
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
 
-//     await user.type(input, "existing");
-//     await user.keyboard("{Enter}");
+    await user.type(input, "existing");
+    await user.keyboard("{Enter}");
 
-//     expect(props.values).toEqual(["existing", "existing"]);
-//   });
+    expect(props.values).toEqual(["existing", "existing"]);
+  });
 
-//   test("does not add empty tag", async () => {
-//     const props = $state({ values: [] as string[], value: "" });
-//     const user = userEvent.setup();
-//     const { container } = render(TagsInput, props);
-//     const input = container.querySelector("input") as HTMLInputElement;
+  test("does not add empty tag", async () => {
+    const props = $state({ values: [] as string[], value: "" });
+    const user = userEvent.setup();
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
 
-//     await user.keyboard("{Enter}");
+    await user.keyboard("{Enter}");
 
-//     expect(props.values).toEqual([]);
-//   });
+    expect(props.values).toEqual([]);
+  });
 
-//   test("does not add tag while composing", async () => {
-//     const props = $state({ values: [] as string[], value: "" });
-//     const { container } = render(TagsInput, props);
-//     const input = container.querySelector("input") as HTMLInputElement;
+  test("does not add tag while composing", async () => {
+    const props = $state({ values: [] as string[], value: "" });
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
 
-//     await fireEvent.keyDown(input, {
-//       key: "Enter",
-//       isComposing: true,
-//     });
+    await fireEvent.keyDown(input, {
+      key: "Enter",
+      isComposing: true,
+    });
 
-//     expect(props.values).toEqual([]);
-//   });
-// });
+    expect(props.values).toEqual([]);
+  });
+});
 
-// describe("Tag removal functionality", () => {
-//   test("removes tag when badge is clicked", async () => {
-//     const props = $state({ values: ["tag1", "tag2", "tag3"] });
-//     const user = userEvent.setup();
-//     const { container } = render(TagsInput, props);
+describe("Tag removal functionality", () => {
+  test("removes tag when tag's button is clicked", async () => {
+    const props = $state({ values: ["tag1", "tag2", "tag3"] });
+    const user = userEvent.setup();
+    const { getAllByRole } = render(TagsInput, props);
 
-//     const badges = container.querySelectorAll(".mock-badge");
-//     await user.click(badges[1]); // Click second tag
+    const badges = getAllByRole("button");
+    await user.click(badges[1]); // Click second tag
 
-//     expect(props.values).toEqual(["tag1", "tag3"]);
-//   });
+    expect(props.values).toEqual(["tag1", "tag3"]);
+  });
 
-//   test("removes first tag", async () => {
-//     const props = $state({ values: ["tag1", "tag2"] });
-//     const user = userEvent.setup();
-//     const { container } = render(TagsInput, props);
+  test("removes first tag", async () => {
+    const props = $state({ values: ["tag1", "tag2"] });
+    const user = userEvent.setup();
+    const { getAllByRole } = render(TagsInput, props);
 
-//     const badges = container.querySelectorAll(".mock-badge");
-//     await user.click(badges[0]);
+    const badges = getAllByRole("button");
+    await user.click(badges[0]);
 
-//     expect(props.values).toEqual(["tag2"]);
-//   });
+    expect(props.values).toEqual(["tag2"]);
+  });
 
-//   test("removes last tag", async () => {
-//     const props = $state({ values: ["tag1", "tag2"] });
-//     const user = userEvent.setup();
-//     const { container } = render(TagsInput, props);
+  test("removes last tag", async () => {
+    const props = $state({ values: ["tag1", "tag2"] });
+    const user = userEvent.setup();
+    const { getAllByRole } = render(TagsInput, props);
 
-//     const badges = container.querySelectorAll(".mock-badge");
-//     await user.click(badges[1]);
+    const badges = getAllByRole("button");
+    await user.click(badges[1]);
 
-//     expect(props.values).toEqual(["tag1"]);
-//   });
-// });
+    expect(props.values).toEqual(["tag1"]);
+  });
+});
 
 describe("Event handlers", () => {
   test("calls onadd event handler", async () => {
@@ -389,33 +389,5 @@ describe("Status and state management", () => {
     const input = getByRole("textbox");
     expect(input).toHaveAttribute("aria-errormessage", "eid");
     expect(input).toHaveAttribute("aria-invalid", "true");
-  });
-});
-
-describe("Dependencies integration", () => {
-  test("passes badge dependencies", () => {
-    const deps = {
-      svsBadge: {
-        style: "custom-badge-style",
-        onclick: vi.fn(),
-      },
-    };
-    const values = ["tag1"];
-    const { container } = render(TagsInput, { values, deps });
-
-    const badge = container.querySelector(".custom-badge-style");
-    waitFor(() => {
-      expect(badge).toBeInTheDocument();
-    });
-  });
-
-  test("uses default badge style when no deps provided", () => {
-    const values = ["tag1"];
-    const { container } = render(TagsInput, { values });
-
-    const badge = container.querySelector(".svs-tags-input.svs-badge.main");
-    waitFor(() => {
-      expect(badge).toBeInTheDocument();
-    });
   });
 });

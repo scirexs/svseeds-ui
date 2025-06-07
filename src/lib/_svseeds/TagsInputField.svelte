@@ -50,8 +50,8 @@
     element?: HTMLInputElement; // bindable
     deps?: TagsInputFieldDeps;
   }
-  export interface TagsInputFieldDeps extends TagsInputDeps {
-    svsTagsInput?: Omit<TagsInputProps, TagsInputReqdProps | TagsInputBindProps | "deps">;
+  export interface TagsInputFieldDeps {
+    svsTagsInput?: Omit<TagsInputProps, TagsInputReqdProps | TagsInputBindProps>;
   }
   export type TagsInputFieldReqdProps = never;
   export type TagsInputFieldBindProps = "values" | "status" | "element";
@@ -63,7 +63,7 @@
 
   import { type Snippet, untrack } from "svelte";
   import { type SVSStyle, STATE, PARTS, elemId, fnClass, isNeutral, omit } from "./core";
-  import TagsInput, { type TagsInputProps, type TagsInputReqdProps, type TagsInputBindProps, type TagsInputDeps } from "./TagsInput.svelte";
+  import TagsInput, { type TagsInputProps, type TagsInputReqdProps, type TagsInputBindProps } from "./_TagsInput.svelte";
 </script>
 
 <script lang="ts">
@@ -82,10 +82,6 @@
   if (min) validations.unshift(() => values.length < min.value ? min.message : "");
 
   // *** Initialize Deps *** //
-  const svsBadge = {
-    ...omit(deps?.svsBadge, "style"),
-    style: deps?.svsBadge?.style ?? `${preset} svs-tags-input svs-badge`,
-  };
   const svsTagsInput = {
     ...omit(deps?.svsTagsInput, "style", "attributes"),
     events: { onadd, onremove: deps?.svsTagsInput?.events?.onremove },
@@ -173,7 +169,7 @@
   {@render desc(descFirst)}
   <div class={cls(PARTS.MIDDLE, status)}>
     {@render side(PARTS.LEFT, left)}
-    <TagsInput bind:values bind:value bind:status bind:element bind:ariaErrMsgId={idMsg} {...svsTagsInput} deps={{ svsBadge }} />
+    <TagsInput bind:values bind:value bind:status bind:element bind:ariaErrMsgId={idMsg} {...svsTagsInput} />
     {@render side(PARTS.RIGHT, right)}
   </div>
   {@render desc(!descFirst)}
