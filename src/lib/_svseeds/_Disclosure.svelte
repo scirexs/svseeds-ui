@@ -3,7 +3,7 @@
   default value: `(value)`
   ```ts
   interface DisclosureProps {
-    label: string | Snippet<[string]>; // Snippet<[status]>
+    label: string | Snippet<[boolean,string]>; // Snippet<[open,status]>
     children: Snippet;
     open?: boolean; // bindable (false)
     duration?: number; // (400)
@@ -17,7 +17,7 @@
 -->
 <script module lang="ts">
   export interface DisclosureProps {
-    label: string | Snippet<[string]>; // Snippet<[status]>
+    label: string | Snippet<[boolean,string]>; // Snippet<[open,status]>
     children: Snippet;
     open?: boolean; // bindable (false)
     duration?: number; // (400)
@@ -118,7 +118,7 @@
     {#if typeof label === "string"}
       {label}
     {:else if typeof label === "function"}
-      {@render label(status)}
+      {@render label(open,status)}
     {/if}
   </summary>
   {#if open}
