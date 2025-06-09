@@ -294,10 +294,6 @@ describe("Specify attrs & state transition & event handlers", () => {
     main = getByRole("searchbox") as HTMLInputElement;
     expect(main).toHaveAttribute("type", "search");
 
-    await rerender({ type: "number" });
-    main = getByRole("spinbutton") as HTMLInputElement;
-    expect(main).toHaveAttribute("type", "number");
-
     await rerender({ type: "email" });
     main = getByRole("textbox") as HTMLInputElement;
     expect(main).toHaveAttribute("type", "email");

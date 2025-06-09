@@ -11,7 +11,7 @@
     bottom?: string;
     descFirst?: boolean; // <false>
     value?: string; // bindable
-    type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url" | "number";  // bindable <"text">
+    type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url";  // bindable <"text">
     options?: SvelteSet<string> | Set<string>;
     validations?: TextFieldValidation[];
     status?: string; // bindable <STATE.NEUTRAL>
@@ -33,7 +33,7 @@
     bottom?: string;
     descFirst?: boolean; // <false>
     value?: string; // bindable
-    type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url" | "number";  // bindable <"text">
+    type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url";  // bindable <"text">
     options?: SvelteSet<string> | Set<string>;
     validations?: TextFieldValidation[];
     status?: string; // bindable <STATE.NEUTRAL>
