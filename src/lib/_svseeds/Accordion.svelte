@@ -8,7 +8,7 @@
     status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     deps?: AccordionDeps;
-    [key: string]: unknown | Snippet;
+    [key: string]: unknown | Snippet; // contents of each disclosure
   }
   interface AccordionDeps {
     svsDisclosure?: Omit<DisclosureProps, DisclosureReqdProps | DisclosureBindProps>;
@@ -22,7 +22,7 @@
     status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     deps?: AccordionDeps;
-    [key: string]: unknown | Snippet;
+    [key: string]: unknown | Snippet; // contents of each disclosure
   }
   export interface AccordionDeps {
     svsDisclosure?: Omit<DisclosureProps, DisclosureReqdProps | DisclosureBindProps>;
