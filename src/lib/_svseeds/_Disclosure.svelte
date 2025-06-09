@@ -118,7 +118,7 @@
     {#if typeof label === "string"}
       {label}
     {:else if typeof label === "function"}
-      {@render label(open,status)}
+      {@render label(open, status)}
     {/if}
   </summary>
   {#if open}
