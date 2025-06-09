@@ -1,6 +1,6 @@
 <!--
   @component
-  default value: `<value>`
+  default value: `(value)`
   ```ts
   interface TagsInputFieldProps {
     label?: string;
@@ -9,13 +9,13 @@
     left?: Snippet<[string, string[], HTMLInputElement | undefined]>; // Snippet<[status,values,element]>
     right?: Snippet<[string, string[], HTMLInputElement | undefined]>; // Snippet<[status,values,element]>
     bottom?: string;
-    descFirst?: boolean; // <false>
+    descFirst?: boolean; // (false)
     values?: string[]; // bindable
     min?: TagsInputFieldCountValidation;
     max?: TagsInputFieldCountValidation;
     constraints?: TagsInputFieldConstraint[];
     validations?: TagsInputFieldValidation[];
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     element?: HTMLInputElement; // bindable
     deps?: TagsInputFieldDeps;
@@ -39,13 +39,13 @@
     left?: Snippet<[string, string[], HTMLInputElement | undefined]>; // Snippet<[status,values,element]>
     right?: Snippet<[string, string[], HTMLInputElement | undefined]>; // Snippet<[status,values,element]>
     bottom?: string;
-    descFirst?: boolean; // <false>
+    descFirst?: boolean; // (false)
     values?: string[]; // bindable
     min?: TagsInputFieldCountValidation;
     max?: TagsInputFieldCountValidation;
     constraints?: TagsInputFieldConstraint[];
     validations?: TagsInputFieldValidation[];
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     element?: HTMLInputElement; // bindable
     deps?: TagsInputFieldDeps;

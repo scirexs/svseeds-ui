@@ -1,14 +1,14 @@
 <!--
   @component
-  default value: `<value>`
+  default value: `(value)`
   ```ts
   interface TooltipProps {
     main?: Snippet<[string, string, boolean]>; // Snippet<[status,text,isFlipped]>
     name?: string;
-    position?: Position; // "top"
-    align?: Align; // "center"
-    offset?: Vector; // <{ x: 0, y: 0 }>
-    status?: string; // bindable <STATE.NEUTRAL>
+    position?: Position; // ("top")
+    align?: Align; // ("center")
+    offset?: Vector; // ({ x: 0, y: 0 })
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     element?: HTMLDivElement; // bindable
   }
@@ -21,10 +21,10 @@
   export interface TooltipProps {
     main?: Snippet<[string, string, boolean]>; // Snippet<[status,text,isFlipped]>
     name?: string;
-    position?: Position; // "top"
-    align?: Align; // "center"
-    offset?: Vector; // <{ x: 0, y: 0 }>
-    status?: string; // bindable <STATE.NEUTRAL>
+    position?: Position; // ("top")
+    align?: Align; // ("center")
+    offset?: Vector; // ({ x: 0, y: 0 })
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     element?: HTMLDivElement; // bindable
   }

@@ -1,6 +1,6 @@
 <!--
   @component
-  default value: `<value>`
+  default value: `(value)`
   ```ts
   interface CheckFieldProps {
     options: SvelteMap<string, string> | Map<string, string>;
@@ -8,11 +8,11 @@
     extra?: string;
     aux?: Snippet<[string, string[], HTMLInputElement[]]>; // Snippet<[status,values,elements]>
     bottom?: string;
-    descFirst?: boolean; // <false>
+    descFirst?: boolean; // (false)
     values?: string[]; // bindable
-    multiple?: boolean; // <true>
+    multiple?: boolean; // (true)
     validations?: CheckFieldValidation[];
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;
@@ -28,11 +28,11 @@
     extra?: string;
     aux?: Snippet<[string, string[], HTMLInputElement[]]>; // Snippet<[status,values,elements]>
     bottom?: string;
-    descFirst?: boolean; // <false>
+    descFirst?: boolean; // (false)
     values?: string[]; // bindable
-    multiple?: boolean; // <true>
+    multiple?: boolean; // (true)
     validations?: CheckFieldValidation[];
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;

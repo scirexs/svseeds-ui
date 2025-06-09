@@ -1,10 +1,10 @@
 <!--
   @component
-  default value: `<value>`
+  default value: `(value)`
   ```ts
   interface DarkToggleProps {
-    dark?: boolean; // bindable <(prefers-color-scheme)>
-    status?: string; // bindable <STATE.NEUTRAL>
+    dark?: boolean; // bindable (prefers-color-scheme)
+    status?: string; // bindable (STATE.NEUTRAL)
     element?: HTMLButtonElement; // bindable
     deps?: DarkToggleDeps;
   }
@@ -15,8 +15,8 @@
 -->
 <script module lang="ts">
   export interface DarkToggleProps {
-    dark?: boolean; // bindable <(prefers-color-scheme)>
-    status?: string; // bindable <STATE.NEUTRAL>
+    dark?: boolean; // bindable (prefers-color-scheme)
+    status?: string; // bindable (STATE.NEUTRAL)
     element?: HTMLButtonElement; // bindable
     deps?: DarkToggleDeps;
   }

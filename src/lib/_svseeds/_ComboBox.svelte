@@ -1,12 +1,12 @@
 <!--
   @component
-  default value: `<value>`
+  default value: `(value)`
   ```ts
   interface ComboBoxProps {
     options: SvelteSet<string> | Set<string>;
     value?: string; // bindable
     expanded?: boolean; // bindable
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;
@@ -19,7 +19,7 @@
     options: SvelteSet<string> | Set<string>;
     value?: string; // bindable
     expanded?: boolean; // bindable
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;

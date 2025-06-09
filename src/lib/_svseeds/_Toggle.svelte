@@ -1,15 +1,15 @@
 <!--
   @component
-  default value: `<value>`
+  default value: `(value)`
   ```ts
   interface ToggleProps {
     main?: Snippet<[string, boolean, HTMLButtonElement | undefined]>; // Snippet<[status,value,element]>
     left?: Snippet<[string, boolean, HTMLButtonElement | undefined]>; // Snippet<[status,value,element]>
     right?: Snippet<[string, boolean, HTMLButtonElement | undefined]>; // Snippet<[status,value,element]>
-    value?: boolean; // bindable <false>
-    type?: "button" | "switch"; // <"button">
+    value?: boolean; // bindable (false)
+    type?: "button" | "switch"; // ("button")
     ariaLabel?: string;
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     attributes?: HTMLButtonAttributes;
     action?: Action;
@@ -23,10 +23,10 @@
     main?: Snippet<[string, boolean, HTMLButtonElement | undefined]>; // Snippet<[status,value,element]>
     left?: Snippet<[string, boolean, HTMLButtonElement | undefined]>; // Snippet<[status,value,element]>
     right?: Snippet<[string, boolean, HTMLButtonElement | undefined]>; // Snippet<[status,value,element]>
-    value?: boolean; // bindable <false>
-    type?: "button" | "switch"; // <"button">
+    value?: boolean; // bindable (false)
+    type?: "button" | "switch"; // ("button")
     ariaLabel?: string;
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     attributes?: HTMLButtonAttributes;
     action?: Action;

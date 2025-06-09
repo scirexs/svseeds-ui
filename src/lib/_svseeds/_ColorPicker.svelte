@@ -1,11 +1,11 @@
 <!--
   @component
-  default value: `<value>`
+  default value: `(value)`
   ```ts
   interface ColorPickerProps {
-    value?: string; // bindable <"#000000">
-    alpha?: number; // bindable <1>
-    status?: string; // bindable <STATE.NEUTRAL>
+    value?: string; // bindable ("#000000")
+    alpha?: number; // bindable (1)
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;
@@ -20,9 +20,9 @@
 -->
 <script module lang="ts">
   export interface ColorPickerProps {
-    value?: string; // bindable <"#000000">
-    alpha?: number; // bindable <1>
-    status?: string; // bindable <STATE.NEUTRAL>
+    value?: string; // bindable ("#000000")
+    alpha?: number; // bindable (1)
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;

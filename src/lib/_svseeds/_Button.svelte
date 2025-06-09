@@ -1,15 +1,15 @@
 <!--
   @component
-  default value: `<value>`
+  default value: `(value)`
   ```ts
   interface ButtonProps {
     children: Snippet;
     left?: Snippet<[string, HTMLButtonElement | undefined]>; // Snippet<[status,element]>
     right?: Snippet<[string, HTMLButtonElement | undefined]>; // Snippet<[status,element]>
-    type?: "submit" | "reset" | "button"; // <"button">
+    type?: "submit" | "reset" | "button"; // ("button")
     onclick?: MouseEventHandler<HTMLButtonElement> | null;
     form?: HTMLFormElement; // bindable
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     attributes?: HTMLButtonAttributes;
     action?: Action;
@@ -22,10 +22,10 @@
     children: Snippet;
     left?: Snippet<[string, HTMLButtonElement | undefined]>; // Snippet<[status,element]>
     right?: Snippet<[string, HTMLButtonElement | undefined]>; // Snippet<[status,element]>
-    type?: "submit" | "reset" | "button"; // <"button">
+    type?: "submit" | "reset" | "button"; // ("button")
     onclick?: MouseEventHandler<HTMLButtonElement> | null;
     form?: HTMLFormElement; // bindable
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     attributes?: HTMLButtonAttributes;
     action?: Action;

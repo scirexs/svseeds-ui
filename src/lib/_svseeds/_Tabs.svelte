@@ -1,12 +1,12 @@
 <!--
   @component
-  default value: `<value>`
+  default value: `(value)`
   ```ts
   interface TabsProps {
     labels?: string[];
-    current?: number; // bindable <0>
+    current?: number; // bindable (0)
     ariaOrientation?: "horizontal" | "vertical";
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     [key: string]: unknown | Snippet;
   }
@@ -15,9 +15,9 @@
 <script module lang="ts">
   export interface TabsProps {
     labels?: string[];
-    current?: number; // bindable <0>
+    current?: number; // bindable (0)
     ariaOrientation?: "horizontal" | "vertical";
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     [key: string]: unknown | Snippet;
   }

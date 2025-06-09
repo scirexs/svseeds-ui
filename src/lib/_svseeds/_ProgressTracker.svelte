@@ -1,13 +1,13 @@
 <!--
   @component
-  default value: `<value>`
+  default value: `(value)`
   ```ts
   interface ProgressTrackerProps {
-    current: number; // bindable <0>
+    current: number; // bindable (0)
     labels: string[];
     aux?: Snippet<[string, number]>; // Snippet<[status,index]>
     extra?: Snippet<[string, number]>; // Snippet<[status,index]>
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     eachStatus?: SvelteMap<number, string> | Map<number, string>;
     style?: SVSStyle;
   }
@@ -15,11 +15,11 @@
 -->
 <script module lang="ts">
   export interface ProgressTrackerProps {
-    current: number; // bindable <0>
+    current: number; // bindable (0)
     labels: string[];
     aux?: Snippet<[string, number]>; // Snippet<[status,index]>
     extra?: Snippet<[string, number]>; // Snippet<[status,index]>
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     eachStatus?: SvelteMap<number, string> | Map<number, string>;
     style?: SVSStyle;
   }

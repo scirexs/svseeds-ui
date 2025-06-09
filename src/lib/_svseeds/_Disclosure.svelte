@@ -1,13 +1,13 @@
 <!--
   @component
-  default value: `<value>`
+  default value: `(value)`
   ```ts
   interface DisclosureProps {
     label: string | Snippet<[string]>; // Snippet<[status]>
     children: Snippet;
-    open?: boolean; // bindable <false>
-    duration?: number; // <400>
-    status?: string; // bindable <STATE.NEUTRAL>
+    open?: boolean; // bindable (false)
+    duration?: number; // (400)
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     attributes?: HTMLDetailsAttributes;
     action?: Action;
@@ -19,9 +19,9 @@
   export interface DisclosureProps {
     label: string | Snippet<[string]>; // Snippet<[status]>
     children: Snippet;
-    open?: boolean; // bindable <false>
-    duration?: number; // <400>
-    status?: string; // bindable <STATE.NEUTRAL>
+    open?: boolean; // bindable (false)
+    duration?: number; // (400)
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     attributes?: HTMLDetailsAttributes;
     action?: Action;

@@ -1,6 +1,6 @@
 <!--
   @component
-  default value: `<value>`
+  default value: `(value)`
   ```ts
   interface SelectFieldProps {
     options: SvelteMap<string, string> | Map<string, string>;
@@ -10,10 +10,10 @@
     left?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[status,value,element]>
     right?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[status,value,element]>
     bottom?: string;
-    descFirst?: boolean; // <false>
+    descFirst?: boolean; // (false)
     value?: string; // bindable
     validations?: SelectFieldValidation[];
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     attributes?: HTMLSelectAttributes;
     action?: Action;
@@ -31,10 +31,10 @@
     left?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[status,value,element]>
     right?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[status,value,element]>
     bottom?: string;
-    descFirst?: boolean; // <false>
+    descFirst?: boolean; // (false)
     value?: string; // bindable
     validations?: SelectFieldValidation[];
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     attributes?: HTMLSelectAttributes;
     action?: Action;

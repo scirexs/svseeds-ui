@@ -1,13 +1,13 @@
 <!--
   @component
-  default value: `<value>`
+  default value: `(value)`
   ```ts
   interface HotkeyCaptureProps {
     value?: string; // bindable
     placeholder?: string;
-    active?: boolean; // bindable, <false>
-    disabled?: boolean; // bindable, <false>
-    status?: string; // bindable <STATE.NEUTRAL>
+    active?: boolean; // bindable, (false)
+    disabled?: boolean; // bindable, (false)
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     element?: HTMLInputElement; // bindable
   }
@@ -17,9 +17,9 @@
   export interface HotkeyCaptureProps {
     value?: string; // bindable
     placeholder?: string;
-    active?: boolean; // bindable, <false>
-    disabled?: boolean; // bindable, <false>
-    status?: string; // bindable <STATE.NEUTRAL>
+    active?: boolean; // bindable, (false)
+    disabled?: boolean; // bindable, (false)
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     element?: HTMLInputElement; // bindable
   }

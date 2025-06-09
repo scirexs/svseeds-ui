@@ -1,16 +1,16 @@
 <!--
   @component
-  default value: `<value>`
+  default value: `(value)`
   ```ts
   interface SliderProps {
     range: Range; // bindable
     left?: Snippet<[string, number, HTMLInputElement | undefined]>; // Snippet<[status,value,element]>
     right?: Snippet<[string, number, HTMLInputElement | undefined]>; // Snippet<[status,value,element]>
-    value?: number; // bindable <min+((max-min)/2)>
-    step?: number | "any"; // <1>
+    value?: number; // bindable (min+((max-min)/2))
+    step?: number | "any"; // (1)
     options?: SvelteSet<number> | Set<number>;
-    background?: Range; // <{ min: 5, max: 95 }>
-    status?: string; // bindable <STATE.NEUTRAL>
+    background?: Range; // ({ min: 5, max: 95 })
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;
@@ -24,11 +24,11 @@
     range: Range; // bindable
     left?: Snippet<[string, number, HTMLInputElement | undefined]>; // Snippet<[status,value,element]>
     right?: Snippet<[string, number, HTMLInputElement | undefined]>; // Snippet<[status,value,element]>
-    value?: number; // bindable <min+((max-min)/2)>
-    step?: number | "any"; // <1>
+    value?: number; // bindable (min+((max-min)/2))
+    step?: number | "any"; // (1)
     options?: SvelteSet<number> | Set<number>;
-    background?: Range; // <{ min: 5, max: 95 }>
-    status?: string; // bindable <STATE.NEUTRAL>
+    background?: Range; // ({ min: 5, max: 95 })
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;

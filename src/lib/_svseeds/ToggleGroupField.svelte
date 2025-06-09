@@ -1,6 +1,6 @@
 <!--
   @component
-  default value: `<value>`
+  default value: `(value)`
   ```ts
   interface ToggleGroupFieldProps {
     options: SvelteMap<string, string> | Map<string, string>;
@@ -10,11 +10,11 @@
     left?: Snippet<[string, string[]]>; // Snippet<[status,values]>
     right?: Snippet<[string, string[]]>; // Snippet<[status,values]>
     bottom?: string;
-    descFirst?: boolean; // <false>
+    descFirst?: boolean; // (false)
     values?: string[]; // bindable
-    multiple?: boolean; // <true>
+    multiple?: boolean; // (true)
     validations?: ToggleGroupFieldValidation[];
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     name?: string;
     deps?: ToggleGroupFieldDeps;
@@ -35,11 +35,11 @@
     left?: Snippet<[string, string[]]>; // Snippet<[status,values]>
     right?: Snippet<[string, string[]]>; // Snippet<[status,values]>
     bottom?: string;
-    descFirst?: boolean; // <false>
+    descFirst?: boolean; // (false)
     values?: string[]; // bindable
-    multiple?: boolean; // <true>
+    multiple?: boolean; // (true)
     validations?: ToggleGroupFieldValidation[];
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     name?: string;
     deps?: ToggleGroupFieldDeps;

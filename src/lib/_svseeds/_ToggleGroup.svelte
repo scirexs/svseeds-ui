@@ -1,14 +1,14 @@
 <!--
   @component
-  default value: `<value>`
+  default value: `(value)`
   ```ts
   interface ToggleGroupProps {
     options: SvelteMap<string, string> | Map<string, string>;
     values?: string[]; // bindable
-    multiple?: boolean; // <true>
+    multiple?: boolean; // (true)
     ariaDescId?: string;
     ariaErrMsgId?: string; // bindable
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     action?: Action;
     [key: string]: unknown | Snippet<[string]>;
@@ -19,10 +19,10 @@
   export interface ToggleGroupProps {
     options: SvelteMap<string, string> | Map<string, string>;
     values?: string[]; // bindable
-    multiple?: boolean; // <true>
+    multiple?: boolean; // (true)
     ariaDescId?: string;
     ariaErrMsgId?: string; // bindable
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     action?: Action;
     [key: string]: unknown | Snippet<[string]>;

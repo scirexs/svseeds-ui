@@ -1,11 +1,11 @@
 <!--
   @component
-  default value: `<value>`
+  default value: `(value)`
   ```ts
   interface AccordionProps {
     labels?: string[];
-    current?: number; // bindable <-1>
-    status?: string; // bindable <STATE.NEUTRAL>
+    current?: number; // bindable (-1)
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     deps?: AccordionDeps;
     [key: string]: unknown | Snippet;
@@ -18,8 +18,8 @@
 <script module lang="ts">
   export interface AccordionProps {
     labels?: string[];
-    current?: number; // bindable <-1>
-    status?: string; // bindable <STATE.NEUTRAL>
+    current?: number; // bindable (-1)
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     deps?: AccordionDeps;
     [key: string]: unknown | Snippet;

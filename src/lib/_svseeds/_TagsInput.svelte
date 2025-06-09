@@ -1,19 +1,19 @@
 <!--
   @component
-  default value: `<value>`
+  default value: `(value)`
   ```ts
   interface TagsInputProps {
     label?: Snippet<[string, string]>; // Snippet<[value,status]>
     aux?: Snippet<[string, string]>; // Snippet<[value,status]>
     values?: string[]; // bindable
     value?: string; // bindable
-    type?: "left" | "right"; // <"left">
-    confirm?: string[]; // <["Enter"]>
-    trim?: boolean; // <true>
-    unique?: boolean; // <true>
+    type?: "left" | "right"; // ("left")
+    confirm?: string[]; // (["Enter"])
+    trim?: boolean; // (true)
+    unique?: boolean; // (true)
     ariaErrMsgId?: string; // bindable
     events?: TagsInputEvents;
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;
@@ -31,13 +31,13 @@
     aux?: Snippet<[string, string]>; // Snippet<[value,status]>
     values?: string[]; // bindable
     value?: string; // bindable
-    type?: "left" | "right"; // <"left">
-    confirm?: string[]; // <["Enter"]>
-    trim?: boolean; // <true>
-    unique?: boolean; // <true>
+    type?: "left" | "right"; // ("left")
+    confirm?: string[]; // (["Enter"])
+    trim?: boolean; // (true)
+    unique?: boolean; // (true)
     ariaErrMsgId?: string; // bindable
     events?: TagsInputEvents;
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;

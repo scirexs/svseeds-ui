@@ -1,14 +1,14 @@
 <!--
   @component
-  default value: `<value>`
+  default value: `(value)`
   ```ts
   interface ModalProps {
     children: Snippet;
-    open?: boolean; // bindable <false>
-    closable?: boolean; // <true>
+    open?: boolean; // bindable (false)
+    closable?: boolean; // (true)
     trigger?: HTMLElement; // bindable
     ariaLabel?: string;
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     element?: HTMLDialogElement; // bindable
   }
@@ -17,11 +17,11 @@
 <script module lang="ts">
   export interface ModalProps {
     children: Snippet;
-    open?: boolean; // bindable <false>
-    closable?: boolean; // <true>
+    open?: boolean; // bindable (false)
+    closable?: boolean; // (true)
     trigger?: HTMLElement; // bindable
     ariaLabel?: string;
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     element?: HTMLDialogElement; // bindable
   }

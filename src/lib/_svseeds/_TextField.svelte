@@ -1,6 +1,6 @@
 <!--
   @component
-  default value: `<value>`
+  default value: `(value)`
   ```ts
   interface TextFieldProps {
     label?: string;
@@ -9,12 +9,12 @@
     left?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[status,value,element]>
     right?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[status,value,element]>
     bottom?: string;
-    descFirst?: boolean; // <false>
+    descFirst?: boolean; // (false)
     value?: string; // bindable
-    type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url";  // bindable <"text">
+    type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url";  // bindable ("text")
     options?: SvelteSet<string> | Set<string>;
     validations?: TextFieldValidation[];
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     attributes?: HTMLInputAttributes | HTMLTextareaAttributes;
     action?: Action;
@@ -31,12 +31,12 @@
     left?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[status,value,element]>
     right?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[status,value,element]>
     bottom?: string;
-    descFirst?: boolean; // <false>
+    descFirst?: boolean; // (false)
     value?: string; // bindable
-    type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url";  // bindable <"text">
+    type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url";  // bindable ("text")
     options?: SvelteSet<string> | Set<string>;
     validations?: TextFieldValidation[];
-    status?: string; // bindable <STATE.NEUTRAL>
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
     attributes?: HTMLInputAttributes | HTMLTextareaAttributes;
     action?: Action;

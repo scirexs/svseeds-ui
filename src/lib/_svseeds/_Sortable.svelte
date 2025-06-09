@@ -1,20 +1,20 @@
 <!--
   @component
-  default value: `<value>`
+  default value: `(value)`
   ```ts
   interface SortableProps {
     items: SortableItems; // wrapper of string array as items to handle DnD
     item: Snippet<[string, string, PointerEventHandler]>; // Snippet<[status, value, onpointerdown]>
-    ghost?: Snippet<[string]>; // custom shadow while dragging <the translucent item>; Snippet<[value]>
-    name?: string;        // name of this group <random string>
-    mode?: SortableMode;  // sort mode <"std">;
-    accept?: string[];    // list of accept group names <undefined>; undefined=any,[]=none
-    sort?: boolean;       // enable sort within same group <true>
-    multiple?: boolean;   // enable multiple select & drag with them <false>
-    draggable?: boolean;  // enable default pointerdown handler <true>
-    appendable?: boolean; // enable append when enter group area <false>
-    confirm?: boolean     // enable confirm interval time to move items <false>
-    status?: string;      // bindable <STATE.NEUTRAL>
+    ghost?: Snippet<[string]>; // custom shadow while dragging (the translucent item); Snippet<[value]>
+    name?: string;        // name of this group (random string)
+    mode?: SortableMode;  // sort mode ("std"); "std","clone","swap"
+    accept?: string[];    // list of accept group names (undefined); undefined=any,[]=none
+    sort?: boolean;       // enable sort within same group (true)
+    multiple?: boolean;   // enable multiple select & drag with them (false)
+    draggable?: boolean;  // enable default pointerdown handler (true)
+    appendable?: boolean; // enable append when enter group area (false)
+    confirm?: boolean     // enable confirm interval time to move items (false)
+    status?: string;      // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
   }
   type SortableMode = "std" | "clone" | "swap";
@@ -52,16 +52,16 @@
   export interface SortableProps {
     items: SortableItems; // wrapper of string array as items to handle DnD
     item: Snippet<[string, string, PointerEventHandler]>; // Snippet<[status, value, onpointerdown]>
-    ghost?: Snippet<[string]>; // custom shadow while dragging <the translucent item>; Snippet<[value]>
-    name?: string;        // name of this group <random string>
-    mode?: SortableMode;  // sort mode <"std">; "std","clone","swap"
-    accept?: string[];    // list of accept group names <undefined>; undefined=any,[]=none
-    sort?: boolean;       // enable sort within same group <true>
-    multiple?: boolean;   // enable multiple select & drag with them <false>
-    draggable?: boolean;  // enable default pointerdown handler <true>
-    appendable?: boolean; // enable append when enter group area <false>
-    confirm?: boolean     // enable confirm interval time to move items <false>
-    status?: string; // bindable <STATE.NEUTRAL>
+    ghost?: Snippet<[string]>; // custom shadow while dragging (the translucent item); Snippet<[value]>
+    name?: string;        // name of this group (random string)
+    mode?: SortableMode;  // sort mode ("std"); "std","clone","swap"
+    accept?: string[];    // list of accept group names (undefined); undefined=any,[]=none
+    sort?: boolean;       // enable sort within same group (true)
+    multiple?: boolean;   // enable multiple select & drag with them (false)
+    draggable?: boolean;  // enable default pointerdown handler (true)
+    appendable?: boolean; // enable append when enter group area (false)
+    confirm?: boolean     // enable confirm interval time to move items (false)
+    status?: string; // bindable (STATE.NEUTRAL)
     style?: SVSStyle;
   }
   export type SortableReqdProps = "items" | "item";
