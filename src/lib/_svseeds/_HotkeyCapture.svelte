@@ -7,9 +7,9 @@
     placeholder?: string;
     active?: boolean; // bindable, (false)
     disabled?: boolean; // bindable, (false)
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     element?: HTMLInputElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   ```
 -->
@@ -19,12 +19,12 @@
     placeholder?: string;
     active?: boolean; // bindable, (false)
     disabled?: boolean; // bindable, (false)
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     element?: HTMLInputElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   export type HotkeyCaptureReqdProps = never;
-  export type HotkeyCaptureBindProps = "value" | "active" | "disable" | "status" | "element";
+  export type HotkeyCaptureBindProps = "value" | "active" | "disable" | "variant" | "element";
 
   const preset = "svs-hotkey-capture";
   const KEY_MODIFIER = new Set(["Control", "Alt", "Shift", "Meta"]);
@@ -36,19 +36,19 @@
   }
 
   import { untrack } from "svelte";
-  import { type SVSStyle, STATE, PARTS, fnClass, isNeutral } from "./core";
+  import { type SVSClass, VARIANT, PARTS, fnClass, isNeutral } from "./core";
 </script>
 
 <script lang="ts">
-  let { value = $bindable(""), placeholder, active = $bindable(false), disabled = $bindable(false), status = $bindable(""), style, element = $bindable() }: HotkeyCaptureProps = $props();
+  let { value = $bindable(""), placeholder, active = $bindable(false), disabled = $bindable(false), element = $bindable(), styling, variant = $bindable("") }: HotkeyCaptureProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.NEUTRAL;
-  const cls = fnClass(preset, style);
-  let neutral = isNeutral(status) ? status : STATE.NEUTRAL;
+  if (!variant) variant = VARIANT.NEUTRAL;
+  const cls = fnClass(preset, styling);
+  let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
 
   // *** Bind Handlers *** //
-  $effect(() => { neutral = isNeutral(status) ? status : neutral });
+  $effect(() => { neutral = isNeutral(variant) ? variant : neutral });
   $effect.pre(() => {
     disabled;
     untrack(() => shiftStatus());
@@ -67,8 +67,8 @@
     }
   }
   function shiftStatus() {
-    if (disabled) return status = STATE.INACTIVE;
-    status = active ? STATE.ACTIVE : neutral;
+    if (disabled) return variant = VARIANT.INACTIVE;
+    variant = active ? VARIANT.ACTIVE : neutral;
   }
 
   // *** Event Handlers *** //
@@ -105,4 +105,4 @@
 
 <!---------------------------------------->
 
-<input bind:value bind:this={element} class={cls(PARTS.MAIN, status)} type="text" readonly={true} {placeholder} {disabled} {onkeydown} {onpointerdown} {onwheel} {oncontextmenu} {onfocus} {onblur} />
+<input bind:value bind:this={element} class={cls(PARTS.MAIN, variant)} type="text" readonly={true} {placeholder} {disabled} {onkeydown} {onpointerdown} {onwheel} {oncontextmenu} {onfocus} {onblur} />

@@ -8,10 +8,10 @@
     multiple?: boolean; // (true)
     ariaDescId?: string;
     ariaErrMsgId?: string; // bindable
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     action?: Action;
-    [key: string]: unknown | Snippet<[string]>;
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
+    [key: string]: unknown | Snippet<[string]>; // contents instead of the value
   }
   ```
 -->
@@ -22,13 +22,13 @@
     multiple?: boolean; // (true)
     ariaDescId?: string;
     ariaErrMsgId?: string; // bindable
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     action?: Action;
-    [key: string]: unknown | Snippet<[string]>;
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
+    [key: string]: unknown | Snippet<[string]>; // contents instead of the value
   }
   export type ToggleGroupReqdProps = "options";
-  export type ToggleGroupBindProps = "values" | "ariaErrMsgId" | "status";
+  export type ToggleGroupBindProps = "values" | "ariaErrMsgId" | "variant";
 
   const preset = "svs-toggle-group";
 
@@ -41,15 +41,15 @@
   import { type Snippet } from "svelte";
   import { type Action } from "svelte/action";
   import { type SvelteMap } from "svelte/reactivity";
-  import { type SVSStyle, STATE, PARTS, fnClass } from "./core";
+  import { type SVSClass, VARIANT, PARTS, fnClass } from "./core";
 </script>
 
 <script lang="ts">
-  let { options, values = $bindable([]), multiple = true, ariaDescId, ariaErrMsgId = $bindable(), status = $bindable(""), style, attributes, action, ...rest }: ToggleGroupProps = $props();
+  let { options, values = $bindable([]), multiple = true, ariaDescId, ariaErrMsgId = $bindable(), attributes, action, styling, variant = $bindable(""), ...rest }: ToggleGroupProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.NEUTRAL;
-  const cls = fnClass(preset, style);
+  if (!variant) variant = VARIANT.NEUTRAL;
+  const cls = fnClass(preset, styling);
   const role = multiple ? "checkbox" : "radio";
   const roleGroup = multiple ? "group" : "radiogroup";
 
@@ -69,9 +69,9 @@
 <!---------------------------------------->
 
 {#if opts.length}
-  <span class={cls(PARTS.WHOLE, status)} role={roleGroup} aria-describedby={ariaDescId} aria-invalid={!multiple ? invalid : undefined} aria-errormessage={!multiple ? ariaErrMsgId : undefined}>
+  <span class={cls(PARTS.WHOLE, variant)} role={roleGroup} aria-describedby={ariaDescId} aria-invalid={!multiple ? invalid : undefined} aria-errormessage={!multiple ? ariaErrMsgId : undefined}>
     {#each opts as { value, text, checked } (value)}
-      {@const c = cls(PARTS.MAIN, checked ? STATE.ACTIVE : status)}
+      {@const c = cls(PARTS.MAIN, checked ? VARIANT.ACTIVE : variant)}
       {#if action}
         <button class={c} aria-checked={checked} aria-invalid={multiple ? invalid : undefined} aria-errormessage={multiple ? ariaErrMsgId : undefined} onclick={updateValues(value)} type="button" {role} use:action>
           {@render content(value, text)}

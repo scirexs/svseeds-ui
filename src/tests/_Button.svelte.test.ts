@@ -3,24 +3,24 @@ import { render } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import Button from "../lib/_svseeds/_Button.svelte";
-import { PARTS, STATE } from "../lib/_svseeds/core.ts";
+import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
 
 const leftid = "test-left";
 const rightid = "test-right";
 const leftfn = createRawSnippet(
   (
-    status: () => string,
+    variant: () => string,
     element: () => HTMLButtonElement | undefined,
   ) => {
-    return { render: () => `<span data-testid="${leftid}">${status()},${element?.toString()}</span>` };
+    return { render: () => `<span data-testid="${leftid}">${variant()},${element?.toString()}</span>` };
   },
 );
 const rightfn = createRawSnippet(
   (
-    status: () => string,
+    variant: () => string,
     element: () => HTMLButtonElement | undefined,
   ) => {
-    return { render: () => `<span data-testid="${rightid}">${status()},${element?.toString()}</span>` };
+    return { render: () => `<span data-testid="${rightid}">${variant()},${element?.toString()}</span>` };
   },
 );
 const children = createRawSnippet(() => {
@@ -256,12 +256,12 @@ describe("Specify attrs & form validation & event handlers", () => {
     expect(mockClickAttr).not.toHaveBeenCalled();
   });
 
-  test("default class of neutral status", () => {
+  test("default class of neutral variant", () => {
     const props = {
       children,
       left: leftfn,
       right: rightfn,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
     };
 
     const { getByRole, getByTestId } = render(Button, props);
@@ -270,19 +270,19 @@ describe("Specify attrs & form validation & event handlers", () => {
     const mainsp = btn.children[1];
     const rightsp = getByTestId(rightid).parentElement;
 
-    expect(props.status).toBe(STATE.NEUTRAL);
-    expect(btn).toHaveClass(seed, PARTS.WHOLE, STATE.NEUTRAL);
-    expect(leftsp).toHaveClass(seed, PARTS.LEFT, STATE.NEUTRAL);
-    expect(mainsp).toHaveClass(seed, PARTS.MAIN, STATE.NEUTRAL);
-    expect(rightsp).toHaveClass(seed, PARTS.RIGHT, STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
+    expect(btn).toHaveClass(seed, PARTS.WHOLE, VARIANT.NEUTRAL);
+    expect(leftsp).toHaveClass(seed, PARTS.LEFT, VARIANT.NEUTRAL);
+    expect(mainsp).toHaveClass(seed, PARTS.MAIN, VARIANT.NEUTRAL);
+    expect(rightsp).toHaveClass(seed, PARTS.RIGHT, VARIANT.NEUTRAL);
   });
 
-  test("default class of active status", () => {
+  test("default class of active variant", () => {
     const props = {
       children,
       left: leftfn,
       right: rightfn,
-      status: STATE.ACTIVE,
+      variant: VARIANT.ACTIVE,
     };
 
     const { getByRole, getByTestId } = render(Button, props);
@@ -291,18 +291,18 @@ describe("Specify attrs & form validation & event handlers", () => {
     const mainsp = btn.children[1];
     const rightsp = getByTestId(rightid).parentElement;
 
-    expect(btn).toHaveClass(seed, PARTS.WHOLE, STATE.ACTIVE);
-    expect(leftsp).toHaveClass(seed, PARTS.LEFT, STATE.ACTIVE);
-    expect(mainsp).toHaveClass(seed, PARTS.MAIN, STATE.ACTIVE);
-    expect(rightsp).toHaveClass(seed, PARTS.RIGHT, STATE.ACTIVE);
+    expect(btn).toHaveClass(seed, PARTS.WHOLE, VARIANT.ACTIVE);
+    expect(leftsp).toHaveClass(seed, PARTS.LEFT, VARIANT.ACTIVE);
+    expect(mainsp).toHaveClass(seed, PARTS.MAIN, VARIANT.ACTIVE);
+    expect(rightsp).toHaveClass(seed, PARTS.RIGHT, VARIANT.ACTIVE);
   });
 
-  test("default class of inactive status", () => {
+  test("default class of inactive variant", () => {
     const props = {
       children,
       left: leftfn,
       right: rightfn,
-      status: STATE.INACTIVE,
+      variant: VARIANT.INACTIVE,
     };
 
     const { getByRole, getByTestId, rerender } = render(Button, props);
@@ -311,20 +311,20 @@ describe("Specify attrs & form validation & event handlers", () => {
     const mainsp = btn.children[1];
     const rightsp = getByTestId(rightid).parentElement;
 
-    expect(btn).toHaveClass(seed, PARTS.WHOLE, STATE.INACTIVE);
-    expect(leftsp).toHaveClass(seed, PARTS.LEFT, STATE.INACTIVE);
-    expect(mainsp).toHaveClass(seed, PARTS.MAIN, STATE.INACTIVE);
-    expect(rightsp).toHaveClass(seed, PARTS.RIGHT, STATE.INACTIVE);
+    expect(btn).toHaveClass(seed, PARTS.WHOLE, VARIANT.INACTIVE);
+    expect(leftsp).toHaveClass(seed, PARTS.LEFT, VARIANT.INACTIVE);
+    expect(mainsp).toHaveClass(seed, PARTS.MAIN, VARIANT.INACTIVE);
+    expect(rightsp).toHaveClass(seed, PARTS.RIGHT, VARIANT.INACTIVE);
   });
 
-  test("w/ string style class of neutral status", () => {
+  test("w/ string styling class of neutral variant", () => {
     const clsid = "custom-button";
     const props = $state({
       children,
       left: leftfn,
       right: rightfn,
-      status: STATE.NEUTRAL,
-      style: clsid,
+      variant: VARIANT.NEUTRAL,
+      styling: clsid,
     });
 
     const { getByRole, getByTestId } = render(Button, props);
@@ -333,21 +333,21 @@ describe("Specify attrs & form validation & event handlers", () => {
     const mainsp = btn.children[1];
     const rightsp = getByTestId(rightid).parentElement;
 
-    expect(props.status).toBe(STATE.NEUTRAL);
-    expect(btn).toHaveClass(clsid, PARTS.WHOLE, STATE.NEUTRAL);
-    expect(leftsp).toHaveClass(clsid, PARTS.LEFT, STATE.NEUTRAL);
-    expect(mainsp).toHaveClass(clsid, PARTS.MAIN, STATE.NEUTRAL);
-    expect(rightsp).toHaveClass(clsid, PARTS.RIGHT, STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
+    expect(btn).toHaveClass(clsid, PARTS.WHOLE, VARIANT.NEUTRAL);
+    expect(leftsp).toHaveClass(clsid, PARTS.LEFT, VARIANT.NEUTRAL);
+    expect(mainsp).toHaveClass(clsid, PARTS.MAIN, VARIANT.NEUTRAL);
+    expect(rightsp).toHaveClass(clsid, PARTS.RIGHT, VARIANT.NEUTRAL);
   });
 
-  test("w/ string style class of active status", () => {
+  test("w/ string styling class of active variant", () => {
     const clsid = "custom-button";
     const props = $state({
       children,
       left: leftfn,
       right: rightfn,
-      status: STATE.ACTIVE,
-      style: clsid,
+      variant: VARIANT.ACTIVE,
+      styling: clsid,
     });
 
     const { getByRole, getByTestId } = render(Button, props);
@@ -356,10 +356,10 @@ describe("Specify attrs & form validation & event handlers", () => {
     const mainsp = btn.children[1];
     const rightsp = getByTestId(rightid).parentElement;
 
-    expect(btn).toHaveClass(clsid, PARTS.WHOLE, STATE.ACTIVE);
-    expect(leftsp).toHaveClass(clsid, PARTS.LEFT, STATE.ACTIVE);
-    expect(mainsp).toHaveClass(clsid, PARTS.MAIN, STATE.ACTIVE);
-    expect(rightsp).toHaveClass(clsid, PARTS.RIGHT, STATE.ACTIVE);
+    expect(btn).toHaveClass(clsid, PARTS.WHOLE, VARIANT.ACTIVE);
+    expect(leftsp).toHaveClass(clsid, PARTS.LEFT, VARIANT.ACTIVE);
+    expect(mainsp).toHaveClass(clsid, PARTS.MAIN, VARIANT.ACTIVE);
+    expect(rightsp).toHaveClass(clsid, PARTS.RIGHT, VARIANT.ACTIVE);
   });
 
   const dynObj = {
@@ -368,19 +368,19 @@ describe("Specify attrs & form validation & event handlers", () => {
     active: "btn-active",
     inactive: "btn-inactive",
   };
-  const style = {
+  const styling = {
     whole: dynObj,
     main: dynObj,
     left: dynObj,
     right: dynObj,
   };
-  test("w/ object style of neutral status", () => {
+  test("w/ object styling of neutral variant", () => {
     const props = $state({
       children,
       left: leftfn,
       right: rightfn,
-      status: STATE.NEUTRAL,
-      style,
+      variant: VARIANT.NEUTRAL,
+      styling,
     });
 
     const { getByRole, getByTestId } = render(Button, props);
@@ -389,20 +389,20 @@ describe("Specify attrs & form validation & event handlers", () => {
     const mainsp = btn.children[1];
     const rightsp = getByTestId(rightid).parentElement;
 
-    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(btn).toHaveClass(dynObj.base, dynObj.neutral);
     expect(leftsp).toHaveClass(dynObj.base, dynObj.neutral);
     expect(mainsp).toHaveClass(dynObj.base, dynObj.neutral);
     expect(rightsp).toHaveClass(dynObj.base, dynObj.neutral);
   });
 
-  test("w/ object style of active status", () => {
+  test("w/ object styling of active variant", () => {
     const props = $state({
       children,
       left: leftfn,
       right: rightfn,
-      status: STATE.ACTIVE,
-      style,
+      variant: VARIANT.ACTIVE,
+      styling,
     });
 
     const { getByRole, getByTestId } = render(Button, props);
@@ -417,13 +417,13 @@ describe("Specify attrs & form validation & event handlers", () => {
     expect(rightsp).toHaveClass(dynObj.base, dynObj.active);
   });
 
-  test("w/ object style of inactive status", () => {
+  test("w/ object styling of inactive variant", () => {
     const props = $state({
       children,
       left: leftfn,
       right: rightfn,
-      status: STATE.INACTIVE,
-      style,
+      variant: VARIANT.INACTIVE,
+      styling,
     });
 
     const { getByRole, getByTestId } = render(Button, props);
@@ -446,16 +446,16 @@ describe("Specify attrs & form validation & event handlers", () => {
     expect(props.element).toBe(btn);
   });
 
-  test("status binding", async () => {
-    const props = $state({ children, status: "custom-status" });
+  test("variant binding", async () => {
+    const props = $state({ children, variant: "custom-variant" });
     const { getByRole, rerender } = render(Button, props);
     const btn = getByRole("button") as HTMLButtonElement;
 
-    expect(btn).toHaveClass(seed, PARTS.WHOLE, "custom-status");
+    expect(btn).toHaveClass(seed, PARTS.WHOLE, "custom-variant");
 
-    props.status = "another-status";
+    props.variant = "another-variant";
     await rerender(props);
-    expect(btn).toHaveClass(seed, PARTS.WHOLE, "another-status");
+    expect(btn).toHaveClass(seed, PARTS.WHOLE, "another-variant");
   });
 
   test("form binding", () => {

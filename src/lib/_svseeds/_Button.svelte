@@ -3,50 +3,51 @@
   default value: `(value)`
   ```ts
   interface ButtonProps {
-    children: Snippet;
-    left?: Snippet<[string, HTMLButtonElement | undefined]>; // Snippet<[status,element]>
-    right?: Snippet<[string, HTMLButtonElement | undefined]>; // Snippet<[status,element]>
+    children: Snippet<[string]>; // Snippet<[variant]>
+    left?: Snippet<[string, HTMLButtonElement | undefined]>; // Snippet<[variant,element]>
+    right?: Snippet<[string, HTMLButtonElement | undefined]>; // Snippet<[variant,element]>
     type?: "submit" | "reset" | "button"; // ("button")
     onclick?: MouseEventHandler<HTMLButtonElement> | null;
     form?: HTMLFormElement; // bindable
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     attributes?: HTMLButtonAttributes;
     action?: Action;
     element?: HTMLButtonElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   ```
 -->
 <script module lang="ts">
   export interface ButtonProps {
-    children: Snippet;
-    left?: Snippet<[string, HTMLButtonElement | undefined]>; // Snippet<[status,element]>
-    right?: Snippet<[string, HTMLButtonElement | undefined]>; // Snippet<[status,element]>
+    children: Snippet<[string]>; // Snippet<[variant]>
+    left?: Snippet<[string, HTMLButtonElement | undefined]>; // Snippet<[variant,element]>
+    right?: Snippet<[string, HTMLButtonElement | undefined]>; // Snippet<[variant,element]>
     type?: "submit" | "reset" | "button"; // ("button")
     onclick?: MouseEventHandler<HTMLButtonElement> | null;
     form?: HTMLFormElement; // bindable
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     attributes?: HTMLButtonAttributes;
     action?: Action;
     element?: HTMLButtonElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   export type ButtonReqdProps = "children";
-  export type ButtonBindProps = "form" | "status" | "element";
+  export type ButtonBindProps = "form" | "variant" | "element";
 
   const preset = "svs-button";
 
   import { type Snippet } from "svelte";
   import { type Action } from "svelte/action";
   import { type HTMLButtonAttributes, type MouseEventHandler } from "svelte/elements";
-  import { type SVSStyle, STATE, PARTS, fnClass, omit } from "./core";
+  import { type SVSClass, VARIANT, PARTS, fnClass, omit } from "./core";
 </script>
 
 <script lang="ts">
-  let { children, left, right, type = "button", onclick, form = $bindable(), status = $bindable(STATE.NEUTRAL), style, attributes, action, element = $bindable()}: ButtonProps = $props();
+  let { children, left, right, type = "button", onclick, form = $bindable(), attributes, action, element = $bindable(), styling, variant = $bindable("") }: ButtonProps = $props();
 
   // *** Initialize *** //
-  const cls = fnClass(preset, style);
+  if (!variant) variant = VARIANT.NEUTRAL;
+  const cls = fnClass(preset, styling);
   const click = onclick ?? attributes?.["onclick"];
   const attrs = omit(attributes, "class", "type", "onclick");
 
@@ -59,24 +60,24 @@
 <!---------------------------------------->
 
 {#if action}
-  <button bind:this={element} class={cls(PARTS.WHOLE, status)} {type} {onclick} {...attrs} use:action>
+  <button bind:this={element} class={cls(PARTS.WHOLE, variant)} {type} {onclick} {...attrs} use:action>
     {@render whole()}
   </button>
 {:else}
-  <button bind:this={element} class={cls(PARTS.WHOLE, status)} {type} {onclick} {...attrs}>
+  <button bind:this={element} class={cls(PARTS.WHOLE, variant)} {type} {onclick} {...attrs}>
     {@render whole()}
   </button>
 {/if}
 
 {#snippet side(area: string, body?: Snippet<[string, HTMLButtonElement | undefined]>)}
   {#if body}
-    <span class={cls(area, status)}>{@render body(status, element)}</span>
+    <span class={cls(area, variant)}>{@render body(variant, element)}</span>
   {/if}
 {/snippet}
 {#snippet whole()}
   {@render side(PARTS.LEFT, left)}
-  <span class={cls(PARTS.MAIN, status)}>
-    {@render children()}
+  <span class={cls(PARTS.MAIN, variant)}>
+    {@render children(variant)}
   </span>
   {@render side(PARTS.RIGHT, right)}
 {/snippet}

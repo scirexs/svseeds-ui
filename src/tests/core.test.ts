@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { BASE, debounce, elemId, fnClass, omit, PARTS, STATE, type SVSStyle, throttle, UniqueId } from "../lib/_svseeds/core.ts";
+import { BASE, debounce, elemId, fnClass, omit, PARTS, throttle, UniqueId, VARIANT } from "../lib/_svseeds/core.ts";
 
 describe("const vars", () => {
-  test("STATE", () => {
-    expect(STATE).toEqual({
+  test("VARIANT", () => {
+    expect(VARIANT).toEqual({
       NEUTRAL: "neutral",
       ACTIVE: "active",
       INACTIVE: "inactive",
     });
-    expect(Object.isFrozen(STATE)).toBe(true);
+    expect(Object.isFrozen(VARIANT)).toBe(true);
   });
   test("PARTS", () => {
     expect(PARTS).toEqual({
@@ -65,28 +65,28 @@ describe("fnClass", () => {
   const srulex = {
     [PARTS.WHOLE]: {
       [BASE]: ["style-rule-w1", "style-rule-w2"],
-      [STATE.ACTIVE]: { stylerulewa: "style-rule-wa" },
+      [VARIANT.ACTIVE]: { stylerulewa: "style-rule-wa" },
     },
     [PARTS.MAIN]: [{ stylerulem: "style-rule-m" }],
   };
   const prules = {
     [PARTS.WHOLE]: {
       [BASE]: "preset-rules-wc",
-      [STATE.NEUTRAL]: "preset-rules-wd",
+      [VARIANT.NEUTRAL]: "preset-rules-wd",
     },
     [PARTS.TOP]: {
-      [STATE.NEUTRAL]: "preset-rules-tc",
-      [STATE.INACTIVE]: "preset-rules-ti",
+      [VARIANT.NEUTRAL]: "preset-rules-tc",
+      [VARIANT.INACTIVE]: "preset-rules-ti",
     },
   };
   const srules = {
     [PARTS.WHOLE]: {
       [BASE]: "style-rules-wc",
-      [STATE.ACTIVE]: "style-rules-wa",
+      [VARIANT.ACTIVE]: "style-rules-wa",
     },
     [PARTS.MAIN]: {
       [BASE]: "style-rules-mc",
-      [STATE.INACTIVE]: "style-rules-mi",
+      [VARIANT.INACTIVE]: "style-rules-mi",
     },
   };
 
@@ -124,23 +124,23 @@ describe("fnClass", () => {
   const empty_undef = fnClass({}, undefined);
 
   test("str_str", () => {
-    const wholeNeutral = str_str(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = str_str(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = str_str(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = str_str(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = str_str(PARTS.MAIN, STATE.NEUTRAL);
-    expect(wholeNeutral).toBe(`${sstr} ${PARTS.WHOLE} ${STATE.NEUTRAL}`);
-    expect(wholeActive).toBe(`${sstr} ${PARTS.WHOLE} ${STATE.ACTIVE}`);
-    expect(wholeInactive).toBe(`${sstr} ${PARTS.WHOLE} ${STATE.INACTIVE}`);
-    expect(topNeutral).toBe(`${sstr} ${PARTS.TOP} ${STATE.NEUTRAL}`);
-    expect(mainNeutral).toBe(`${sstr} ${PARTS.MAIN} ${STATE.NEUTRAL}`);
+    const wholeNeutral = str_str(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = str_str(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = str_str(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = str_str(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = str_str(PARTS.MAIN, VARIANT.NEUTRAL);
+    expect(wholeNeutral).toBe(`${sstr} ${PARTS.WHOLE} ${VARIANT.NEUTRAL}`);
+    expect(wholeActive).toBe(`${sstr} ${PARTS.WHOLE} ${VARIANT.ACTIVE}`);
+    expect(wholeInactive).toBe(`${sstr} ${PARTS.WHOLE} ${VARIANT.INACTIVE}`);
+    expect(topNeutral).toBe(`${sstr} ${PARTS.TOP} ${VARIANT.NEUTRAL}`);
+    expect(mainNeutral).toBe(`${sstr} ${PARTS.MAIN} ${VARIANT.NEUTRAL}`);
   });
   test("str_rule", () => {
-    const wholeNeutral = str_rule(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = str_rule(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = str_rule(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = str_rule(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = str_rule(PARTS.MAIN, STATE.NEUTRAL);
+    const wholeNeutral = str_rule(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = str_rule(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = str_rule(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = str_rule(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = str_rule(PARTS.MAIN, VARIANT.NEUTRAL);
     expect(wholeNeutral).toBe(`${srule[PARTS.WHOLE]}`);
     expect(wholeActive).toBe(`${srule[PARTS.WHOLE]}`);
     expect(wholeInactive).toBe(`${srule[PARTS.WHOLE]}`);
@@ -148,83 +148,83 @@ describe("fnClass", () => {
     expect(mainNeutral).toBe(`${srule[PARTS.MAIN]}`);
   });
   test("str_rulex", () => {
-    const wholeNeutral = str_rulex(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = str_rulex(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = str_rulex(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = str_rulex(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = str_rulex(PARTS.MAIN, STATE.NEUTRAL);
+    const wholeNeutral = str_rulex(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = str_rulex(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = str_rulex(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = str_rulex(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = str_rulex(PARTS.MAIN, VARIANT.NEUTRAL);
     expect(wholeNeutral).toEqual(srulex[PARTS.WHOLE][BASE]);
-    expect(wholeActive).toEqual([srulex[PARTS.WHOLE][BASE], srulex[PARTS.WHOLE][STATE.ACTIVE]]);
+    expect(wholeActive).toEqual([srulex[PARTS.WHOLE][BASE], srulex[PARTS.WHOLE][VARIANT.ACTIVE]]);
     expect(wholeInactive).toEqual(srulex[PARTS.WHOLE][BASE]);
     expect(topNeutral).toBeUndefined();
     expect(mainNeutral).toEqual(srulex[PARTS.MAIN]);
   });
   test("str_rules", () => {
-    const wholeNeutral = str_rules(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = str_rules(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = str_rules(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = str_rules(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = str_rules(PARTS.MAIN, STATE.NEUTRAL);
+    const wholeNeutral = str_rules(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = str_rules(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = str_rules(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = str_rules(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = str_rules(PARTS.MAIN, VARIANT.NEUTRAL);
     expect(wholeNeutral).toBe(`${srules[PARTS.WHOLE][BASE]}`);
-    expect(wholeActive).toEqual([srules[PARTS.WHOLE][BASE], srules[PARTS.WHOLE][STATE.ACTIVE]]);
+    expect(wholeActive).toEqual([srules[PARTS.WHOLE][BASE], srules[PARTS.WHOLE][VARIANT.ACTIVE]]);
     expect(wholeInactive).toBe(`${srules[PARTS.WHOLE][BASE]}`);
     expect(topNeutral).toBeUndefined();
     expect(mainNeutral).toBe(`${srules[PARTS.MAIN][BASE]}`);
   });
   test("str_blank", () => {
-    const wholeNeutral = str_blank(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = str_blank(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = str_blank(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = str_blank(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = str_blank(PARTS.MAIN, STATE.NEUTRAL);
-    expect(wholeNeutral).toBe(`${pstr} ${PARTS.WHOLE} ${STATE.NEUTRAL}`);
-    expect(wholeActive).toBe(`${pstr} ${PARTS.WHOLE} ${STATE.ACTIVE}`);
-    expect(wholeInactive).toBe(`${pstr} ${PARTS.WHOLE} ${STATE.INACTIVE}`);
-    expect(topNeutral).toBe(`${pstr} ${PARTS.TOP} ${STATE.NEUTRAL}`);
-    expect(mainNeutral).toBe(`${pstr} ${PARTS.MAIN} ${STATE.NEUTRAL}`);
+    const wholeNeutral = str_blank(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = str_blank(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = str_blank(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = str_blank(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = str_blank(PARTS.MAIN, VARIANT.NEUTRAL);
+    expect(wholeNeutral).toBe(`${pstr} ${PARTS.WHOLE} ${VARIANT.NEUTRAL}`);
+    expect(wholeActive).toBe(`${pstr} ${PARTS.WHOLE} ${VARIANT.ACTIVE}`);
+    expect(wholeInactive).toBe(`${pstr} ${PARTS.WHOLE} ${VARIANT.INACTIVE}`);
+    expect(topNeutral).toBe(`${pstr} ${PARTS.TOP} ${VARIANT.NEUTRAL}`);
+    expect(mainNeutral).toBe(`${pstr} ${PARTS.MAIN} ${VARIANT.NEUTRAL}`);
   });
   test("str_empty", () => {
-    const wholeNeutral = str_empty(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = str_empty(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = str_empty(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = str_empty(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = str_empty(PARTS.MAIN, STATE.NEUTRAL);
-    expect(wholeNeutral).toBe(`${pstr} ${PARTS.WHOLE} ${STATE.NEUTRAL}`);
-    expect(wholeActive).toBe(`${pstr} ${PARTS.WHOLE} ${STATE.ACTIVE}`);
-    expect(wholeInactive).toBe(`${pstr} ${PARTS.WHOLE} ${STATE.INACTIVE}`);
-    expect(topNeutral).toBe(`${pstr} ${PARTS.TOP} ${STATE.NEUTRAL}`);
-    expect(mainNeutral).toBe(`${pstr} ${PARTS.MAIN} ${STATE.NEUTRAL}`);
+    const wholeNeutral = str_empty(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = str_empty(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = str_empty(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = str_empty(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = str_empty(PARTS.MAIN, VARIANT.NEUTRAL);
+    expect(wholeNeutral).toBe(`${pstr} ${PARTS.WHOLE} ${VARIANT.NEUTRAL}`);
+    expect(wholeActive).toBe(`${pstr} ${PARTS.WHOLE} ${VARIANT.ACTIVE}`);
+    expect(wholeInactive).toBe(`${pstr} ${PARTS.WHOLE} ${VARIANT.INACTIVE}`);
+    expect(topNeutral).toBe(`${pstr} ${PARTS.TOP} ${VARIANT.NEUTRAL}`);
+    expect(mainNeutral).toBe(`${pstr} ${PARTS.MAIN} ${VARIANT.NEUTRAL}`);
   });
   test("str_undef", () => {
-    const wholeNeutral = str_undef(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = str_undef(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = str_undef(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = str_undef(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = str_undef(PARTS.MAIN, STATE.NEUTRAL);
-    expect(wholeNeutral).toBe(`${pstr} ${PARTS.WHOLE} ${STATE.NEUTRAL}`);
-    expect(wholeActive).toBe(`${pstr} ${PARTS.WHOLE} ${STATE.ACTIVE}`);
-    expect(wholeInactive).toBe(`${pstr} ${PARTS.WHOLE} ${STATE.INACTIVE}`);
-    expect(topNeutral).toBe(`${pstr} ${PARTS.TOP} ${STATE.NEUTRAL}`);
-    expect(mainNeutral).toBe(`${pstr} ${PARTS.MAIN} ${STATE.NEUTRAL}`);
+    const wholeNeutral = str_undef(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = str_undef(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = str_undef(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = str_undef(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = str_undef(PARTS.MAIN, VARIANT.NEUTRAL);
+    expect(wholeNeutral).toBe(`${pstr} ${PARTS.WHOLE} ${VARIANT.NEUTRAL}`);
+    expect(wholeActive).toBe(`${pstr} ${PARTS.WHOLE} ${VARIANT.ACTIVE}`);
+    expect(wholeInactive).toBe(`${pstr} ${PARTS.WHOLE} ${VARIANT.INACTIVE}`);
+    expect(topNeutral).toBe(`${pstr} ${PARTS.TOP} ${VARIANT.NEUTRAL}`);
+    expect(mainNeutral).toBe(`${pstr} ${PARTS.MAIN} ${VARIANT.NEUTRAL}`);
   });
   test("rule_str", () => {
-    const wholeNeutral = rule_str(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = rule_str(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = rule_str(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = rule_str(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = rule_str(PARTS.MAIN, STATE.NEUTRAL);
-    expect(wholeNeutral).toBe(`${sstr} ${PARTS.WHOLE} ${STATE.NEUTRAL}`);
-    expect(wholeActive).toBe(`${sstr} ${PARTS.WHOLE} ${STATE.ACTIVE}`);
-    expect(wholeInactive).toBe(`${sstr} ${PARTS.WHOLE} ${STATE.INACTIVE}`);
-    expect(topNeutral).toBe(`${sstr} ${PARTS.TOP} ${STATE.NEUTRAL}`);
-    expect(mainNeutral).toBe(`${sstr} ${PARTS.MAIN} ${STATE.NEUTRAL}`);
+    const wholeNeutral = rule_str(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = rule_str(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = rule_str(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = rule_str(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = rule_str(PARTS.MAIN, VARIANT.NEUTRAL);
+    expect(wholeNeutral).toBe(`${sstr} ${PARTS.WHOLE} ${VARIANT.NEUTRAL}`);
+    expect(wholeActive).toBe(`${sstr} ${PARTS.WHOLE} ${VARIANT.ACTIVE}`);
+    expect(wholeInactive).toBe(`${sstr} ${PARTS.WHOLE} ${VARIANT.INACTIVE}`);
+    expect(topNeutral).toBe(`${sstr} ${PARTS.TOP} ${VARIANT.NEUTRAL}`);
+    expect(mainNeutral).toBe(`${sstr} ${PARTS.MAIN} ${VARIANT.NEUTRAL}`);
   });
   test("rule_rule", () => {
-    const wholeNeutral = rule_rule(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = rule_rule(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = rule_rule(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = rule_rule(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = rule_rule(PARTS.MAIN, STATE.NEUTRAL);
+    const wholeNeutral = rule_rule(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = rule_rule(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = rule_rule(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = rule_rule(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = rule_rule(PARTS.MAIN, VARIANT.NEUTRAL);
     expect(wholeNeutral).toBe(`${srule[PARTS.WHOLE]}`);
     expect(wholeActive).toBe(`${srule[PARTS.WHOLE]}`);
     expect(wholeInactive).toBe(`${srule[PARTS.WHOLE]}`);
@@ -232,23 +232,23 @@ describe("fnClass", () => {
     expect(mainNeutral).toBe(`${srule[PARTS.MAIN]}`);
   });
   test("rule_rules", () => {
-    const wholeNeutral = rule_rules(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = rule_rules(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = rule_rules(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = rule_rules(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = rule_rules(PARTS.MAIN, STATE.NEUTRAL);
+    const wholeNeutral = rule_rules(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = rule_rules(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = rule_rules(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = rule_rules(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = rule_rules(PARTS.MAIN, VARIANT.NEUTRAL);
     expect(wholeNeutral).toBe(`${srules[PARTS.WHOLE][BASE]}`);
-    expect(wholeActive).toEqual([srules[PARTS.WHOLE][BASE], srules[PARTS.WHOLE][STATE.ACTIVE]]);
+    expect(wholeActive).toEqual([srules[PARTS.WHOLE][BASE], srules[PARTS.WHOLE][VARIANT.ACTIVE]]);
     expect(wholeInactive).toBe(`${srules[PARTS.WHOLE][BASE]}`);
     expect(topNeutral).toBeUndefined();
     expect(mainNeutral).toBe(`${srules[PARTS.MAIN][BASE]}`);
   });
   test("rule_blank", () => {
-    const wholeNeutral = rule_blank(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = rule_blank(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = rule_blank(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = rule_blank(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = rule_blank(PARTS.MAIN, STATE.NEUTRAL);
+    const wholeNeutral = rule_blank(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = rule_blank(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = rule_blank(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = rule_blank(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = rule_blank(PARTS.MAIN, VARIANT.NEUTRAL);
     expect(wholeNeutral).toBe(`${prule[PARTS.WHOLE]}`);
     expect(wholeActive).toBe(`${prule[PARTS.WHOLE]}`);
     expect(wholeInactive).toBe(`${prule[PARTS.WHOLE]}`);
@@ -256,11 +256,11 @@ describe("fnClass", () => {
     expect(mainNeutral).toBeUndefined();
   });
   test("rule_empty", () => {
-    const wholeNeutral = rule_empty(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = rule_empty(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = rule_empty(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = rule_empty(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = rule_empty(PARTS.MAIN, STATE.NEUTRAL);
+    const wholeNeutral = rule_empty(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = rule_empty(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = rule_empty(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = rule_empty(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = rule_empty(PARTS.MAIN, VARIANT.NEUTRAL);
     expect(wholeNeutral).toBe(`${prule[PARTS.WHOLE]}`);
     expect(wholeActive).toBe(`${prule[PARTS.WHOLE]}`);
     expect(wholeInactive).toBe(`${prule[PARTS.WHOLE]}`);
@@ -268,11 +268,11 @@ describe("fnClass", () => {
     expect(mainNeutral).toBeUndefined();
   });
   test("rule_undef", () => {
-    const wholeNeutral = rule_undef(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = rule_undef(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = rule_undef(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = rule_undef(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = rule_undef(PARTS.MAIN, STATE.NEUTRAL);
+    const wholeNeutral = rule_undef(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = rule_undef(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = rule_undef(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = rule_undef(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = rule_undef(PARTS.MAIN, VARIANT.NEUTRAL);
     expect(wholeNeutral).toBe(`${prule[PARTS.WHOLE]}`);
     expect(wholeActive).toBe(`${prule[PARTS.WHOLE]}`);
     expect(wholeInactive).toBe(`${prule[PARTS.WHOLE]}`);
@@ -280,23 +280,23 @@ describe("fnClass", () => {
     expect(mainNeutral).toBeUndefined();
   });
   test("rules_str", () => {
-    const wholeNeutral = rules_str(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = rules_str(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = rules_str(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = rules_str(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = rules_str(PARTS.MAIN, STATE.NEUTRAL);
-    expect(wholeNeutral).toBe(`${sstr} ${PARTS.WHOLE} ${STATE.NEUTRAL}`);
-    expect(wholeActive).toBe(`${sstr} ${PARTS.WHOLE} ${STATE.ACTIVE}`);
-    expect(wholeInactive).toBe(`${sstr} ${PARTS.WHOLE} ${STATE.INACTIVE}`);
-    expect(topNeutral).toBe(`${sstr} ${PARTS.TOP} ${STATE.NEUTRAL}`);
-    expect(mainNeutral).toBe(`${sstr} ${PARTS.MAIN} ${STATE.NEUTRAL}`);
+    const wholeNeutral = rules_str(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = rules_str(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = rules_str(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = rules_str(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = rules_str(PARTS.MAIN, VARIANT.NEUTRAL);
+    expect(wholeNeutral).toBe(`${sstr} ${PARTS.WHOLE} ${VARIANT.NEUTRAL}`);
+    expect(wholeActive).toBe(`${sstr} ${PARTS.WHOLE} ${VARIANT.ACTIVE}`);
+    expect(wholeInactive).toBe(`${sstr} ${PARTS.WHOLE} ${VARIANT.INACTIVE}`);
+    expect(topNeutral).toBe(`${sstr} ${PARTS.TOP} ${VARIANT.NEUTRAL}`);
+    expect(mainNeutral).toBe(`${sstr} ${PARTS.MAIN} ${VARIANT.NEUTRAL}`);
   });
   test("rules_rule", () => {
-    const wholeNeutral = rules_rule(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = rules_rule(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = rules_rule(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = rules_rule(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = rules_rule(PARTS.MAIN, STATE.NEUTRAL);
+    const wholeNeutral = rules_rule(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = rules_rule(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = rules_rule(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = rules_rule(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = rules_rule(PARTS.MAIN, VARIANT.NEUTRAL);
     expect(wholeNeutral).toBe(`${srule[PARTS.WHOLE]}`);
     expect(wholeActive).toBe(`${srule[PARTS.WHOLE]}`);
     expect(wholeInactive).toBe(`${srule[PARTS.WHOLE]}`);
@@ -304,71 +304,71 @@ describe("fnClass", () => {
     expect(mainNeutral).toBe(`${srule[PARTS.MAIN]}`);
   });
   test("rules_rules", () => {
-    const wholeNeutral = rules_rules(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = rules_rules(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = rules_rules(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = rules_rules(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = rules_rules(PARTS.MAIN, STATE.NEUTRAL);
+    const wholeNeutral = rules_rules(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = rules_rules(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = rules_rules(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = rules_rules(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = rules_rules(PARTS.MAIN, VARIANT.NEUTRAL);
     expect(wholeNeutral).toBe(`${srules[PARTS.WHOLE][BASE]}`);
-    expect(wholeActive).toEqual([srules[PARTS.WHOLE][BASE], srules[PARTS.WHOLE][STATE.ACTIVE]]);
+    expect(wholeActive).toEqual([srules[PARTS.WHOLE][BASE], srules[PARTS.WHOLE][VARIANT.ACTIVE]]);
     expect(wholeInactive).toBe(`${srules[PARTS.WHOLE][BASE]}`);
     expect(topNeutral).toBeUndefined();
     expect(mainNeutral).toBe(`${srules[PARTS.MAIN][BASE]}`);
   });
   test("rules_blank", () => {
-    const wholeNeutral = rules_blank(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = rules_blank(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = rules_blank(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = rules_blank(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = rules_blank(PARTS.MAIN, STATE.NEUTRAL);
-    expect(wholeNeutral).toEqual([prules[PARTS.WHOLE][BASE], prules[PARTS.WHOLE][STATE.NEUTRAL]]);
-    expect(wholeActive).toEqual([prules[PARTS.WHOLE][BASE], prules[PARTS.WHOLE][STATE.NEUTRAL]]);
-    expect(wholeInactive).toEqual([prules[PARTS.WHOLE][BASE], prules[PARTS.WHOLE][STATE.NEUTRAL]]);
-    expect(topNeutral).toBe(`${prules[PARTS.TOP][STATE.NEUTRAL]}`);
+    const wholeNeutral = rules_blank(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = rules_blank(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = rules_blank(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = rules_blank(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = rules_blank(PARTS.MAIN, VARIANT.NEUTRAL);
+    expect(wholeNeutral).toEqual([prules[PARTS.WHOLE][BASE], prules[PARTS.WHOLE][VARIANT.NEUTRAL]]);
+    expect(wholeActive).toEqual([prules[PARTS.WHOLE][BASE], prules[PARTS.WHOLE][VARIANT.NEUTRAL]]);
+    expect(wholeInactive).toEqual([prules[PARTS.WHOLE][BASE], prules[PARTS.WHOLE][VARIANT.NEUTRAL]]);
+    expect(topNeutral).toBe(`${prules[PARTS.TOP][VARIANT.NEUTRAL]}`);
     expect(mainNeutral).toBeUndefined();
   });
   test("rules_empty", () => {
-    const wholeNeutral = rules_empty(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = rules_empty(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = rules_empty(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = rules_empty(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = rules_empty(PARTS.MAIN, STATE.NEUTRAL);
-    expect(wholeNeutral).toEqual([prules[PARTS.WHOLE][BASE], prules[PARTS.WHOLE][STATE.NEUTRAL]]);
-    expect(wholeActive).toEqual([prules[PARTS.WHOLE][BASE], prules[PARTS.WHOLE][STATE.NEUTRAL]]);
-    expect(wholeInactive).toEqual([prules[PARTS.WHOLE][BASE], prules[PARTS.WHOLE][STATE.NEUTRAL]]);
-    expect(topNeutral).toBe(`${prules[PARTS.TOP][STATE.NEUTRAL]}`);
+    const wholeNeutral = rules_empty(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = rules_empty(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = rules_empty(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = rules_empty(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = rules_empty(PARTS.MAIN, VARIANT.NEUTRAL);
+    expect(wholeNeutral).toEqual([prules[PARTS.WHOLE][BASE], prules[PARTS.WHOLE][VARIANT.NEUTRAL]]);
+    expect(wholeActive).toEqual([prules[PARTS.WHOLE][BASE], prules[PARTS.WHOLE][VARIANT.NEUTRAL]]);
+    expect(wholeInactive).toEqual([prules[PARTS.WHOLE][BASE], prules[PARTS.WHOLE][VARIANT.NEUTRAL]]);
+    expect(topNeutral).toBe(`${prules[PARTS.TOP][VARIANT.NEUTRAL]}`);
     expect(mainNeutral).toBeUndefined();
   });
   test("rules_undef", () => {
-    const wholeNeutral = rules_undef(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = rules_undef(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = rules_undef(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = rules_undef(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = rules_undef(PARTS.MAIN, STATE.NEUTRAL);
-    expect(wholeNeutral).toEqual([prules[PARTS.WHOLE][BASE], prules[PARTS.WHOLE][STATE.NEUTRAL]]);
-    expect(wholeActive).toEqual([prules[PARTS.WHOLE][BASE], prules[PARTS.WHOLE][STATE.NEUTRAL]]);
-    expect(wholeInactive).toEqual([prules[PARTS.WHOLE][BASE], prules[PARTS.WHOLE][STATE.NEUTRAL]]);
-    expect(topNeutral).toBe(`${prules[PARTS.TOP][STATE.NEUTRAL]}`);
+    const wholeNeutral = rules_undef(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = rules_undef(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = rules_undef(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = rules_undef(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = rules_undef(PARTS.MAIN, VARIANT.NEUTRAL);
+    expect(wholeNeutral).toEqual([prules[PARTS.WHOLE][BASE], prules[PARTS.WHOLE][VARIANT.NEUTRAL]]);
+    expect(wholeActive).toEqual([prules[PARTS.WHOLE][BASE], prules[PARTS.WHOLE][VARIANT.NEUTRAL]]);
+    expect(wholeInactive).toEqual([prules[PARTS.WHOLE][BASE], prules[PARTS.WHOLE][VARIANT.NEUTRAL]]);
+    expect(topNeutral).toBe(`${prules[PARTS.TOP][VARIANT.NEUTRAL]}`);
     expect(mainNeutral).toBeUndefined();
   });
   test("blank_str", () => {
-    const wholeNeutral = blank_str(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = blank_str(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = blank_str(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = blank_str(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = blank_str(PARTS.MAIN, STATE.NEUTRAL);
-    expect(wholeNeutral).toBe(`${sstr} ${PARTS.WHOLE} ${STATE.NEUTRAL}`);
-    expect(wholeActive).toBe(`${sstr} ${PARTS.WHOLE} ${STATE.ACTIVE}`);
-    expect(wholeInactive).toBe(`${sstr} ${PARTS.WHOLE} ${STATE.INACTIVE}`);
-    expect(topNeutral).toBe(`${sstr} ${PARTS.TOP} ${STATE.NEUTRAL}`);
-    expect(mainNeutral).toBe(`${sstr} ${PARTS.MAIN} ${STATE.NEUTRAL}`);
+    const wholeNeutral = blank_str(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = blank_str(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = blank_str(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = blank_str(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = blank_str(PARTS.MAIN, VARIANT.NEUTRAL);
+    expect(wholeNeutral).toBe(`${sstr} ${PARTS.WHOLE} ${VARIANT.NEUTRAL}`);
+    expect(wholeActive).toBe(`${sstr} ${PARTS.WHOLE} ${VARIANT.ACTIVE}`);
+    expect(wholeInactive).toBe(`${sstr} ${PARTS.WHOLE} ${VARIANT.INACTIVE}`);
+    expect(topNeutral).toBe(`${sstr} ${PARTS.TOP} ${VARIANT.NEUTRAL}`);
+    expect(mainNeutral).toBe(`${sstr} ${PARTS.MAIN} ${VARIANT.NEUTRAL}`);
   });
   test("blank_rule", () => {
-    const wholeNeutral = blank_rule(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = blank_rule(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = blank_rule(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = blank_rule(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = blank_rule(PARTS.MAIN, STATE.NEUTRAL);
+    const wholeNeutral = blank_rule(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = blank_rule(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = blank_rule(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = blank_rule(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = blank_rule(PARTS.MAIN, VARIANT.NEUTRAL);
     expect(wholeNeutral).toBe(`${srule[PARTS.WHOLE]}`);
     expect(wholeActive).toBe(`${srule[PARTS.WHOLE]}`);
     expect(wholeInactive).toBe(`${srule[PARTS.WHOLE]}`);
@@ -376,23 +376,23 @@ describe("fnClass", () => {
     expect(mainNeutral).toBe(`${srule[PARTS.MAIN]}`);
   });
   test("blank_rules", () => {
-    const wholeNeutral = blank_rules(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = blank_rules(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = blank_rules(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = blank_rules(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = blank_rules(PARTS.MAIN, STATE.NEUTRAL);
+    const wholeNeutral = blank_rules(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = blank_rules(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = blank_rules(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = blank_rules(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = blank_rules(PARTS.MAIN, VARIANT.NEUTRAL);
     expect(wholeNeutral).toBe(`${srules[PARTS.WHOLE][BASE]}`);
-    expect(wholeActive).toEqual([srules[PARTS.WHOLE][BASE], srules[PARTS.WHOLE][STATE.ACTIVE]]);
+    expect(wholeActive).toEqual([srules[PARTS.WHOLE][BASE], srules[PARTS.WHOLE][VARIANT.ACTIVE]]);
     expect(wholeInactive).toBe(`${srules[PARTS.WHOLE][BASE]}`);
     expect(topNeutral).toBeUndefined();
     expect(mainNeutral).toBe(`${srules[PARTS.MAIN][BASE]}`);
   });
   test("blank_blank", () => {
-    const wholeNeutral = blank_blank(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = blank_blank(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = blank_blank(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = blank_blank(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = blank_blank(PARTS.MAIN, STATE.NEUTRAL);
+    const wholeNeutral = blank_blank(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = blank_blank(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = blank_blank(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = blank_blank(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = blank_blank(PARTS.MAIN, VARIANT.NEUTRAL);
     expect(wholeNeutral).toBeUndefined();
     expect(wholeActive).toBeUndefined();
     expect(wholeInactive).toBeUndefined();
@@ -400,11 +400,11 @@ describe("fnClass", () => {
     expect(mainNeutral).toBeUndefined();
   });
   test("blank_empty", () => {
-    const wholeNeutral = blank_empty(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = blank_empty(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = blank_empty(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = blank_empty(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = blank_empty(PARTS.MAIN, STATE.NEUTRAL);
+    const wholeNeutral = blank_empty(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = blank_empty(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = blank_empty(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = blank_empty(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = blank_empty(PARTS.MAIN, VARIANT.NEUTRAL);
     expect(wholeNeutral).toBeUndefined();
     expect(wholeActive).toBeUndefined();
     expect(wholeInactive).toBeUndefined();
@@ -412,11 +412,11 @@ describe("fnClass", () => {
     expect(mainNeutral).toBeUndefined();
   });
   test("blank_undef", () => {
-    const wholeNeutral = blank_undef(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = blank_undef(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = blank_undef(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = blank_undef(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = blank_undef(PARTS.MAIN, STATE.NEUTRAL);
+    const wholeNeutral = blank_undef(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = blank_undef(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = blank_undef(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = blank_undef(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = blank_undef(PARTS.MAIN, VARIANT.NEUTRAL);
     expect(wholeNeutral).toBeUndefined();
     expect(wholeActive).toBeUndefined();
     expect(wholeInactive).toBeUndefined();
@@ -424,23 +424,23 @@ describe("fnClass", () => {
     expect(mainNeutral).toBeUndefined();
   });
   test("empty_str", () => {
-    const wholeNeutral = empty_str(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = empty_str(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = empty_str(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = empty_str(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = empty_str(PARTS.MAIN, STATE.NEUTRAL);
-    expect(wholeNeutral).toBe(`${sstr} ${PARTS.WHOLE} ${STATE.NEUTRAL}`);
-    expect(wholeActive).toBe(`${sstr} ${PARTS.WHOLE} ${STATE.ACTIVE}`);
-    expect(wholeInactive).toBe(`${sstr} ${PARTS.WHOLE} ${STATE.INACTIVE}`);
-    expect(topNeutral).toBe(`${sstr} ${PARTS.TOP} ${STATE.NEUTRAL}`);
-    expect(mainNeutral).toBe(`${sstr} ${PARTS.MAIN} ${STATE.NEUTRAL}`);
+    const wholeNeutral = empty_str(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = empty_str(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = empty_str(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = empty_str(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = empty_str(PARTS.MAIN, VARIANT.NEUTRAL);
+    expect(wholeNeutral).toBe(`${sstr} ${PARTS.WHOLE} ${VARIANT.NEUTRAL}`);
+    expect(wholeActive).toBe(`${sstr} ${PARTS.WHOLE} ${VARIANT.ACTIVE}`);
+    expect(wholeInactive).toBe(`${sstr} ${PARTS.WHOLE} ${VARIANT.INACTIVE}`);
+    expect(topNeutral).toBe(`${sstr} ${PARTS.TOP} ${VARIANT.NEUTRAL}`);
+    expect(mainNeutral).toBe(`${sstr} ${PARTS.MAIN} ${VARIANT.NEUTRAL}`);
   });
   test("empty_rule", () => {
-    const wholeNeutral = empty_rule(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = empty_rule(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = empty_rule(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = empty_rule(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = empty_rule(PARTS.MAIN, STATE.NEUTRAL);
+    const wholeNeutral = empty_rule(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = empty_rule(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = empty_rule(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = empty_rule(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = empty_rule(PARTS.MAIN, VARIANT.NEUTRAL);
     expect(wholeNeutral).toBe(`${srule[PARTS.WHOLE]}`);
     expect(wholeActive).toBe(`${srule[PARTS.WHOLE]}`);
     expect(wholeInactive).toBe(`${srule[PARTS.WHOLE]}`);
@@ -448,23 +448,23 @@ describe("fnClass", () => {
     expect(mainNeutral).toBe(`${srule[PARTS.MAIN]}`);
   });
   test("empty_rules", () => {
-    const wholeNeutral = empty_rules(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = empty_rules(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = empty_rules(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = empty_rules(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = empty_rules(PARTS.MAIN, STATE.NEUTRAL);
+    const wholeNeutral = empty_rules(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = empty_rules(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = empty_rules(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = empty_rules(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = empty_rules(PARTS.MAIN, VARIANT.NEUTRAL);
     expect(wholeNeutral).toBe(`${srules[PARTS.WHOLE][BASE]}`);
-    expect(wholeActive).toEqual([srules[PARTS.WHOLE][BASE], srules[PARTS.WHOLE][STATE.ACTIVE]]);
+    expect(wholeActive).toEqual([srules[PARTS.WHOLE][BASE], srules[PARTS.WHOLE][VARIANT.ACTIVE]]);
     expect(wholeInactive).toBe(`${srules[PARTS.WHOLE][BASE]}`);
     expect(topNeutral).toBeUndefined();
     expect(mainNeutral).toBe(`${srules[PARTS.MAIN][BASE]}`);
   });
   test("empty_blank", () => {
-    const wholeNeutral = empty_blank(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = empty_blank(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = empty_blank(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = empty_blank(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = empty_blank(PARTS.MAIN, STATE.NEUTRAL);
+    const wholeNeutral = empty_blank(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = empty_blank(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = empty_blank(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = empty_blank(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = empty_blank(PARTS.MAIN, VARIANT.NEUTRAL);
     expect(wholeNeutral).toBeUndefined();
     expect(wholeActive).toBeUndefined();
     expect(wholeInactive).toBeUndefined();
@@ -472,11 +472,11 @@ describe("fnClass", () => {
     expect(mainNeutral).toBeUndefined();
   });
   test("empty_empty", () => {
-    const wholeNeutral = empty_empty(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = empty_empty(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = empty_empty(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = empty_empty(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = empty_empty(PARTS.MAIN, STATE.NEUTRAL);
+    const wholeNeutral = empty_empty(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = empty_empty(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = empty_empty(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = empty_empty(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = empty_empty(PARTS.MAIN, VARIANT.NEUTRAL);
     expect(wholeNeutral).toBeUndefined();
     expect(wholeActive).toBeUndefined();
     expect(wholeInactive).toBeUndefined();
@@ -484,11 +484,11 @@ describe("fnClass", () => {
     expect(mainNeutral).toBeUndefined();
   });
   test("empty_undef", () => {
-    const wholeNeutral = empty_undef(PARTS.WHOLE, STATE.NEUTRAL);
-    const wholeActive = empty_undef(PARTS.WHOLE, STATE.ACTIVE);
-    const wholeInactive = empty_undef(PARTS.WHOLE, STATE.INACTIVE);
-    const topNeutral = empty_undef(PARTS.TOP, STATE.NEUTRAL);
-    const mainNeutral = empty_undef(PARTS.MAIN, STATE.NEUTRAL);
+    const wholeNeutral = empty_undef(PARTS.WHOLE, VARIANT.NEUTRAL);
+    const wholeActive = empty_undef(PARTS.WHOLE, VARIANT.ACTIVE);
+    const wholeInactive = empty_undef(PARTS.WHOLE, VARIANT.INACTIVE);
+    const topNeutral = empty_undef(PARTS.TOP, VARIANT.NEUTRAL);
+    const mainNeutral = empty_undef(PARTS.MAIN, VARIANT.NEUTRAL);
     expect(wholeNeutral).toBeUndefined();
     expect(wholeActive).toBeUndefined();
     expect(wholeInactive).toBeUndefined();
@@ -497,11 +497,11 @@ describe("fnClass", () => {
   });
 
   // test("noPresetWithStyle", () => {
-  //   const wholeNeutral = noPresetWithStyle(PARTS.WHOLE, STATE.NEUTRAL);
-  //   const wholeActive = noPresetWithStyle(PARTS.WHOLE, STATE.ACTIVE);
-  //   const wholeInactive = noPresetWithStyle(PARTS.WHOLE, STATE.INACTIVE);
-  //   const topNeutral = noPresetWithStyle(PARTS.TOP, STATE.NEUTRAL);
-  //   const mainNeutral = noPresetWithStyle(PARTS.MAIN, STATE.NEUTRAL);
+  //   const wholeNeutral = noPresetWithStyle(PARTS.WHOLE, VARIANT.NEUTRAL);
+  //   const wholeActive = noPresetWithStyle(PARTS.WHOLE, VARIANT.ACTIVE);
+  //   const wholeInactive = noPresetWithStyle(PARTS.WHOLE, VARIANT.INACTIVE);
+  //   const topNeutral = noPresetWithStyle(PARTS.TOP, VARIANT.NEUTRAL);
+  //   const mainNeutral = noPresetWithStyle(PARTS.MAIN, VARIANT.NEUTRAL);
   //   expect(wholeNeutral).toBe(`${style.whole?.const}`);
   //   expect(wholeActive).toBe(`${style.whole?.const} ${style.whole?.active}`);
   //   expect(wholeInactive).toBe(`${style.whole?.const}`);
@@ -509,35 +509,35 @@ describe("fnClass", () => {
   //   expect(mainNeutral).toBe(`${style.main?.const}`);
   // });
   // test("noPresetEmptyStyle", () => {
-  //   const wholeNeutral = noPresetEmptyStyle(PARTS.WHOLE, STATE.NEUTRAL);
-  //   const wholeActive = noPresetEmptyStyle(PARTS.WHOLE, STATE.ACTIVE);
-  //   const wholeInactive = noPresetEmptyStyle(PARTS.WHOLE, STATE.INACTIVE);
-  //   const topNeutral = noPresetEmptyStyle(PARTS.TOP, STATE.NEUTRAL);
-  //   const mainNeutral = noPresetEmptyStyle(PARTS.MAIN, STATE.NEUTRAL);
+  //   const wholeNeutral = noPresetEmptyStyle(PARTS.WHOLE, VARIANT.NEUTRAL);
+  //   const wholeActive = noPresetEmptyStyle(PARTS.WHOLE, VARIANT.ACTIVE);
+  //   const wholeInactive = noPresetEmptyStyle(PARTS.WHOLE, VARIANT.INACTIVE);
+  //   const topNeutral = noPresetEmptyStyle(PARTS.TOP, VARIANT.NEUTRAL);
+  //   const mainNeutral = noPresetEmptyStyle(PARTS.MAIN, VARIANT.NEUTRAL);
   //   expect(wholeNeutral).toBe(`${name} ${PARTS.WHOLE}`);
-  //   expect(wholeActive).toBe(`${name} ${PARTS.WHOLE} ${STATE.ACTIVE}`);
-  //   expect(wholeInactive).toBe(`${name} ${PARTS.WHOLE} ${STATE.INACTIVE}`);
+  //   expect(wholeActive).toBe(`${name} ${PARTS.WHOLE} ${VARIANT.ACTIVE}`);
+  //   expect(wholeInactive).toBe(`${name} ${PARTS.WHOLE} ${VARIANT.INACTIVE}`);
   //   expect(topNeutral).toBe(`${name} ${PARTS.TOP}`);
   //   expect(mainNeutral).toBe(`${name} ${PARTS.MAIN}`);
   // });
   // test("noPresetStrStyle", () => {
-  //   const wholeNeutral = noPresetStrStyle(PARTS.WHOLE, STATE.NEUTRAL);
-  //   const wholeActive = noPresetStrStyle(PARTS.WHOLE, STATE.ACTIVE);
-  //   const wholeInactive = noPresetStrStyle(PARTS.WHOLE, STATE.INACTIVE);
-  //   const topNeutral = noPresetStrStyle(PARTS.TOP, STATE.NEUTRAL);
-  //   const mainNeutral = noPresetStrStyle(PARTS.MAIN, STATE.NEUTRAL);
+  //   const wholeNeutral = noPresetStrStyle(PARTS.WHOLE, VARIANT.NEUTRAL);
+  //   const wholeActive = noPresetStrStyle(PARTS.WHOLE, VARIANT.ACTIVE);
+  //   const wholeInactive = noPresetStrStyle(PARTS.WHOLE, VARIANT.INACTIVE);
+  //   const topNeutral = noPresetStrStyle(PARTS.TOP, VARIANT.NEUTRAL);
+  //   const mainNeutral = noPresetStrStyle(PARTS.MAIN, VARIANT.NEUTRAL);
   //   expect(wholeNeutral).toBe(`${strStyle} ${PARTS.WHOLE}`);
-  //   expect(wholeActive).toBe(`${strStyle} ${PARTS.WHOLE} ${STATE.ACTIVE}`);
-  //   expect(wholeInactive).toBe(`${strStyle} ${PARTS.WHOLE} ${STATE.INACTIVE}`);
+  //   expect(wholeActive).toBe(`${strStyle} ${PARTS.WHOLE} ${VARIANT.ACTIVE}`);
+  //   expect(wholeInactive).toBe(`${strStyle} ${PARTS.WHOLE} ${VARIANT.INACTIVE}`);
   //   expect(topNeutral).toBe(`${strStyle} ${PARTS.TOP}`);
   //   expect(mainNeutral).toBe(`${strStyle} ${PARTS.MAIN}`);
   // });
   // test("withPresetNoStyle", () => {
-  //   const wholeNeutral = withPresetNoStyle(PARTS.WHOLE, STATE.NEUTRAL);
-  //   const wholeActive = withPresetNoStyle(PARTS.WHOLE, STATE.ACTIVE);
-  //   const wholeInactive = withPresetNoStyle(PARTS.WHOLE, STATE.INACTIVE);
-  //   const topNeutral = withPresetNoStyle(PARTS.TOP, STATE.NEUTRAL);
-  //   const mainNeutral = withPresetNoStyle(PARTS.MAIN, STATE.NEUTRAL);
+  //   const wholeNeutral = withPresetNoStyle(PARTS.WHOLE, VARIANT.NEUTRAL);
+  //   const wholeActive = withPresetNoStyle(PARTS.WHOLE, VARIANT.ACTIVE);
+  //   const wholeInactive = withPresetNoStyle(PARTS.WHOLE, VARIANT.INACTIVE);
+  //   const topNeutral = withPresetNoStyle(PARTS.TOP, VARIANT.NEUTRAL);
+  //   const mainNeutral = withPresetNoStyle(PARTS.MAIN, VARIANT.NEUTRAL);
   //   expect(wholeNeutral).toBe(`${preset.whole?.const} ${preset.whole?.default}`);
   //   expect(wholeActive).toBe(`${preset.whole?.const} ${preset.whole?.default}`);
   //   expect(wholeInactive).toBe(`${preset.whole?.const} ${preset.whole?.default}`);
@@ -545,11 +545,11 @@ describe("fnClass", () => {
   //   expect(mainNeutral).toBeUndefined();
   // });
   // test("withPresetWithStyle", () => {
-  //   const wholeNeutral = withPresetWithStyle(PARTS.WHOLE, STATE.NEUTRAL);
-  //   const wholeActive = withPresetWithStyle(PARTS.WHOLE, STATE.ACTIVE);
-  //   const wholeInactive = withPresetWithStyle(PARTS.WHOLE, STATE.INACTIVE);
-  //   const topNeutral = withPresetWithStyle(PARTS.TOP, STATE.NEUTRAL);
-  //   const mainNeutral = withPresetWithStyle(PARTS.MAIN, STATE.NEUTRAL);
+  //   const wholeNeutral = withPresetWithStyle(PARTS.WHOLE, VARIANT.NEUTRAL);
+  //   const wholeActive = withPresetWithStyle(PARTS.WHOLE, VARIANT.ACTIVE);
+  //   const wholeInactive = withPresetWithStyle(PARTS.WHOLE, VARIANT.INACTIVE);
+  //   const topNeutral = withPresetWithStyle(PARTS.TOP, VARIANT.NEUTRAL);
+  //   const mainNeutral = withPresetWithStyle(PARTS.MAIN, VARIANT.NEUTRAL);
   //   expect(wholeNeutral).toBe(`${style.whole?.const} ${preset.whole?.default}`);
   //   expect(wholeActive).toBe(`${style.whole?.const} ${style.whole?.active}`);
   //   expect(wholeInactive).toBe(`${style.whole?.const} ${preset.whole?.default}`);
@@ -557,26 +557,26 @@ describe("fnClass", () => {
   //   expect(mainNeutral).toBe(`${style.main?.const}`);
   // });
   // test("withPresetEmptyStyle", () => {
-  //   const wholeNeutral = withPresetEmptyStyle(PARTS.WHOLE, STATE.NEUTRAL);
-  //   const wholeActive = withPresetEmptyStyle(PARTS.WHOLE, STATE.ACTIVE);
-  //   const wholeInactive = withPresetEmptyStyle(PARTS.WHOLE, STATE.INACTIVE);
-  //   const topNeutral = withPresetEmptyStyle(PARTS.TOP, STATE.NEUTRAL);
-  //   const mainNeutral = withPresetEmptyStyle(PARTS.MAIN, STATE.NEUTRAL);
+  //   const wholeNeutral = withPresetEmptyStyle(PARTS.WHOLE, VARIANT.NEUTRAL);
+  //   const wholeActive = withPresetEmptyStyle(PARTS.WHOLE, VARIANT.ACTIVE);
+  //   const wholeInactive = withPresetEmptyStyle(PARTS.WHOLE, VARIANT.INACTIVE);
+  //   const topNeutral = withPresetEmptyStyle(PARTS.TOP, VARIANT.NEUTRAL);
+  //   const mainNeutral = withPresetEmptyStyle(PARTS.MAIN, VARIANT.NEUTRAL);
   //   expect(wholeNeutral).toBe(`${name} ${PARTS.WHOLE}`);
-  //   expect(wholeActive).toBe(`${name} ${PARTS.WHOLE} ${STATE.ACTIVE}`);
-  //   expect(wholeInactive).toBe(`${name} ${PARTS.WHOLE} ${STATE.INACTIVE}`);
+  //   expect(wholeActive).toBe(`${name} ${PARTS.WHOLE} ${VARIANT.ACTIVE}`);
+  //   expect(wholeInactive).toBe(`${name} ${PARTS.WHOLE} ${VARIANT.INACTIVE}`);
   //   expect(topNeutral).toBe(`${name} ${PARTS.TOP}`);
   //   expect(mainNeutral).toBe(`${name} ${PARTS.MAIN}`);
   // });
   // test("withPresetStrStyle", () => {
-  //   const wholeNeutral = withPresetStrStyle(PARTS.WHOLE, STATE.NEUTRAL);
-  //   const wholeActive = withPresetStrStyle(PARTS.WHOLE, STATE.ACTIVE);
-  //   const wholeInactive = withPresetStrStyle(PARTS.WHOLE, STATE.INACTIVE);
-  //   const topNeutral = withPresetStrStyle(PARTS.TOP, STATE.NEUTRAL);
-  //   const mainNeutral = withPresetStrStyle(PARTS.MAIN, STATE.NEUTRAL);
+  //   const wholeNeutral = withPresetStrStyle(PARTS.WHOLE, VARIANT.NEUTRAL);
+  //   const wholeActive = withPresetStrStyle(PARTS.WHOLE, VARIANT.ACTIVE);
+  //   const wholeInactive = withPresetStrStyle(PARTS.WHOLE, VARIANT.INACTIVE);
+  //   const topNeutral = withPresetStrStyle(PARTS.TOP, VARIANT.NEUTRAL);
+  //   const mainNeutral = withPresetStrStyle(PARTS.MAIN, VARIANT.NEUTRAL);
   //   expect(wholeNeutral).toBe(`${strStyle} ${PARTS.WHOLE}`);
-  //   expect(wholeActive).toBe(`${strStyle} ${PARTS.WHOLE} ${STATE.ACTIVE}`);
-  //   expect(wholeInactive).toBe(`${strStyle} ${PARTS.WHOLE} ${STATE.INACTIVE}`);
+  //   expect(wholeActive).toBe(`${strStyle} ${PARTS.WHOLE} ${VARIANT.ACTIVE}`);
+  //   expect(wholeInactive).toBe(`${strStyle} ${PARTS.WHOLE} ${VARIANT.INACTIVE}`);
   //   expect(topNeutral).toBe(`${strStyle} ${PARTS.TOP}`);
   //   expect(mainNeutral).toBe(`${strStyle} ${PARTS.MAIN}`);
   // });

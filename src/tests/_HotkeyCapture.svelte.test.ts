@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from "vitest";
 import { fireEvent, render, waitFor } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import HotkeyCapture from "../lib/_svseeds/_HotkeyCapture.svelte";
-import { PARTS, STATE } from "../lib/_svseeds/core.ts";
+import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
 // import { PointerEvent } from "jsdom";
 
 const placeholder = "Press a key combination...";
@@ -339,37 +339,37 @@ describe("Wheel event handling", () => {
 describe("Status management", () => {
   const preset = "svs-hotkey-capture";
 
-  test("default status is neutral", () => {
+  test("default variant is neutral", () => {
     const { getByRole } = render(HotkeyCapture);
     const input = getByRole("textbox") as HTMLInputElement;
-    expect(input).toHaveClass(preset, PARTS.MAIN, STATE.NEUTRAL);
+    expect(input).toHaveClass(preset, PARTS.MAIN, VARIANT.NEUTRAL);
   });
 
-  test("status changes to active when focused", async () => {
-    const props = $state({ status: STATE.NEUTRAL });
+  test("variant changes to active when focused", async () => {
+    const props = $state({ variant: VARIANT.NEUTRAL });
     const user = userEvent.setup();
     const { getByRole } = render(HotkeyCapture, props);
     const input = getByRole("textbox") as HTMLInputElement;
 
     await user.click(input);
-    expect(props.status).toBe(STATE.ACTIVE);
-    expect(input).toHaveClass(preset, PARTS.MAIN, STATE.ACTIVE);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(input).toHaveClass(preset, PARTS.MAIN, VARIANT.ACTIVE);
   });
 
-  test("status changes to inactive when disabled", async () => {
-    const props = $state({ status: STATE.NEUTRAL, disabled: false });
+  test("variant changes to inactive when disabled", async () => {
+    const props = $state({ variant: VARIANT.NEUTRAL, disabled: false });
     const { getByRole, rerender } = render(HotkeyCapture, props);
     const input = getByRole("textbox") as HTMLInputElement;
 
     props.disabled = true;
     await rerender(props);
-    expect(props.status).toBe(STATE.INACTIVE);
-    expect(input).toHaveClass(preset, PARTS.MAIN, STATE.INACTIVE);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+    expect(input).toHaveClass(preset, PARTS.MAIN, VARIANT.INACTIVE);
   });
 
-  test("custom neutral status is preserved", async () => {
+  test("custom neutral variant is preserved", async () => {
     const customNeutral = "custom-neutral";
-    const props = $state({ status: customNeutral, active: false });
+    const props = $state({ variant: customNeutral, active: false });
     const { getByRole, rerender } = render(HotkeyCapture, props);
     const input = getByRole("textbox") as HTMLInputElement;
 
@@ -377,11 +377,11 @@ describe("Status management", () => {
 
     props.active = true;
     await rerender(props);
-    expect(props.status).toBe(STATE.ACTIVE);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
 
     props.active = false;
     await rerender(props);
-    expect(props.status).toBe(customNeutral);
+    expect(props.variant).toBe(customNeutral);
   });
 });
 
@@ -391,19 +391,19 @@ describe("CSS class and styling", () => {
   test("default preset classes", () => {
     const { getByRole } = render(HotkeyCapture);
     const input = getByRole("textbox") as HTMLInputElement;
-    expect(input).toHaveClass(preset, PARTS.MAIN, STATE.NEUTRAL);
+    expect(input).toHaveClass(preset, PARTS.MAIN, VARIANT.NEUTRAL);
   });
 
-  test("string style overrides preset", () => {
-    const customStyle = "custom-style";
-    const { getByRole } = render(HotkeyCapture, { style: customStyle });
+  test("string styling overrides preset", () => {
+    const customStyle = "custom-styling";
+    const { getByRole } = render(HotkeyCapture, { styling: customStyle });
     const input = getByRole("textbox") as HTMLInputElement;
-    expect(input).toHaveClass(customStyle, PARTS.MAIN, STATE.NEUTRAL);
+    expect(input).toHaveClass(customStyle, PARTS.MAIN, VARIANT.NEUTRAL);
     expect(input).not.toHaveClass(preset);
   });
 
-  test("object style with base and status classes", async () => {
-    const style = {
+  test("object styling with base and variant classes", async () => {
+    const styling = {
       main: {
         base: "base-class",
         neutral: "neutral-class",
@@ -411,7 +411,7 @@ describe("CSS class and styling", () => {
         inactive: "inactive-class",
       },
     };
-    const props = $state({ style, status: STATE.NEUTRAL });
+    const props = $state({ styling, variant: VARIANT.NEUTRAL });
     const user = userEvent.setup();
     const { getByRole } = render(HotkeyCapture, props);
     const input = getByRole("textbox") as HTMLInputElement;
@@ -419,7 +419,7 @@ describe("CSS class and styling", () => {
     expect(input).toHaveClass("base-class", "neutral-class");
 
     await user.click(input);
-    expect(props.status).toBe(STATE.ACTIVE);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
     expect(input).toHaveClass("base-class", "active-class");
   });
 });

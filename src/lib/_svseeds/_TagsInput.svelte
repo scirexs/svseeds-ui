@@ -3,8 +3,8 @@
   default value: `(value)`
   ```ts
   interface TagsInputProps {
-    label?: Snippet<[string, string]>; // Snippet<[value,status]>
-    aux?: Snippet<[string, string]>; // Snippet<[value,status]>
+    label?: Snippet<[string, string]>; // Snippet<[value,variant]>
+    aux?: Snippet<[string, string]>; // Snippet<[value,variant]>
     values?: string[]; // bindable
     value?: string; // bindable
     type?: "left" | "right"; // ("left")
@@ -13,11 +13,11 @@
     unique?: boolean; // (true)
     ariaErrMsgId?: string; // bindable
     events?: TagsInputEvents;
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;
     element?: HTMLInputElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   interface TagsInputEvents { // cancel if true
     onadd?: (values: string[], value: string) => void | boolean;
@@ -27,8 +27,8 @@
 -->
 <script module lang="ts">
   export interface TagsInputProps {
-    label?: Snippet<[string, string]>; // Snippet<[value,status]>
-    aux?: Snippet<[string, string]>; // Snippet<[value,status]>
+    label?: Snippet<[string, string]>; // Snippet<[value,variant]>
+    aux?: Snippet<[string, string]>; // Snippet<[value,variant]>
     values?: string[]; // bindable
     value?: string; // bindable
     type?: "left" | "right"; // ("left")
@@ -37,14 +37,14 @@
     unique?: boolean; // (true)
     ariaErrMsgId?: string; // bindable
     events?: TagsInputEvents;
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;
     element?: HTMLInputElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   export type TagsInputReqdProps = never;
-  export type TagsInputBindProps = "values" | "value" | "ariaErrMsgId" | "status" | "element";
+  export type TagsInputBindProps = "values" | "value" | "ariaErrMsgId" | "variant" | "element";
   export interface TagsInputEvents { // cancel if true
     onadd?: (values: string[], value: string) => void | boolean;
     onremove?: (values: string[], value: string, index: number) => void | boolean;
@@ -58,15 +58,15 @@
   import { type Snippet } from "svelte";
   import { type Action } from "svelte/action";
   import { type HTMLInputAttributes } from "svelte/elements";
-  import { type SVSStyle, STATE, PARTS, fnClass, omit } from "./core";
+  import { type SVSClass, VARIANT, PARTS, fnClass, omit } from "./core";
 </script>
 
 <script lang="ts">
-  let { label, aux, values = $bindable([]), value = $bindable(""), type = "left", confirm = [], trim = true, unique = true, ariaErrMsgId = $bindable(), events, status = $bindable(""), style, attributes, action, element = $bindable() }: TagsInputProps = $props();
+  let { label, aux, values = $bindable([]), value = $bindable(""), type = "left", confirm = [], trim = true, unique = true, ariaErrMsgId = $bindable(), events, attributes, action, element = $bindable(), styling, variant = $bindable("") }: TagsInputProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.NEUTRAL;
-  const cls = fnClass(preset, style);
+  if (!variant) variant = VARIANT.NEUTRAL;
+  const cls = fnClass(preset, styling);
   const attrs = omit(attributes, "class", "type", "onkeydown");
   const confirmKeys = new Set([CONFIRM_KEY, ...confirm]);
   let invalid = $derived(ariaErrMsgId ? true : undefined);
@@ -96,29 +96,29 @@
 
 <!---------------------------------------->
 
-<div class={cls(PARTS.WHOLE, status)}>
+<div class={cls(PARTS.WHOLE, variant)}>
   {@render tags(type === "left")}
   {#if action}
-    <input bind:value bind:this={element} class={cls(PARTS.MAIN, status)} type="text" {onkeydown} aria-invalid={invalid} aria-errormessage={ariaErrMsgId} {...attrs} use:action />
+    <input bind:value bind:this={element} class={cls(PARTS.MAIN, variant)} type="text" {onkeydown} aria-invalid={invalid} aria-errormessage={ariaErrMsgId} {...attrs} use:action />
   {:else}
-    <input bind:value bind:this={element} class={cls(PARTS.MAIN, status)} type="text" {onkeydown} aria-invalid={invalid} aria-errormessage={ariaErrMsgId} {...attrs} />
+    <input bind:value bind:this={element} class={cls(PARTS.MAIN, variant)} type="text" {onkeydown} aria-invalid={invalid} aria-errormessage={ariaErrMsgId} {...attrs} />
   {/if}
   {@render tags(type === "right")}
 </div>
 
 {#snippet tags(render: boolean)}
   {#if render}
-    <span class={cls(type, status)}>
+    <span class={cls(type, variant)}>
       {#each values as value, i}
-        <span class={cls(PARTS.LABEL, status)}>
+        <span class={cls(PARTS.LABEL, variant)}>
           {#if label}
-            {@render label(value, status)}
+            {@render label(value, variant)}
           {:else}
             {value}
           {/if}
-          <button class={cls(PARTS.AUX, status)} onclick={remove(i)}>
+          <button class={cls(PARTS.AUX, variant)} onclick={remove(i)}>
             {#if aux}
-              {@render aux(value, status)}
+              {@render aux(value, variant)}
             {:else}
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="10" height="10"><path d="M511.998 70.682 441.315 0 256.002 185.313 70.685 0 .002 70.692l185.314 185.314L.002 441.318 70.69 512l185.312-185.312L441.315 512l70.683-70.682-185.314-185.312z" /></svg>
             {/if}

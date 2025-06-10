@@ -3,7 +3,7 @@ import { fireEvent, render, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import Tabs from "../lib/_svseeds/_Tabs.svelte";
-import { PARTS, STATE } from "../lib/_svseeds/core.ts";
+import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
 
 const label1id = "test-label1";
 const label2id = "test-label2";
@@ -177,10 +177,10 @@ describe("State management and interaction", () => {
     expect(getByTestId(panel2id)).toBeInTheDocument();
   });
 
-  test("status prop affects styling", () => {
+  test("variant prop affects styling", () => {
     const props = {
       labels: ["Tab 1", "Tab 2"],
-      status: STATE.ACTIVE,
+      variant: VARIANT.ACTIVE,
       panel1: panel1fn,
       panel2: panel2fn,
     };
@@ -191,11 +191,11 @@ describe("State management and interaction", () => {
     const tabs = tablist.querySelectorAll('[role="tab"]');
     const panel = getByRole("tabpanel");
 
-    expect(whole).toHaveClass("svs-tabs", PARTS.WHOLE, STATE.ACTIVE);
-    expect(tablist).toHaveClass("svs-tabs", PARTS.TOP, STATE.ACTIVE);
-    expect(tabs[0]).toHaveClass("svs-tabs", PARTS.LABEL, STATE.ACTIVE); // Selected tab uses ACTIVE
-    expect(tabs[1]).toHaveClass("svs-tabs", PARTS.LABEL, STATE.ACTIVE); // Non-selected uses status
-    expect(panel).toHaveClass("svs-tabs", PARTS.MAIN, STATE.ACTIVE);
+    expect(whole).toHaveClass("svs-tabs", PARTS.WHOLE, VARIANT.ACTIVE);
+    expect(tablist).toHaveClass("svs-tabs", PARTS.TOP, VARIANT.ACTIVE);
+    expect(tabs[0]).toHaveClass("svs-tabs", PARTS.LABEL, VARIANT.ACTIVE); // Selected tab uses ACTIVE
+    expect(tabs[1]).toHaveClass("svs-tabs", PARTS.LABEL, VARIANT.ACTIVE); // Non-selected uses variant
+    expect(panel).toHaveClass("svs-tabs", PARTS.MAIN, VARIANT.ACTIVE);
   });
 });
 
@@ -278,16 +278,16 @@ describe("Styling and CSS classes", () => {
 
     expect(whole).toHaveClass(seed, PARTS.WHOLE);
     expect(tablist).toHaveClass(seed, PARTS.TOP);
-    expect(tabs[0]).toHaveClass(seed, PARTS.LABEL, STATE.ACTIVE);
-    expect(tabs[1]).toHaveClass(seed, PARTS.LABEL, STATE.NEUTRAL);
+    expect(tabs[0]).toHaveClass(seed, PARTS.LABEL, VARIANT.ACTIVE);
+    expect(tabs[1]).toHaveClass(seed, PARTS.LABEL, VARIANT.NEUTRAL);
     expect(panel).toHaveClass(seed, PARTS.MAIN);
   });
 
-  test("string style override", () => {
+  test("string styling override", () => {
     const styleId = "custom-tabs";
     const props = {
       labels: ["Tab 1", "Tab 2"],
-      style: styleId,
+      styling: styleId,
       panel1: panel1fn,
       panel2: panel2fn,
     };
@@ -300,19 +300,19 @@ describe("Styling and CSS classes", () => {
 
     expect(whole).toHaveClass(styleId, PARTS.WHOLE);
     expect(tablist).toHaveClass(styleId, PARTS.TOP);
-    expect(tabs[0]).toHaveClass(styleId, PARTS.LABEL, STATE.ACTIVE);
-    expect(tabs[1]).toHaveClass(styleId, PARTS.LABEL, STATE.NEUTRAL);
+    expect(tabs[0]).toHaveClass(styleId, PARTS.LABEL, VARIANT.ACTIVE);
+    expect(tabs[1]).toHaveClass(styleId, PARTS.LABEL, VARIANT.NEUTRAL);
     expect(panel).toHaveClass(styleId, PARTS.MAIN);
   });
 
-  test("object style override", () => {
+  test("object styling override", () => {
     const dynObj = {
       base: "base-class",
       neutral: "neutral-class",
       active: "active-class",
       inactive: "inactive-class",
     };
-    const style = {
+    const styling = {
       whole: dynObj,
       top: dynObj,
       label: dynObj,
@@ -320,7 +320,7 @@ describe("Styling and CSS classes", () => {
     };
     const props = {
       labels: ["Tab 1", "Tab 2"],
-      style,
+      styling,
       panel1: panel1fn,
       panel2: panel2fn,
     };

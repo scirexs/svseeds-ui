@@ -5,11 +5,11 @@
   interface ProgressTrackerProps {
     current: number; // bindable (0)
     labels: string[];
-    aux?: Snippet<[string, number]>; // Snippet<[status,index]>
-    extra?: Snippet<[string, number]>; // Snippet<[status,index]>
-    status?: string; // bindable (STATE.NEUTRAL)
-    eachStatus?: SvelteMap<number, string> | Map<number, string>;
-    style?: SVSStyle;
+    aux?: Snippet<[string, number]>; // Snippet<[variant,index]>
+    extra?: Snippet<[string, number]>; // Snippet<[variant,index]>
+    variant?: string; // bindable (VARIANT.NEUTRAL)
+    eachVariant?: SvelteMap<number, string> | Map<number, string>;
+    styling?: SVSClass;
   }
   ```
 -->
@@ -17,42 +17,43 @@
   export interface ProgressTrackerProps {
     current: number; // bindable (0)
     labels: string[];
-    aux?: Snippet<[string, number]>; // Snippet<[status,index]>
-    extra?: Snippet<[string, number]>; // Snippet<[status,index]>
-    status?: string; // bindable (STATE.NEUTRAL)
-    eachStatus?: SvelteMap<number, string> | Map<number, string>;
-    style?: SVSStyle;
+    aux?: Snippet<[number, string]>; // Snippet<[index,variant]>
+    extra?: Snippet<[number, string]>; // Snippet<[index,variant]>
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
+    eachVariant?: SvelteMap<number, string> | Map<number, string>;
   }
   export type ProgressTrackerReqdProps = "current" | "labels";
-  export type ProgressTrackerBindProps = "current" | "status";
+  export type ProgressTrackerBindProps = "current" | "variant";
 
   const preset = "svs-progress-tracker";
 
   import { type Snippet } from "svelte";
   import { type SvelteMap } from "svelte/reactivity";
-  import { type SVSStyle, STATE, PARTS, fnClass } from "./core";
+  import { type SVSClass, VARIANT, PARTS, fnClass, isUnsignedInteger } from "./core";
 </script>
 
 <script lang="ts">
-  let { current = $bindable(0), labels, aux, extra, status = $bindable(""), eachStatus, style }: ProgressTrackerProps = $props();
+  let { current = $bindable(-1), labels, aux, extra, styling, variant = $bindable(""), eachVariant }: ProgressTrackerProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.NEUTRAL;
-  const cls = fnClass(preset, style);
+  if (!variant) variant = VARIANT.NEUTRAL;
+  if (!isUnsignedInteger(current)) current = 0;
+  const cls = fnClass(preset, styling);
 
   // *** Status *** //
   function getEachStatus(index: number): string {
-    if (eachStatus?.has(index)) return eachStatus.get(index)!;
-    if (index < current) return STATE.ACTIVE;
-    if (index > current) return STATE.INACTIVE;
-    return status;
+    if (eachVariant?.has(index)) return eachVariant.get(index)!;
+    if (index < current) return VARIANT.ACTIVE;
+    if (index > current) return VARIANT.INACTIVE;
+    return variant;
   }
 </script>
 
 <!---------------------------------------->
 
 {#if labels.length}
-  <ol class={cls(PARTS.WHOLE, status)}>
+  <ol class={cls(PARTS.WHOLE, variant)}>
     {#each labels as label, i}
       {@const stat = getEachStatus(i)}
       {#if i > current}
@@ -61,7 +62,7 @@
       <li class={cls(PARTS.MAIN, stat)} aria-current={i === current ? "step" : false}>
         {#if aux}
           <div class={cls(PARTS.AUX, stat)}>
-            {@render aux(stat, i)}
+            {@render aux(i, stat)}
           </div>
         {/if}
         <div class={cls(PARTS.LABEL, stat)}>
@@ -77,9 +78,9 @@
 
 {#snippet separator(i: number)}
   {#if extra}
-    {@const stat = i < current ? STATE.ACTIVE : STATE.INACTIVE}
+    {@const stat = i < current ? VARIANT.ACTIVE : VARIANT.INACTIVE}
     <li class={cls(PARTS.EXTRA, stat)} role="separator">
-      {@render extra(stat, i)}
+      {@render extra(i, stat)}
     </li>
   {/if}
 {/snippet}

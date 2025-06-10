@@ -3,14 +3,14 @@
   default value: `(value)`
   ```ts
   interface TooltipProps {
-    main?: Snippet<[string, string, boolean]>; // Snippet<[status,text,isFlipped]>
+    children?: Snippet<[string, string, boolean]>; // Snippet<[text,variant,isFlipped]>
     name?: string;
     position?: Position; // ("top")
     align?: Align; // ("center")
     offset?: Vector; // ({ x: 0, y: 0 })
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     element?: HTMLDivElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   type Vector = { x: number, y: number };
   type Position = "top" | "left" | "bottom" | "right";
@@ -19,17 +19,17 @@
 -->
 <script module lang="ts">
   export interface TooltipProps {
-    main?: Snippet<[string, string, boolean]>; // Snippet<[status,text,isFlipped]>
+    children?: Snippet<[string, string, boolean]>; // Snippet<[text,variant,isFlipped]>
     name?: string;
     position?: Position; // ("top")
     align?: Align; // ("center")
     offset?: Vector; // ({ x: 0, y: 0 })
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     element?: HTMLDivElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   export type TooltipReqdProps = never;
-  export type TooltipBindProps = "status" | "element";
+  export type TooltipBindProps = "variant" | "element";
   export function tooltip(node: HTMLElement, params: { text: string, delay?: number, cursor?: boolean, name?: string }): ActionReturn {
     return core.action(node, params.text, params.delay, params.cursor, params.name);
   }
@@ -247,15 +247,15 @@
   import { type Snippet, untrack } from "svelte";
   import { on } from "svelte/events";
   import { type Action, type ActionReturn } from "svelte/action";
-  import { type SVSStyle, STATE, PARTS, elemId, fnClass, throttle } from "./core";
+  import { type SVSClass, VARIANT, PARTS, elemId, fnClass, throttle } from "./core";
 </script>
 
 <script lang="ts">
-  let { main, name, position = "top", align = "center", offset = { ...INIT_VEC }, status = $bindable(""), style, element = $bindable() }: TooltipProps = $props();
+  let { children, name, position = "top", align = "center", offset = { ...INIT_VEC }, element = $bindable(), styling, variant = $bindable("") }: TooltipProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.NEUTRAL;
-  const cls = fnClass(preset, style);
+  if (!variant) variant = VARIANT.NEUTRAL;
+  const cls = fnClass(preset, styling);
   const id = core.register(name);
   let point: Vector = $state.raw(INIT_VEC);
 
@@ -275,9 +275,9 @@
 <!---------------------------------------->
 
 {#if core.mount(id)}
-  <div bind:this={element} class={cls(PARTS.WHOLE, status)} style={dynStyle} {id} role="tooltip">
-    {#if main}
-      {@render main(status, core.text, core.flipped)}
+  <div bind:this={element} class={cls(PARTS.WHOLE, variant)} style={dynStyle} {id} role="tooltip">
+    {#if children}
+      {@render children(core.text, variant, core.flipped)}
     {:else}
       {core.text}
     {/if}

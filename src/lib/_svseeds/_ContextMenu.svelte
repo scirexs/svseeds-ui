@@ -3,41 +3,41 @@
   default value: `(value)`
   ```ts
   interface ContextMenuProps {
-    children: Snippet;
+    children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false); to observe state, not to control
     lock?: boolean; // bindable (false)
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     element?: HTMLElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   ```
 -->
 <script module lang="ts">
   export interface ContextMenuProps {
-    children: Snippet;
+    children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false); to observe state, not to control
     lock?: boolean; // bindable (false)
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     element?: HTMLElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   export type ContextMenuReqdProps = "children";
-  export type ContextMenuBindProps = "open" | "lock" | "status" | "element";
+  export type ContextMenuBindProps = "open" | "lock" | "variant" | "element";
 
   const preset = "svs-context-menu";
 
   import { type Snippet } from "svelte";
-  import { type SVSStyle, STATE, PARTS, fnClass } from "./core";
+  import { type SVSClass, VARIANT, PARTS, fnClass } from "./core";
 </script>
 
 <!---------------------------------------->
 
 <script lang="ts">
-  let { children, open = $bindable(false), lock = $bindable(false), status = $bindable(""), style, element = $bindable() }: ContextMenuProps = $props();
+  let { children, open = $bindable(false), lock = $bindable(false), element = $bindable(), styling, variant = $bindable("") }: ContextMenuProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.NEUTRAL;
-  const cls = fnClass(preset, style);
+  if (!variant) variant = VARIANT.NEUTRAL;
+  const cls = fnClass(preset, styling);
   let position = $state({ x: 0, y: 0 });
 
   // *** Bind Handlers *** //
@@ -60,6 +60,6 @@
 <!---------------------------------------->
 <svelte:document oncontextmenu={show} onclick={hide} />
 
-<nav class={cls(PARTS.WHOLE, status)} style={dynStyle} bind:this={element}>
-  {@render children()}
+<nav class={cls(PARTS.WHOLE, variant)} style={dynStyle} bind:this={element}>
+  {@render children(variant)}
 </nav>

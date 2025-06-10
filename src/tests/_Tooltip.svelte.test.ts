@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/sve
 // import userEvent from "@testing-library/user-event"; // userEvent can also be used
 import { createRawSnippet } from "svelte";
 import Tooltip, { tooltip, tooltipAction, type TooltipProps } from "../lib/_svseeds/_Tooltip.svelte"; // Adjust path if needed
-import { PARTS, STATE } from "../lib/_svseeds/core.ts"; // Adjust path if needed
+import { PARTS, VARIANT } from "../lib/_svseeds/core.ts"; // Adjust path if needed
 
 // Helper to create a trigger element host for tooltip action
 function setupTriggerHost() {
@@ -91,7 +91,7 @@ describe("Tooltip Basic Rendering and Props", () => {
   // test("w/ main slot - renders content from slot when visible", async () => {
   //   const tooltipName = "slot-tooltip";
   //   const expectedText = "Slot Text Content";
-  //   const currentStatus = STATE.NEUTRAL;
+  //   const currentStatus = VARIANT.NEUTRAL;
   //   const currentFlipped = false;
 
   //   const props: TooltipProps = {
@@ -120,10 +120,10 @@ describe("Tooltip Basic Rendering and Props", () => {
   //   trigger.remove();
   // });
 
-  // test("default status and style classes are applied", async () => {
+  // test("default variant and style classes are applied", async () => {
   //   const tooltipName = "default-style-tooltip";
   //   const presetClass = "svs-tooltip"; // from component's module script
-  //   render(Tooltip, { target: host, props: { name: tooltipName, status: STATE.NEUTRAL } });
+  //   render(Tooltip, { target: host, props: { name: tooltipName, variant: VARIANT.NEUTRAL } });
 
   //   const trigger = document.createElement("button");
   //   host.appendChild(trigger);
@@ -136,9 +136,9 @@ describe("Tooltip Basic Rendering and Props", () => {
   //   // Expected: "svs-tooltip whole neutral" (if fnClass behaves like example)
   //   expect(tooltipElement).toHaveClass(presetClass);
   //   expect(tooltipElement).toHaveClass(PARTS.WHOLE);
-  //   expect(tooltipElement).toHaveClass(STATE.NEUTRAL); // status is part of the class list
-  //   // More precise check for combined class if fnClass output is strictly `${rule} ${part} ${status}`
-  //   expect(tooltipElement.className).toContain(`${presetClass} ${PARTS.WHOLE} ${STATE.NEUTRAL}`);
+  //   expect(tooltipElement).toHaveClass(VARIANT.NEUTRAL); // variant is part of the class list
+  //   // More precise check for combined class if fnClass output is strictly `${rule} ${part} ${variant}`
+  //   expect(tooltipElement.className).toContain(`${presetClass} ${PARTS.WHOLE} ${VARIANT.NEUTRAL}`);
 
   //   action?.destroy?.();
   //   trigger.remove();
@@ -329,7 +329,7 @@ describe("Tooltip Basic Rendering and Props", () => {
 
 //   test("flips from top to bottom if not enough space above", async () => {
 //     let capturedFlipped: boolean | undefined;
-//     const flippingSlot = (status: () => string, text: () => string, isFlipped: () => boolean) =>
+//     const flippingSlot = (variant: () => string, text: () => string, isFlipped: () => boolean) =>
 //       createRawSnippet(() => {
 //         return {
 //           render: () => {
@@ -394,9 +394,9 @@ describe("Tooltip Basic Rendering and Props", () => {
 
 //   test("applies classes from string `style` prop", async () => {
 //     const customClass = "my-custom-tooltip-style";
-//     const { tooltipElement, action } = await showStyledTooltip({ style: customClass, status: STATE.ACTIVE });
+//     const { tooltipElement, action } = await showStyledTooltip({ style: customClass, variant: VARIANT.ACTIVE });
 //     // fnClass(preset, customClass)("whole", "active") -> "my-custom-tooltip-style whole active"
-//     expect(tooltipElement.className).toContain(`${customClass} ${PARTS.WHOLE} ${STATE.ACTIVE}`);
+//     expect(tooltipElement.className).toContain(`${customClass} ${PARTS.WHOLE} ${VARIANT.ACTIVE}`);
 //     action?.destroy?.();
 //   });
 
@@ -404,15 +404,15 @@ describe("Tooltip Basic Rendering and Props", () => {
 //     const styleObj: TooltipProps["style"] = {
 //       [PARTS.WHOLE]: { // Assuming PARTS.WHOLE is "whole"
 //         base: "base-class",
-//         [STATE.NEUTRAL]: "neutral-class",
-//         [STATE.ACTIVE]: "active-class",
+//         [VARIANT.NEUTRAL]: "neutral-class",
+//         [VARIANT.ACTIVE]: "active-class",
 //       },
 //     };
 
-//     // Test with NEUTRAL status
+//     // Test with NEUTRAL variant
 //     const { tooltipElement: elNeutral, action: actionNeutral, component, rerender } = await showStyledTooltip({
 //       style: styleObj,
-//       status: STATE.NEUTRAL,
+//       variant: VARIANT.NEUTRAL,
 //     });
 //     expect(elNeutral).toHaveClass("base-class");
 //     expect(elNeutral).toHaveClass("neutral-class");
@@ -423,9 +423,9 @@ describe("Tooltip Basic Rendering and Props", () => {
 //     await fireEvent.pointerLeave(trigger);
 //     vi.advanceTimersByTime(10); // Allow hide to complete
 
-//     // Test with ACTIVE status (re-using the component instance and updating props)
-//     rerender({ status: STATE.ACTIVE });
-//     // await component.$set({ status: STATE.ACTIVE });
+//     // Test with ACTIVE variant (re-using the component instance and updating props)
+//     rerender({ variant: VARIANT.ACTIVE });
+//     // await component.$set({ variant: VARIANT.ACTIVE });
 //     const actionActive = tooltip(trigger, { text: "Styled Active", delay: 0, name: tooltipName }); // Re-apply or ensure action allows re-show
 //     await fireEvent.pointerEnter(trigger); // Re-trigger to show
 //     vi.advanceTimersByTime(0);

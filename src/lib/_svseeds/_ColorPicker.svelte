@@ -5,11 +5,11 @@
   interface ColorPickerProps {
     value?: string; // bindable ("#000000")
     alpha?: number; // bindable (1)
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;
     element?: HTMLInputElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   ```
   ```ts
@@ -22,14 +22,14 @@
   export interface ColorPickerProps {
     value?: string; // bindable ("#000000")
     alpha?: number; // bindable (1)
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;
     element?: HTMLInputElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   export type ColorPickerReqdProps = never;
-  export type ColorPickerBindProps = "value" | "alpha" | "status" | "element";
+  export type ColorPickerBindProps = "value" | "alpha" | "variant" | "element";
   export function getHex(rgb: RgbColor): string {
     if (!isValidRgb(rgb)) return DEFAULT_COLOR;
     return "#" + (1 << 24 | rgb[0] << 16 | rgb[1] << 8 | rgb[2]).toString(16).slice(1);
@@ -62,15 +62,15 @@
 
   import { type Action } from "svelte/action";
   import { type HTMLInputAttributes } from "svelte/elements";
-  import { type SVSStyle, STATE, PARTS, fnClass, omit } from "./core";
+  import { type SVSClass, VARIANT, PARTS, fnClass, omit } from "./core";
 </script>
 
 <script lang="ts">
-  let { value = $bindable(DEFAULT_COLOR), alpha = $bindable(1), status = $bindable(""), style, attributes, action, element = $bindable() }: ColorPickerProps = $props();
+  let { value = $bindable(DEFAULT_COLOR), alpha = $bindable(1), attributes, action, element = $bindable(), styling, variant = $bindable("") }: ColorPickerProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.NEUTRAL;
-  const cls = fnClass(preset, style);
+  if (!variant) variant = VARIANT.NEUTRAL;
+  const cls = fnClass(preset, styling);
   const attrs = omit(attributes, "type");
   value = castValidHex(value) ?? DEFAULT_COLOR;
 
@@ -81,9 +81,9 @@
 
 <!---------------------------------------->
 
-<label class={cls(PARTS.WHOLE, status)}>
+<label class={cls(PARTS.WHOLE, variant)}>
   <div style="display: inline-block; background-image: linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%); background-size: 20px 20px; background-position: 0 0,0 10px,10px -10px,-10px 0px;">
-    <div class={cls(PARTS.MAIN, status)} style={`background-color: rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alp})`}>
+    <div class={cls(PARTS.MAIN, variant)} style={`background-color: rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alp})`}>
       {#if action}
         <input bind:value bind:this={element} type="color" style="visibility: hidden;" {...attrs} use:action />
       {:else}

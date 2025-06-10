@@ -4,18 +4,18 @@
   ```ts
   interface SortableProps {
     items: SortableItems; // wrapper of string array as items to handle DnD
-    item: Snippet<[string, string, PointerEventHandler]>; // Snippet<[status, value, onpointerdown]>
+    item: Snippet<[string, string, PointerEventHandler]>; // Snippet<[value, variant, onpointerdown]>
     ghost?: Snippet<[string]>; // custom shadow while dragging (the translucent item); Snippet<[value]>
     name?: string;        // name of this group (random string)
-    mode?: SortableMode;  // sort mode ("std"); "std","clone","swap"
+    mode?: SortableMode;  // sort mode ("std")
     accept?: string[];    // list of accept group names (undefined); undefined=any,[]=none
     sort?: boolean;       // enable sort within same group (true)
     multiple?: boolean;   // enable multiple select & drag with them (false)
     draggable?: boolean;  // enable default pointerdown handler (true)
     appendable?: boolean; // enable append when enter group area (false)
     confirm?: boolean     // enable confirm interval time to move items (false)
-    status?: string;      // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
+    styling?: SVSClass;
+    variant?: string;     // bindable (VARIANT.NEUTRAL)
   }
   type SortableMode = "std" | "clone" | "swap";
   class SortableItems { // methods are same with array's
@@ -51,21 +51,21 @@
   type SortableMode = "std" | "clone" | "swap";
   export interface SortableProps {
     items: SortableItems; // wrapper of string array as items to handle DnD
-    item: Snippet<[string, string, PointerEventHandler]>; // Snippet<[status, value, onpointerdown]>
+    item: Snippet<[string, string, PointerEventHandler]>; // Snippet<[value, variant, onpointerdown]>
     ghost?: Snippet<[string]>; // custom shadow while dragging (the translucent item); Snippet<[value]>
     name?: string;        // name of this group (random string)
-    mode?: SortableMode;  // sort mode ("std"); "std","clone","swap"
+    mode?: SortableMode;  // sort mode ("std")
     accept?: string[];    // list of accept group names (undefined); undefined=any,[]=none
     sort?: boolean;       // enable sort within same group (true)
     multiple?: boolean;   // enable multiple select & drag with them (false)
     draggable?: boolean;  // enable default pointerdown handler (true)
     appendable?: boolean; // enable append when enter group area (false)
     confirm?: boolean     // enable confirm interval time to move items (false)
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
+    styling?: SVSClass;
+    variant?: string;     // bindable (VARIANT.NEUTRAL)
   }
   export type SortableReqdProps = "items" | "item";
-  export type SortableBindProps = "status";
+  export type SortableBindProps = "variant";
 
   export class SortableItems {
     #inner: KeyValue[] = $state([]);
@@ -641,15 +641,15 @@
   import { on } from "svelte/events";
   import { type EasingFunction, crossfade } from "svelte/transition";
   import { flip } from "svelte/animate";
-  import { type SVSStyle, STATE, PARTS, fnClass, throttle } from "./core";
+  import { type SVSClass, VARIANT, PARTS, fnClass, throttle } from "./core";
 </script>
 
 <script lang="ts">
-  let { items, item, ghost, name, mode = "std", accept, sort = true, multiple = false, draggable = true, appendable = false, confirm = false, status = $bindable(""), style }: SortableProps = $props();
+  let { items, item, ghost, name, mode = "std", accept, sort = true, multiple = false, draggable = true, appendable = false, confirm = false, styling, variant = $bindable("") }: SortableProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.NEUTRAL;
-  const cls = fnClass(preset, style);
+  if (!variant) variant = VARIANT.NEUTRAL;
+  const cls = fnClass(preset, styling);
   const group: KeyValue = SortableItems._newItem(name);
   const elems: HTMLElement[] = [];
   const shadow = new Shadow(ghost);
@@ -757,26 +757,26 @@
 
 <!---------------------------------------->
 
-<ul class={cls(PARTS.WHOLE, status)} onpointerenter={drag.active ? groupenter : undefined} onpointerleave={drag.active ? groupleave : undefined}>
+<ul class={cls(PARTS.WHOLE, variant)} onpointerenter={drag.active ? groupenter : undefined} onpointerleave={drag.active ? groupleave : undefined}>
   {#each items._inner as {key, value}, i (key)}
     {@const style = "touch-action:none;"}
-    {@const itemStatus = isSelected(key) ? STATE.ACTIVE : status}
+    {@const itemStatus = isSelected(key) ? VARIANT.ACTIVE : variant}
     {@const onpointerdown = draggable ? downF(key, elems[i]) : undefined}
     {@const onpointerenter = drag.active ? enterF(key) : undefined}
     {@const onpointerleave = drag.active ? leave : undefined}
     <li bind:this={elems[i]} class={cls(PARTS.MAIN, itemStatus)} in:s={{key}} out:r={{key}} animate:flip={tp} {style} {onpointerdown} {onpointerenter} {onpointerleave} {ondragstart}>
-      {@render item(itemStatus, value, downF(key, elems[i]))}
+      {@render item(value, itemStatus, downF(key, elems[i]))}
     </li>
   {/each}
 </ul>
 {#if shadow.rendering}
   {@const style = `opacity: 0.5; pointer-events: none; position: fixed; left: ${shadow.pt.x}px; top: ${shadow.pt.y}px; ${shadow.cssVisibility} ${shadow.cssSize}`}
   <ul style="display: contents;">
-    <li bind:this={shadow.elem} class={shadow.isGhost ? undefined : cls(PARTS.MAIN, status)} {style}>
+    <li bind:this={shadow.elem} class={shadow.isGhost ? undefined : cls(PARTS.MAIN, variant)} {style}>
       {#if shadow.isGhost}
         {@render ghost!(items._value(drag.key))}
       {:else}
-        {@render item(status, items._value(drag.key), ()=>cleanup())}
+        {@render item(items._value(drag.key), variant, ()=>cleanup())}
       {/if}
     </li>
   </ul>

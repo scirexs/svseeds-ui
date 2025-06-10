@@ -6,9 +6,9 @@
     labels?: string[];
     current?: number; // bindable (0)
     ariaOrientation?: "horizontal" | "vertical";
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
-    [key: string]: unknown | Snippet;
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
+    [key: string]: unknown | Snippet; // labels or contents of each tab
   }
   ```
 -->
@@ -17,12 +17,12 @@
     labels?: string[];
     current?: number; // bindable (0)
     ariaOrientation?: "horizontal" | "vertical";
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
-    [key: string]: unknown | Snippet;
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
+    [key: string]: unknown | Snippet; // labels or contents of each tab
   }
   export type TabsReqdProps = never;
-  export type TabsBindProps = "current" | "status";
+  export type TabsBindProps = "current" | "variant";
 
   type NamedId = { id: string, name: string };
   const preset = "svs-tabs";
@@ -37,27 +37,27 @@
   function toNamedId(names: string[]): NamedId[] {
     return names.map((x) => ({ id: elemId.id, name: x }));
   }
-  function correctCurrent(active: number, labels: string[]): number {
-    if (active <= 0) return 0;
-    if (active >= labels.length) return labels.length - 1;
-    return active;
+  function correctCurrent(current: number, tabs: NamedId[]): number {
+    if (!isUnsignedInteger(current)) return 0;
+    if (current >= tabs.length) return tabs.length - 1;
+    return current;
   }
 
   import { type Snippet } from "svelte";
-  import { type SVSStyle, STATE, PARTS, elemId, fnClass } from "./core";
+  import { type SVSClass, VARIANT, PARTS, elemId, fnClass, isUnsignedInteger } from "./core";
 </script>
 
 <script lang="ts">
-  let { labels = [], current = $bindable(0), ariaOrientation, status = $bindable(""), style, ...rest }: TabsProps = $props();
+  let { labels = [], current = $bindable(0), ariaOrientation, styling, variant = $bindable(""), ...rest }: TabsProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.NEUTRAL;
-  const cls = fnClass(preset, style);
+  if (!variant) variant = VARIANT.NEUTRAL;
+  const cls = fnClass(preset, styling);
   const isStrLabel = labels.length > 0;
   const tabs = toNamedId(isStrLabel ? labels : getSnippetNames(roleLabel, rest));
   const panels = toNamedId(getSnippetNames(rolePanel, rest));
   const elems: HTMLButtonElement[] = [];
-  current = correctCurrent(current, labels);
+  current = correctCurrent(current, tabs);
   const isValidTabs = $derived(tabs.length && panels.length && tabs.length === panels.length);
 
   // *** Event Handlers *** //
@@ -79,11 +79,11 @@
 <!---------------------------------------->
 
 {#if isValidTabs}
-  <div class={cls(PARTS.WHOLE, status)}>
-    <div class={cls(PARTS.TOP, status)} role="tablist" aria-orientation={ariaOrientation}>
+  <div class={cls(PARTS.WHOLE, variant)}>
+    <div class={cls(PARTS.TOP, variant)} role="tablist" aria-orientation={ariaOrientation}>
       {#each tabs as { id, name }, i (id)}
         {@const selected = i === current}
-        {@const tabStatus = selected ? STATE.ACTIVE : status}
+        {@const tabStatus = selected ? VARIANT.ACTIVE : variant}
         <button bind:this={elems[i]} class={cls(PARTS.LABEL, tabStatus)} onclick={activate(i)} onkeydown={moveFocus(i)} tabindex={selected ? 0 : -1} aria-selected={selected} aria-controls={panels[i].id} type="button" role="tab" {id}>
           {#if isStrLabel}
             {name}
@@ -96,7 +96,7 @@
     {#each panels as { id, name }, i (id)}
       {@const selected = i === current}
       {@const style = selected ? undefined : "display: none;"}
-      <div class={cls(PARTS.MAIN, status)} aria-labelledby={tabs[i].id} role="tabpanel" tabindex={0} hidden={!selected} {id} {style}>
+      <div class={cls(PARTS.MAIN, variant)} aria-labelledby={tabs[i].id} role="tabpanel" tabindex={0} hidden={!selected} {id} {style}>
         {@render (rest[name] as Snippet)()}
       </div>
     {/each}

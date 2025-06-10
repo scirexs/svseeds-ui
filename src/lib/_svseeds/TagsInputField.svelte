@@ -5,9 +5,9 @@
   interface TagsInputFieldProps {
     label?: string;
     extra?: string;
-    aux?: Snippet<[string, string[], HTMLInputElement | undefined]>; // Snippet<[status,values,element]>
-    left?: Snippet<[string, string[], HTMLInputElement | undefined]>; // Snippet<[status,values,element]>
-    right?: Snippet<[string, string[], HTMLInputElement | undefined]>; // Snippet<[status,values,element]>
+    aux?: Snippet<[string[], string, HTMLInputElement | undefined]>; // Snippet<[values,variant,element]>
+    left?: Snippet<[string[], string, HTMLInputElement | undefined]>; // Snippet<[values,variant,element]>
+    right?: Snippet<[string[], string, HTMLInputElement | undefined]>; // Snippet<[values,variant,element]>
     bottom?: string;
     descFirst?: boolean; // (false)
     values?: string[]; // bindable
@@ -15,9 +15,9 @@
     max?: TagsInputFieldCountValidation;
     constraints?: TagsInputFieldConstraint[];
     validations?: TagsInputFieldValidation[];
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     element?: HTMLInputElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
     deps?: TagsInputFieldDeps;
   }
   interface TagsInputFieldDeps extends TagsInputDeps {
@@ -35,9 +35,9 @@
   export interface TagsInputFieldProps {
     label?: string;
     extra?: string;
-    aux?: Snippet<[string, string[], HTMLInputElement | undefined]>; // Snippet<[status,values,element]>
-    left?: Snippet<[string, string[], HTMLInputElement | undefined]>; // Snippet<[status,values,element]>
-    right?: Snippet<[string, string[], HTMLInputElement | undefined]>; // Snippet<[status,values,element]>
+    aux?: Snippet<[string[], string, HTMLInputElement | undefined]>; // Snippet<[values,variant,element]>
+    left?: Snippet<[string[], string, HTMLInputElement | undefined]>; // Snippet<[values,variant,element]>
+    right?: Snippet<[string[], string, HTMLInputElement | undefined]>; // Snippet<[values,variant,element]>
     bottom?: string;
     descFirst?: boolean; // (false)
     values?: string[]; // bindable
@@ -45,16 +45,16 @@
     max?: TagsInputFieldCountValidation;
     constraints?: TagsInputFieldConstraint[];
     validations?: TagsInputFieldValidation[];
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     element?: HTMLInputElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
     deps?: TagsInputFieldDeps;
   }
   export interface TagsInputFieldDeps {
     svsTagsInput?: Omit<TagsInputProps, TagsInputReqdProps | TagsInputBindProps>;
   }
   export type TagsInputFieldReqdProps = never;
-  export type TagsInputFieldBindProps = "values" | "status" | "element";
+  export type TagsInputFieldBindProps = "values" | "variant" | "element";
   export type TagsInputFieldConstraint = (value: string, validity: ValidityState) => string | undefined;
   export type TagsInputFieldValidation = (values: string[], validity: ValidityState) => string | undefined;
   export type TagsInputFieldCountValidation = { value: number, message: string };
@@ -62,16 +62,16 @@
   const preset = "svs-tags-input-field";
 
   import { type Snippet, untrack } from "svelte";
-  import { type SVSStyle, STATE, PARTS, elemId, fnClass, isNeutral, omit } from "./core";
+  import { type SVSClass, VARIANT, PARTS, elemId, fnClass, isNeutral, omit } from "./core";
   import TagsInput, { type TagsInputProps, type TagsInputReqdProps, type TagsInputBindProps } from "./_TagsInput.svelte";
 </script>
 
 <script lang="ts">
-  let { label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), min, max, constraints = [], validations = [], status = $bindable(""), style, element = $bindable(), deps }: TagsInputFieldProps = $props();
+  let { label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), min, max, constraints = [], validations = [], element = $bindable(), styling, variant = $bindable(""), deps }: TagsInputFieldProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.NEUTRAL;
-  const cls = fnClass(preset, style);
+  if (!variant) variant = VARIANT.NEUTRAL;
+  const cls = fnClass(preset, styling);
   const id = deps?.svsTagsInput?.attributes?.id ? deps.svsTagsInput.attributes.id : elemId.get(label?.trim());
   const idLabel = elemId.get(label?.trim());
   const idDesc = elemId.get(bottom?.trim());
@@ -83,9 +83,9 @@
 
   // *** Initialize Deps *** //
   const svsTagsInput = {
-    ...omit(deps?.svsTagsInput, "style", "attributes"),
+    ...omit(deps?.svsTagsInput, "styling", "attributes"),
     events: { onadd, onremove: deps?.svsTagsInput?.events?.onremove },
-    style: deps?.svsTagsInput?.style ?? `${preset} svs-tags-input`,
+    styling: deps?.svsTagsInput?.styling ?? `${preset} svs-tags-input`,
     attributes: {
       ...omit(deps?.svsTagsInput?.attributes, "id", "onchange", "oninvalid", "aria-describedby"),
       id,
@@ -96,19 +96,19 @@
   };
 
   // *** Status *** //
-  let neutral = isNeutral(status) ? status : STATE.NEUTRAL;
-  $effect(() => { neutral = isNeutral(status) ? status : neutral });
-  let live = $derived(status === STATE.INACTIVE ? "alert" : "status");
-  let idMsg = $derived(status === STATE.INACTIVE && message?.trim() ? idErr : undefined);
+  let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
+  $effect(() => { neutral = isNeutral(variant) ? variant : neutral });
+  let live = $derived(variant === VARIANT.INACTIVE ? "alert" : "status");
+  let idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
   function shift(oninvalid: boolean = false, msg?: string) {
     const vmsg = element?.validationMessage ?? "";
-    status = getStatus(oninvalid, vmsg, msg);
-    message = status === STATE.INACTIVE ? msg ? msg : vmsg ? vmsg : bottom : bottom;
+    variant = getStatus(oninvalid, vmsg, msg);
+    message = variant === VARIANT.INACTIVE ? msg ? msg : vmsg ? vmsg : bottom : bottom;
   }
   function getStatus(oninvalid: boolean, vmsg: string, msg?: string): string {
-    if (msg || (oninvalid && vmsg)) return STATE.INACTIVE;
+    if (msg || (oninvalid && vmsg)) return VARIANT.INACTIVE;
     if (!values.length || vmsg) return neutral;
-    return STATE.ACTIVE;
+    return VARIANT.ACTIVE;
   }
   function verify() {
     if (!element) return;
@@ -132,9 +132,9 @@
   // *** Event Handlers *** //
   function onadd(values: string[], value: string): void | boolean {
     if (deps?.svsTagsInput?.events?.onadd?.(values, value)) return true;
-    status = neutral;
+    variant = neutral;
     shift(false, check());
-    return status === STATE.INACTIVE;
+    return variant === VARIANT.INACTIVE;
   }
   function check(): string | undefined {
     if (!element) return;
@@ -145,7 +145,7 @@
   }
   function onchange(ev: Event) {
     deps?.svsTagsInput?.attributes?.onchange?.(ev as any);
-    if (!isNeutral(status)) shift();
+    if (!isNeutral(variant)) shift();
   }
   function oninvalid(ev: Event) {
     deps?.svsTagsInput?.attributes?.oninvalid?.(ev as any);
@@ -157,19 +157,19 @@
 
 <!---------------------------------------->
 
-<div class={cls(PARTS.WHOLE, status)} role="group" aria-labelledby={idLabel}>
+<div class={cls(PARTS.WHOLE, variant)} role="group" aria-labelledby={idLabel}>
   {#if aux}
-    <div class={cls(PARTS.TOP, status)}>
+    <div class={cls(PARTS.TOP, variant)}>
       {@render lbl()}
-      <span class={cls(PARTS.AUX, status)}>{@render aux(status, values, element)}</span>
+      <span class={cls(PARTS.AUX, variant)}>{@render aux(values, variant, element)}</span>
     </div>
   {:else}
     {@render lbl()}
   {/if}
   {@render desc(descFirst)}
-  <div class={cls(PARTS.MIDDLE, status)}>
+  <div class={cls(PARTS.MIDDLE, variant)}>
     {@render side(PARTS.LEFT, left)}
-    <TagsInput bind:values bind:value bind:status bind:element bind:ariaErrMsgId={idMsg} {...svsTagsInput} />
+    <TagsInput bind:values bind:value bind:variant bind:element bind:ariaErrMsgId={idMsg} {...svsTagsInput} />
     {@render side(PARTS.RIGHT, right)}
   </div>
   {@render desc(!descFirst)}
@@ -177,22 +177,21 @@
 
 {#snippet lbl()}
   {#if label?.trim()}
-    <label class={cls(PARTS.LABEL, status)} for={id} id={idLabel}>
+    <label class={cls(PARTS.LABEL, variant)} for={id} id={idLabel}>
       {label}
       {#if extra?.trim()}
-        <span class={cls(PARTS.EXTRA, status)}>{extra}</span>
+        <span class={cls(PARTS.EXTRA, variant)}>{extra}</span>
       {/if}
     </label>
   {/if}
 {/snippet}
-{#snippet side(area: string, body?: Snippet<[string, string[], HTMLInputElement | undefined]>)}
+{#snippet side(area: string, body?: Snippet<[string[], string, HTMLInputElement | undefined]>)}
   {#if body}
-    <span class={cls(area, status)}>{@render body(status, values, element)}</span>
+    <span class={cls(area, variant)}>{@render body(values, variant, element)}</span>
   {/if}
 {/snippet}
 {#snippet desc(show: boolean)}
   {#if show && message?.trim()}
-    <div class={cls(PARTS.BOTTOM, status)} id={idDesc ?? idErr} role={live}>{message}</div>
+    <div class={cls(PARTS.BOTTOM, variant)} id={idDesc ?? idErr} role={live}>{message}</div>
   {/if}
 {/snippet}
-

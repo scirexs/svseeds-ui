@@ -4,8 +4,8 @@
   ```ts
   interface DarkToggleProps {
     dark?: boolean; // bindable (prefers-color-scheme)
-    status?: string; // bindable (STATE.NEUTRAL)
     element?: HTMLButtonElement; // bindable
+    variant?: string; // bindable (VARIANT.NEUTRAL)
     deps?: DarkToggleDeps;
   }
   interface DarkToggleDeps {
@@ -16,15 +16,15 @@
 <script module lang="ts">
   export interface DarkToggleProps {
     dark?: boolean; // bindable (prefers-color-scheme)
-    status?: string; // bindable (STATE.NEUTRAL)
     element?: HTMLButtonElement; // bindable
+    variant?: string; // bindable (VARIANT.NEUTRAL)
     deps?: DarkToggleDeps;
   }
   export interface DarkToggleDeps {
     svsToggle?: Omit<ToggleProps, ToggleReqdProps | ToggleBindProps>;
   }
   export type DarkToggleReqdProps = never;
-  export type DarkToggleBindProps = "dark" | "status" | "element";
+  export type DarkToggleBindProps = "dark" | "variant" | "element";
 
   export const THEME = { LIGHT: "light", DARK: "dark" } as const;
   export function setThemeToRoot(theme?: string) {
@@ -137,22 +137,22 @@
   }
   const theme = new Theme();
 
-  import { STATE, omit } from "./core";
+  import { VARIANT, omit } from "./core";
   import Toggle, { type ToggleProps, type ToggleReqdProps, type ToggleBindProps } from "./_Toggle.svelte";
 </script>
 
 <script lang="ts">
-  let { dark = $bindable(), status = $bindable(""), element = $bindable(), deps }: DarkToggleProps = $props();
+  let { dark = $bindable(), variant = $bindable(""), element = $bindable(), deps }: DarkToggleProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.NEUTRAL;
+  if (!variant) variant = VARIANT.NEUTRAL;
   if (dark === undefined) dark = theme.dark;
   theme.dark = dark;
 
   // *** Initialize Deps *** //
   const svsToggle = {
-    ...omit(deps?.svsToggle, "main", "style", "attributes"),
-    style: deps?.svsToggle?.style ?? `${preset} svs-toggle`,
+    ...omit(deps?.svsToggle, "children", "styling", "attributes"),
+    styling: deps?.svsToggle?.styling ?? `${preset} svs-toggle`,
     ariaLabel,
     attributes: {
       ...deps?.svsToggle?.attributes,
@@ -165,10 +165,10 @@
 
 <!---------------------------------------->
 
-<Toggle bind:value={dark} bind:status bind:element {...svsToggle}>
-  {#snippet main(status: string, value: boolean, element: HTMLButtonElement | undefined)}
-    {#if deps?.svsToggle?.main}
-      {@render deps.svsToggle.main(status, value, element)}
+<Toggle bind:value={dark} bind:variant bind:element {...svsToggle}>
+  {#snippet children(value: boolean, variant: string, element: HTMLButtonElement | undefined)}
+    {#if deps?.svsToggle?.children}
+      {@render deps.svsToggle.children(value, variant, element)}
     {:else}
       {#if value}
         {@render svgDark()}

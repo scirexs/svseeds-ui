@@ -3,7 +3,7 @@ import { fireEvent, render, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import CheckField from "../lib/_svseeds/_CheckField.svelte";
-import { PARTS, STATE } from "../lib/_svseeds/core.ts";
+import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
 
 const label = "label_text";
 const extra = "(optional)";
@@ -16,11 +16,11 @@ const options = new Map([
 ]);
 const auxfn = createRawSnippet(
   (
-    status: () => string,
+    variant: () => string,
     values: () => string[],
     elements: () => HTMLInputElement[],
   ) => {
-    return { render: () => `<span data-testid="${auxid}">${status()},${values().length},${elements().length}</span>` };
+    return { render: () => `<span data-testid="${auxid}">${variant()},${values().length},${elements().length}</span>` };
   },
 );
 
@@ -216,7 +216,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const mockValidation = vi.fn().mockImplementation(validationFn);
     const props = $state({
       options,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       validations: [mockValidation],
       values: [],
     });
@@ -225,22 +225,22 @@ describe("Specify attrs & state transition & event handlers", () => {
     const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
 
     // Initially neutral
-    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
 
     // Check first option
     await user.click(checkboxes[0]);
     expect(props.values).toContain("option1");
     expect(mockValidation).toHaveBeenCalled();
-    expect(props.status).toBe(STATE.ACTIVE);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
 
     // Uncheck to trigger validation error
     await user.click(checkboxes[0]);
     expect(props.values).toHaveLength(0);
-    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
 
     // Trigger validation error
     await fireEvent.invalid(checkboxes[0]);
-    expect(props.status).toBe(STATE.INACTIVE);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
     getByRole("alert") as HTMLDivElement;
     expect(checkboxes[0]).toHaveAttribute("aria-invalid", "true");
     expect(checkboxes[0]).toHaveAccessibleErrorMessage(errmsg);
@@ -251,7 +251,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const props = $state({
       options,
       multiple: false,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       validations: [mockValidation],
       values: [],
     });
@@ -261,24 +261,24 @@ describe("Specify attrs & state transition & event handlers", () => {
     const middle = getByRole("radiogroup") as HTMLDivElement;
 
     // Initially neutral
-    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
 
     // For radio buttons, aria-invalid is on the group
     await fireEvent.invalid(radios[0]);
-    expect(props.status).toBe(STATE.INACTIVE);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
     expect(middle).toHaveAttribute("aria-invalid", "true");
 
     // Select first option
     await user.click(radios[0]);
     expect(props.values).toEqual(["option1"]);
     expect(mockValidation).toHaveBeenCalled();
-    expect(props.status).toBe(STATE.ACTIVE);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
   });
 
   test("w/ required and no validations", async () => {
     const props = $state({
       options,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       attributes: { required: true },
       values: [],
     });
@@ -289,14 +289,14 @@ describe("Specify attrs & state transition & event handlers", () => {
     getByRole("alert") as HTMLDivElement;
     expect(checkboxes[0]).toHaveAttribute("aria-invalid", "true");
     expect(checkboxes[0]).toHaveAccessibleErrorMessage();
-    expect(props.status).toBe(STATE.INACTIVE);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
   });
 
   test("w/ required and custom validations", async () => {
     const props = $state({
       options,
       bottom,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       validations,
       attributes: { required: true },
       values: [],
@@ -308,7 +308,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     getByRole("alert") as HTMLDivElement;
     expect(checkboxes[0]).toHaveAttribute("aria-invalid", "true");
     expect(checkboxes[0]).toHaveAccessibleErrorMessage(errmsg);
-    expect(props.status).toBe(STATE.INACTIVE);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
   });
 
   test("w/ custom events used internally", async () => {
@@ -316,7 +316,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const oninvalid = vi.fn();
     const props = $state({
       options,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       validations,
       attributes: { onchange, oninvalid, required: true },
       values: [],
@@ -327,21 +327,21 @@ describe("Specify attrs & state transition & event handlers", () => {
 
     await fireEvent.invalid(checkboxes[0]);
     expect(oninvalid).toHaveBeenCalledTimes(1);
-    expect(props.status).toBe(STATE.INACTIVE);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
 
     await user.click(checkboxes[0]);
     expect(onchange).toHaveBeenCalledTimes(1);
-    expect(props.status).toBe(STATE.ACTIVE);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
   });
 
-  test("default class of each status", async () => {
+  test("default class of each variant", async () => {
     const props = $state({
       options,
       label,
       extra,
       aux: auxfn,
       bottom,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       validations,
       values: [],
     });
@@ -357,7 +357,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const middle = checkboxes[0].parentElement?.parentElement;
     const btm = getByRole("status") as HTMLDivElement;
 
-    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(whole).toHaveClass(seed, PARTS.WHOLE);
     expect(top).toHaveClass(seed, PARTS.TOP);
     expect(lbl).toHaveClass(seed, PARTS.LABEL);
@@ -368,29 +368,29 @@ describe("Specify attrs & state transition & event handlers", () => {
 
     // Check first checkbox and verify active state
     await user.click(checkboxes[0]);
-    expect(props.status).toBe(STATE.ACTIVE);
-    expect(whole).toHaveClass(seed, PARTS.WHOLE, STATE.ACTIVE);
-    expect(top).toHaveClass(seed, PARTS.TOP, STATE.ACTIVE);
-    expect(lbl).toHaveClass(seed, PARTS.LABEL, STATE.ACTIVE);
-    expect(ext).toHaveClass(seed, PARTS.EXTRA, STATE.ACTIVE);
-    expect(auxdv).toHaveClass(seed, PARTS.AUX, STATE.ACTIVE);
-    expect(middle).toHaveClass(seed, PARTS.MIDDLE, STATE.ACTIVE);
-    expect(btm).toHaveClass(seed, PARTS.BOTTOM, STATE.ACTIVE);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(whole).toHaveClass(seed, PARTS.WHOLE, VARIANT.ACTIVE);
+    expect(top).toHaveClass(seed, PARTS.TOP, VARIANT.ACTIVE);
+    expect(lbl).toHaveClass(seed, PARTS.LABEL, VARIANT.ACTIVE);
+    expect(ext).toHaveClass(seed, PARTS.EXTRA, VARIANT.ACTIVE);
+    expect(auxdv).toHaveClass(seed, PARTS.AUX, VARIANT.ACTIVE);
+    expect(middle).toHaveClass(seed, PARTS.MIDDLE, VARIANT.ACTIVE);
+    expect(btm).toHaveClass(seed, PARTS.BOTTOM, VARIANT.ACTIVE);
 
     // Uncheck and trigger invalid state
     await user.click(checkboxes[0]);
     await fireEvent.invalid(checkboxes[0]);
-    expect(props.status).toBe(STATE.INACTIVE);
-    expect(whole).toHaveClass(seed, PARTS.WHOLE, STATE.INACTIVE);
-    expect(top).toHaveClass(seed, PARTS.TOP, STATE.INACTIVE);
-    expect(lbl).toHaveClass(seed, PARTS.LABEL, STATE.INACTIVE);
-    expect(ext).toHaveClass(seed, PARTS.EXTRA, STATE.INACTIVE);
-    expect(auxdv).toHaveClass(seed, PARTS.AUX, STATE.INACTIVE);
-    expect(middle).toHaveClass(seed, PARTS.MIDDLE, STATE.INACTIVE);
-    expect(btm).toHaveClass(seed, PARTS.BOTTOM, STATE.INACTIVE);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+    expect(whole).toHaveClass(seed, PARTS.WHOLE, VARIANT.INACTIVE);
+    expect(top).toHaveClass(seed, PARTS.TOP, VARIANT.INACTIVE);
+    expect(lbl).toHaveClass(seed, PARTS.LABEL, VARIANT.INACTIVE);
+    expect(ext).toHaveClass(seed, PARTS.EXTRA, VARIANT.INACTIVE);
+    expect(auxdv).toHaveClass(seed, PARTS.AUX, VARIANT.INACTIVE);
+    expect(middle).toHaveClass(seed, PARTS.MIDDLE, VARIANT.INACTIVE);
+    expect(btm).toHaveClass(seed, PARTS.BOTTOM, VARIANT.INACTIVE);
   });
 
-  test("w/ string style class of each status", async () => {
+  test("w/ string styling class of each variant", async () => {
     const clsid = "style_id";
     const props = $state({
       options,
@@ -398,9 +398,9 @@ describe("Specify attrs & state transition & event handlers", () => {
       extra,
       aux: auxfn,
       bottom,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       validations,
-      style: clsid,
+      styling: clsid,
       values: [],
     });
     const user = userEvent.setup();
@@ -415,7 +415,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const middle = groups[1] as HTMLDivElement;
     const btm = getByRole("status") as HTMLDivElement;
 
-    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(whole).toHaveClass(clsid, PARTS.WHOLE);
     expect(top).toHaveClass(clsid, PARTS.TOP);
     expect(lbl).toHaveClass(clsid, PARTS.LABEL);
@@ -425,24 +425,24 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(btm).toHaveClass(clsid, PARTS.BOTTOM);
 
     await user.click(checkboxes[0]);
-    expect(props.status).toBe(STATE.ACTIVE);
-    expect(whole).toHaveClass(clsid, PARTS.WHOLE, STATE.ACTIVE);
-    expect(top).toHaveClass(clsid, PARTS.TOP, STATE.ACTIVE);
-    expect(lbl).toHaveClass(clsid, PARTS.LABEL, STATE.ACTIVE);
-    expect(ext).toHaveClass(clsid, PARTS.EXTRA, STATE.ACTIVE);
-    expect(auxdv).toHaveClass(clsid, PARTS.AUX, STATE.ACTIVE);
-    expect(middle).toHaveClass(clsid, PARTS.MIDDLE, STATE.ACTIVE);
-    expect(btm).toHaveClass(clsid, PARTS.BOTTOM, STATE.ACTIVE);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(whole).toHaveClass(clsid, PARTS.WHOLE, VARIANT.ACTIVE);
+    expect(top).toHaveClass(clsid, PARTS.TOP, VARIANT.ACTIVE);
+    expect(lbl).toHaveClass(clsid, PARTS.LABEL, VARIANT.ACTIVE);
+    expect(ext).toHaveClass(clsid, PARTS.EXTRA, VARIANT.ACTIVE);
+    expect(auxdv).toHaveClass(clsid, PARTS.AUX, VARIANT.ACTIVE);
+    expect(middle).toHaveClass(clsid, PARTS.MIDDLE, VARIANT.ACTIVE);
+    expect(btm).toHaveClass(clsid, PARTS.BOTTOM, VARIANT.ACTIVE);
   });
 
-  test("w/ obj style of each status", async () => {
+  test("w/ obj styling of each variant", async () => {
     const dynObj = {
       base: "base",
       neutral: "dyn_neutral",
       active: "dyn_active",
       inactive: "dyn_inactive",
     };
-    const style = {
+    const styling = {
       whole: dynObj,
       middle: dynObj,
       main: dynObj,
@@ -460,9 +460,9 @@ describe("Specify attrs & state transition & event handlers", () => {
       extra,
       aux: auxfn,
       bottom,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       validations,
-      style,
+      styling,
       values: [],
     });
     const user = userEvent.setup();
@@ -477,7 +477,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const middle = groups[1] as HTMLDivElement;
     const btm = getByRole("status") as HTMLDivElement;
 
-    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(whole).toHaveClass(dynObj.base, dynObj.neutral);
     expect(top).toHaveClass(dynObj.base, dynObj.neutral);
     expect(lbl).toHaveClass(dynObj.base, dynObj.neutral);
@@ -487,7 +487,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(btm).toHaveClass(dynObj.base, dynObj.neutral);
 
     await user.click(checkboxes[0]);
-    expect(props.status).toBe(STATE.ACTIVE);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
     expect(whole).toHaveClass(dynObj.base, dynObj.active);
     expect(top).toHaveClass(dynObj.base, dynObj.active);
     expect(lbl).toHaveClass(dynObj.base, dynObj.active);
@@ -498,7 +498,7 @@ describe("Specify attrs & state transition & event handlers", () => {
 
     await user.click(checkboxes[0]);
     await fireEvent.invalid(checkboxes[0]);
-    expect(props.status).toBe(STATE.INACTIVE);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
     expect(whole).toHaveClass(dynObj.base, dynObj.inactive);
     expect(top).toHaveClass(dynObj.base, dynObj.inactive);
     expect(lbl).toHaveClass(dynObj.base, dynObj.inactive);
@@ -515,7 +515,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const labels = checkboxes.map((cb) => cb.parentElement);
 
     // First checkbox is checked (active), others are neutral
-    expect(labels[0]).toHaveClass(seed, PARTS.MAIN, STATE.ACTIVE);
+    expect(labels[0]).toHaveClass(seed, PARTS.MAIN, VARIANT.ACTIVE);
     expect(labels[1]).toHaveClass(seed, PARTS.MAIN);
     expect(labels[2]).toHaveClass(seed, PARTS.MAIN);
 
@@ -523,7 +523,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     labels.forEach((label, index) => {
       const input = label?.querySelector("input");
       const span = label?.querySelector("span");
-      const expectedState = index === 0 ? STATE.ACTIVE : STATE.NEUTRAL;
+      const expectedState = index === 0 ? VARIANT.ACTIVE : VARIANT.NEUTRAL;
 
       expect(input).toHaveClass(seed, PARTS.LEFT, expectedState);
       expect(span).toHaveClass(seed, PARTS.RIGHT, expectedState);

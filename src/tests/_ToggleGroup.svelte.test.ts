@@ -3,7 +3,7 @@ import { fireEvent, render, waitFor, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import ToggleGroup from "../lib/_svseeds/_ToggleGroup.svelte";
-import { PARTS, STATE } from "../lib/_svseeds/core.ts";
+import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
 
 const options = new Map([
   ["option1", "Option 1"],
@@ -130,26 +130,26 @@ describe("Switching existence of elements", () => {
 describe("Status and styling", () => {
   const preset = "svs-toggle-group";
 
-  test("default status and classes", () => {
+  test("default variant and classes", () => {
     const { getByRole, getAllByRole } = render(ToggleGroup, { options });
     const group = getByRole("group") as HTMLSpanElement;
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
-    expect(group).toHaveClass(preset, PARTS.WHOLE, STATE.NEUTRAL);
+    expect(group).toHaveClass(preset, PARTS.WHOLE, VARIANT.NEUTRAL);
     buttons.forEach((button) => {
-      expect(button).toHaveClass(preset, PARTS.MAIN, STATE.NEUTRAL);
+      expect(button).toHaveClass(preset, PARTS.MAIN, VARIANT.NEUTRAL);
     });
   });
 
-  test("with custom status", () => {
-    const status = STATE.INACTIVE;
-    const { getByRole, getAllByRole } = render(ToggleGroup, { options, status });
+  test("with custom variant", () => {
+    const variant = VARIANT.INACTIVE;
+    const { getByRole, getAllByRole } = render(ToggleGroup, { options, variant });
     const group = getByRole("group") as HTMLSpanElement;
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
-    expect(group).toHaveClass(preset, PARTS.WHOLE, status);
+    expect(group).toHaveClass(preset, PARTS.WHOLE, variant);
     buttons.forEach((button) => {
-      expect(button).toHaveClass(preset, PARTS.MAIN, status);
+      expect(button).toHaveClass(preset, PARTS.MAIN, variant);
     });
   });
 
@@ -158,35 +158,35 @@ describe("Status and styling", () => {
     const { getAllByRole } = render(ToggleGroup, { options, values });
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
-    expect(buttons[0]).toHaveClass(preset, PARTS.MAIN, STATE.ACTIVE);
-    expect(buttons[1]).toHaveClass(preset, PARTS.MAIN, STATE.NEUTRAL);
-    expect(buttons[2]).toHaveClass(preset, PARTS.MAIN, STATE.NEUTRAL);
+    expect(buttons[0]).toHaveClass(preset, PARTS.MAIN, VARIANT.ACTIVE);
+    expect(buttons[1]).toHaveClass(preset, PARTS.MAIN, VARIANT.NEUTRAL);
+    expect(buttons[2]).toHaveClass(preset, PARTS.MAIN, VARIANT.NEUTRAL);
   });
 
-  test("with string style", () => {
-    const style = "custom-style";
-    const { getByRole, getAllByRole } = render(ToggleGroup, { options, style });
+  test("with string styling", () => {
+    const styling = "custom-styling";
+    const { getByRole, getAllByRole } = render(ToggleGroup, { options, styling });
     const group = getByRole("group") as HTMLSpanElement;
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
-    expect(group).toHaveClass(style, PARTS.WHOLE, STATE.NEUTRAL);
+    expect(group).toHaveClass(styling, PARTS.WHOLE, VARIANT.NEUTRAL);
     buttons.forEach((button) => {
-      expect(button).toHaveClass(style, PARTS.MAIN, STATE.NEUTRAL);
+      expect(button).toHaveClass(styling, PARTS.MAIN, VARIANT.NEUTRAL);
     });
   });
 
-  test("with object style", () => {
+  test("with object styling", () => {
     const dynObj = {
       base: "base-class",
       neutral: "neutral-class",
       active: "active-class",
     };
-    const style = {
+    const styling = {
       whole: dynObj,
       main: dynObj,
     };
     const values = ["option1"];
-    const { getByRole, getAllByRole } = render(ToggleGroup, { options, style, values });
+    const { getByRole, getAllByRole } = render(ToggleGroup, { options, styling, values });
     const group = getByRole("group") as HTMLSpanElement;
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 

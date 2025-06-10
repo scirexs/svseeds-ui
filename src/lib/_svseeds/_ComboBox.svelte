@@ -6,11 +6,11 @@
     options: SvelteSet<string> | Set<string>;
     value?: string; // bindable
     expanded?: boolean; // bindable
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;
     element?: HTMLInputElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   ```
 -->
@@ -19,14 +19,14 @@
     options: SvelteSet<string> | Set<string>;
     value?: string; // bindable
     expanded?: boolean; // bindable
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     attributes?: HTMLInputAttributes;
     action?: Action;
     element?: HTMLInputElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   export type ComboBoxReqdProps = "options";
-  export type ComboBoxBindProps = "value" | "expanded" | "status" | "element";
+  export type ComboBoxBindProps = "value" | "expanded" | "variant" | "element";
 
   const preset = "svs-combo-box";
   const NA = -1;
@@ -36,15 +36,15 @@
   import { type Action } from "svelte/action";
   import { type SvelteSet } from "svelte/reactivity";
   import { type HTMLInputAttributes } from "svelte/elements";
-  import { type SVSStyle, STATE, PARTS, elemId, fnClass, omit } from "./core";
+  import { type SVSClass, VARIANT, PARTS, elemId, fnClass, omit } from "./core";
 </script>
 
 <script lang="ts">
-  let { options, value = $bindable(""), expanded = $bindable(false), status = $bindable(""), style, attributes, action, element = $bindable() }: ComboBoxProps = $props();
+  let { options, value = $bindable(""), expanded = $bindable(false), attributes, action, element = $bindable(), styling, variant = $bindable("") }: ComboBoxProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.NEUTRAL;
-  const cls = fnClass(preset, style);
+  if (!variant) variant = VARIANT.NEUTRAL;
+  const cls = fnClass(preset, styling);
   const idList = elemId.id;
   const attrs = omit(attributes, "class", "type", "value", "list", "role", "aria-haspopup", "aria-autocomplete", "aria-controls", "aria-expanded");
   let selected = $state(NA);
@@ -110,17 +110,17 @@
 <!---------------------------------------->
 
 {#if options.size}
-  <div class={cls(PARTS.WHOLE, status)}>
+  <div class={cls(PARTS.WHOLE, variant)}>
     <div style="position: relative; width: fit-content; height: fit-content;">
       {#if action}
-        <input bind:value bind:this={element} class={cls(PARTS.MAIN, status)} type="text" role="combobox" aria-haspopup="listbox" aria-autocomplete="none" aria-controls={idList} aria-expanded={expanded} onfocus={() => open()} onblur={close} {onkeydown} {...attrs} use:action />
+        <input bind:value bind:this={element} class={cls(PARTS.MAIN, variant)} type="text" role="combobox" aria-haspopup="listbox" aria-autocomplete="none" aria-controls={idList} aria-expanded={expanded} onfocus={() => open()} onblur={close} {onkeydown} {...attrs} use:action />
       {:else}
-        <input bind:value bind:this={element} class={cls(PARTS.MAIN, status)} type="text" role="combobox" aria-haspopup="listbox" aria-autocomplete="none" aria-controls={idList} aria-expanded={expanded} onfocus={() => open()} onblur={close} {onkeydown} {...attrs} />
+        <input bind:value bind:this={element} class={cls(PARTS.MAIN, variant)} type="text" role="combobox" aria-haspopup="listbox" aria-autocomplete="none" aria-controls={idList} aria-expanded={expanded} onfocus={() => open()} onblur={close} {onkeydown} {...attrs} />
       {/if}
-      <ul bind:this={listElem} class={cls(PARTS.BOTTOM, status)} id={idList} role="listbox" style={listboxStyle}>
+      <ul bind:this={listElem} class={cls(PARTS.BOTTOM, variant)} id={idList} role="listbox" style={listboxStyle}>
         {#each opts as opt, i (opt)}
           {@const isSelected = i === selected}
-          {@const labelStatus = isSelected ? STATE.ACTIVE : status}
+          {@const labelStatus = isSelected ? VARIANT.ACTIVE : variant}
           {@const onpointerenter = () => selected = i}
           <li class={cls(PARTS.LABEL, labelStatus)} aria-selected={isSelected} role="option" style={optionStyle} onpointerdown={apply} {onpointerenter}>
             {opt}

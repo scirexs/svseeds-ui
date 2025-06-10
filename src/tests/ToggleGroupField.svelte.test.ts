@@ -4,7 +4,7 @@ import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import { SvelteMap } from "svelte/reactivity";
 import ToggleGroupField from "../lib/_svseeds/ToggleGroupField.svelte";
-import { PARTS, STATE } from "../lib/_svseeds/core.ts";
+import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
 
 const label = "label_text";
 const extra = "(optional)";
@@ -14,26 +14,26 @@ const leftid = "test-left";
 const rightid = "test-right";
 const auxfn = createRawSnippet(
   (
-    status: () => string,
+    variant: () => string,
     values: () => string[],
   ) => {
-    return { render: () => `<span data-testid="${auxid}">${status()},${values().length}</span>` };
+    return { render: () => `<span data-testid="${auxid}">${variant()},${values().length}</span>` };
   },
 );
 const leftfn = createRawSnippet(
   (
-    status: () => string,
+    variant: () => string,
     values: () => string[],
   ) => {
-    return { render: () => `<span data-testid="${leftid}">${status()},${values().length}</span>` };
+    return { render: () => `<span data-testid="${leftid}">${variant()},${values().length}</span>` };
   },
 );
 const rightfn = createRawSnippet(
   (
-    status: () => string,
+    variant: () => string,
     values: () => string[],
   ) => {
-    return { render: () => `<span data-testid="${rightid}">${status()},${values().length}</span>` };
+    return { render: () => `<span data-testid="${rightid}">${variant()},${values().length}</span>` };
   },
 );
 
@@ -197,7 +197,7 @@ describe("Specify state transition & event handlers", () => {
     const mockValidation = vi.fn().mockImplementation(validationFn);
     const props = $state({
       options,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       validations: [mockValidation],
       values: [] as string[],
     });
@@ -206,12 +206,12 @@ describe("Specify state transition & event handlers", () => {
     const hiddenInput = whole.querySelector('input[style*="display: none"]') as HTMLInputElement;
 
     // Initial state
-    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
 
     // Trigger validation by simulating invalid event
     await fireEvent.invalid(hiddenInput);
     expect(mockValidation).toHaveBeenCalled();
-    expect(props.status).toBe(STATE.INACTIVE);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
 
     // Check error state
     const alert = getByRole("alert") as HTMLDivElement;
@@ -221,18 +221,18 @@ describe("Specify state transition & event handlers", () => {
     // Add selection to make it valid
     props.values = ["opt1"];
     await fireEvent.change(hiddenInput); // Simulate validation trigger
-    expect(props.status).toBe(STATE.ACTIVE);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
 
     // Clear selection
     props.values = [];
     await fireEvent.change(hiddenInput);
-    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
   });
 
   test("required validation without custom validations", async () => {
     const props = $state({
       options,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       values: [] as string[],
     });
     const { getAllByRole, getByRole } = render(ToggleGroupField, props);
@@ -243,7 +243,7 @@ describe("Specify state transition & event handlers", () => {
     waitFor(() => {
       const alert = getByRole("alert") as HTMLDivElement;
       expect(alert).toBeInTheDocument();
-      expect(props.status).toBe(STATE.INACTIVE);
+      expect(props.variant).toBe(VARIANT.INACTIVE);
     });
   });
 
@@ -252,7 +252,7 @@ describe("Specify state transition & event handlers", () => {
     const validation2 = vi.fn().mockImplementation((values: string[]) => values.length > 2 ? "Too many selections" : "");
     const props = $state({
       options,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       validations: [validation1, validation2],
       values: ["opt1", "opt2", "opt3"] as string[],
     });
@@ -264,14 +264,14 @@ describe("Specify state transition & event handlers", () => {
     waitFor(() => {
       expect(validation1).toHaveBeenCalled();
       expect(validation2).toHaveBeenCalled();
-      expect(props.status).toBe(STATE.INACTIVE);
+      expect(props.variant).toBe(VARIANT.INACTIVE);
 
       const alert = getByRole("alert") as HTMLDivElement;
       expect(alert).toHaveTextContent("Too many selections");
     });
   });
 
-  test("default class of each status", async () => {
+  test("default class of each variant", async () => {
     const props = $state({
       options,
       label,
@@ -280,7 +280,7 @@ describe("Specify state transition & event handlers", () => {
       left: leftfn,
       right: rightfn,
       bottom,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       validations,
       values: [] as string[],
     });
@@ -295,7 +295,7 @@ describe("Specify state transition & event handlers", () => {
     const middle = leftdv?.parentElement;
     const btm = getByRole("status") as HTMLDivElement;
 
-    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(whole).toHaveClass(seed, PARTS.WHOLE);
     expect(top).toHaveClass(seed, PARTS.TOP);
     expect(lbl).toHaveClass(seed, PARTS.LABEL);
@@ -309,33 +309,33 @@ describe("Specify state transition & event handlers", () => {
     // Trigger invalid state
     const hiddenInput = whole.querySelector('input[style*="display: none"]') as HTMLInputElement;
     await fireEvent.invalid(hiddenInput);
-    expect(props.status).toBe(STATE.INACTIVE);
-    expect(whole).toHaveClass(seed, PARTS.WHOLE, STATE.INACTIVE);
-    expect(top).toHaveClass(seed, PARTS.TOP, STATE.INACTIVE);
-    expect(lbl).toHaveClass(seed, PARTS.LABEL, STATE.INACTIVE);
-    expect(ext).toHaveClass(seed, PARTS.EXTRA, STATE.INACTIVE);
-    expect(auxdv).toHaveClass(seed, PARTS.AUX, STATE.INACTIVE);
-    expect(middle).toHaveClass(seed, PARTS.MIDDLE, STATE.INACTIVE);
-    expect(leftdv).toHaveClass(seed, PARTS.LEFT, STATE.INACTIVE);
-    expect(rightdv).toHaveClass(seed, PARTS.RIGHT, STATE.INACTIVE);
-    expect(btm).toHaveClass(seed, PARTS.BOTTOM, STATE.INACTIVE);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+    expect(whole).toHaveClass(seed, PARTS.WHOLE, VARIANT.INACTIVE);
+    expect(top).toHaveClass(seed, PARTS.TOP, VARIANT.INACTIVE);
+    expect(lbl).toHaveClass(seed, PARTS.LABEL, VARIANT.INACTIVE);
+    expect(ext).toHaveClass(seed, PARTS.EXTRA, VARIANT.INACTIVE);
+    expect(auxdv).toHaveClass(seed, PARTS.AUX, VARIANT.INACTIVE);
+    expect(middle).toHaveClass(seed, PARTS.MIDDLE, VARIANT.INACTIVE);
+    expect(leftdv).toHaveClass(seed, PARTS.LEFT, VARIANT.INACTIVE);
+    expect(rightdv).toHaveClass(seed, PARTS.RIGHT, VARIANT.INACTIVE);
+    expect(btm).toHaveClass(seed, PARTS.BOTTOM, VARIANT.INACTIVE);
 
     // Make valid
     props.values = ["opt1"];
     await fireEvent.change(hiddenInput);
-    expect(props.status).toBe(STATE.ACTIVE);
-    expect(whole).toHaveClass(seed, PARTS.WHOLE, STATE.ACTIVE);
-    expect(top).toHaveClass(seed, PARTS.TOP, STATE.ACTIVE);
-    expect(lbl).toHaveClass(seed, PARTS.LABEL, STATE.ACTIVE);
-    expect(ext).toHaveClass(seed, PARTS.EXTRA, STATE.ACTIVE);
-    expect(auxdv).toHaveClass(seed, PARTS.AUX, STATE.ACTIVE);
-    expect(middle).toHaveClass(seed, PARTS.MIDDLE, STATE.ACTIVE);
-    expect(leftdv).toHaveClass(seed, PARTS.LEFT, STATE.ACTIVE);
-    expect(rightdv).toHaveClass(seed, PARTS.RIGHT, STATE.ACTIVE);
-    expect(btm).toHaveClass(seed, PARTS.BOTTOM, STATE.ACTIVE);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(whole).toHaveClass(seed, PARTS.WHOLE, VARIANT.ACTIVE);
+    expect(top).toHaveClass(seed, PARTS.TOP, VARIANT.ACTIVE);
+    expect(lbl).toHaveClass(seed, PARTS.LABEL, VARIANT.ACTIVE);
+    expect(ext).toHaveClass(seed, PARTS.EXTRA, VARIANT.ACTIVE);
+    expect(auxdv).toHaveClass(seed, PARTS.AUX, VARIANT.ACTIVE);
+    expect(middle).toHaveClass(seed, PARTS.MIDDLE, VARIANT.ACTIVE);
+    expect(leftdv).toHaveClass(seed, PARTS.LEFT, VARIANT.ACTIVE);
+    expect(rightdv).toHaveClass(seed, PARTS.RIGHT, VARIANT.ACTIVE);
+    expect(btm).toHaveClass(seed, PARTS.BOTTOM, VARIANT.ACTIVE);
   });
 
-  test("w/ string style class of each status", async () => {
+  test("w/ string styling class of each variant", async () => {
     const clsid = "style_id";
     const props = $state({
       options,
@@ -345,10 +345,10 @@ describe("Specify state transition & event handlers", () => {
       left: leftfn,
       right: rightfn,
       bottom,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       validations,
       values: [] as string[],
-      style: clsid,
+      styling: clsid,
     });
     const { getAllByRole, getByRole, getByTestId, getByText } = render(ToggleGroupField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
@@ -361,7 +361,7 @@ describe("Specify state transition & event handlers", () => {
     const middle = leftdv?.parentElement;
     const btm = getByRole("status") as HTMLDivElement;
 
-    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(whole).toHaveClass(clsid, PARTS.WHOLE);
     expect(top).toHaveClass(clsid, PARTS.TOP);
     expect(lbl).toHaveClass(clsid, PARTS.LABEL);
@@ -375,40 +375,40 @@ describe("Specify state transition & event handlers", () => {
     // Trigger invalid state
     const hiddenInput = whole.querySelector('input[style*="display: none"]') as HTMLInputElement;
     await fireEvent.invalid(hiddenInput);
-    expect(props.status).toBe(STATE.INACTIVE);
-    expect(whole).toHaveClass(clsid, PARTS.WHOLE, STATE.INACTIVE);
-    expect(top).toHaveClass(clsid, PARTS.TOP, STATE.INACTIVE);
-    expect(lbl).toHaveClass(clsid, PARTS.LABEL, STATE.INACTIVE);
-    expect(ext).toHaveClass(clsid, PARTS.EXTRA, STATE.INACTIVE);
-    expect(auxdv).toHaveClass(clsid, PARTS.AUX, STATE.INACTIVE);
-    expect(middle).toHaveClass(clsid, PARTS.MIDDLE, STATE.INACTIVE);
-    expect(leftdv).toHaveClass(clsid, PARTS.LEFT, STATE.INACTIVE);
-    expect(rightdv).toHaveClass(clsid, PARTS.RIGHT, STATE.INACTIVE);
-    expect(btm).toHaveClass(clsid, PARTS.BOTTOM, STATE.INACTIVE);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+    expect(whole).toHaveClass(clsid, PARTS.WHOLE, VARIANT.INACTIVE);
+    expect(top).toHaveClass(clsid, PARTS.TOP, VARIANT.INACTIVE);
+    expect(lbl).toHaveClass(clsid, PARTS.LABEL, VARIANT.INACTIVE);
+    expect(ext).toHaveClass(clsid, PARTS.EXTRA, VARIANT.INACTIVE);
+    expect(auxdv).toHaveClass(clsid, PARTS.AUX, VARIANT.INACTIVE);
+    expect(middle).toHaveClass(clsid, PARTS.MIDDLE, VARIANT.INACTIVE);
+    expect(leftdv).toHaveClass(clsid, PARTS.LEFT, VARIANT.INACTIVE);
+    expect(rightdv).toHaveClass(clsid, PARTS.RIGHT, VARIANT.INACTIVE);
+    expect(btm).toHaveClass(clsid, PARTS.BOTTOM, VARIANT.INACTIVE);
 
     // Make valid
     props.values = ["opt1"];
     await fireEvent.change(hiddenInput);
-    expect(props.status).toBe(STATE.ACTIVE);
-    expect(whole).toHaveClass(clsid, PARTS.WHOLE, STATE.ACTIVE);
-    expect(top).toHaveClass(clsid, PARTS.TOP, STATE.ACTIVE);
-    expect(lbl).toHaveClass(clsid, PARTS.LABEL, STATE.ACTIVE);
-    expect(ext).toHaveClass(clsid, PARTS.EXTRA, STATE.ACTIVE);
-    expect(auxdv).toHaveClass(clsid, PARTS.AUX, STATE.ACTIVE);
-    expect(middle).toHaveClass(clsid, PARTS.MIDDLE, STATE.ACTIVE);
-    expect(leftdv).toHaveClass(clsid, PARTS.LEFT, STATE.ACTIVE);
-    expect(rightdv).toHaveClass(clsid, PARTS.RIGHT, STATE.ACTIVE);
-    expect(btm).toHaveClass(clsid, PARTS.BOTTOM, STATE.ACTIVE);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(whole).toHaveClass(clsid, PARTS.WHOLE, VARIANT.ACTIVE);
+    expect(top).toHaveClass(clsid, PARTS.TOP, VARIANT.ACTIVE);
+    expect(lbl).toHaveClass(clsid, PARTS.LABEL, VARIANT.ACTIVE);
+    expect(ext).toHaveClass(clsid, PARTS.EXTRA, VARIANT.ACTIVE);
+    expect(auxdv).toHaveClass(clsid, PARTS.AUX, VARIANT.ACTIVE);
+    expect(middle).toHaveClass(clsid, PARTS.MIDDLE, VARIANT.ACTIVE);
+    expect(leftdv).toHaveClass(clsid, PARTS.LEFT, VARIANT.ACTIVE);
+    expect(rightdv).toHaveClass(clsid, PARTS.RIGHT, VARIANT.ACTIVE);
+    expect(btm).toHaveClass(clsid, PARTS.BOTTOM, VARIANT.ACTIVE);
   });
 
-  test("w/ obj style of each status", async () => {
+  test("w/ obj styling of each variant", async () => {
     const dynObj = {
       base: "base",
       neutral: "dyn_neutral",
       active: "dyn_active",
       inactive: "dyn_inactive",
     };
-    const style = {
+    const styling = {
       whole: dynObj,
       middle: dynObj,
       top: dynObj,
@@ -427,10 +427,10 @@ describe("Specify state transition & event handlers", () => {
       left: leftfn,
       right: rightfn,
       bottom,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       validations,
       values: [] as string[],
-      style,
+      styling,
     });
     const { getAllByRole, getByRole, getByTestId, getByText } = render(ToggleGroupField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
@@ -443,7 +443,7 @@ describe("Specify state transition & event handlers", () => {
     const middle = leftdv?.parentElement;
     const btm = getByRole("status") as HTMLDivElement;
 
-    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(whole).toHaveClass(dynObj.base, dynObj.neutral);
     expect(top).toHaveClass(dynObj.base, dynObj.neutral);
     expect(lbl).toHaveClass(dynObj.base, dynObj.neutral);
@@ -457,7 +457,7 @@ describe("Specify state transition & event handlers", () => {
     // Trigger invalid state
     const hiddenInput = whole.querySelector('input[style*="display: none"]') as HTMLInputElement;
     await fireEvent.invalid(hiddenInput);
-    expect(props.status).toBe(STATE.INACTIVE);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
     expect(whole).toHaveClass(dynObj.base, dynObj.inactive);
     expect(top).toHaveClass(dynObj.base, dynObj.inactive);
     expect(lbl).toHaveClass(dynObj.base, dynObj.inactive);
@@ -471,7 +471,7 @@ describe("Specify state transition & event handlers", () => {
     // Make valid
     props.values = ["opt1"];
     await fireEvent.change(hiddenInput);
-    expect(props.status).toBe(STATE.ACTIVE);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
     expect(whole).toHaveClass(dynObj.base, dynObj.active);
     expect(top).toHaveClass(dynObj.base, dynObj.active);
     expect(lbl).toHaveClass(dynObj.base, dynObj.active);
@@ -487,7 +487,7 @@ describe("Specify state transition & event handlers", () => {
     const svsToggleGroupStyle = "custom-toggle-group";
     const deps = {
       svsToggleGroup: {
-        style: svsToggleGroupStyle,
+        styling: svsToggleGroupStyle,
       },
     };
     const props = { options, deps };

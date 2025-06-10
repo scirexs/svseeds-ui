@@ -3,7 +3,7 @@ import { fireEvent, render, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import Modal from "../lib/_svseeds/_Modal.svelte";
-import { PARTS, STATE } from "../lib/_svseeds/core.ts";
+import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
 
 afterEach(() => {
   // Clean up any remaining dialogs
@@ -251,59 +251,59 @@ describe("Modal trigger focus behavior", () => {
   });
 });
 
-describe("Modal status and styling", () => {
-  test("default status is neutral", () => {
+describe("Modal variant and styling", () => {
+  test("default variant is neutral", () => {
     const { getByRole } = render(Modal, {
       children: childrenSnippet,
       open: true,
     });
     const dialog = getByRole("dialog") as HTMLDialogElement;
-    expect(dialog).toHaveClass(preset, PARTS.WHOLE, STATE.NEUTRAL);
+    expect(dialog).toHaveClass(preset, PARTS.WHOLE, VARIANT.NEUTRAL);
   });
 
-  test("custom status is applied", () => {
-    const customStatus = "custom-status";
+  test("custom variant is applied", () => {
+    const customStatus = "custom-variant";
     const { getByRole } = render(Modal, {
       children: childrenSnippet,
       open: true,
-      status: customStatus,
+      variant: customStatus,
     });
     const dialog = getByRole("dialog") as HTMLDialogElement;
     expect(dialog).toHaveClass(preset, PARTS.WHOLE, customStatus);
   });
 
-  test("status binding works", async () => {
+  test("variant binding works", async () => {
     const props = $state({
       children: childrenSnippet,
       open: true,
-      status: "",
+      variant: "",
     });
     const { getByRole, rerender } = render(Modal, props);
 
     let dialog = getByRole("dialog") as HTMLDialogElement;
-    expect(dialog).toHaveClass(preset, PARTS.WHOLE, STATE.NEUTRAL);
+    expect(dialog).toHaveClass(preset, PARTS.WHOLE, VARIANT.NEUTRAL);
 
-    props.status = STATE.ACTIVE;
+    props.variant = VARIANT.ACTIVE;
     await rerender(props);
     dialog = getByRole("dialog") as HTMLDialogElement;
-    expect(dialog).toHaveClass(preset, PARTS.WHOLE, STATE.ACTIVE);
+    expect(dialog).toHaveClass(preset, PARTS.WHOLE, VARIANT.ACTIVE);
   });
 
-  test("custom style string is applied", () => {
+  test("custom styling string is applied", () => {
     const customStyle = "custom-modal";
     const { getByRole } = render(Modal, {
       children: childrenSnippet,
       open: true,
-      style: customStyle,
+      styling: customStyle,
     });
     const dialog = getByRole("dialog") as HTMLDialogElement;
     const mainDiv = dialog.firstElementChild;
 
-    expect(dialog).toHaveClass(customStyle, PARTS.WHOLE, STATE.NEUTRAL);
-    expect(mainDiv).toHaveClass(customStyle, PARTS.MAIN, STATE.NEUTRAL);
+    expect(dialog).toHaveClass(customStyle, PARTS.WHOLE, VARIANT.NEUTRAL);
+    expect(mainDiv).toHaveClass(customStyle, PARTS.MAIN, VARIANT.NEUTRAL);
   });
 
-  test("custom style object is applied", () => {
+  test("custom styling object is applied", () => {
     const customStyle = {
       whole: { base: "modal-base", neutral: "modal-neutral" },
       main: { base: "content-base", neutral: "content-neutral" },
@@ -311,7 +311,7 @@ describe("Modal status and styling", () => {
     const { getByRole } = render(Modal, {
       children: childrenSnippet,
       open: true,
-      style: customStyle,
+      styling: customStyle,
     });
     const dialog = getByRole("dialog") as HTMLDialogElement;
     const mainDiv = dialog.firstElementChild;
@@ -332,7 +332,7 @@ describe("Modal structure and classes", () => {
 
     expect(dialog.children).toHaveLength(1);
     expect(mainDiv.tagName).toBe("DIV");
-    expect(mainDiv).toHaveClass(preset, PARTS.MAIN, STATE.NEUTRAL);
+    expect(mainDiv).toHaveClass(preset, PARTS.MAIN, VARIANT.NEUTRAL);
   });
 
   // test("modal has autofocus attribute", () => {
@@ -346,14 +346,14 @@ describe("Modal structure and classes", () => {
 });
 
 describe("Modal edge cases", () => {
-  test("empty status defaults to neutral", () => {
+  test("empty variant defaults to neutral", () => {
     const { getByRole } = render(Modal, {
       children: childrenSnippet,
       open: true,
-      status: "",
+      variant: "",
     });
     const dialog = getByRole("dialog") as HTMLDialogElement;
-    expect(dialog).toHaveClass(preset, PARTS.WHOLE, STATE.NEUTRAL);
+    expect(dialog).toHaveClass(preset, PARTS.WHOLE, VARIANT.NEUTRAL);
   });
 
   test("modal with complex children content", () => {

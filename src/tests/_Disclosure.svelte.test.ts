@@ -3,7 +3,7 @@ import { render, waitFor } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import Disclosure from "../lib/_svseeds/_Disclosure.svelte";
-import { PARTS, STATE } from "../lib/_svseeds/core.ts";
+import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
 
 const label = "Disclosure Label";
 const childrenContent = "Disclosure Content";
@@ -13,8 +13,8 @@ const childrenSnippet = createRawSnippet(() => {
   return { render: () => `<div data-testid="${childrenTestId}">${childrenContent}</div>` };
 });
 
-const labelSnippet = createRawSnippet((status: () => string) => {
-  return { render: () => `<span data-testid="test-label">${label} - ${status()}</span>` };
+const labelSnippet = createRawSnippet((open: () => boolean, variant: () => string) => {
+  return { render: () => `<span data-testid="test-label">${label} - ${variant()}</span>` };
 });
 
 describe("Switching existence of elements", () => {
@@ -41,7 +41,7 @@ describe("Switching existence of elements", () => {
     });
     const labelEl = getByTestId("test-label");
     expect(labelEl).toBeInTheDocument();
-    expect(labelEl).toHaveTextContent(`${label} - ${STATE.NEUTRAL}`);
+    expect(labelEl).toHaveTextContent(`${label} - ${VARIANT.NEUTRAL}`);
   });
 
   test("w/ open=true", () => {
@@ -93,12 +93,12 @@ describe("Switching existence of elements", () => {
     expect(details).toBeInTheDocument();
   });
 
-  test("w/ custom status", () => {
-    const customStatus = "custom-status";
+  test("w/ custom variant", () => {
+    const customStatus = "custom-variant";
     const { getByRole } = render(Disclosure, {
       label,
       children: childrenSnippet,
-      status: customStatus,
+      variant: customStatus,
     });
     const details = getByRole("group") as HTMLDetailsElement;
     expect(details.className).toContain(customStatus);
@@ -111,7 +111,7 @@ describe("Interactions and state transitions", () => {
       label,
       children: childrenSnippet,
       open: false,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       duration: 0,
     });
     const user = userEvent.setup();
@@ -138,12 +138,12 @@ describe("Interactions and state transitions", () => {
     });
   });
 
-  test("status changes with open/close", async () => {
+  test("variant changes with open/close", async () => {
     const props = $state({
       label,
       children: childrenSnippet,
       open: false,
-      status: "",
+      variant: "",
       duration: 0,
     });
     const user = userEvent.setup();
@@ -151,16 +151,16 @@ describe("Interactions and state transitions", () => {
 
     const summary = getByText(label);
 
-    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
 
     await user.click(summary);
     await waitFor(() => {
-      expect(props.status).toBe(STATE.ACTIVE);
+      expect(props.variant).toBe(VARIANT.ACTIVE);
     });
 
     await user.click(summary);
     await waitFor(() => {
-      expect(props.status).toBe(STATE.NEUTRAL);
+      expect(props.variant).toBe(VARIANT.NEUTRAL);
     });
   });
 
@@ -235,19 +235,19 @@ describe("Interactions and state transitions", () => {
     expect(ontoggle).toHaveBeenCalled();
   });
 
-  // test("label snippet receives correct status", () => {
+  // test("label snippet receives correct variant", () => {
   //   const props = $state({
   //     label: labelSnippet,
   //     children: childrenSnippet,
   //     open: false,
-  //     status: STATE.NEUTRAL,
+  //     variant: VARIANT.NEUTRAL,
   //     duration: 0,
   //   });
   //   const { getByTestId } = render(Disclosure, props);
 
   //   const labelEl = getByTestId("test-label");
 
-  //   expect(labelEl).toHaveTextContent(`${label} - ${STATE.NEUTRAL}`);
+  //   expect(labelEl).toHaveTextContent(`${label} - ${VARIANT.NEUTRAL}`);
   // });
 });
 
@@ -264,33 +264,33 @@ describe("CSS classes and styling", () => {
     const details = getByRole("group") as HTMLDetailsElement;
     const summary = getByText(label);
 
-    expect(details).toHaveClass(seed, PARTS.WHOLE, STATE.ACTIVE);
-    expect(summary).toHaveClass(seed, PARTS.LABEL, STATE.ACTIVE);
+    expect(details).toHaveClass(seed, PARTS.WHOLE, VARIANT.ACTIVE);
+    expect(summary).toHaveClass(seed, PARTS.LABEL, VARIANT.ACTIVE);
   });
 
-  test("w/ string style", () => {
-    const styleId = "custom-style";
+  test("w/ string styling", () => {
+    const styleId = "custom-styling";
     const { getByRole, getByText } = render(Disclosure, {
       label,
       children: childrenSnippet,
-      style: styleId,
+      styling: styleId,
       open: true,
     });
 
     const details = getByRole("group") as HTMLDetailsElement;
     const summary = getByText(label);
 
-    expect(details).toHaveClass(styleId, PARTS.WHOLE, STATE.ACTIVE);
-    expect(summary).toHaveClass(styleId, PARTS.LABEL, STATE.ACTIVE);
+    expect(details).toHaveClass(styleId, PARTS.WHOLE, VARIANT.ACTIVE);
+    expect(summary).toHaveClass(styleId, PARTS.LABEL, VARIANT.ACTIVE);
   });
 
-  test("w/ object style", () => {
+  test("w/ object styling", () => {
     const dynObj = {
       base: "base-class",
       neutral: "neutral-class",
       active: "active-class",
     };
-    const style = {
+    const styling = {
       whole: dynObj,
       label: dynObj,
       main: dynObj,
@@ -299,7 +299,7 @@ describe("CSS classes and styling", () => {
     const { getByRole, getByText } = render(Disclosure, {
       label,
       children: childrenSnippet,
-      style,
+      styling,
       open: true,
     });
 
@@ -310,12 +310,12 @@ describe("CSS classes and styling", () => {
     expect(summary).toHaveClass(dynObj.base, dynObj.active);
   });
 
-  test("class changes with status", async () => {
+  test("class changes with variant", async () => {
     const props = $state({
       label,
       children: childrenSnippet,
       open: false,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       duration: 0,
     });
     const user = userEvent.setup();
@@ -324,19 +324,19 @@ describe("CSS classes and styling", () => {
     const details = getByRole("group") as HTMLDetailsElement;
     const summary = getByText(label);
 
-    expect(details).toHaveClass(seed, PARTS.WHOLE, STATE.NEUTRAL);
-    expect(summary).toHaveClass(seed, PARTS.LABEL, STATE.NEUTRAL);
+    expect(details).toHaveClass(seed, PARTS.WHOLE, VARIANT.NEUTRAL);
+    expect(summary).toHaveClass(seed, PARTS.LABEL, VARIANT.NEUTRAL);
 
     await user.click(summary);
-    expect(props.status).toBe(STATE.ACTIVE);
-    expect(details).toHaveClass(seed, PARTS.WHOLE, STATE.ACTIVE);
-    expect(summary).toHaveClass(seed, PARTS.LABEL, STATE.ACTIVE);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(details).toHaveClass(seed, PARTS.WHOLE, VARIANT.ACTIVE);
+    expect(summary).toHaveClass(seed, PARTS.LABEL, VARIANT.ACTIVE);
 
     await user.click(summary);
     await waitFor(() => {
-      expect(props.status).toBe(STATE.NEUTRAL);
-      expect(details).toHaveClass(seed, PARTS.WHOLE, STATE.NEUTRAL);
-      expect(summary).toHaveClass(seed, PARTS.LABEL, STATE.NEUTRAL);
+      expect(props.variant).toBe(VARIANT.NEUTRAL);
+      expect(details).toHaveClass(seed, PARTS.WHOLE, VARIANT.NEUTRAL);
+      expect(summary).toHaveClass(seed, PARTS.LABEL, VARIANT.NEUTRAL);
     });
   });
 });
@@ -381,12 +381,12 @@ describe("Edge cases and error handling", () => {
     expect(details).toBeInTheDocument();
   });
 
-  test("w/ neutral status variations", () => {
+  test("w/ neutral variant variations", () => {
     const customNeutral = "custom-neutral";
     const props = $state({
       label,
       children: childrenSnippet,
-      status: customNeutral,
+      variant: customNeutral,
     });
     const { getByRole, getByText } = render(Disclosure, props);
 
@@ -397,7 +397,7 @@ describe("Edge cases and error handling", () => {
     expect(summary).toHaveClass(seed, PARTS.LABEL, customNeutral);
   });
 
-  test("w/ active status variations", () => {
+  test("w/ active variant variations", () => {
     const props = $state({
       label,
       children: childrenSnippet,
@@ -408,8 +408,8 @@ describe("Edge cases and error handling", () => {
     const details = getByRole("group") as HTMLDetailsElement;
     const summary = getByText(label);
 
-    expect(details).toHaveClass(seed, PARTS.WHOLE, STATE.ACTIVE);
-    expect(summary).toHaveClass(seed, PARTS.LABEL, STATE.ACTIVE);
+    expect(details).toHaveClass(seed, PARTS.WHOLE, VARIANT.ACTIVE);
+    expect(summary).toHaveClass(seed, PARTS.LABEL, VARIANT.ACTIVE);
   });
 
   test("handles missing element gracefully", () => {

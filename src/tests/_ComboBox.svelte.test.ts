@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from "vitest";
 import { fireEvent, render, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import ComboBox from "../lib/_svseeds/_ComboBox.svelte";
-import { PARTS, STATE } from "../lib/_svseeds/core.ts";
+import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
 
 const actionfn = () => {
   return {};
@@ -57,11 +57,11 @@ describe("Switching existence of elements", () => {
     expect(listbox).toHaveStyle("visibility: visible");
   });
 
-  test("w/ custom status", () => {
-    const { getByRole } = render(ComboBox, { options, status: STATE.ACTIVE });
+  test("w/ custom variant", () => {
+    const { getByRole } = render(ComboBox, { options, variant: VARIANT.ACTIVE });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    expect(combobox).toHaveClass("svs-combo-box", PARTS.MAIN, STATE.ACTIVE);
+    expect(combobox).toHaveClass("svs-combo-box", PARTS.MAIN, VARIANT.ACTIVE);
   });
 
   test("w/ attributes", () => {
@@ -137,7 +137,7 @@ describe("Focus and blur behavior", () => {
 
     const items = getAllByRole("option");
     expect(items[1]).toHaveAttribute("aria-selected", "true");
-    expect(items[1]).toHaveClass("svs-combo-box", PARTS.LABEL, STATE.ACTIVE);
+    expect(items[1]).toHaveClass("svs-combo-box", PARTS.LABEL, VARIANT.ACTIVE);
   });
 });
 
@@ -346,16 +346,16 @@ describe("State management and bindings", () => {
     expect(listbox).toHaveStyle("visibility: visible");
   });
 
-  test("status binding works", async () => {
-    const props = $state({ options, status: "" });
+  test("variant binding works", async () => {
+    const props = $state({ options, variant: "" });
     const { getByRole, rerender } = render(ComboBox, props);
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    expect(combobox).toHaveClass("svs-combo-box", PARTS.MAIN, STATE.NEUTRAL);
+    expect(combobox).toHaveClass("svs-combo-box", PARTS.MAIN, VARIANT.NEUTRAL);
 
-    props.status = STATE.ACTIVE;
+    props.variant = VARIANT.ACTIVE;
     await rerender(props);
-    expect(combobox).toHaveClass("svs-combo-box", PARTS.MAIN, STATE.ACTIVE);
+    expect(combobox).toHaveClass("svs-combo-box", PARTS.MAIN, VARIANT.ACTIVE);
   });
 
   test("element binding works", () => {
@@ -377,34 +377,34 @@ describe("Style and class handling", () => {
     const listbox = getByRole("listbox") as HTMLUListElement;
     const items = getAllByRole("option");
 
-    expect(whole).toHaveClass("svs-combo-box", PARTS.WHOLE, STATE.NEUTRAL);
-    expect(combobox).toHaveClass("svs-combo-box", PARTS.MAIN, STATE.NEUTRAL);
-    expect(listbox).toHaveClass("svs-combo-box", PARTS.BOTTOM, STATE.NEUTRAL);
-    expect(items[0]).toHaveClass("svs-combo-box", PARTS.LABEL, STATE.NEUTRAL);
+    expect(whole).toHaveClass("svs-combo-box", PARTS.WHOLE, VARIANT.NEUTRAL);
+    expect(combobox).toHaveClass("svs-combo-box", PARTS.MAIN, VARIANT.NEUTRAL);
+    expect(listbox).toHaveClass("svs-combo-box", PARTS.BOTTOM, VARIANT.NEUTRAL);
+    expect(items[0]).toHaveClass("svs-combo-box", PARTS.LABEL, VARIANT.NEUTRAL);
   });
 
-  test("string style classes", () => {
-    const style = "custom-combo";
-    const { container, getByRole, getAllByRole } = render(ComboBox, { options, style, expanded: true });
+  test("string styling classes", () => {
+    const styling = "custom-combo";
+    const { container, getByRole, getAllByRole } = render(ComboBox, { options, styling, expanded: true });
     const whole = container.firstElementChild as HTMLDivElement;
     const combobox = getByRole("combobox") as HTMLInputElement;
     const listbox = getByRole("listbox") as HTMLUListElement;
     const items = getAllByRole("option");
 
-    expect(whole).toHaveClass(style, PARTS.WHOLE, STATE.NEUTRAL);
-    expect(combobox).toHaveClass(style, PARTS.MAIN, STATE.NEUTRAL);
-    expect(listbox).toHaveClass(style, PARTS.BOTTOM, STATE.NEUTRAL);
-    expect(items[0]).toHaveClass(style, PARTS.LABEL, STATE.NEUTRAL);
+    expect(whole).toHaveClass(styling, PARTS.WHOLE, VARIANT.NEUTRAL);
+    expect(combobox).toHaveClass(styling, PARTS.MAIN, VARIANT.NEUTRAL);
+    expect(listbox).toHaveClass(styling, PARTS.BOTTOM, VARIANT.NEUTRAL);
+    expect(items[0]).toHaveClass(styling, PARTS.LABEL, VARIANT.NEUTRAL);
   });
 
-  test("object style classes", () => {
+  test("object styling classes", () => {
     const dynObj = {
       base: "base-class",
       neutral: "neutral-class",
       active: "active-class",
       inactive: "inactive-class",
     };
-    const style = {
+    const styling = {
       whole: dynObj,
       main: dynObj,
       bottom: dynObj,
@@ -412,8 +412,8 @@ describe("Style and class handling", () => {
     };
     const { container, getByRole, getAllByRole } = render(ComboBox, {
       options,
-      style,
-      status: STATE.ACTIVE,
+      styling,
+      variant: VARIANT.ACTIVE,
       expanded: true,
     });
 

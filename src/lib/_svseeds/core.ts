@@ -1,12 +1,13 @@
 // deno-fmt-ignore
 export {
-  type SVSStyle,
+  type SVSClass,
   BASE,
-  STATE,
+  VARIANT,
   PARTS,
   elemId,
   fnClass,
   isNeutral,
+  isUnsignedInteger,
   omit,
   debounce,
   throttle,
@@ -19,11 +20,11 @@ type ClassPartialValue = string | ClassArray;
 type ClassValue = ClassPartialValue | ClassDictionary;
 type ClassRule = Record<string, ClassValue> | ClassPartialValue;
 type ClassRuleSet = Record<string, Record<string, ClassValue>>;
-type SVSStyle = Record<string, ClassRule> | string;
-type ClassFn = (part: string, status: string) => ClassValue | undefined;
+type SVSClass = Record<string, ClassRule> | string;
+type ClassFn = (part: string, variant: string) => ClassValue | undefined;
 
 const BASE = "base";
-const STATE = Object.freeze({ NEUTRAL: "neutral", ACTIVE: "active", INACTIVE: "inactive" });
+const VARIANT = Object.freeze({ NEUTRAL: "neutral", ACTIVE: "active", INACTIVE: "inactive" });
 const PARTS = Object.freeze({
   WHOLE: "whole",
   MIDDLE: "middle",
@@ -37,16 +38,16 @@ const PARTS = Object.freeze({
   EXTRA: "extra",
 });
 /**
- * Creates a function that dynamically generates CSS classes based on component parts and status.
+ * Creates a function that dynamically generates CSS classes based on component parts and variant.
  *
  * Compatible with ClassValue type available in Svelte 5.16+ class attributes,
  * this function generates a ClassFn that returns appropriate CSS classes
- * based on the combination of component parts and their states.
+ * based on the combination of component parts and their variants.
  *
  * @param preset - Preset style definition. Can be a string or style rule object
  * @param style - Optional style definition. Takes precedence over preset when provided
  *
- * @returns Function that takes part and status parameters and returns ClassValue
+ * @returns Function that takes part and variant parameters and returns ClassValue
  *
  * @example
  * // String preset case
@@ -82,13 +83,13 @@ const PARTS = Object.freeze({
  * const classFn = fnClass(preset, customStyle);
  * classFn("button", "active"); // ["btn", "btn-active"]
  */
-function fnClass(preset: SVSStyle, style?: SVSStyle): ClassFn {
+function fnClass(preset: SVSClass, style?: SVSClass): ClassFn {
   const rule = prepRule(style) ?? prepRule(preset);
   if (rule == null) return (_, __) => undefined;
-  if (typeof rule === "string") return (part, status) => `${rule} ${part} ${status}`;
-  return (part, status) => ruleClass(rule, part, status);
+  if (typeof rule === "string") return (part, variant) => `${rule} ${part} ${variant}`;
+  return (part, variant) => ruleClass(rule, part, variant);
 }
-function prepRule(rule?: SVSStyle): ClassRuleSet | string | undefined {
+function prepRule(rule?: SVSClass): ClassRuleSet | string | undefined {
   if (rule == null) return;
   if (typeof rule === "string") return rule.trim() ? rule : undefined;
   const entries = Object.entries(rule);
@@ -97,9 +98,9 @@ function prepRule(rule?: SVSStyle): ClassRuleSet | string | undefined {
     return v !== null && typeof v === "object" && !Array.isArray(v) ? [k, v] : [k, { base: v }];
   }));
 }
-function ruleClass(rule: ClassRuleSet, part: string, status: string): ClassValue | undefined {
+function ruleClass(rule: ClassRuleSet, part: string, variant: string): ClassValue | undefined {
   const base = rule[part]?.[BASE] ?? "";
-  const dyn = rule[part]?.[status] ?? rule[part]?.[STATE.NEUTRAL] ?? "";
+  const dyn = rule[part]?.[variant] ?? rule[part]?.[VARIANT.NEUTRAL] ?? "";
   if (!base && !dyn) return;
   if (base && dyn) return [base, dyn];
   return base ? base : dyn;
@@ -202,21 +203,40 @@ class UniqueId {
 }
 const elemId = new UniqueId();
 /**
- * Determines whether a status is in a neutral state (neither ACTIVE nor INACTIVE).
+ * Determines whether a variant is in a neutral variant (neither ACTIVE nor INACTIVE).
  *
- * @param status - The status string to check
- * @returns false if the status is ACTIVE or INACTIVE, true otherwise
+ * @param variant - The variant string to check
+ * @returns false if the variant is ACTIVE or INACTIVE, true otherwise
  *
  * @example
  * ```typescript
- * isNeutral(STATE.NEUTRAL); // true
- * isNeutral("custom state"); // true
- * isNeutral(STATE.ACTIVE); // false
- * isNeutral(STATE.INACTIVE); // false
+ * isNeutral(VARIANT.NEUTRAL); // true
+ * isNeutral("custom variant"); // true
+ * isNeutral(VARIANT.ACTIVE); // false
+ * isNeutral(VARIANT.INACTIVE); // false
  * ```
  */
-function isNeutral(status: string): boolean {
-  return status !== STATE.ACTIVE && status !== STATE.INACTIVE;
+function isNeutral(variant: string): boolean {
+  return variant !== VARIANT.ACTIVE && variant !== VARIANT.INACTIVE;
+}
+/**
+ * Checks if a given number is an unsigned integer (non-negative integer).
+ *
+ * @param num - The number to check
+ * @returns True if the number is an integer and greater than or equal to zero, false otherwise
+ *
+ * @example
+ * ```typescript
+ * isUnsignedInteger(5);        // true
+ * isUnsignedInteger(0);        // true
+ * isUnsignedInteger(-1);       // false
+ * isUnsignedInteger(3.14);     // false
+ * isUnsignedInteger(NaN);      // false
+ * isUnsignedInteger(Infinity); // false
+ * ```
+ */
+function isUnsignedInteger(num: number): boolean {
+  return Number.isInteger(num) && num >= 0;
 }
 /**
  * Creates a new object with specified keys omitted from the original object.

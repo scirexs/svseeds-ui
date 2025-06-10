@@ -3,26 +3,26 @@ import { fireEvent, render, waitFor, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import Slider from "../lib/_svseeds/_Slider.svelte";
-import { PARTS, STATE } from "../lib/_svseeds/core.ts";
+import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
 
 const leftid = "test-left";
 const rightid = "test-right";
 const leftfn = createRawSnippet(
   (
-    status: () => string,
+    variant: () => string,
     value: () => number,
     element: () => HTMLInputElement | undefined,
   ) => {
-    return { render: () => `<span data-testid="${leftid}">${status()},${value()},${element()?.toString()}</span>` };
+    return { render: () => `<span data-testid="${leftid}">${variant()},${value()},${element()?.toString()}</span>` };
   },
 );
 const rightfn = createRawSnippet(
   (
-    status: () => string,
+    variant: () => string,
     value: () => number,
     element: () => HTMLInputElement | undefined,
   ) => {
-    return { render: () => `<span data-testid="${rightid}">${status()},${value()},${element()?.toString()}</span>` };
+    return { render: () => `<span data-testid="${rightid}">${variant()},${value()},${element()?.toString()}</span>` };
   },
 );
 
@@ -234,68 +234,68 @@ describe("Specify attrs & value handling & styling", () => {
     });
   });
 
-  test("default class of each status", () => {
+  test("default class of each variant", () => {
     const range = { min: 0, max: 100 };
     const left = vi.fn().mockImplementation(leftfn);
     const right = vi.fn().mockImplementation(rightfn);
-    const status = STATE.NEUTRAL;
-    const { container, getByTestId } = render(Slider, { range, left, right, status });
+    const variant = VARIANT.NEUTRAL;
+    const { container, getByTestId } = render(Slider, { range, left, right, variant });
     const whole = container.firstElementChild as HTMLSpanElement;
     const main = whole.querySelector('input[type="range"]') as HTMLInputElement;
     const leftdv = getByTestId(leftid).parentElement;
     const rightdv = getByTestId(rightid).parentElement;
 
-    expect(whole).toHaveClass(seed, PARTS.WHOLE, STATE.NEUTRAL);
-    expect(leftdv).toHaveClass(seed, PARTS.LEFT, STATE.NEUTRAL);
-    expect(main).toHaveClass(seed, PARTS.MAIN, STATE.NEUTRAL);
-    expect(rightdv).toHaveClass(seed, PARTS.RIGHT, STATE.NEUTRAL);
+    expect(whole).toHaveClass(seed, PARTS.WHOLE, VARIANT.NEUTRAL);
+    expect(leftdv).toHaveClass(seed, PARTS.LEFT, VARIANT.NEUTRAL);
+    expect(main).toHaveClass(seed, PARTS.MAIN, VARIANT.NEUTRAL);
+    expect(rightdv).toHaveClass(seed, PARTS.RIGHT, VARIANT.NEUTRAL);
   });
 
-  test("w/ different status", async () => {
+  test("w/ different variant", async () => {
     const range = { min: 0, max: 100 };
     const left = vi.fn().mockImplementation(leftfn);
     const right = vi.fn().mockImplementation(rightfn);
-    const props = $state({ range, left, right, status: "" });
-    props.status = STATE.ACTIVE;
+    const props = $state({ range, left, right, variant: "" });
+    props.variant = VARIANT.ACTIVE;
     const { container, getByTestId, rerender } = render(Slider, props);
     const whole = container.firstElementChild as HTMLSpanElement;
     const main = whole.querySelector('input[type="range"]') as HTMLInputElement;
     const leftdv = getByTestId(leftid).parentElement;
     const rightdv = getByTestId(rightid).parentElement;
 
-    expect(whole).toHaveClass(seed, PARTS.WHOLE, STATE.ACTIVE);
-    expect(leftdv).toHaveClass(seed, PARTS.LEFT, STATE.ACTIVE);
-    expect(main).toHaveClass(seed, PARTS.MAIN, STATE.ACTIVE);
-    expect(rightdv).toHaveClass(seed, PARTS.RIGHT, STATE.ACTIVE);
+    expect(whole).toHaveClass(seed, PARTS.WHOLE, VARIANT.ACTIVE);
+    expect(leftdv).toHaveClass(seed, PARTS.LEFT, VARIANT.ACTIVE);
+    expect(main).toHaveClass(seed, PARTS.MAIN, VARIANT.ACTIVE);
+    expect(rightdv).toHaveClass(seed, PARTS.RIGHT, VARIANT.ACTIVE);
 
-    props.status = STATE.INACTIVE;
+    props.variant = VARIANT.INACTIVE;
     await rerender(props);
 
-    expect(whole).toHaveClass(seed, PARTS.WHOLE, STATE.INACTIVE);
-    expect(leftdv).toHaveClass(seed, PARTS.LEFT, STATE.INACTIVE);
-    expect(main).toHaveClass(seed, PARTS.MAIN, STATE.INACTIVE);
-    expect(rightdv).toHaveClass(seed, PARTS.RIGHT, STATE.INACTIVE);
+    expect(whole).toHaveClass(seed, PARTS.WHOLE, VARIANT.INACTIVE);
+    expect(leftdv).toHaveClass(seed, PARTS.LEFT, VARIANT.INACTIVE);
+    expect(main).toHaveClass(seed, PARTS.MAIN, VARIANT.INACTIVE);
+    expect(rightdv).toHaveClass(seed, PARTS.RIGHT, VARIANT.INACTIVE);
   });
 
-  test("w/ string style class", () => {
+  test("w/ string styling class", () => {
     const range = { min: 0, max: 100 };
     const left = vi.fn().mockImplementation(leftfn);
     const right = vi.fn().mockImplementation(rightfn);
-    const clsid = "custom-style";
-    const status = STATE.NEUTRAL;
-    const { container, getByTestId } = render(Slider, { range, left, right, status, style: clsid });
+    const clsid = "custom-styling";
+    const variant = VARIANT.NEUTRAL;
+    const { container, getByTestId } = render(Slider, { range, left, right, variant, styling: clsid });
     const whole = container.firstElementChild as HTMLSpanElement;
     const main = whole.querySelector('input[type="range"]') as HTMLInputElement;
     const leftdv = getByTestId(leftid).parentElement;
     const rightdv = getByTestId(rightid).parentElement;
 
-    expect(whole).toHaveClass(clsid, PARTS.WHOLE, STATE.NEUTRAL);
-    expect(leftdv).toHaveClass(clsid, PARTS.LEFT, STATE.NEUTRAL);
-    expect(main).toHaveClass(clsid, PARTS.MAIN, STATE.NEUTRAL);
-    expect(rightdv).toHaveClass(clsid, PARTS.RIGHT, STATE.NEUTRAL);
+    expect(whole).toHaveClass(clsid, PARTS.WHOLE, VARIANT.NEUTRAL);
+    expect(leftdv).toHaveClass(clsid, PARTS.LEFT, VARIANT.NEUTRAL);
+    expect(main).toHaveClass(clsid, PARTS.MAIN, VARIANT.NEUTRAL);
+    expect(rightdv).toHaveClass(clsid, PARTS.RIGHT, VARIANT.NEUTRAL);
   });
 
-  test("w/ object style", () => {
+  test("w/ object styling", () => {
     const range = { min: 0, max: 100 };
     const left = vi.fn().mockImplementation(leftfn);
     const right = vi.fn().mockImplementation(rightfn);
@@ -305,14 +305,14 @@ describe("Specify attrs & value handling & styling", () => {
       active: "active-class",
       inactive: "inactive-class",
     };
-    const style = {
+    const styling = {
       whole: dynObj,
       left: dynObj,
       main: dynObj,
       right: dynObj,
     };
-    const status = STATE.NEUTRAL;
-    const { container, getByTestId } = render(Slider, { range, left, right, status, style });
+    const variant = VARIANT.NEUTRAL;
+    const { container, getByTestId } = render(Slider, { range, left, right, variant, styling });
     const whole = container.firstElementChild as HTMLSpanElement;
     const main = whole.querySelector('input[type="range"]') as HTMLInputElement;
     const leftdv = getByTestId(leftid).parentElement;
@@ -350,17 +350,17 @@ describe("Binding and element reference", () => {
     expect(main).toHaveAttribute("max", "90");
   });
 
-  test("status binding", async () => {
+  test("variant binding", async () => {
     const range = { min: 0, max: 100 };
-    const props = $state({ range, status: "" });
+    const props = $state({ range, variant: "" });
     const { container, rerender } = render(Slider, props);
     const whole = container.firstElementChild as HTMLSpanElement;
 
-    expect(whole).toHaveClass("svs-slider", PARTS.WHOLE, STATE.NEUTRAL);
+    expect(whole).toHaveClass("svs-slider", PARTS.WHOLE, VARIANT.NEUTRAL);
 
-    props.status = STATE.ACTIVE;
+    props.variant = VARIANT.ACTIVE;
     await rerender(props);
 
-    expect(whole).toHaveClass("svs-slider", PARTS.WHOLE, STATE.ACTIVE);
+    expect(whole).toHaveClass("svs-slider", PARTS.WHOLE, VARIANT.ACTIVE);
   });
 });

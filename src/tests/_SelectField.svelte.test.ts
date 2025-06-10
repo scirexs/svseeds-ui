@@ -4,7 +4,7 @@ import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import { SvelteMap } from "svelte/reactivity";
 import SelectField from "../lib/_svseeds/_SelectField.svelte";
-import { PARTS, STATE } from "../lib/_svseeds/core.ts";
+import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
 
 type SelectFieldElement = HTMLSelectElement | undefined;
 const label = "label_text";
@@ -15,29 +15,29 @@ const leftid = "test-left";
 const rightid = "test-right";
 const auxfn = createRawSnippet(
   (
-    status: () => string,
+    variant: () => string,
     value: () => string,
     element: () => SelectFieldElement,
   ) => {
-    return { render: () => `<span data-testid="${auxid}">${status().length},${value().length},${element?.toString()}</span>` };
+    return { render: () => `<span data-testid="${auxid}">${variant().length},${value().length},${element?.toString()}</span>` };
   },
 );
 const leftfn = createRawSnippet(
   (
-    status: () => string,
+    variant: () => string,
     value: () => string,
     element: () => SelectFieldElement,
   ) => {
-    return { render: () => `<span data-testid="${leftid}">${status().length},${value().length},${element?.toString()}</span>` };
+    return { render: () => `<span data-testid="${leftid}">${variant().length},${value().length},${element?.toString()}</span>` };
   },
 );
 const rightfn = createRawSnippet(
   (
-    status: () => string,
+    variant: () => string,
     value: () => string,
     element: () => SelectFieldElement,
   ) => {
-    return { render: () => `<span data-testid="${rightid}">${status().length},${value().length},${element?.toString()}</span>` };
+    return { render: () => `<span data-testid="${rightid}">${variant().length},${value().length},${element?.toString()}</span>` };
   },
 );
 
@@ -243,33 +243,33 @@ describe("Specify attrs & state transition & event handlers", () => {
     const options = new SvelteMap([["", ""], ["val1", "Option 1"], ["val2", "Option 2"]]);
     const props = $state({
       options,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       validations: [mockValidation],
     });
     const user = userEvent.setup();
     const { getByRole } = render(SelectField, props);
     const main = getByRole("combobox") as HTMLSelectElement;
 
-    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
 
     await user.selectOptions(main, "val1");
     expect(mockValidation).toHaveBeenCalled();
-    expect(props.status).toBe(STATE.INACTIVE);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
     getByRole("alert") as HTMLDivElement;
     expect(main).toHaveAttribute("aria-invalid", "true");
     expect(main).toHaveAccessibleErrorMessage(errmsg);
 
     await user.selectOptions(main, "val2");
-    expect(props.status).toBe(STATE.ACTIVE);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
 
     await user.selectOptions(main, "");
-    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
   });
   test("w/ required and no validations", async () => {
     const optionsWithEmpty = new SvelteMap([["", "Select Option"], ["val1", "Option 1"]]);
     const props = $state({
       options: optionsWithEmpty,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       attributes: { required: true },
     });
     const { getByRole } = render(SelectField, props);
@@ -278,13 +278,13 @@ describe("Specify attrs & state transition & event handlers", () => {
     getByRole("alert") as HTMLDivElement;
     expect(main).toHaveAttribute("aria-invalid", "true");
     expect(main).toHaveAccessibleErrorMessage();
-    expect(props.status).toBe(STATE.INACTIVE);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
   });
   test("w/ required and custom validations", async () => {
     const props = $state({
       options,
       bottom,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       validations: [(value: string) => value === "" ? "required" : ""],
       attributes: { required: true },
     });
@@ -294,13 +294,13 @@ describe("Specify attrs & state transition & event handlers", () => {
     getByRole("alert") as HTMLDivElement;
     expect(main).toHaveAttribute("aria-invalid", "true");
     expect(main).toHaveAccessibleErrorMessage("required");
-    expect(props.status).toBe(STATE.INACTIVE);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
   });
   test("w/ custom events used internally", async () => {
     const oninvalid = vi.fn();
     const props = $state({
       options,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       validations,
       attributes: { oninvalid, required: true },
     });
@@ -310,12 +310,12 @@ describe("Specify attrs & state transition & event handlers", () => {
 
     await fireEvent.invalid(main);
     expect(oninvalid).toHaveBeenCalledTimes(1);
-    expect(props.status).toBe(STATE.INACTIVE);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
 
     await user.selectOptions(main, "val2");
-    expect(props.status).toBe(STATE.ACTIVE);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
   });
-  test("default class of each status", async () => {
+  test("default class of each variant", async () => {
     const props = $state({
       options,
       label,
@@ -324,7 +324,7 @@ describe("Specify attrs & state transition & event handlers", () => {
       left: leftfn,
       right: rightfn,
       bottom,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       validations,
     });
     const user = userEvent.setup();
@@ -340,7 +340,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const middle = main.parentElement;
     const btm = getByRole("status") as HTMLDivElement;
 
-    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(whole).toHaveClass(seed, PARTS.WHOLE);
     expect(top).toHaveClass(seed, PARTS.TOP);
     expect(lbl).toHaveClass(seed, PARTS.LABEL);
@@ -353,32 +353,32 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(btm).toHaveClass(seed, PARTS.BOTTOM);
 
     await user.selectOptions(main, "val1");
-    expect(props.status).toBe(STATE.INACTIVE);
-    expect(whole).toHaveClass(seed, PARTS.WHOLE, STATE.INACTIVE);
-    expect(top).toHaveClass(seed, PARTS.TOP, STATE.INACTIVE);
-    expect(lbl).toHaveClass(seed, PARTS.LABEL, STATE.INACTIVE);
-    expect(ext).toHaveClass(seed, PARTS.EXTRA, STATE.INACTIVE);
-    expect(auxdv).toHaveClass(seed, PARTS.AUX, STATE.INACTIVE);
-    expect(middle).toHaveClass(seed, PARTS.MIDDLE, STATE.INACTIVE);
-    expect(leftdv).toHaveClass(seed, PARTS.LEFT, STATE.INACTIVE);
-    expect(main).toHaveClass(seed, PARTS.MAIN, STATE.INACTIVE);
-    expect(rightdv).toHaveClass(seed, PARTS.RIGHT, STATE.INACTIVE);
-    expect(btm).toHaveClass(seed, PARTS.BOTTOM, STATE.INACTIVE);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+    expect(whole).toHaveClass(seed, PARTS.WHOLE, VARIANT.INACTIVE);
+    expect(top).toHaveClass(seed, PARTS.TOP, VARIANT.INACTIVE);
+    expect(lbl).toHaveClass(seed, PARTS.LABEL, VARIANT.INACTIVE);
+    expect(ext).toHaveClass(seed, PARTS.EXTRA, VARIANT.INACTIVE);
+    expect(auxdv).toHaveClass(seed, PARTS.AUX, VARIANT.INACTIVE);
+    expect(middle).toHaveClass(seed, PARTS.MIDDLE, VARIANT.INACTIVE);
+    expect(leftdv).toHaveClass(seed, PARTS.LEFT, VARIANT.INACTIVE);
+    expect(main).toHaveClass(seed, PARTS.MAIN, VARIANT.INACTIVE);
+    expect(rightdv).toHaveClass(seed, PARTS.RIGHT, VARIANT.INACTIVE);
+    expect(btm).toHaveClass(seed, PARTS.BOTTOM, VARIANT.INACTIVE);
 
     await user.selectOptions(main, "val2");
-    expect(props.status).toBe(STATE.ACTIVE);
-    expect(whole).toHaveClass(seed, PARTS.WHOLE, STATE.ACTIVE);
-    expect(top).toHaveClass(seed, PARTS.TOP, STATE.ACTIVE);
-    expect(lbl).toHaveClass(seed, PARTS.LABEL, STATE.ACTIVE);
-    expect(ext).toHaveClass(seed, PARTS.EXTRA, STATE.ACTIVE);
-    expect(auxdv).toHaveClass(seed, PARTS.AUX, STATE.ACTIVE);
-    expect(middle).toHaveClass(seed, PARTS.MIDDLE, STATE.ACTIVE);
-    expect(leftdv).toHaveClass(seed, PARTS.LEFT, STATE.ACTIVE);
-    expect(main).toHaveClass(seed, PARTS.MAIN, STATE.ACTIVE);
-    expect(rightdv).toHaveClass(seed, PARTS.RIGHT, STATE.ACTIVE);
-    expect(btm).toHaveClass(seed, PARTS.BOTTOM, STATE.ACTIVE);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(whole).toHaveClass(seed, PARTS.WHOLE, VARIANT.ACTIVE);
+    expect(top).toHaveClass(seed, PARTS.TOP, VARIANT.ACTIVE);
+    expect(lbl).toHaveClass(seed, PARTS.LABEL, VARIANT.ACTIVE);
+    expect(ext).toHaveClass(seed, PARTS.EXTRA, VARIANT.ACTIVE);
+    expect(auxdv).toHaveClass(seed, PARTS.AUX, VARIANT.ACTIVE);
+    expect(middle).toHaveClass(seed, PARTS.MIDDLE, VARIANT.ACTIVE);
+    expect(leftdv).toHaveClass(seed, PARTS.LEFT, VARIANT.ACTIVE);
+    expect(main).toHaveClass(seed, PARTS.MAIN, VARIANT.ACTIVE);
+    expect(rightdv).toHaveClass(seed, PARTS.RIGHT, VARIANT.ACTIVE);
+    expect(btm).toHaveClass(seed, PARTS.BOTTOM, VARIANT.ACTIVE);
   });
-  test("w/ string style class of each status", async () => {
+  test("w/ string styling class of each variant", async () => {
     const clsid = "style_id";
     const props = $state({
       options,
@@ -388,9 +388,9 @@ describe("Specify attrs & state transition & event handlers", () => {
       left: leftfn,
       right: rightfn,
       bottom,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       validations,
-      style: clsid,
+      styling: clsid,
     });
     const user = userEvent.setup();
     const { getByRole, getByTestId, getByText } = render(SelectField, props);
@@ -405,7 +405,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const middle = main.parentElement;
     const btm = getByRole("status") as HTMLDivElement;
 
-    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(whole).toHaveClass(clsid, PARTS.WHOLE);
     expect(top).toHaveClass(clsid, PARTS.TOP);
     expect(lbl).toHaveClass(clsid, PARTS.LABEL);
@@ -418,39 +418,39 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(btm).toHaveClass(clsid, PARTS.BOTTOM);
 
     await user.selectOptions(main, "val1");
-    expect(props.status).toBe(STATE.INACTIVE);
-    expect(whole).toHaveClass(clsid, PARTS.WHOLE, STATE.INACTIVE);
-    expect(top).toHaveClass(clsid, PARTS.TOP, STATE.INACTIVE);
-    expect(lbl).toHaveClass(clsid, PARTS.LABEL, STATE.INACTIVE);
-    expect(ext).toHaveClass(clsid, PARTS.EXTRA, STATE.INACTIVE);
-    expect(auxdv).toHaveClass(clsid, PARTS.AUX, STATE.INACTIVE);
-    expect(middle).toHaveClass(clsid, PARTS.MIDDLE, STATE.INACTIVE);
-    expect(leftdv).toHaveClass(clsid, PARTS.LEFT, STATE.INACTIVE);
-    expect(main).toHaveClass(clsid, PARTS.MAIN, STATE.INACTIVE);
-    expect(rightdv).toHaveClass(clsid, PARTS.RIGHT, STATE.INACTIVE);
-    expect(btm).toHaveClass(clsid, PARTS.BOTTOM, STATE.INACTIVE);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+    expect(whole).toHaveClass(clsid, PARTS.WHOLE, VARIANT.INACTIVE);
+    expect(top).toHaveClass(clsid, PARTS.TOP, VARIANT.INACTIVE);
+    expect(lbl).toHaveClass(clsid, PARTS.LABEL, VARIANT.INACTIVE);
+    expect(ext).toHaveClass(clsid, PARTS.EXTRA, VARIANT.INACTIVE);
+    expect(auxdv).toHaveClass(clsid, PARTS.AUX, VARIANT.INACTIVE);
+    expect(middle).toHaveClass(clsid, PARTS.MIDDLE, VARIANT.INACTIVE);
+    expect(leftdv).toHaveClass(clsid, PARTS.LEFT, VARIANT.INACTIVE);
+    expect(main).toHaveClass(clsid, PARTS.MAIN, VARIANT.INACTIVE);
+    expect(rightdv).toHaveClass(clsid, PARTS.RIGHT, VARIANT.INACTIVE);
+    expect(btm).toHaveClass(clsid, PARTS.BOTTOM, VARIANT.INACTIVE);
 
     await user.selectOptions(main, "val2");
-    expect(props.status).toBe(STATE.ACTIVE);
-    expect(whole).toHaveClass(clsid, PARTS.WHOLE, STATE.ACTIVE);
-    expect(top).toHaveClass(clsid, PARTS.TOP, STATE.ACTIVE);
-    expect(lbl).toHaveClass(clsid, PARTS.LABEL, STATE.ACTIVE);
-    expect(ext).toHaveClass(clsid, PARTS.EXTRA, STATE.ACTIVE);
-    expect(auxdv).toHaveClass(clsid, PARTS.AUX, STATE.ACTIVE);
-    expect(middle).toHaveClass(clsid, PARTS.MIDDLE, STATE.ACTIVE);
-    expect(leftdv).toHaveClass(clsid, PARTS.LEFT, STATE.ACTIVE);
-    expect(main).toHaveClass(clsid, PARTS.MAIN, STATE.ACTIVE);
-    expect(rightdv).toHaveClass(clsid, PARTS.RIGHT, STATE.ACTIVE);
-    expect(btm).toHaveClass(clsid, PARTS.BOTTOM, STATE.ACTIVE);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(whole).toHaveClass(clsid, PARTS.WHOLE, VARIANT.ACTIVE);
+    expect(top).toHaveClass(clsid, PARTS.TOP, VARIANT.ACTIVE);
+    expect(lbl).toHaveClass(clsid, PARTS.LABEL, VARIANT.ACTIVE);
+    expect(ext).toHaveClass(clsid, PARTS.EXTRA, VARIANT.ACTIVE);
+    expect(auxdv).toHaveClass(clsid, PARTS.AUX, VARIANT.ACTIVE);
+    expect(middle).toHaveClass(clsid, PARTS.MIDDLE, VARIANT.ACTIVE);
+    expect(leftdv).toHaveClass(clsid, PARTS.LEFT, VARIANT.ACTIVE);
+    expect(main).toHaveClass(clsid, PARTS.MAIN, VARIANT.ACTIVE);
+    expect(rightdv).toHaveClass(clsid, PARTS.RIGHT, VARIANT.ACTIVE);
+    expect(btm).toHaveClass(clsid, PARTS.BOTTOM, VARIANT.ACTIVE);
   });
-  test("w/ obj style of each status", async () => {
+  test("w/ obj styling of each variant", async () => {
     const dynObj = {
       base: "base",
       neutral: "dyn_neutral",
       active: "dyn_active",
       inactive: "dyn_inactive",
     };
-    const style = {
+    const styling = {
       whole: dynObj,
       middle: dynObj,
       main: dynObj,
@@ -470,9 +470,9 @@ describe("Specify attrs & state transition & event handlers", () => {
       left: leftfn,
       right: rightfn,
       bottom,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
       validations,
-      style,
+      styling,
     });
     const user = userEvent.setup();
     const { getByRole, getByTestId, getByText } = render(SelectField, props);
@@ -487,7 +487,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const middle = main.parentElement;
     const btm = getByRole("status") as HTMLDivElement;
 
-    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(whole).toHaveClass(dynObj.base, dynObj.neutral);
     expect(top).toHaveClass(dynObj.base, dynObj.neutral);
     expect(lbl).toHaveClass(dynObj.base, dynObj.neutral);
@@ -500,7 +500,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(btm).toHaveClass(dynObj.base, dynObj.neutral);
 
     await user.selectOptions(main, "val1");
-    expect(props.status).toBe(STATE.INACTIVE);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
     expect(whole).toHaveClass(dynObj.base, dynObj.inactive);
     expect(top).toHaveClass(dynObj.base, dynObj.inactive);
     expect(lbl).toHaveClass(dynObj.base, dynObj.inactive);
@@ -513,7 +513,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(btm).toHaveClass(dynObj.base, dynObj.inactive);
 
     await user.selectOptions(main, "val2");
-    expect(props.status).toBe(STATE.ACTIVE);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
     expect(whole).toHaveClass(dynObj.base, dynObj.active);
     expect(top).toHaveClass(dynObj.base, dynObj.active);
     expect(lbl).toHaveClass(dynObj.base, dynObj.active);

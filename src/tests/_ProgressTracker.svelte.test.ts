@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { render, within } from "@testing-library/svelte";
 import { createRawSnippet } from "svelte";
 import ProgressTracker from "../lib/_svseeds/_ProgressTracker.svelte";
-import { PARTS, STATE } from "../lib/_svseeds/core.ts";
+import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
 
 const labels = ["Step 1", "Step 2", "Step 3", "Step 4"];
 const auxid = "test-aux";
@@ -10,19 +10,19 @@ const extraid = "test-extra";
 
 const auxfn = createRawSnippet(
   (
-    status: () => string,
+    variant: () => string,
     index: () => number,
   ) => {
-    return { render: () => `<span data-testid="${auxid}">${status()}-${index()}</span>` };
+    return { render: () => `<span data-testid="${auxid}">${variant()}-${index()}</span>` };
   },
 );
 
 const extrafn = createRawSnippet(
   (
-    status: () => string,
+    variant: () => string,
     index: () => number,
   ) => {
-    return { render: () => `<span data-testid="${extraid}">${status()}-${index()}</span>` };
+    return { render: () => `<span data-testid="${extraid}">${variant()}-${index()}</span>` };
   },
 );
 
@@ -99,82 +99,82 @@ describe("Basic structure and rendering", () => {
 });
 
 describe("Status management and step states", () => {
-  test("default status initialization", () => {
+  test("default variant initialization", () => {
     const { getAllByRole } = render(ProgressTracker, { current: 1, labels });
     const items = getAllByRole("listitem");
 
-    // Check default status classes are applied
+    // Check default variant classes are applied
     items.forEach((item) => {
       expect(item.className).toMatch(/svs-progress-tracker/);
     });
   });
 
-  test("step status based on current position", () => {
-    const props = $state({ current: 2, labels, status: STATE.ACTIVE });
+  test("step variant based on current position", () => {
+    const props = $state({ current: 2, labels, variant: VARIANT.ACTIVE });
     const { getAllByRole } = render(ProgressTracker, props);
     const items = getAllByRole("listitem");
 
     items.forEach((item, index) => {
       if (index < props.current) {
-        // Past steps should have ACTIVE status
-        expect(item.className).toContain(STATE.ACTIVE);
+        // Past steps should have ACTIVE variant
+        expect(item.className).toContain(VARIANT.ACTIVE);
       } else if (index > props.current) {
-        // Future steps should have INACTIVE status
-        expect(item.className).toContain(STATE.INACTIVE);
+        // Future steps should have INACTIVE variant
+        expect(item.className).toContain(VARIANT.INACTIVE);
       } else {
-        // Current step should have the specified status
-        expect(item.className).toContain(props.status);
+        // Current step should have the specified variant
+        expect(item.className).toContain(props.variant);
       }
     });
   });
 
-  test("custom eachStatus map overrides default behavior", () => {
-    const eachStatus = new Map([
-      [0, "custom-status-0"],
-      [2, "custom-status-2"],
+  test("custom eachVariant map overrides default behavior", () => {
+    const eachVariant = new Map([
+      [0, "custom-variant-0"],
+      [2, "custom-variant-2"],
     ]);
 
     const { getAllByRole } = render(ProgressTracker, {
       current: 1,
       labels,
-      status: STATE.NEUTRAL,
-      eachStatus,
+      variant: VARIANT.NEUTRAL,
+      eachVariant,
     });
     const items = getAllByRole("listitem");
 
-    // Check custom status is applied
-    expect(items[0].className).toContain("custom-status-0");
-    expect(items[2].className).toContain("custom-status-2");
+    // Check custom variant is applied
+    expect(items[0].className).toContain("custom-variant-0");
+    expect(items[2].className).toContain("custom-variant-2");
 
     // Other steps should follow default logic
-    expect(items[1].className).toContain(STATE.NEUTRAL); // current step
-    expect(items[3].className).toContain(STATE.INACTIVE); // future step
+    expect(items[1].className).toContain(VARIANT.NEUTRAL); // current step
+    expect(items[3].className).toContain(VARIANT.INACTIVE); // future step
   });
 
-  test("status binding and updates", async () => {
+  test("variant binding and updates", async () => {
     const props = $state({
       current: 1,
       labels,
-      status: "",
+      variant: "",
     });
     const { rerender, getAllByRole } = render(ProgressTracker, props);
 
     let items = getAllByRole("listitem");
-    expect(items[1].className).toContain(STATE.NEUTRAL);
+    expect(items[1].className).toContain(VARIANT.NEUTRAL);
 
-    // Update status
-    props.status = STATE.ACTIVE;
+    // Update variant
+    props.variant = VARIANT.ACTIVE;
     await rerender(props);
 
     items = getAllByRole("listitem");
-    expect(items[1].className).toContain(STATE.ACTIVE);
+    expect(items[1].className).toContain(VARIANT.ACTIVE);
   });
 
   test("current position binding and updates", async () => {
     const props = $state({
       current: 0,
       labels,
-      status: STATE.ACTIVE,
+      variant: VARIANT.ACTIVE,
     });
     const { rerender, getAllByRole } = render(ProgressTracker, props);
 
@@ -198,49 +198,49 @@ describe("Styling and CSS classes", () => {
     const { getByRole, getAllByRole } = render(ProgressTracker, {
       current: 1,
       labels,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
     });
 
     const list = getByRole("list");
     const items = getAllByRole("listitem");
 
-    expect(list).toHaveClass(seed, PARTS.WHOLE, STATE.NEUTRAL);
+    expect(list).toHaveClass(seed, PARTS.WHOLE, VARIANT.NEUTRAL);
 
     items.forEach((item, index) => {
       expect(item).toHaveClass(seed, PARTS.MAIN);
 
-      // Check status classes based on position
+      // Check variant classes based on position
       if (index < 1) {
-        expect(item).toHaveClass(STATE.ACTIVE);
+        expect(item).toHaveClass(VARIANT.ACTIVE);
       } else if (index > 1) {
-        expect(item).toHaveClass(STATE.INACTIVE);
+        expect(item).toHaveClass(VARIANT.INACTIVE);
       } else {
-        expect(item).toHaveClass(STATE.NEUTRAL);
+        expect(item).toHaveClass(VARIANT.NEUTRAL);
       }
     });
   });
 
-  test("string style override", () => {
+  test("string styling override", () => {
     const customStyle = "custom-tracker";
     const { getByRole, getAllByRole } = render(ProgressTracker, {
       current: 1,
       labels,
-      status: STATE.ACTIVE,
-      style: customStyle,
+      variant: VARIANT.ACTIVE,
+      styling: customStyle,
     });
 
     const list = getByRole("list");
     const items = getAllByRole("listitem");
 
-    expect(list).toHaveClass(customStyle, PARTS.WHOLE, STATE.ACTIVE);
+    expect(list).toHaveClass(customStyle, PARTS.WHOLE, VARIANT.ACTIVE);
 
     items.forEach((item) => {
       expect(item).toHaveClass(customStyle, PARTS.MAIN);
     });
   });
 
-  test("object style configuration", () => {
-    const style = {
+  test("object styling configuration", () => {
+    const styling = {
       whole: { base: "whole-base", active: "whole-active" },
       main: { base: "main-base", inactive: "main-inactive" },
       label: { base: "label-base", neutral: "label-neutral" },
@@ -251,8 +251,8 @@ describe("Styling and CSS classes", () => {
     const { getByRole, getAllByRole, getAllByTestId } = render(ProgressTracker, {
       current: 1,
       labels,
-      status: STATE.ACTIVE,
-      style,
+      variant: VARIANT.ACTIVE,
+      styling,
       aux: auxfn,
       extra: extrafn,
     });
@@ -278,7 +278,7 @@ describe("Styling and CSS classes", () => {
     const { getAllByRole, getAllByTestId } = render(ProgressTracker, {
       current: 1,
       labels,
-      status: STATE.ACTIVE,
+      variant: VARIANT.ACTIVE,
       aux: auxfn,
       extra: extrafn,
     });
@@ -358,7 +358,7 @@ describe("Edge cases and error handling", () => {
     items.forEach((item) => {
       if (item.getAttribute("role") !== "separator") {
         expect(item).toHaveAttribute("aria-current", "false");
-        expect(item.className).toContain(STATE.ACTIVE);
+        expect(item.className).toContain(VARIANT.ACTIVE);
       }
     });
   });
@@ -367,16 +367,19 @@ describe("Edge cases and error handling", () => {
     const { getAllByRole } = render(ProgressTracker, {
       current: -1,
       labels,
-      status: STATE.NEUTRAL,
+      variant: VARIANT.NEUTRAL,
     });
 
     const items = getAllByRole("listitem");
 
     // All steps should be in inactive state (future steps)
-    items.forEach((item) => {
-      if (item.getAttribute("role") !== "separator") {
+    items.forEach((item, i) => {
+      if (i > 0) {
         expect(item).toHaveAttribute("aria-current", "false");
-        expect(item.className).toContain(STATE.INACTIVE);
+        expect(item.className).toContain(VARIANT.INACTIVE);
+      } else {
+        expect(item).toHaveAttribute("aria-current", "step");
+        expect(item.className).toContain(VARIANT.NEUTRAL);
       }
     });
   });
@@ -396,19 +399,19 @@ describe("Edge cases and error handling", () => {
     expect(items[0]).toHaveAttribute("aria-current", "step");
   });
 
-  test("eachStatus with SvelteMap", () => {
+  test("eachVariant with SvelteMap", () => {
     // Test with SvelteMap (though we're using regular Map in tests)
-    const eachStatus = new Map([
-      [1, "special-status"],
+    const eachVariant = new Map([
+      [1, "special-variant"],
     ]);
 
     const { getAllByRole } = render(ProgressTracker, {
       current: 0,
       labels,
-      eachStatus,
+      eachVariant,
     });
 
     const items = getAllByRole("listitem");
-    expect(items[1].className).toContain("special-status");
+    expect(items[1].className).toContain("special-variant");
   });
 });

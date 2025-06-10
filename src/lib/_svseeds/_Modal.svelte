@@ -3,43 +3,43 @@
   default value: `(value)`
   ```ts
   interface ModalProps {
-    children: Snippet;
+    children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false)
     closable?: boolean; // (true)
     trigger?: HTMLElement; // bindable
     ariaLabel?: string;
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
+    styling?: SVSClass;
     element?: HTMLDialogElement; // bindable
   }
   ```
 -->
 <script module lang="ts">
   export interface ModalProps {
-    children: Snippet;
+    children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false)
     closable?: boolean; // (true)
     trigger?: HTMLElement; // bindable
     ariaLabel?: string;
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     element?: HTMLDialogElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   export type ModalReqdProps = "children";
-  export type ModalBindProps = "open" | "status" | "element";
+  export type ModalBindProps = "open" | "variant" | "element";
 
   const preset = "svs-modal";
 
   import { type Snippet, untrack } from "svelte";
-  import { type SVSStyle, STATE, PARTS, fnClass } from "./core";
+  import { type SVSClass, VARIANT, PARTS, fnClass } from "./core";
 </script>
 
 <script lang="ts">
-  let { children, open = $bindable(false), closable = true, trigger = $bindable(), ariaLabel, status = $bindable(""), style, element = $bindable() }: ModalProps = $props();
+  let { children, open = $bindable(false), closable = true, trigger = $bindable(), ariaLabel, element = $bindable(), styling, variant = $bindable("") }: ModalProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.NEUTRAL;
-  const cls = fnClass(preset, style);
+  if (!variant) variant = VARIANT.NEUTRAL;
+  const cls = fnClass(preset, styling);
 
   // *** Bind Handlers *** //
   $effect(() => {
@@ -70,9 +70,9 @@
 <!---------------------------------------->
 
 <!-- svelte-ignore a11y_autofocus -->
-<dialog bind:this={element} class={cls(PARTS.WHOLE, status)} aria-label={ariaLabel} {onclick} {onkeydown} {onclose} autofocus={true}>
-  <div class={cls(PARTS.MAIN, status)}>
-    {@render children()}
+<dialog bind:this={element} class={cls(PARTS.WHOLE, variant)} aria-label={ariaLabel} {onclick} {onkeydown} {onclose} autofocus={true}>
+  <div class={cls(PARTS.MAIN, variant)}>
+    {@render children(variant)}
   </div>
 </dialog>
 

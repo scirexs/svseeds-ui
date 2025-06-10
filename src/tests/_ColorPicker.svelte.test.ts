@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from "vitest";
 import { fireEvent, render } from "@testing-library/svelte";
 import ColorPicker, { getHex } from "../lib/_svseeds/_ColorPicker.svelte";
-import { PARTS, STATE } from "../lib/_svseeds/core.ts";
+import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
 
 describe("Switching existence of elements and basic functionality", () => {
   const actionfn = () => {
@@ -145,45 +145,45 @@ describe("Alpha value correction and edge cases", () => {
 describe("Status and styling", () => {
   const seed = "svs-color-picker";
 
-  test("default status is neutral", () => {
+  test("default variant is neutral", () => {
     const props = {};
     const { container } = render(ColorPicker, props);
     const label = container.querySelector("label") as HTMLLabelElement;
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
-    expect(label).toHaveClass(seed, PARTS.WHOLE, STATE.NEUTRAL);
-    expect(colorDiv).toHaveClass(seed, PARTS.MAIN, STATE.NEUTRAL);
+    expect(label).toHaveClass(seed, PARTS.WHOLE, VARIANT.NEUTRAL);
+    expect(colorDiv).toHaveClass(seed, PARTS.MAIN, VARIANT.NEUTRAL);
   });
 
-  test("w/ active status", () => {
-    const props = { status: STATE.ACTIVE };
+  test("w/ active variant", () => {
+    const props = { variant: VARIANT.ACTIVE };
     const { container } = render(ColorPicker, props);
     const label = container.querySelector("label") as HTMLLabelElement;
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
-    expect(label).toHaveClass(seed, PARTS.WHOLE, STATE.ACTIVE);
-    expect(colorDiv).toHaveClass(seed, PARTS.MAIN, STATE.ACTIVE);
+    expect(label).toHaveClass(seed, PARTS.WHOLE, VARIANT.ACTIVE);
+    expect(colorDiv).toHaveClass(seed, PARTS.MAIN, VARIANT.ACTIVE);
   });
 
-  test("w/ inactive status", () => {
-    const props = { status: STATE.INACTIVE };
+  test("w/ inactive variant", () => {
+    const props = { variant: VARIANT.INACTIVE };
     const { container } = render(ColorPicker, props);
     const label = container.querySelector("label") as HTMLLabelElement;
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
-    expect(label).toHaveClass(seed, PARTS.WHOLE, STATE.INACTIVE);
-    expect(colorDiv).toHaveClass(seed, PARTS.MAIN, STATE.INACTIVE);
+    expect(label).toHaveClass(seed, PARTS.WHOLE, VARIANT.INACTIVE);
+    expect(colorDiv).toHaveClass(seed, PARTS.MAIN, VARIANT.INACTIVE);
   });
 
   test("w/ string style class", () => {
     const clsid = "custom-style";
-    const props = { style: clsid };
+    const props = { styling: clsid };
     const { container } = render(ColorPicker, props);
     const label = container.querySelector("label") as HTMLLabelElement;
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
-    expect(label).toHaveClass(clsid, PARTS.WHOLE, STATE.NEUTRAL);
-    expect(colorDiv).toHaveClass(clsid, PARTS.MAIN, STATE.NEUTRAL);
+    expect(label).toHaveClass(clsid, PARTS.WHOLE, VARIANT.NEUTRAL);
+    expect(colorDiv).toHaveClass(clsid, PARTS.MAIN, VARIANT.NEUTRAL);
   });
 
   test("w/ object style", () => {
@@ -193,11 +193,11 @@ describe("Status and styling", () => {
       active: "active-class",
       inactive: "inactive-class",
     };
-    const style = {
+    const styling = {
       whole: dynObj,
       main: dynObj,
     };
-    const props = { style, status: STATE.ACTIVE };
+    const props = { styling, variant: VARIANT.ACTIVE };
     const { container } = render(ColorPicker, props);
     const label = container.querySelector("label") as HTMLLabelElement;
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
@@ -229,17 +229,17 @@ describe("User interaction and binding", () => {
     expect(props.element).toBe(input);
   });
 
-  test("status binding works", async () => {
-    const props = $state({ status: "" });
+  test("variant binding works", async () => {
+    const props = $state({ variant: "" });
     const { container } = render(ColorPicker, props);
     const label = container.querySelector("label") as HTMLLabelElement;
 
-    expect(label).toHaveClass("svs-color-picker", PARTS.WHOLE, STATE.NEUTRAL);
+    expect(label).toHaveClass("svs-color-picker", PARTS.WHOLE, VARIANT.NEUTRAL);
 
-    props.status = STATE.ACTIVE;
+    props.variant = VARIANT.ACTIVE;
     await new Promise((resolve) => setTimeout(resolve, 0)); // wait reactive update
 
-    expect(label).toHaveClass("svs-color-picker", PARTS.WHOLE, STATE.ACTIVE);
+    expect(label).toHaveClass("svs-color-picker", PARTS.WHOLE, VARIANT.ACTIVE);
   });
 
   test("alpha binding works", async () => {

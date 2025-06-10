@@ -6,17 +6,17 @@
     options: SvelteMap<string, string> | Map<string, string>;
     label?: string;
     extra?: string;
-    aux?: Snippet<[string, string[]]>; // Snippet<[status,values]>
-    left?: Snippet<[string, string[]]>; // Snippet<[status,values]>
-    right?: Snippet<[string, string[]]>; // Snippet<[status,values]>
+    aux?: Snippet<[string[], string]>; // Snippet<[values,variant]>
+    left?: Snippet<[string[], string]>; // Snippet<[values,variant]>
+    right?: Snippet<[string[], string]>; // Snippet<[values,variant]>
     bottom?: string;
     descFirst?: boolean; // (false)
     values?: string[]; // bindable
     multiple?: boolean; // (true)
     validations?: ToggleGroupFieldValidation[];
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     name?: string;
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
     deps?: ToggleGroupFieldDeps;
     [key: string]: unknown | Snippet;
   }
@@ -31,17 +31,17 @@
     options: SvelteMap<string, string> | Map<string, string>;
     label?: string;
     extra?: string;
-    aux?: Snippet<[string, string[]]>; // Snippet<[status,values]>
-    left?: Snippet<[string, string[]]>; // Snippet<[status,values]>
-    right?: Snippet<[string, string[]]>; // Snippet<[status,values]>
+    aux?: Snippet<[string[], string]>; // Snippet<[values,variant]>
+    left?: Snippet<[string[], string]>; // Snippet<[values,variant]>
+    right?: Snippet<[string[], string]>; // Snippet<[values,variant]>
     bottom?: string;
     descFirst?: boolean; // (false)
     values?: string[]; // bindable
     multiple?: boolean; // (true)
     validations?: ToggleGroupFieldValidation[];
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     name?: string;
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
     deps?: ToggleGroupFieldDeps;
     [key: string]: unknown | Snippet;
   }
@@ -49,7 +49,7 @@
     svsToggleGroup?: Omit<ToggleGroupProps, ToggleGroupReqdProps | ToggleGroupBindProps | "ariaDescId" | "multiple">;
   }
   export type ToggleGroupFieldReqdProps = "options";
-  export type ToggleGroupFieldBindProps = "values" | "status";
+  export type ToggleGroupFieldBindProps = "values" | "variant";
   export type ToggleGroupFieldValidation = (values: string[]) => string | undefined;
 
   const preset = "svs-toggle-group-field";
@@ -57,16 +57,16 @@
   import { type Snippet, untrack } from "svelte";
   import { type Action } from "svelte/action";
   import { type SvelteMap } from "svelte/reactivity";
-  import { type SVSStyle, STATE, PARTS, elemId, fnClass, isNeutral } from "./core";
+  import { type SVSClass, VARIANT, PARTS, elemId, fnClass, isNeutral } from "./core";
   import ToggleGroup, { type ToggleGroupProps, type ToggleGroupReqdProps, type ToggleGroupBindProps } from "./_ToggleGroup.svelte";
 </script>
 
 <script lang="ts">
-  let { options, label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), multiple = true, validations = [], status = $bindable(""), style, name, deps, ...rest }: ToggleGroupFieldProps = $props();
+  let { options, label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), multiple = true, validations = [], name, styling, variant = $bindable(""), deps, ...rest }: ToggleGroupFieldProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.NEUTRAL;
-  const cls = fnClass(preset, style);
+  if (!variant) variant = VARIANT.NEUTRAL;
+  const cls = fnClass(preset, styling);
   const idLabel = elemId.get(label?.trim());
   const idDesc = elemId.get(bottom?.trim());
   const idErr = idDesc ?? elemId.id;
@@ -77,19 +77,19 @@
   const svsToggleGroup = {
     ...Object.fromEntries(Object.entries(rest).filter(([_, v]) => typeof v === "function")),
     ariaDescId: idDesc,
-    style: deps?.svsToggleGroup?.style as SVSStyle ?? `${preset} svs-toggle-group`,
+    styling: deps?.svsToggleGroup?.styling as SVSClass ?? `${preset} svs-toggle-group`,
     action: deps?.svsToggleGroup?.action as Action,
   };
 
   // *** Status *** //
-  let neutral = $state(isNeutral(status) ? status : STATE.NEUTRAL);
-  $effect(() => { neutral = isNeutral(status) ? status : neutral });
-  let live = $derived(status === STATE.INACTIVE ? "alert" : "status");
-  let idMsg = $derived(status === STATE.INACTIVE && message?.trim() ? idErr : undefined);
+  let neutral = $state(isNeutral(variant) ? variant : VARIANT.NEUTRAL);
+  $effect(() => { neutral = isNeutral(variant) ? variant : neutral });
+  let live = $derived(variant === VARIANT.INACTIVE ? "alert" : "status");
+  let idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
   function shift(oninvalid?: boolean) {
     const vmsg = element?.validationMessage ?? "";
-    status = oninvalid && vmsg ? STATE.INACTIVE : (!values.length || vmsg) ? neutral : STATE.ACTIVE;
-    message = status === STATE.INACTIVE ? vmsg ? vmsg : bottom : bottom;
+    variant = oninvalid && vmsg ? VARIANT.INACTIVE : (!values.length || vmsg) ? neutral : VARIANT.ACTIVE;
+    message = variant === VARIANT.INACTIVE ? vmsg ? vmsg : bottom : bottom;
   }
   function verify() {
     if (!element) return;
@@ -121,20 +121,20 @@
 <!---------------------------------------->
 
 {#if options.size}
-  <div class={cls(PARTS.WHOLE, status)} role="group" aria-labelledby={idLabel}>
+  <div class={cls(PARTS.WHOLE, variant)} role="group" aria-labelledby={idLabel}>
     {#if aux}
-      <div class={cls(PARTS.TOP, status)}>
+      <div class={cls(PARTS.TOP, variant)}>
         {@render lbl()}
-        <span class={cls(PARTS.AUX, status)}>{@render aux(status, values)}</span>
+        <span class={cls(PARTS.AUX, variant)}>{@render aux(values, variant)}</span>
       </div>
     {:else}
       {@render lbl()}
     {/if}
     {@render desc(descFirst)}
-    <div class={cls(PARTS.MIDDLE, status)}>
+    <div class={cls(PARTS.MIDDLE, variant)}>
       {@render side(PARTS.LEFT, left)}
       {@render fnForm()}
-      <ToggleGroup bind:values bind:ariaErrMsgId={idMsg} bind:status={neutral} {options} {multiple} {...svsToggleGroup} />
+      <ToggleGroup bind:values bind:ariaErrMsgId={idMsg} bind:variant={neutral} {options} {multiple} {...svsToggleGroup} />
       {@render side(PARTS.RIGHT, right)}
     </div>
     {@render desc(!descFirst)}
@@ -143,22 +143,22 @@
 
 {#snippet lbl()}
   {#if label?.trim()}
-    <span class={cls(PARTS.LABEL, status)} id={idLabel}>
+    <span class={cls(PARTS.LABEL, variant)} id={idLabel}>
       {label}
       {#if extra?.trim()}
-        <span class={cls(PARTS.EXTRA, status)}>{extra}</span>
+        <span class={cls(PARTS.EXTRA, variant)}>{extra}</span>
       {/if}
     </span>
   {/if}
 {/snippet}
-{#snippet side(area: string, body?: Snippet<[string, string[]]>)}
+{#snippet side(area: string, body?: Snippet<[string[], string]>)}
   {#if body}
-    <span class={cls(area, status)}>{@render body(status, values)}</span>
+    <span class={cls(area, variant)}>{@render body(values, variant)}</span>
   {/if}
 {/snippet}
 {#snippet desc(show: boolean)}
   {#if show && message?.trim()}
-    <div class={cls(PARTS.BOTTOM, status)} id={idDesc ?? idErr} role={live}>{message}</div>
+    <div class={cls(PARTS.BOTTOM, variant)} id={idDesc ?? idErr} role={live}>{message}</div>
   {/if}
 {/snippet}
 {#snippet fnForm()}

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, waitFor, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import TagsInput from "../lib/_svseeds/_TagsInput.svelte";
-import { PARTS, STATE } from "../lib/_svseeds/core.ts";
+import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
 
 const preset = "svs-tags-input";
 
@@ -333,45 +333,45 @@ describe("Attributes and styling", () => {
 
   test("applies default CSS classes", () => {
     const values = ["tag1"];
-    const status = STATE.ACTIVE;
-    const { container } = render(TagsInput, { values, status });
+    const variant = VARIANT.ACTIVE;
+    const { container } = render(TagsInput, { values, variant });
 
     const whole = container.querySelector(`.${preset}`);
     const input = container.querySelector("input");
     const tagsSpan = container.querySelector(`.${preset}.left`);
 
-    expect(whole).toHaveClass(preset, PARTS.WHOLE, status);
-    expect(input).toHaveClass(preset, PARTS.MAIN, status);
-    expect(tagsSpan).toHaveClass(preset, "left", status);
+    expect(whole).toHaveClass(preset, PARTS.WHOLE, variant);
+    expect(input).toHaveClass(preset, PARTS.MAIN, variant);
+    expect(tagsSpan).toHaveClass(preset, "left", variant);
   });
 
-  test("applies string style", () => {
-    const style = "custom-style";
-    const status = STATE.NEUTRAL;
-    const { container } = render(TagsInput, { style, status });
+  test("applies string styling", () => {
+    const styling = "custom-styling";
+    const variant = VARIANT.NEUTRAL;
+    const { container } = render(TagsInput, { styling, variant });
 
-    const whole = container.querySelector(".custom-style");
+    const whole = container.querySelector(".custom-styling");
     const input = container.querySelector("input");
 
-    expect(whole).toHaveClass("custom-style", PARTS.WHOLE, status);
-    expect(input).toHaveClass("custom-style", PARTS.MAIN, status);
+    expect(whole).toHaveClass("custom-styling", PARTS.WHOLE, variant);
+    expect(input).toHaveClass("custom-styling", PARTS.MAIN, variant);
   });
 });
 
 describe("Status and state management", () => {
-  test("initializes with neutral status by default", () => {
-    const props = $state({ status: "" });
+  test("initializes with neutral variant by default", () => {
+    const props = $state({ variant: "" });
     const { container } = render(TagsInput, props);
 
-    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
   });
 
-  test("maintains provided status", () => {
-    const status = STATE.ACTIVE;
-    const { container } = render(TagsInput, { status });
+  test("maintains provided variant", () => {
+    const variant = VARIANT.ACTIVE;
+    const { container } = render(TagsInput, { variant });
     const whole = container.querySelector(`.${preset}`);
 
-    expect(whole).toHaveClass(preset, PARTS.WHOLE, status);
+    expect(whole).toHaveClass(preset, PARTS.WHOLE, variant);
   });
 
   test("binds element reference", () => {

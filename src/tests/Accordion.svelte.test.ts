@@ -3,7 +3,7 @@ import { fireEvent, render, waitFor, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import Accordion from "../lib/_svseeds/Accordion.svelte";
-import { PARTS, STATE } from "../lib/_svseeds/core.ts";
+import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
 
 const label1 = "First Section";
 const label2 = "Second Section";
@@ -210,26 +210,26 @@ describe("Accordion state management and interactions", () => {
     // expect(details3.open).toBe(false);
   });
 
-  test("status binding", async () => {
+  test("variant binding", async () => {
     const props = $state({
       labels: [label1, label2],
       current: -1,
-      status: "",
+      variant: "",
       panel1: panel1fn,
       panel2: panel2fn,
     });
     const { getAllByRole, rerender } = render(Accordion, props);
 
     const group = getAllByRole("group")[0];
-    expect(group).toHaveClass("svs-accordion", PARTS.WHOLE, STATE.NEUTRAL);
+    expect(group).toHaveClass("svs-accordion", PARTS.WHOLE, VARIANT.NEUTRAL);
 
-    props.status = STATE.ACTIVE;
+    props.variant = VARIANT.ACTIVE;
     await rerender(props);
-    expect(group).toHaveClass("svs-accordion", PARTS.WHOLE, STATE.ACTIVE);
+    expect(group).toHaveClass("svs-accordion", PARTS.WHOLE, VARIANT.ACTIVE);
 
-    props.status = STATE.INACTIVE;
+    props.variant = VARIANT.INACTIVE;
     await rerender(props);
-    expect(group).toHaveClass("svs-accordion", PARTS.WHOLE, STATE.INACTIVE);
+    expect(group).toHaveClass("svs-accordion", PARTS.WHOLE, VARIANT.INACTIVE);
   });
 });
 
@@ -242,24 +242,24 @@ describe("Accordion styling and dependencies", () => {
     };
     const { getAllByRole } = render(Accordion, props);
     const group = getAllByRole("group")[0];
-    expect(group).toHaveClass("svs-accordion", PARTS.WHOLE, STATE.NEUTRAL);
+    expect(group).toHaveClass("svs-accordion", PARTS.WHOLE, VARIANT.NEUTRAL);
   });
 
-  test("custom string style", () => {
+  test("custom string styling", () => {
     const customStyle = "custom-accordion";
     const props = {
       labels: [label1, label2],
-      style: customStyle,
+      styling: customStyle,
       panel1: panel1fn,
       panel2: panel2fn,
     };
     const { getAllByRole } = render(Accordion, props);
     const group = getAllByRole("group")[0];
-    expect(group).toHaveClass(customStyle, PARTS.WHOLE, STATE.NEUTRAL);
+    expect(group).toHaveClass(customStyle, PARTS.WHOLE, VARIANT.NEUTRAL);
   });
 
-  test("custom object style", async () => {
-    const style = {
+  test("custom object styling", async () => {
+    const styling = {
       whole: {
         base: "custom-base",
         neutral: "custom-neutral",
@@ -268,8 +268,8 @@ describe("Accordion styling and dependencies", () => {
     };
     const props = $state({
       labels: [label1, label2],
-      style,
-      status: "",
+      styling,
+      variant: "",
       panel1: panel1fn,
       panel2: panel2fn,
     });
@@ -278,7 +278,7 @@ describe("Accordion styling and dependencies", () => {
 
     expect(group).toHaveClass("custom-base", "custom-neutral");
 
-    props.status = STATE.ACTIVE;
+    props.variant = VARIANT.ACTIVE;
     await rerender(props);
     expect(group).toHaveClass("custom-base", "custom-active");
   });
@@ -301,12 +301,12 @@ describe("Accordion styling and dependencies", () => {
     expect(details1).toHaveClass("svs-accordion", "svs-disclosure");
   });
 
-  test("with custom svsDisclosure style", () => {
+  test("with custom svsDisclosure styling", () => {
     const props = {
       labels: [label1, label2],
       deps: {
         svsDisclosure: {
-          style: "custom-disclosure-style",
+          styling: "custom-disclosure-styling",
         },
       },
       panel1: panel1fn,
@@ -315,7 +315,7 @@ describe("Accordion styling and dependencies", () => {
     const { getByText } = render(Accordion, props);
 
     const details1 = getByText(label1).closest("details") as HTMLDetailsElement;
-    expect(details1).toHaveClass("custom-disclosure-style");
+    expect(details1).toHaveClass("custom-disclosure-styling");
   });
 });
 

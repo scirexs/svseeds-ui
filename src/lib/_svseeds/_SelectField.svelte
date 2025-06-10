@@ -6,18 +6,18 @@
     options: SvelteMap<string, string> | Map<string, string>;
     label?: string;
     extra?: string;
-    aux?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[status,value,element]>
-    left?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[status,value,element]>
-    right?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[status,value,element]>
+    aux?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[value,variant,element]>
+    left?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[value,variant,element]>
+    right?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[value,variant,element]>
     bottom?: string;
     descFirst?: boolean; // (false)
     value?: string; // bindable
     validations?: SelectFieldValidation[];
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     attributes?: HTMLSelectAttributes;
     action?: Action;
     element?: HTMLSelectElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   type SelectFieldValidation = (value: string, validity: ValidityState) => string | undefined;
   ```
@@ -27,21 +27,21 @@
     options: SvelteMap<string, string> | Map<string, string>;
     label?: string;
     extra?: string;
-    aux?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[status,value,element]>
-    left?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[status,value,element]>
-    right?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[status,value,element]>
+    aux?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[value,variant,element]>
+    left?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[value,variant,element]>
+    right?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[value,variant,element]>
     bottom?: string;
     descFirst?: boolean; // (false)
     value?: string; // bindable
     validations?: SelectFieldValidation[];
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     attributes?: HTMLSelectAttributes;
     action?: Action;
     element?: HTMLSelectElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   export type SelectFieldReqdProps = "options";
-  export type SelectFieldBindProps = "value" | "status" | "element";
+  export type SelectFieldBindProps = "value" | "variant" | "element";
   export type SelectFieldValidation = (value: string, validity: ValidityState) => string | undefined;
 
   const preset = "svs-select-field";
@@ -50,15 +50,15 @@
   import { type Action } from "svelte/action";
   import { type SvelteMap } from "svelte/reactivity";
   import { type HTMLSelectAttributes } from "svelte/elements";
-  import { type SVSStyle, STATE, PARTS, elemId, fnClass, isNeutral, omit } from "./core";
+  import { type SVSClass, VARIANT, PARTS, elemId, fnClass, isNeutral, omit } from "./core";
 </script>
 
 <script lang="ts">
-  let { options, label, extra, aux, left, right, bottom, descFirst = false, value = $bindable(""), validations = [], status = $bindable(""), style, attributes, action, element = $bindable() }: SelectFieldProps = $props();
+  let { options, label, extra, aux, left, right, bottom, descFirst = false, value = $bindable(""), validations = [], attributes, action, element = $bindable(), styling, variant = $bindable("") }: SelectFieldProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.NEUTRAL;
-  const cls = fnClass(preset, style);
+  if (!variant) variant = VARIANT.NEUTRAL;
+  const cls = fnClass(preset, styling);
   const id = attributes?.id ? attributes.id : elemId.get(label?.trim());
   const idLabel = elemId.get(label?.trim());
   const idDesc = elemId.get(bottom?.trim());
@@ -67,15 +67,15 @@
   let message = $state(bottom);
 
   // *** Status *** //
-  let neutral = isNeutral(status) ? status : STATE.NEUTRAL;
-  $effect(() => { neutral = isNeutral(status) ? status : neutral; });
-  let live = $derived(status === STATE.INACTIVE ? "alert" : "status");
-  let invalid = $derived(status === STATE.INACTIVE ? true : undefined);
-  let idMsg = $derived(status === STATE.INACTIVE && message?.trim() ? idErr : undefined);
+  let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
+  $effect(() => { neutral = isNeutral(variant) ? variant : neutral; });
+  let live = $derived(variant === VARIANT.INACTIVE ? "alert" : "status");
+  let invalid = $derived(variant === VARIANT.INACTIVE ? true : undefined);
+  let idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
   function shift(oninvalid?: boolean) {
     const vmsg = element?.validationMessage ?? "";
-    status = !value && !oninvalid ? neutral : vmsg ? STATE.INACTIVE : STATE.ACTIVE;
-    message = status === STATE.INACTIVE ? vmsg ? vmsg : bottom : bottom;
+    variant = !value && !oninvalid ? neutral : vmsg ? VARIANT.INACTIVE : VARIANT.ACTIVE;
+    message = variant === VARIANT.INACTIVE ? vmsg ? vmsg : bottom : bottom;
   }
   function verify() {
     if (!element) return;
@@ -109,17 +109,17 @@
 <!---------------------------------------->
 
 {#if opts.length}
-  <div class={cls(PARTS.WHOLE, status)} role="group" aria-labelledby={idLabel}>
+  <div class={cls(PARTS.WHOLE, variant)} role="group" aria-labelledby={idLabel}>
     {#if aux}
-      <div class={cls(PARTS.TOP, status)}>
+      <div class={cls(PARTS.TOP, variant)}>
         {@render lbl()}
-        <span class={cls(PARTS.AUX, status)}>{@render aux(status, value, element)}</span>
+        <span class={cls(PARTS.AUX, variant)}>{@render aux(value, variant, element)}</span>
       </div>
     {:else}
       {@render lbl()}
     {/if}
     {@render desc(descFirst)}
-    <div class={cls(PARTS.MIDDLE, status)}>
+    <div class={cls(PARTS.MIDDLE, variant)}>
       {@render side(PARTS.LEFT, left)}
       {@render main()}
       {@render side(PARTS.RIGHT, right)}
@@ -130,21 +130,21 @@
 
 {#snippet lbl()}
   {#if label?.trim()}
-    <span class={cls(PARTS.LABEL, status)} id={idLabel}>
+    <span class={cls(PARTS.LABEL, variant)} id={idLabel}>
       {label}
       {#if extra?.trim()}
-        <span class={cls(PARTS.EXTRA, status)}>{extra}</span>
+        <span class={cls(PARTS.EXTRA, variant)}>{extra}</span>
       {/if}
     </span>
   {/if}
 {/snippet}
 {#snippet side(area: string, body?: Snippet<[string, string, HTMLSelectElement | undefined]>)}
   {#if body}
-    <span class={cls(area, status)}>{@render body(status, value, element)}</span>
+    <span class={cls(area, variant)}>{@render body(value, variant, element)}</span>
   {/if}
 {/snippet}
 {#snippet main()}
-  {@const c = cls(PARTS.MAIN, status)}
+  {@const c = cls(PARTS.MAIN, variant)}
   {#if action}
     <select bind:value bind:this={element} class={c} {id} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={idMsg} use:action>
       {@render option()}
@@ -162,6 +162,6 @@
 {/snippet}
 {#snippet desc(show: boolean)}
   {#if show && message?.trim()}
-    <div class={cls(PARTS.BOTTOM, status)} id={idDesc ?? idErr} role={live}>{message}</div>
+    <div class={cls(PARTS.BOTTOM, variant)} id={idDesc ?? idErr} role={live}>{message}</div>
   {/if}
 {/snippet}

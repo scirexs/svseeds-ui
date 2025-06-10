@@ -3,34 +3,35 @@
   default value: `(value)`
   ```ts
   interface DisclosureProps {
-    label: string | Snippet<[boolean,string]>; // Snippet<[open,status]>
-    children: Snippet;
+    label: string | Snippet<[boolean, string]>; // Snippet<[open,variant]>
+    children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false)
     duration?: number; // (400)
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     attributes?: HTMLDetailsAttributes;
     action?: Action;
     element?: HTMLDetailsElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   ```
 -->
 <script module lang="ts">
   export interface DisclosureProps {
-    label: string | Snippet<[boolean,string]>; // Snippet<[open,status]>
-    children: Snippet;
+    label: string | Snippet<[boolean, string]>; // Snippet<[open,variant]>
+    children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false)
     duration?: number; // (400)
-    status?: string; // bindable (STATE.NEUTRAL)
-    style?: SVSStyle;
     attributes?: HTMLDetailsAttributes;
     action?: Action;
     element?: HTMLDetailsElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   export type DisclosureReqdProps = "label" | "children";
-  export type DisclosureBindProps = "open" | "status" | "element";
+  export type DisclosureBindProps = "open" | "variant" | "element";
 
   type DisclosureTarget = { currentTarget: EventTarget & HTMLDetailsElement };
+  const DEFAULT_DURATION = 400;
   const preset = "svs-disclosure";
 
   const sleep = (msec: number) => new Promise(resolve => setTimeout(resolve, msec));
@@ -49,22 +50,23 @@
   import { type Action } from "svelte/action";
   import { type HTMLDetailsAttributes } from "svelte/elements";
   import { slide } from "svelte/transition";
-  import { type SVSStyle, STATE, PARTS, fnClass, isNeutral, omit } from "./core";
+  import { type SVSClass, VARIANT, PARTS, fnClass, isNeutral, isUnsignedInteger, omit } from "./core";
 </script>
 
 <script lang="ts">
-  let { label, children, open = $bindable(false), duration = 400, status = $bindable(""), style, attributes, action, element = $bindable() }: DisclosureProps = $props();
+  let { label, children, open = $bindable(false), duration = -1, attributes, action, element = $bindable(), styling, variant = $bindable("") }: DisclosureProps = $props();
 
   // *** Initialize *** //
-  if (!status) status = STATE.NEUTRAL;
-  const cls = fnClass(preset, style);
+  if (!variant) variant = VARIANT.NEUTRAL;
+  if (!isUnsignedInteger(duration)) duration = DEFAULT_DURATION;
+  const cls = fnClass(preset, styling);
   const attrs = omit(attributes, "class", "open", "ontoggle");
   const guard = new ToggleGurad();
   let hidden = $state(!open);
-  let neutral = isNeutral(status) ? status : STATE.NEUTRAL;
+  let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
 
   // *** Bind Handlers *** //
-  $effect(() => { neutral = isNeutral(status) ? status : neutral });
+  $effect(() => { neutral = isNeutral(variant) ? variant : neutral });
   $effect.pre(() => {
     open;
     untrack(() => toggleOpen());
@@ -81,7 +83,7 @@
     if (!element) return;
     element.open = bool;
     hidden = !element.open;
-    status = bool ? STATE.ACTIVE : neutral;
+    variant = bool ? VARIANT.ACTIVE : neutral;
   }
 
   // *** Event Handlers *** //
@@ -104,31 +106,31 @@
 <!---------------------------------------->
 
 {#if action}
-  <details bind:this={element} class={cls(PARTS.WHOLE, status)} {ontoggle} {...attrs} use:action>
+  <details bind:this={element} class={cls(PARTS.WHOLE, variant)} {ontoggle} {...attrs} use:action>
     {@render inner()}
   </details>
 {:else}
-  <details bind:this={element} class={cls(PARTS.WHOLE, status)} {ontoggle} {...attrs}>
+  <details bind:this={element} class={cls(PARTS.WHOLE, variant)} {ontoggle} {...attrs}>
     {@render inner()}
   </details>
 {/if}
 
 {#snippet inner()}
-  <summary class={cls(PARTS.LABEL, status)} {onclick}>
+  <summary class={cls(PARTS.LABEL, variant)} {onclick}>
     {#if typeof label === "string"}
       {label}
     {:else if typeof label === "function"}
-      {@render label(open, status)}
+      {@render label(open, variant)}
     {/if}
   </summary>
   {#if open}
-    <div class={cls(PARTS.MAIN, status)} transition:slide={{ duration }}>
-      {@render children()}
+    <div class={cls(PARTS.MAIN, variant)} transition:slide={{ duration }}>
+      {@render children(variant)}
     </div>
   {/if}
   {#if hidden}
-    <div class={cls(PARTS.MAIN, status)}>
-      {@render children()}
+    <div class={cls(PARTS.MAIN, variant)}>
+      {@render children(variant)}
     </div>
   {/if}
 {/snippet}

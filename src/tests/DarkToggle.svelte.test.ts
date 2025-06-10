@@ -3,7 +3,7 @@ import { fireEvent, render, waitFor } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import DarkToggle, { setThemeToRoot, THEME } from "../lib/_svseeds/DarkToggle.svelte";
-import { PARTS, STATE } from "../lib/_svseeds/core.ts";
+import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
 
 // Mock window.matchMedia for testing
 const mockMatchMedia = vi.fn();
@@ -21,12 +21,12 @@ Object.defineProperty(document, "styleSheets", {
 // Custom snippet for testing deps.svsToggle.main
 const customMainSnippet = createRawSnippet(
   (
-    status: () => string,
+    variant: () => string,
     value: () => boolean,
     element: () => HTMLButtonElement | undefined,
   ) => {
     return {
-      render: () => `<span data-testid="custom-main">${status()},${value()},${element()?.tagName}</span>`,
+      render: () => `<span data-testid="custom-main">${variant()},${value()},${element()?.tagName}</span>`,
     };
   },
 );
@@ -123,7 +123,7 @@ describe("DarkToggle - User interactions", () => {
   });
 
   test("toggles dark and light mode on click", async () => {
-    const props = $state({ dark: false, status: STATE.NEUTRAL });
+    const props = $state({ dark: false, variant: VARIANT.NEUTRAL });
     const user = userEvent.setup();
     const { getByRole } = render(DarkToggle, props);
     const button = getByRole("button") as HTMLButtonElement;
@@ -148,18 +148,18 @@ describe("DarkToggle - User interactions", () => {
     });
   });
 
-  test("status updates correctly", async () => {
-    const props = $state({ dark: false, status: STATE.NEUTRAL });
+  test("variant updates correctly", async () => {
+    const props = $state({ dark: false, variant: VARIANT.NEUTRAL });
     const user = userEvent.setup();
     const { getByRole } = render(DarkToggle, props);
     const button = getByRole("button") as HTMLButtonElement;
 
-    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
 
     await user.click(button);
 
     // Status should update to active after interaction
-    expect(props.status).toBe(STATE.ACTIVE);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
   });
 
   test("element binding works correctly", () => {
@@ -181,11 +181,11 @@ describe("DarkToggle - Dependencies and customization", () => {
     });
   });
 
-  test("applies custom style from deps", () => {
-    const customStyle = "custom-toggle-style";
+  test("applies custom styling from deps", () => {
+    const customStyle = "custom-toggle-styling";
     const deps = {
       svsToggle: {
-        style: customStyle,
+        styling: customStyle,
       },
     };
     const { getByRole } = render(DarkToggle, { deps });
@@ -213,16 +213,16 @@ describe("DarkToggle - Dependencies and customization", () => {
   test("renders custom main snippet", () => {
     const deps = {
       svsToggle: {
-        main: customMainSnippet,
+        children: customMainSnippet,
       },
     };
-    const props = $state({ dark: false, status: STATE.NEUTRAL, deps });
+    const props = $state({ dark: false, variant: VARIANT.NEUTRAL, deps });
     const { getByTestId } = render(DarkToggle, { ...props, deps });
     const customMain = getByTestId("custom-main");
 
     waitFor(() => {
       expect(customMain).toBeInTheDocument();
-      expect(customMain.textContent).toContain(STATE.NEUTRAL);
+      expect(customMain.textContent).toContain(VARIANT.NEUTRAL);
       expect(customMain.textContent).toContain("false");
       expect(customMain.textContent).toContain("neutral,false,BUTTON");
     });
@@ -231,10 +231,10 @@ describe("DarkToggle - Dependencies and customization", () => {
   test("custom main snippet updates with state changes", async () => {
     const deps = {
       svsToggle: {
-        main: customMainSnippet,
+        children: customMainSnippet,
       },
     };
-    const props = $state({ dark: false, status: STATE.NEUTRAL });
+    const props = $state({ dark: false, variant: VARIANT.NEUTRAL });
     const user = userEvent.setup();
     const { getByTestId, getByRole } = render(DarkToggle, { ...props, deps });
     const button = getByRole("button") as HTMLButtonElement;
@@ -331,24 +331,24 @@ describe("DarkToggle - Status states", () => {
     });
   });
 
-  test("initializes with neutral status", () => {
-    const props = $state({ status: "" });
+  test("initializes with neutral variant", () => {
+    const props = $state({ variant: "" });
     render(DarkToggle, props);
 
-    expect(props.status).toBe(STATE.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
   });
 
-  test("preserves custom initial status", () => {
+  test("preserves custom initial variant", () => {
     const customStatus = "custom";
-    const props = $state({ status: customStatus });
+    const props = $state({ variant: customStatus });
     render(DarkToggle, props);
 
-    expect(props.status).toBe(customStatus);
+    expect(props.variant).toBe(customStatus);
   });
 
-  test("applies status classes correctly", () => {
+  test("applies variant classes correctly", () => {
     const customStatus = "custom";
-    const props = $state({ status: customStatus });
+    const props = $state({ variant: customStatus });
     const { getByRole } = render(DarkToggle, props);
     const button = getByRole("button") as HTMLButtonElement;
 

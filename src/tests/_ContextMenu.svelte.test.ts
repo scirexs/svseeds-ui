@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from "vitest";
 import { fireEvent, render } from "@testing-library/svelte";
 import { createRawSnippet } from "svelte";
 import ContextMenu from "../lib/_svseeds/_ContextMenu.svelte";
-import { PARTS, STATE } from "../lib/_svseeds/core.ts";
+import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
 import { userEvent } from "@testing-library/user-event";
 
 const childrenContent = "Menu Item";
@@ -68,23 +68,23 @@ describe("ContextMenu rendering and visibility", () => {
     expect(nav).toHaveClass(preset, PARTS.WHOLE);
   });
 
-  test("applies custom status class", () => {
+  test("applies custom variant class", () => {
     const preset = "svs-context-menu";
-    const customStatus = "custom-status";
+    const customStatus = "custom-variant";
     const { container } = render(ContextMenu, {
       children: childrenSnippet,
-      status: customStatus,
+      variant: customStatus,
     });
 
     const nav = container.firstChild;
     expect(nav).toHaveClass(preset, PARTS.WHOLE, customStatus);
   });
 
-  test("applies string style", () => {
-    const customStyle = "custom-style";
+  test("applies string styling", () => {
+    const customStyle = "custom-styling";
     const { container } = render(ContextMenu, {
       children: childrenSnippet,
-      style: customStyle,
+      styling: customStyle,
     });
 
     const nav = container.firstChild;
@@ -309,7 +309,7 @@ describe("ContextMenu positioning", () => {
 });
 
 describe("ContextMenu with different styles", () => {
-  test("applies object-based style rules", () => {
+  test("applies object-based styling rules", () => {
     const customStyle = {
       whole: {
         base: "menu-base",
@@ -320,8 +320,8 @@ describe("ContextMenu with different styles", () => {
 
     const { container } = render(ContextMenu, {
       children: childrenSnippet,
-      style: customStyle,
-      status: STATE.ACTIVE,
+      styling: customStyle,
+      variant: VARIANT.ACTIVE,
     });
 
     const nav = container.firstChild;
@@ -341,43 +341,43 @@ describe("ContextMenu with different styles", () => {
   });
 });
 
-describe("ContextMenu status management", () => {
-  test("defaults to neutral status", () => {
+describe("ContextMenu variant management", () => {
+  test("defaults to neutral variant", () => {
     const preset = "svs-context-menu";
     const { container } = render(ContextMenu, {
       children: childrenSnippet,
     });
 
     const nav = container.firstChild;
-    expect(nav).toHaveClass(preset, PARTS.WHOLE, STATE.NEUTRAL);
+    expect(nav).toHaveClass(preset, PARTS.WHOLE, VARIANT.NEUTRAL);
   });
 
-  test("uses provided status", () => {
+  test("uses provided variant", () => {
     const preset = "svs-context-menu";
-    const customStatus = STATE.ACTIVE;
+    const customStatus = VARIANT.ACTIVE;
     const { container } = render(ContextMenu, {
       children: childrenSnippet,
-      status: customStatus,
+      variant: customStatus,
     });
 
     const nav = container.firstChild;
     expect(nav).toHaveClass(preset, PARTS.WHOLE, customStatus);
   });
 
-  test("status binding works correctly", async () => {
+  test("variant binding works correctly", async () => {
     const props = $state({
       children: childrenSnippet,
-      status: "",
+      variant: "",
     });
 
     const { container, rerender } = render(ContextMenu, props);
 
     const nav = container.firstChild;
-    expect(nav).toHaveClass("svs-context-menu", PARTS.WHOLE, STATE.NEUTRAL);
+    expect(nav).toHaveClass("svs-context-menu", PARTS.WHOLE, VARIANT.NEUTRAL);
 
-    props.status = STATE.ACTIVE;
+    props.variant = VARIANT.ACTIVE;
     await rerender(props);
 
-    expect(nav).toHaveClass("svs-context-menu", PARTS.WHOLE, STATE.ACTIVE);
+    expect(nav).toHaveClass("svs-context-menu", PARTS.WHOLE, VARIANT.ACTIVE);
   });
 });
