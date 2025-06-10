@@ -81,7 +81,7 @@
     action: deps?.svsToggleGroup?.action as Action,
   };
 
-  // *** Status *** //
+  // *** States *** //
   let neutral = $state(isNeutral(variant) ? variant : VARIANT.NEUTRAL);
   $effect(() => { neutral = isNeutral(variant) ? variant : neutral });
   let live = $derived(variant === VARIANT.INACTIVE ? "alert" : "status");

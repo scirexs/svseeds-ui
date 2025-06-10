@@ -41,8 +41,8 @@
   if (!isUnsignedInteger(current)) current = 0;
   const cls = fnClass(preset, styling);
 
-  // *** Status *** //
-  function getEachStatus(index: number): string {
+  // *** States *** //
+  function getEachVariant(index: number): string {
     if (eachVariant?.has(index)) return eachVariant.get(index)!;
     if (index < current) return VARIANT.ACTIVE;
     if (index > current) return VARIANT.INACTIVE;
@@ -55,7 +55,7 @@
 {#if labels.length}
   <ol class={cls(PARTS.WHOLE, variant)}>
     {#each labels as label, i}
-      {@const stat = getEachStatus(i)}
+      {@const stat = getEachVariant(i)}
       {#if i > current}
         {@render separator(i)}
       {/if}

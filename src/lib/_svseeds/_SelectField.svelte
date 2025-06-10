@@ -66,7 +66,7 @@
   const attrs = omit(attributes, "class", "id", "value", "oninvalid");
   let message = $state(bottom);
 
-  // *** Status *** //
+  // *** States *** //
   let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
   $effect(() => { neutral = isNeutral(variant) ? variant : neutral; });
   let live = $derived(variant === VARIANT.INACTIVE ? "alert" : "status");
