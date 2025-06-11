@@ -130,12 +130,12 @@
 
 {#snippet lbl()}
   {#if label?.trim()}
-    <span class={cls(PARTS.LABEL, variant)} id={idLabel}>
+    <label class={cls(PARTS.LABEL, variant)} for={id} id={idLabel}>
       {label}
       {#if extra?.trim()}
         <span class={cls(PARTS.EXTRA, variant)}>{extra}</span>
       {/if}
-    </span>
+    </label>
   {/if}
 {/snippet}
 {#snippet side(area: string, body?: Snippet<[string, string, HTMLSelectElement | undefined]>)}
