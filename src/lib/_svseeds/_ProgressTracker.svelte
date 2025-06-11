@@ -56,18 +56,24 @@
   <ol class={cls(PARTS.WHOLE, variant)}>
     {#each labels as label, i}
       {@const stat = getEachVariant(i)}
-      {#if i > current}
-        {@render separator(i)}
-      {/if}
       <li class={cls(PARTS.MAIN, stat)} aria-current={i === current ? "step" : false}>
+        {#if i > current}
+          {@render separator(i)}
+        {/if}
         {#if aux}
-          <div class={cls(PARTS.AUX, stat)}>
-            {@render aux(i, stat)}
+          <div class={cls(PARTS.MIDDLE, stat)}>
+            <div class={cls(PARTS.AUX, stat)}>
+              {@render aux(i, stat)}
+            </div>
+            <div class={cls(PARTS.LABEL, stat)}>
+              {label}
+            </div>
+          </div>
+        {:else}
+          <div class={cls(PARTS.LABEL, stat)}>
+            {label}
           </div>
         {/if}
-        <div class={cls(PARTS.LABEL, stat)}>
-          {label}
-        </div>
       </li>
       {#if i < current}
         {@render separator(i)}
@@ -79,8 +85,8 @@
 {#snippet separator(i: number)}
   {#if extra}
     {@const stat = i < current ? VARIANT.ACTIVE : VARIANT.INACTIVE}
-    <li class={cls(PARTS.EXTRA, stat)} role="separator">
+    <div class={cls(PARTS.EXTRA, stat)} role="separator">
       {@render extra(i, stat)}
-    </li>
+    </div>
   {/if}
 {/snippet}
