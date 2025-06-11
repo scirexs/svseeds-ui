@@ -4,7 +4,7 @@
   ```ts
   interface TagsInputProps {
     label?: Snippet<[string, string]>; // Snippet<[value,variant]>
-    aux?: Snippet<[string, string]>; // Snippet<[value,variant]>
+    extra?: Snippet<[string, string]>; // Snippet<[value,variant]>
     values?: string[]; // bindable
     value?: string; // bindable
     type?: "left" | "right"; // ("left")
@@ -28,7 +28,7 @@
 <script module lang="ts">
   export interface TagsInputProps {
     label?: Snippet<[string, string]>; // Snippet<[value,variant]>
-    aux?: Snippet<[string, string]>; // Snippet<[value,variant]>
+    extra?: Snippet<[string, string]>; // Snippet<[value,variant]>
     values?: string[]; // bindable
     value?: string; // bindable
     type?: "left" | "right"; // ("left")
@@ -62,7 +62,7 @@
 </script>
 
 <script lang="ts">
-  let { label, aux, values = $bindable([]), value = $bindable(""), type = "left", confirm = [], trim = true, unique = true, ariaErrMsgId = $bindable(), events, attributes, action, element = $bindable(), styling, variant = $bindable("") }: TagsInputProps = $props();
+  let { label, extra, values = $bindable([]), value = $bindable(""), type = "left", confirm = [], trim = true, unique = true, ariaErrMsgId = $bindable(), events, attributes, action, element = $bindable(), styling, variant = $bindable("") }: TagsInputProps = $props();
 
   // *** Initialize *** //
   if (!variant) variant = VARIANT.NEUTRAL;
@@ -117,8 +117,8 @@
             {value}
           {/if}
           <button class={cls(PARTS.EXTRA, variant)} onclick={remove(i)}>
-            {#if aux}
-              {@render aux(value, variant)}
+            {#if extra}
+              {@render extra(value, variant)}
             {:else}
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="10" height="10"><path d="M511.998 70.682 441.315 0 256.002 185.313 70.685 0 .002 70.692l185.314 185.314L.002 441.318 70.69 512l185.312-185.312L441.315 512l70.683-70.682-185.314-185.312z" /></svg>
             {/if}
