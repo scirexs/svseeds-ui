@@ -44,7 +44,9 @@
   // *** Bind Handlers *** //
   $effect(() => {
     open;
-    untrack(() => trigger?.focus());
+    untrack(() => {
+      if (!open) trigger?.focus();
+    });
   });
   $effect.pre(() => {
     open;
