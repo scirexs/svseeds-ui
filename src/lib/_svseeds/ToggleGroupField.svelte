@@ -163,7 +163,9 @@
 {/snippet}
 {#snippet fnForm()}
   <input bind:this={element} style="display: none;" aria-hidden="true" {oninvalid} />
-  {#each values as value}
-    <input type="hidden" {name} {value} />
-  {/each}
+  {#if name}
+    {#each values as value}
+      <input type="hidden" {name} {value} />
+    {/each}
+  {/if}
 {/snippet}

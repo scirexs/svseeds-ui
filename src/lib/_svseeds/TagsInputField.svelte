@@ -15,6 +15,7 @@
     max?: TagsInputFieldCountValidation;
     constraints?: TagsInputFieldConstraint[];
     validations?: TagsInputFieldValidation[];
+    name?: string;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
@@ -45,6 +46,7 @@
     max?: TagsInputFieldCountValidation;
     constraints?: TagsInputFieldConstraint[];
     validations?: TagsInputFieldValidation[];
+    name?: string;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
@@ -67,7 +69,7 @@
 </script>
 
 <script lang="ts">
-  let { label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), min, max, constraints = [], validations = [], element = $bindable(), styling, variant = $bindable(""), deps }: TagsInputFieldProps = $props();
+  let { label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), min, max, constraints = [], validations = [], name, element = $bindable(), styling, variant = $bindable(""), deps }: TagsInputFieldProps = $props();
 
   // *** Initialize *** //
   if (!variant) variant = VARIANT.NEUTRAL;
@@ -78,6 +80,7 @@
   const idErr = idDesc ?? elemId.id;
   let message = $state(bottom);
   let value = $state("");
+  if (!name) name = deps?.svsTagsInput?.attributes?.name as string | undefined;
   if (max) constraints.unshift(() => values.length >= max.value ? max.message : "");
   if (min) validations.unshift(() => values.length < min.value ? min.message : "");
 
@@ -87,7 +90,7 @@
     events: { onadd, onremove: deps?.svsTagsInput?.events?.onremove },
     styling: deps?.svsTagsInput?.styling ?? `${preset} svs-tags-input`,
     attributes: {
-      ...omit(deps?.svsTagsInput?.attributes, "id", "onchange", "oninvalid", "aria-describedby"),
+      ...omit(deps?.svsTagsInput?.attributes, "id", "name", "onchange", "oninvalid", "aria-describedby"),
       id,
       onchange,
       oninvalid,
@@ -169,6 +172,7 @@
   {@render desc(descFirst)}
   <div class={cls(PARTS.MIDDLE, variant)}>
     {@render side(PARTS.LEFT, left)}
+    {@render fnForm()}
     <TagsInput bind:values bind:value bind:variant bind:element bind:ariaErrMsgId={idMsg} {...svsTagsInput} />
     {@render side(PARTS.RIGHT, right)}
   </div>
@@ -193,5 +197,12 @@
 {#snippet desc(show: boolean)}
   {#if show && message?.trim()}
     <div class={cls(PARTS.BOTTOM, variant)} id={idDesc ?? idErr} role={live}>{message}</div>
+  {/if}
+{/snippet}
+{#snippet fnForm()}
+  {#if name}
+    {#each values as value}
+      <input type="hidden" {name} {value} />
+    {/each}
   {/if}
 {/snippet}
