@@ -5,11 +5,11 @@
   interface ProgressTrackerProps {
     current: number; // bindable (0)
     labels: string[];
-    aux?: Snippet<[string, number]>; // Snippet<[variant,index]>
-    extra?: Snippet<[string, number]>; // Snippet<[variant,index]>
+    aux?: Snippet<[number, string]>; // Snippet<[index,variant]>
+    extra?: Snippet<[number, string]>; // Snippet<[index,variant]>
+    styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
     eachVariant?: SvelteMap<number, string> | Map<number, string>;
-    styling?: SVSClass;
   }
   ```
 -->
