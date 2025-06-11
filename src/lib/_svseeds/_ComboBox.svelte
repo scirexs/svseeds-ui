@@ -111,7 +111,7 @@
 
 {#if options.size}
   <div class={cls(PARTS.WHOLE, variant)}>
-    <div style="position: relative; width: fit-content; height: fit-content;">
+    <div class={cls(PARTS.MIDDLE, variant)} style="position: relative; width: fit-content; height: fit-content;">
       {#if action}
         <input bind:value bind:this={element} class={cls(PARTS.MAIN, variant)} type="text" role="combobox" aria-haspopup="listbox" aria-autocomplete="none" aria-controls={idList} aria-expanded={expanded} onfocus={() => open()} onblur={close} {onkeydown} {...attrs} use:action />
       {:else}
