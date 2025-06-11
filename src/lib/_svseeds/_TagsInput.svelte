@@ -108,7 +108,7 @@
 
 {#snippet tags(render: boolean)}
   {#if render}
-    <span class={cls(type, variant)}>
+    <span class={cls(PARTS.AUX, variant)}>
       {#each values as value, i}
         <span class={cls(PARTS.LABEL, variant)}>
           {#if label}
@@ -116,7 +116,7 @@
           {:else}
             {value}
           {/if}
-          <button class={cls(PARTS.AUX, variant)} onclick={remove(i)}>
+          <button class={cls(PARTS.EXTRA, variant)} onclick={remove(i)}>
             {#if aux}
               {@render aux(value, variant)}
             {:else}
