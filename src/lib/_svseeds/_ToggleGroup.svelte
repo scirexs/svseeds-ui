@@ -11,7 +11,7 @@
     action?: Action;
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
-    [key: string]: unknown | Snippet<[string]>; // contents instead of the value
+    [key: string]: unknown | Snippet<[string]>; // contents instead of the text
   }
   ```
 -->
@@ -25,7 +25,7 @@
     action?: Action;
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
-    [key: string]: unknown | Snippet<[string]>; // contents instead of the value
+    [key: string]: unknown | Snippet<[string]>; // contents instead of the text
   }
   export type ToggleGroupReqdProps = "options";
   export type ToggleGroupBindProps = "values" | "ariaErrMsgId" | "variant";
