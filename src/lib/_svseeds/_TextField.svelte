@@ -5,20 +5,20 @@
   interface TextFieldProps {
     label?: string;
     extra?: string;
-    aux?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[variant,value,element]>
-    left?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[variant,value,element]>
-    right?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[variant,value,element]>
+    aux?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[value,variant,element]>
+    left?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[value,variant,element]>
+    right?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[value,variant,element]>
     bottom?: string;
     descFirst?: boolean; // (false)
     value?: string; // bindable
     type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url";  // bindable ("text")
     options?: SvelteSet<string> | Set<string>;
     validations?: TextFieldValidation[];
-    variant?: string; // bindable (VARIANT.NEUTRAL)
-    styling?: SVSClass;
     attributes?: HTMLInputAttributes | HTMLTextareaAttributes;
     action?: Action;
     element?: HTMLInputElement | HTMLTextAreaElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   type TextFieldValidation = (value: string, validity: ValidityState) => string | undefined;
   ```
