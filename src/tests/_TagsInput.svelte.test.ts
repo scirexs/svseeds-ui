@@ -50,7 +50,7 @@ describe("Basic rendering and structure", () => {
     const { container } = render(TagsInput, { values });
 
     const whole = container.querySelector(`.${preset}`);
-    const tagsSpan = whole?.querySelector(`.${preset}.left`);
+    const tagsSpan = whole?.querySelector(`.${preset}.aux`);
     const input = container.querySelector("input");
 
     expect(tagsSpan).toBeInTheDocument();
@@ -62,7 +62,7 @@ describe("Basic rendering and structure", () => {
     const { container } = render(TagsInput, { values, type: "right" });
 
     const whole = container.querySelector(`.${preset}`);
-    const tagsSpan = whole?.querySelector(`.${preset}.right`);
+    const tagsSpan = whole?.querySelector(`.${preset}.aux`);
     const input = container.querySelector("input");
 
     expect(tagsSpan).toBeInTheDocument();
@@ -262,7 +262,7 @@ describe("Event handlers", () => {
     const user = userEvent.setup();
     const { container } = render(TagsInput, { props });
 
-    const badges = container.querySelectorAll(".svs-tags-input.svs-badge.right");
+    const badges = container.querySelectorAll(".svs-tags-input.extra");
     await user.click(badges[0]);
 
     waitFor(() => {
@@ -338,11 +338,11 @@ describe("Attributes and styling", () => {
 
     const whole = container.querySelector(`.${preset}`);
     const input = container.querySelector("input");
-    const tagsSpan = container.querySelector(`.${preset}.left`);
+    const tagsSpan = container.querySelector(`.${preset}.aux`);
 
     expect(whole).toHaveClass(preset, PARTS.WHOLE, variant);
     expect(input).toHaveClass(preset, PARTS.MAIN, variant);
-    expect(tagsSpan).toHaveClass(preset, "left", variant);
+    expect(tagsSpan).toHaveClass(preset, PARTS.AUX, variant);
   });
 
   test("applies string styling", () => {
