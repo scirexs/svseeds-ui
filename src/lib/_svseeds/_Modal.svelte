@@ -8,9 +8,9 @@
     closable?: boolean; // (true)
     trigger?: HTMLElement; // bindable
     ariaLabel?: string;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
-    styling?: SVSClass;
     element?: HTMLDialogElement; // bindable
+    styling?: SVSClass;
+    variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   ```
 -->
