@@ -15,7 +15,8 @@
   ```ts
   type RgbColor = [number, number, number];
   function getHex(rgb: RgbColor): string
-  // getHex([255, 123, 34]) => "#ff7b22"
+  // getHex([255, 123, 34])  => "#ff7b22"
+  // getHex([255, 255, 255]) => "#ffffff"
   ```
 -->
 <script module lang="ts">
