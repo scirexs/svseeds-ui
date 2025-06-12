@@ -6,6 +6,7 @@
     options: SvelteSet<string> | Set<string>;
     value?: string; // bindable
     expanded?: boolean; // bindable
+    search?: boolean // (true)
     attributes?: HTMLInputAttributes;
     action?: Action;
     element?: HTMLInputElement; // bindable
@@ -19,6 +20,7 @@
     options: SvelteSet<string> | Set<string>;
     value?: string; // bindable
     expanded?: boolean; // bindable
+    search?: boolean // (true)
     attributes?: HTMLInputAttributes;
     action?: Action;
     element?: HTMLInputElement; // bindable
@@ -40,7 +42,7 @@
 </script>
 
 <script lang="ts">
-  let { options, value = $bindable(""), expanded = $bindable(false), attributes, action, element = $bindable(), styling, variant = $bindable("") }: ComboBoxProps = $props();
+  let { options, value = $bindable(""), expanded = $bindable(false), search = true, attributes, action, element = $bindable(), styling, variant = $bindable("") }: ComboBoxProps = $props();
 
   // *** Initialize *** //
   if (!variant) variant = VARIANT.NEUTRAL;
@@ -63,6 +65,7 @@
     overflow.x = window.innerWidth < rect.right;
     overflow.y = window.innerHeight < rect.bottom;
   }
+  let maxlen = $derived(opts.reduce((max, x) => Math.max(max, [...x].length), 0));
 
   // *** Event Handlers *** //
   function open(activate: boolean = false, bottom: boolean = false) {
@@ -81,25 +84,37 @@
     expanded = false;
     selected = NA;
   }
+  function oninput(ev: Event) {
+    if ((ev as InputEvent).isComposing) return;
+    if ([...value].length > maxlen) return;
+    if (options.has(value)) {
+      selected = opts.indexOf(value);
+      return;
+    }
+    if (!search) return;
+    selected = opts.findIndex((x) => x.startsWith(value));
+  }
   function onkeydown(ev: KeyboardEvent) {
     if (ev.isComposing) return;
     if (ev.ctrlKey || ev.shiftKey || ev.metaKey) return;
     switch (ev.key) {
       case "Escape": if (!ev.altKey && expanded) close(); break;
       case "Enter": if (!ev.altKey && expanded && selected > NA) apply(); break;
-      case "ArrowDown": caseArrowDown(ev.altKey); break;
-      case "ArrowUp": caseArrowUp(ev.altKey); break;
+      case "ArrowDown": caseArrowDown(ev, ev.altKey); break;
+      case "ArrowUp": caseArrowUp(ev, ev.altKey); break;
     }
   }
-  function caseArrowDown(alt: boolean) {
-    if (alt && !expanded) return open();
+  function caseArrowDown(ev: KeyboardEvent, alt: boolean) {
     if (alt && expanded) return;
+    ev.preventDefault();
+    if (alt && !expanded) return open();
     if (!alt && !expanded) return open(true);
     if (selected < opts.length - 1) selected++;
     if (selected === NA) selected = 0;
   }
-  function caseArrowUp(alt: boolean) {
+  function caseArrowUp(ev: KeyboardEvent, alt: boolean) {
     if (alt && !expanded) return;
+    ev.preventDefault();
     if (alt && expanded) return close();
     if (!alt && !expanded) return open(true, true);
     if (selected > 0) selected--;
@@ -110,23 +125,21 @@
 <!---------------------------------------->
 
 {#if options.size}
-  <div class={cls(PARTS.WHOLE, variant)}>
-    <div class={cls(PARTS.MIDDLE, variant)} style="position: relative; width: fit-content; height: fit-content;">
-      {#if action}
-        <input bind:value bind:this={element} class={cls(PARTS.MAIN, variant)} type="text" role="combobox" aria-haspopup="listbox" aria-autocomplete="none" aria-controls={idList} aria-expanded={expanded} onfocus={() => open()} onblur={close} {onkeydown} {...attrs} use:action />
-      {:else}
-        <input bind:value bind:this={element} class={cls(PARTS.MAIN, variant)} type="text" role="combobox" aria-haspopup="listbox" aria-autocomplete="none" aria-controls={idList} aria-expanded={expanded} onfocus={() => open()} onblur={close} {onkeydown} {...attrs} />
-      {/if}
-      <ul bind:this={listElem} class={cls(PARTS.BOTTOM, variant)} id={idList} role="listbox" style={listboxStyle}>
-        {#each opts as opt, i (opt)}
-          {@const isSelected = i === selected}
-          {@const labelStatus = isSelected ? VARIANT.ACTIVE : variant}
-          {@const onpointerenter = () => selected = i}
-          <li class={cls(PARTS.LABEL, labelStatus)} aria-selected={isSelected} role="option" style={optionStyle} onpointerdown={apply} {onpointerenter}>
-            {opt}
-          </li>
-        {/each}
-      </ul>
-    </div>
-  </div>
+  <span class={cls(PARTS.WHOLE, variant)} style="position: relative;">
+    {#if action}
+      <input bind:value bind:this={element} class={cls(PARTS.MAIN, variant)} type="text" role="combobox" aria-haspopup="listbox" aria-autocomplete="none" aria-controls={idList} aria-expanded={expanded} onfocus={() => open()} onblur={close} {onkeydown} {oninput} {...attrs} use:action />
+    {:else}
+      <input bind:value bind:this={element} class={cls(PARTS.MAIN, variant)} type="text" role="combobox" aria-haspopup="listbox" aria-autocomplete="none" aria-controls={idList} aria-expanded={expanded} onfocus={() => open()} onblur={close} {onkeydown} {oninput} {...attrs} />
+    {/if}
+    <ul bind:this={listElem} class={cls(PARTS.BOTTOM, variant)} id={idList} role="listbox" style={listboxStyle}>
+      {#each opts as opt, i (opt)}
+        {@const isSelected = i === selected}
+        {@const labelStatus = isSelected ? VARIANT.ACTIVE : variant}
+        {@const onpointerenter = () => selected = i}
+        <li class={cls(PARTS.LABEL, labelStatus)} aria-selected={isSelected} role="option" style={optionStyle} onpointerdown={apply} {onpointerenter}>
+          {opt}
+        </li>
+      {/each}
+    </ul>
+  </span>
 {/if}

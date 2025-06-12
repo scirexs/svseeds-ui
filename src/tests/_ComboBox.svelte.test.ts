@@ -372,7 +372,7 @@ describe("Style and class handling", () => {
 
   test("default classes", () => {
     const { container, getByRole, getAllByRole } = render(ComboBox, { options, expanded: true });
-    const whole = container.firstElementChild as HTMLDivElement;
+    const whole = container.firstElementChild as HTMLSpanElement;
     const combobox = getByRole("combobox") as HTMLInputElement;
     const listbox = getByRole("listbox") as HTMLUListElement;
     const items = getAllByRole("option");
@@ -386,7 +386,7 @@ describe("Style and class handling", () => {
   test("string styling classes", () => {
     const styling = "custom-combo";
     const { container, getByRole, getAllByRole } = render(ComboBox, { options, styling, expanded: true });
-    const whole = container.firstElementChild as HTMLDivElement;
+    const whole = container.firstElementChild as HTMLSpanElement;
     const combobox = getByRole("combobox") as HTMLInputElement;
     const listbox = getByRole("listbox") as HTMLUListElement;
     const items = getAllByRole("option");
@@ -417,7 +417,7 @@ describe("Style and class handling", () => {
       expanded: true,
     });
 
-    const whole = container.firstElementChild as HTMLDivElement;
+    const whole = container.firstElementChild as HTMLSpanElement;
     const combobox = getByRole("combobox") as HTMLInputElement;
     const listbox = getByRole("listbox") as HTMLUListElement;
     const items = getAllByRole("option");
