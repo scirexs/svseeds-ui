@@ -133,7 +133,7 @@
       <input bind:value bind:this={element} class={cls(PARTS.MAIN, variant)} type="text" role="combobox" aria-haspopup="listbox" aria-autocomplete="none" aria-controls={idList} aria-expanded={expanded} onfocus={() => open()} onblur={close} {onkeydown} {oninput} {...attrs} />
     {/if}
     {#if extra}
-      <div class={cls(PARTS.EXTRA, variant)} style="position:absolute;margin:auto 0;top:0%;right:0%;">
+      <div class={cls(PARTS.EXTRA, variant)} style="position:absolute;margin:auto 0;top:0%;right:0%;pointer-events:none;">
         {@render extra(expanded, variant)}
       </div>
     {/if}
