@@ -56,15 +56,6 @@
   // *** Bind Handlers *** //
   let listboxStyle = $derived(`position: absolute;visibility: ${expanded ? "visible" : "hidden"};${overflow.x ? "right: 0%;" : ""}${overflow.y ? "bottom: 100%;" : ""}`);
   let opts = $derived([...options.keys()]);
-  $effect(() => { options;
-    untrack(() => observeOverflow());
-  });
-  function observeOverflow() {
-    if (!listElem || !window) return;
-    const rect = listElem.getBoundingClientRect();
-    overflow.x = window.innerWidth < rect.right;
-    overflow.y = window.innerHeight < rect.bottom;
-  }
   let maxlen = $derived(opts.reduce((max, x) => Math.max(max, [...x].length), 0));
 
   // *** Event Handlers *** //
@@ -72,7 +63,14 @@
     if (expanded) return;
     selected = opts.indexOf(value);
     if (activate && selected === NA) selected = bottom ? opts.length - 1 : 0;
+    observeOverflow();
     expanded = true;
+  }
+  function observeOverflow() {
+    if (!listElem || !window) return;
+    const rect = listElem.getBoundingClientRect();
+    overflow.x = window.innerWidth < rect.right;
+    overflow.y = window.innerHeight < rect.bottom;
   }
   function apply() {
     if (!expanded) return;
@@ -123,6 +121,7 @@
 </script>
 
 <!---------------------------------------->
+<svelte:document onscroll={() => close()} />
 
 {#if options.size}
   <span class={cls(PARTS.WHOLE, variant)} style="position: relative;">
