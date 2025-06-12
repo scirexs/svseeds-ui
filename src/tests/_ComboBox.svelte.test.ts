@@ -379,7 +379,7 @@ describe("Style and class handling", () => {
 
     expect(whole).toHaveClass("svs-combo-box", PARTS.WHOLE, VARIANT.NEUTRAL);
     expect(combobox).toHaveClass("svs-combo-box", PARTS.MAIN, VARIANT.NEUTRAL);
-    expect(listbox).toHaveClass("svs-combo-box", PARTS.BOTTOM, VARIANT.NEUTRAL);
+    expect(listbox).toHaveClass("svs-combo-box", PARTS.BOTTOM, VARIANT.ACTIVE);
     expect(items[0]).toHaveClass("svs-combo-box", PARTS.LABEL, VARIANT.NEUTRAL);
   });
 
@@ -393,7 +393,7 @@ describe("Style and class handling", () => {
 
     expect(whole).toHaveClass(styling, PARTS.WHOLE, VARIANT.NEUTRAL);
     expect(combobox).toHaveClass(styling, PARTS.MAIN, VARIANT.NEUTRAL);
-    expect(listbox).toHaveClass(styling, PARTS.BOTTOM, VARIANT.NEUTRAL);
+    expect(listbox).toHaveClass(styling, PARTS.BOTTOM, VARIANT.ACTIVE);
     expect(items[0]).toHaveClass(styling, PARTS.LABEL, VARIANT.NEUTRAL);
   });
 
