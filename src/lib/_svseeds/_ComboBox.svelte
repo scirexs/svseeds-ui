@@ -4,6 +4,7 @@
   ```ts
   interface ComboBoxProps {
     options: SvelteSet<string> | Set<string>;
+    extra?: Snippet<[boolean, string]>; // Snippet<[expanded,variant]>
     value?: string; // bindable
     expanded?: boolean; // bindable
     search?: boolean // (true)
@@ -18,6 +19,7 @@
 <script module lang="ts">
   export interface ComboBoxProps {
     options: SvelteSet<string> | Set<string>;
+    extra?: Snippet<[boolean, string]>; // Snippet<[expanded,variant]>
     value?: string; // bindable
     expanded?: boolean; // bindable
     search?: boolean // (true)
@@ -34,6 +36,7 @@
   const NA = -1;
   const optionStyle = "cursor: default; user-select: none;";
 
+  import { type Snippet } from "svelte";
   import { type Action } from "svelte/action";
   import { type SvelteSet } from "svelte/reactivity";
   import { type HTMLInputAttributes } from "svelte/elements";
@@ -41,7 +44,7 @@
 </script>
 
 <script lang="ts">
-  let { options, value = $bindable(""), expanded = $bindable(false), search = true, attributes, action, element = $bindable(), styling, variant = $bindable("") }: ComboBoxProps = $props();
+  let { options, extra, value = $bindable(""), expanded = $bindable(false), search = true, attributes, action, element = $bindable(), styling, variant = $bindable("") }: ComboBoxProps = $props();
 
   // *** Initialize *** //
   if (!variant) variant = VARIANT.NEUTRAL;
@@ -53,7 +56,7 @@
   let listElem: HTMLUListElement | undefined = $state();
 
   // *** Bind Handlers *** //
-  let listboxStyle = $derived(`position: absolute;visibility: ${expanded ? "visible" : "hidden"};${overflow.x ? "right: 0%;" : ""}${overflow.y ? "bottom: 100%;" : ""}`);
+  let listboxStyle = $derived(`position:absolute;visibility: ${expanded ? "visible" : "hidden"};${overflow.x ? "right:0%;" : ""}${overflow.y ? "bottom:100%;" : ""}`);
   let opts = $derived([...options.keys()]);
   let maxlen = $derived(opts.reduce((max, x) => Math.max(max, [...x].length), 0));
 
@@ -123,13 +126,18 @@
 <svelte:document onscroll={() => close()} />
 
 {#if options.size}
-  <span class={cls(PARTS.WHOLE, variant)} style="position: relative;">
+  <span class={cls(PARTS.WHOLE, variant)} style="position:relative;">
     {#if action}
       <input bind:value bind:this={element} class={cls(PARTS.MAIN, variant)} type="text" role="combobox" aria-haspopup="listbox" aria-autocomplete="none" aria-controls={idList} aria-expanded={expanded} onfocus={() => open()} onblur={close} {onkeydown} {oninput} {...attrs} use:action />
     {:else}
       <input bind:value bind:this={element} class={cls(PARTS.MAIN, variant)} type="text" role="combobox" aria-haspopup="listbox" aria-autocomplete="none" aria-controls={idList} aria-expanded={expanded} onfocus={() => open()} onblur={close} {onkeydown} {oninput} {...attrs} />
     {/if}
-    <ul bind:this={listElem} class={cls(PARTS.BOTTOM, variant)} id={idList} role="listbox" style={listboxStyle}>
+    {#if extra}
+      <div class={cls(PARTS.EXTRA, variant)} style="position:absolute;margin:auto 0;top:0%;right:0%;">
+        {@render extra(expanded, variant)}
+      </div>
+    {/if}
+    <ul bind:this={listElem} class={cls(PARTS.BOTTOM, expanded ? VARIANT.ACTIVE : variant)} id={idList} role="listbox" style={listboxStyle}>
       {#each opts as opt, i (opt)}
         {@const isSelected = i === selected}
         {@const labelStatus = isSelected ? VARIANT.ACTIVE : variant}
