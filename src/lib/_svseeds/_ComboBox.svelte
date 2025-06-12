@@ -34,7 +34,6 @@
   const NA = -1;
   const optionStyle = "cursor: default; user-select: none;";
 
-  import { untrack } from "svelte";
   import { type Action } from "svelte/action";
   import { type SvelteSet } from "svelte/reactivity";
   import { type HTMLInputAttributes } from "svelte/elements";
