@@ -34,7 +34,6 @@
 
   const preset = "svs-combo-box";
   const NA = -1;
-  const optionStyle = "cursor: default; user-select: none;";
 
   import { type Snippet } from "svelte";
   import { type Action } from "svelte/action";
@@ -56,7 +55,7 @@
   let listElem: HTMLUListElement | undefined = $state();
 
   // *** Bind Handlers *** //
-  let listboxStyle = $derived(`position:absolute;visibility: ${expanded ? "visible" : "hidden"};${overflow.x ? "right:0%;" : ""}${overflow.y ? "bottom:100%;" : ""}`);
+  let listboxStyle = $derived(`position:absolute;cursor:default;user-select:none;visibility: ${expanded ? "visible" : "hidden"};${overflow.x ? "right:0%;" : ""}${overflow.y ? "bottom:100%;" : ""}`);
   let opts = $derived([...options.keys()]);
   let maxlen = $derived(opts.reduce((max, x) => Math.max(max, [...x].length), 0));
 
@@ -142,7 +141,7 @@
         {@const isSelected = i === selected}
         {@const labelStatus = isSelected ? VARIANT.ACTIVE : variant}
         {@const onpointerenter = () => selected = i}
-        <li class={cls(PARTS.LABEL, labelStatus)} aria-selected={isSelected} role="option" style={optionStyle} onpointerdown={apply} {onpointerenter}>
+        <li class={cls(PARTS.LABEL, labelStatus)} aria-selected={isSelected} role="option" onpointerdown={apply} {onpointerenter}>
           {opt}
         </li>
       {/each}
