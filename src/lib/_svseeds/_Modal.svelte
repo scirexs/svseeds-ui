@@ -30,10 +30,13 @@
   export type ModalReqdProps = "children";
   export type ModalBindProps = "open" | "variant" | "element";
 
+  const duration = 200;
   const preset = "svs-modal";
 
   import { type Snippet, untrack } from "svelte";
   import { type HTMLDialogAttributes } from "svelte/elements";
+  import { fade } from "svelte/transition";
+  import { cubicOut } from "svelte/easing";
   import { type SVSClass, VARIANT, PARTS, fnClass, omit } from "./core";
 </script>
 
@@ -78,10 +81,12 @@
 
 <!---------------------------------------->
 
-<dialog bind:this={element} class={cls(PARTS.WHOLE, variant)} aria-label={ariaLabel} {id} {onclick} {onkeydown} {ontoggle} autofocus={true} {...attrs}>
-  <div class={cls(PARTS.MAIN, variant)}>
-    {@render children(variant)}
-  </div>
+<dialog bind:this={element} class={cls(PARTS.WHOLE, variant)} aria-label={ariaLabel} {id} {onclick} {onkeydown} {ontoggle} autofocus={true} {...attrs} style="margin:auto;background-color:transparent;">
+  {#if open}
+    <div class={cls(PARTS.MAIN, variant)} transition:fade={{ duration, easing: cubicOut }}>
+      {@render children(variant)}
+    </div>
+  {/if}
 </dialog>
 
 <style>
