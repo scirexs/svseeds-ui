@@ -74,8 +74,8 @@
 
 <style>
   :global {
-		html:has(dialog[open]) {
+    html:has(dialog[open]) {
       overflow: hidden;
     }
-	}
+  }
 </style>
