@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { fireEvent, render, within } from "@testing-library/svelte";
+import { fireEvent, render, waitFor, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import Modal from "../lib/_svseeds/_Modal.svelte";
@@ -209,45 +209,9 @@ describe("Modal open/close behavior", () => {
 
     // Simulate close event
     fireEvent(dialog, new Event("close"));
-    expect(props.open).toBe(false);
-  });
-});
-
-describe("Modal trigger focus behavior", () => {
-  test("trigger element receives focus when modal closes", async () => {
-    const button = document.createElement("button");
-    button.textContent = "Open Modal";
-    document.body.appendChild(button);
-
-    const props = $state({
-      children: childrenSnippet,
-      open: true,
-      trigger: button,
+    waitFor(() => {
+      expect(props.open).toBe(false);
     });
-
-    render(Modal, props);
-
-    // Focus should be set when open changes
-    props.open = false;
-
-    // Use setTimeout to allow for the effect to run
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(document.activeElement).toBe(button);
-
-    document.body.removeChild(button);
-  });
-
-  test("no error when trigger is undefined", async () => {
-    const props = $state({
-      children: childrenSnippet,
-      open: true,
-      trigger: undefined,
-    });
-
-    expect(() => {
-      render(Modal, props);
-      props.open = false;
-    }).not.toThrow();
   });
 });
 

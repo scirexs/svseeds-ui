@@ -56,8 +56,8 @@
   }
 
   // *** Event Handlers *** //
-  const onclick = !closable ? (ev: MouseEvent) => { if (ev.target === element) open = false; } : undefined;
-  const onkeydown = !closable ? (ev: KeyboardEvent) => { if (ev.key === "Escape") ev.preventDefault(); } : undefined;
+  const onclick = closable ? (ev: MouseEvent) => { if (ev.target === element) open = false; } : undefined;
+  const onkeydown = closable ? undefined : (ev: KeyboardEvent) => { if (ev.key === "Escape") ev.preventDefault(); };
   function ontoggle() {
     open = element?.open ?? false;
   }
