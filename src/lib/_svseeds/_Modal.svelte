@@ -6,8 +6,9 @@
     children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false)
     closable?: boolean; // (true)
-    id?: string; // bindable
+    id?: string;
     ariaLabel?: string;
+    attributes?: HTMLDialogAttributes;
     element?: HTMLDialogElement; // bindable
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
@@ -19,8 +20,9 @@
     children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false)
     closable?: boolean; // (true)
-    id?: string; // bindable
+    id?: string;
     ariaLabel?: string;
+    attributes?: HTMLDialogAttributes;
     element?: HTMLDialogElement; // bindable
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
@@ -31,16 +33,17 @@
   const preset = "svs-modal";
 
   import { type Snippet, untrack } from "svelte";
-  import { type SVSClass, VARIANT, PARTS, elemId, fnClass } from "./core";
+  import { type HTMLDialogAttributes } from "svelte/elements";
+  import { type SVSClass, VARIANT, PARTS, fnClass, omit } from "./core";
 </script>
 
 <script lang="ts">
-  let { children, open = $bindable(false), closable = true, id = $bindable(), ariaLabel, element = $bindable(), styling, variant = $bindable("") }: ModalProps = $props();
+  let { children, open = $bindable(false), closable = true, id, ariaLabel, attributes, element = $bindable(), styling, variant = $bindable("") }: ModalProps = $props();
 
   // *** Initialize *** //
   if (!variant) variant = VARIANT.NEUTRAL;
   const cls = fnClass(preset, styling);
-  if (!id) id = elemId.id;
+  const attrs = omit(attributes, "class", "id", "autofocus", "aria-label", "onclick", "onkeydown", "ontoggle");
 
   // *** Bind Handlers *** //
   $effect.pre(() => {
@@ -56,9 +59,18 @@
   }
 
   // *** Event Handlers *** //
-  const onclick = closable ? (ev: MouseEvent) => { if (ev.target === element) open = false; } : undefined;
-  const onkeydown = closable ? undefined : (ev: KeyboardEvent) => { if (ev.key === "Escape") ev.preventDefault(); };
-  function ontoggle() {
+  function click(ev: MouseEvent) {
+    attributes?.["onclick"]?.(ev as any);
+    if (ev.target === element) open = false;
+  }
+  function keydown(ev: KeyboardEvent) {
+    attributes?.["onkeydown"]?.(ev as any);
+    if (ev.key === "Escape") ev.preventDefault();
+  }
+  const onclick = closable ? click : attributes?.["onclick"];
+  const onkeydown = closable ? attributes?.["onkeydown"] : keydown;
+  function ontoggle(ev: Event) {
+    attributes?.["ontoggle"]?.(ev as any);
     open = element?.open ?? false;
   }
   $effect(() => untrack(() => { if (open) element?.showModal(); }));
@@ -66,7 +78,7 @@
 
 <!---------------------------------------->
 
-<dialog bind:this={element} class={cls(PARTS.WHOLE, variant)} aria-label={ariaLabel} {id} {onclick} {onkeydown} {ontoggle} autofocus={true}>
+<dialog bind:this={element} class={cls(PARTS.WHOLE, variant)} aria-label={ariaLabel} {id} {onclick} {onkeydown} {ontoggle} autofocus={true} {...attrs}>
   <div class={cls(PARTS.MAIN, variant)}>
     {@render children(variant)}
   </div>
