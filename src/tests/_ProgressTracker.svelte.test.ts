@@ -207,7 +207,7 @@ describe("Styling and CSS classes", () => {
     expect(list).toHaveClass(seed, PARTS.WHOLE, VARIANT.NEUTRAL);
 
     items.forEach((item, index) => {
-      expect(item).toHaveClass(seed, PARTS.MAIN);
+      expect(item).toHaveClass(seed, PARTS.MIDDLE);
 
       // Check variant classes based on position
       if (index < 1) {
@@ -235,13 +235,14 @@ describe("Styling and CSS classes", () => {
     expect(list).toHaveClass(customStyle, PARTS.WHOLE, VARIANT.ACTIVE);
 
     items.forEach((item) => {
-      expect(item).toHaveClass(customStyle, PARTS.MAIN);
+      expect(item).toHaveClass(customStyle, PARTS.MIDDLE);
     });
   });
 
   test("object styling configuration", () => {
     const styling = {
       whole: { base: "whole-base", active: "whole-active" },
+      middle: { base: "middle-base", active: "middle-active" },
       main: { base: "main-base", inactive: "main-inactive" },
       label: { base: "label-base", neutral: "label-neutral" },
       aux: { base: "aux-base", active: "aux-active" },
@@ -262,10 +263,10 @@ describe("Styling and CSS classes", () => {
 
     expect(list).toHaveClass("whole-base", "whole-active");
 
-    // Check main items
+    // Check middle items
     items.forEach((item, index) => {
       if (item.getAttribute("role") !== "separator") {
-        expect(item).toHaveClass("main-base");
+        expect(item).toHaveClass("middle-base");
 
         // Check label classes
         const labelElement = item.querySelector(`.label-base`);

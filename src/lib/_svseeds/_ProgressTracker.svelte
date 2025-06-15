@@ -5,8 +5,9 @@
   interface ProgressTrackerProps {
     current: number; // bindable (0)
     labels: string[];
-    aux?: Snippet<[number, string]>; // Snippet<[index,variant]>
-    extra?: Snippet<[number, string]>; // Snippet<[index,variant]>
+    children?: Snippet<[number, string, string]>; // Snippet<[index,label,variant]>
+    aux?: Snippet<[number, string, string]>; // Snippet<[index,label,variant]>
+    extra?: boolean | Snippet<[number, string, string]>; // (true) Snippet<[index,label,variant]>
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
     eachVariant?: SvelteMap<number, string> | Map<number, string>;
@@ -17,8 +18,9 @@
   export interface ProgressTrackerProps {
     current: number; // bindable (0)
     labels: string[];
-    aux?: Snippet<[number, string]>; // Snippet<[index,variant]>
-    extra?: Snippet<[number, string]>; // Snippet<[index,variant]>
+    children?: Snippet<[number, string, string]>; // Snippet<[index,label,variant]>
+    aux?: Snippet<[number, string, string]>; // Snippet<[index,label,variant]>
+    extra?: boolean | Snippet<[number, string, string]>; // (true) Snippet<[index,label,variant]>
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
     eachVariant?: SvelteMap<number, string> | Map<number, string>;
@@ -34,7 +36,7 @@
 </script>
 
 <script lang="ts">
-  let { current = $bindable(-1), labels, aux, extra, styling, variant = $bindable(""), eachVariant }: ProgressTrackerProps = $props();
+  let { current = $bindable(-1), labels, children, aux, extra = true, styling, variant = $bindable(""), eachVariant }: ProgressTrackerProps = $props();
 
   // *** Initialize *** //
   if (!variant) variant = VARIANT.NEUTRAL;
@@ -56,37 +58,29 @@
   <ol class={cls(PARTS.WHOLE, variant)}>
     {#each labels as label, i}
       {@const stat = getEachVariant(i)}
-      <li class={cls(PARTS.MAIN, stat)} aria-current={i === current ? "step" : false}>
-        {#if i > current}
-          {@render separator(i)}
-        {/if}
-        {#if aux}
-          <div class={cls(PARTS.MIDDLE, stat)}>
+      <li class={cls(PARTS.MIDDLE, stat)} aria-current={i === current ? "step" : false} style={i < labels.length - 1 ? "flex-grow:1;" : undefined}>
+        <div class={cls(PARTS.MAIN, stat)}>
+          {#if aux}
             <div class={cls(PARTS.AUX, stat)}>
-              {@render aux(i, stat)}
+              {@render aux(i, label, stat)}
             </div>
-            <div class={cls(PARTS.LABEL, stat)}>
-              {label}
-            </div>
-          </div>
-        {:else}
+          {/if}
           <div class={cls(PARTS.LABEL, stat)}>
-            {label}
+            {#if children}
+              {@render children(i, label, stat)}
+            {:else}
+              {label}
+            {/if}
+          </div>
+        </div>
+        {#if extra !== false && i < labels.length - 1 }
+          <div class={cls(PARTS.EXTRA, stat)} role="separator">
+            {#if typeof extra === "function"}
+              {@render extra(i, label, stat)}
+            {/if}
           </div>
         {/if}
       </li>
-      {#if i < current}
-        {@render separator(i)}
-      {/if}
     {/each}
   </ol>
 {/if}
-
-{#snippet separator(i: number)}
-  {#if extra}
-    {@const stat = i < current ? VARIANT.ACTIVE : VARIANT.INACTIVE}
-    <div class={cls(PARTS.EXTRA, stat)} role="separator">
-      {@render extra(i, stat)}
-    </div>
-  {/if}
-{/snippet}
