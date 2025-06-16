@@ -651,7 +651,7 @@
   if (!variant) variant = VARIANT.NEUTRAL;
   const cls = fnClass(preset, styling);
   const group: KeyValue = SortableItems._newItem(name);
-  const elems: HTMLElement[] = [];
+  const elems: HTMLElement[] = $state([]);
   const shadow = new Shadow(ghost);
   const selector = new MultiSelect(items, multiple, triggerSelect);
   const listener = new ListenerHandler();
