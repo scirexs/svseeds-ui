@@ -34,8 +34,8 @@
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
   }
-  export type SliderReqdProps = "min" | "max";
-  export type SliderBindProps = "min" | "max" | "value" | "variant" | "element";
+  export type SliderReqdProps = "range";
+  export type SliderBindProps = "range" | "value" | "element" | "variant";
   export type Range = { min: number, max: number };
 
   const preset = "svs-slider";
