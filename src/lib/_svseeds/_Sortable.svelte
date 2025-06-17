@@ -3,22 +3,22 @@
   default value: `(value)`
   ```ts
   interface SortableProps {
-    items: SortableItems; // wrapper of string array as items to handle DnD
+    items: SortableItems; // wrapper around string array to handle drag and drop
     item: Snippet<[string, string, PointerEventHandler]>; // Snippet<[value, variant, onpointerdown]>
-    ghost?: Snippet<[string]>; // custom shadow while dragging (the translucent item); Snippet<[value]>
+    ghost?: Snippet<[string]>; // custom ghost element while dragging (translucent item); Snippet<[value]>
     name?: string;        // name of this group (random string)
-    mode?: SortableMode;  // sort mode ("std")
-    accept?: string[];    // list of accept group names (undefined); undefined=any,[]=none
-    sort?: boolean;       // enable sort within same group (true)
-    multiple?: boolean;   // enable multiple select & drag with them (false)
+    mode?: "std" | "clone" | "swap";  // sort mode ("std")
+    accept?: string[];    // list of accepted group names (undefined); undefined=any,[]=none
+    sort?: boolean;       // enable sorting within the same group (true)
+    multiple?: boolean;   // enable multiple selection and dragging (false)
     draggable?: boolean;  // enable default pointerdown handler (true)
-    appendable?: boolean; // enable append when enter group area (false)
-    confirm?: boolean     // enable confirm interval time to move items (false)
+    appendable?: boolean; // enable appending when entering group area (false)
+    confirm?: boolean     // enable confirmation delay before moving items (false)
     styling?: SVSClass;
     variant?: string;     // bindable (VARIANT.NEUTRAL)
   }
-  type SortableMode = "std" | "clone" | "swap";
-  class SortableItems { // methods are same with array's
+  // Methods have the same functionality as standard array methods
+  class SortableItems {
     constructor(values: string[])
     at(index: number): string | undefined
     replace(index: number, value: string): boolean
@@ -26,8 +26,8 @@
     pop(): string | undefined
     unshift(value: string)
     shift(): string | undefined
-    insert(index: number, value: string) // instead of splice
-    extract(index: number): string | undefined // instead of splice
+    insert(index: number, value: string) // alternative to splice
+    extract(index: number): string | undefined // alternative to splice
     isEmpty(): boolean
     clear(): void
     get length(): number
@@ -50,17 +50,17 @@
 
   type SortableMode = "std" | "clone" | "swap";
   export interface SortableProps {
-    items: SortableItems; // wrapper of string array as items to handle DnD
+    items: SortableItems; // wrapper around string array to handle drag and drop
     item: Snippet<[string, string, PointerEventHandler]>; // Snippet<[value, variant, onpointerdown]>
-    ghost?: Snippet<[string]>; // custom shadow while dragging (the translucent item); Snippet<[value]>
+    ghost?: Snippet<[string]>; // custom ghost element while dragging (translucent item); Snippet<[value]>
     name?: string;        // name of this group (random string)
     mode?: SortableMode;  // sort mode ("std")
-    accept?: string[];    // list of accept group names (undefined); undefined=any,[]=none
-    sort?: boolean;       // enable sort within same group (true)
-    multiple?: boolean;   // enable multiple select & drag with them (false)
+    accept?: string[];    // list of accepted group names (undefined); undefined=any,[]=none
+    sort?: boolean;       // enable sorting within the same group (true)
+    multiple?: boolean;   // enable multiple selection and dragging (false)
     draggable?: boolean;  // enable default pointerdown handler (true)
-    appendable?: boolean; // enable append when enter group area (false)
-    confirm?: boolean     // enable confirm interval time to move items (false)
+    appendable?: boolean; // enable appending when entering group area (false)
+    confirm?: boolean     // enable confirmation delay before moving items (false)
     styling?: SVSClass;
     variant?: string;     // bindable (VARIANT.NEUTRAL)
   }
