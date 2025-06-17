@@ -117,11 +117,11 @@ describe("Switching existence of elements", () => {
     ]);
     const { getAllByRole, getByTestId } = render(ToggleGroup, {
       options: optionsWithSnippet,
-      custom: customSnippet,
+      children: customSnippet,
     });
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
-    expect(buttons[0]).toHaveTextContent("Option 1");
+    expect(buttons[0]).toHaveTextContent("OPTION1");
     expect(buttons[1]).toContainElement(getByTestId("custom-option2"));
     expect(getByTestId("custom-option2")).toHaveTextContent("OPTION2");
   });

@@ -15,10 +15,10 @@
     multiple?: boolean; // (true)
     validations?: ToggleGroupFieldValidation[];
     name?: string;
+    elements?: HTMLButtonElement[];
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
     deps?: ToggleGroupFieldDeps;
-    [key: string]: unknown | Snippet;
   }
   interface ToggleGroupFieldDeps {
     svsToggleGroup?: Omit<ToggleGroupProps, ToggleGroupReqdProps | ToggleGroupBindProps | "ariaDescId" | "multiple">;
@@ -40,10 +40,10 @@
     multiple?: boolean; // (true)
     validations?: ToggleGroupFieldValidation[];
     name?: string;
+    elements?: HTMLButtonElement[];
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
     deps?: ToggleGroupFieldDeps;
-    [key: string]: unknown | Snippet;
   }
   export interface ToggleGroupFieldDeps {
     svsToggleGroup?: Omit<ToggleGroupProps, ToggleGroupReqdProps | ToggleGroupBindProps | "ariaDescId" | "multiple">;
@@ -62,7 +62,7 @@
 </script>
 
 <script lang="ts">
-  let { options, label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), multiple = true, validations = [], name, styling, variant = $bindable(""), deps, ...rest }: ToggleGroupFieldProps = $props();
+  let { options, label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), multiple = true, validations = [], name, elements = $bindable([]), styling, variant = $bindable(""), deps }: ToggleGroupFieldProps = $props();
 
   // *** Initialize *** //
   if (!variant) variant = VARIANT.NEUTRAL;
@@ -75,7 +75,7 @@
 
   // *** Initialize Deps *** //
   const svsToggleGroup = {
-    ...Object.fromEntries(Object.entries(rest).filter(([_, v]) => typeof v === "function")),
+    children: deps?.svsToggleGroup?.children,
     ariaDescId: idDesc,
     styling: deps?.svsToggleGroup?.styling as SVSClass ?? `${preset} svs-toggle-group`,
     action: deps?.svsToggleGroup?.action as Action,
@@ -134,7 +134,7 @@
     <div class={cls(PARTS.MIDDLE, variant)}>
       {@render side(PARTS.LEFT, left)}
       {@render fnForm()}
-      <ToggleGroup bind:values bind:ariaErrMsgId={idMsg} bind:variant={neutral} {options} {multiple} {...svsToggleGroup} />
+      <ToggleGroup bind:values bind:elements bind:ariaErrMsgId={idMsg} bind:variant={neutral} {options} {multiple} {...svsToggleGroup} />
       {@render side(PARTS.RIGHT, right)}
     </div>
     {@render desc(!descFirst)}

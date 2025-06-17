@@ -4,39 +4,35 @@
   ```ts
   interface ToggleGroupProps {
     options: SvelteMap<string, string> | Map<string, string>;
+    children?: Snippet<[string, string, string]>; // Snippet<[value,text,variant]>
     values?: string[]; // bindable
     multiple?: boolean; // (true)
     ariaDescId?: string;
     ariaErrMsgId?: string; // bindable
     action?: Action;
+    elements?: HTMLButtonElement[]; // bindable
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
-    [key: string]: unknown | Snippet<[string]>; // contents instead of the text
   }
   ```
 -->
 <script module lang="ts">
   export interface ToggleGroupProps {
     options: SvelteMap<string, string> | Map<string, string>;
+    children?: Snippet<[string, string, string]>; // Snippet<[value,text,variant]>
     values?: string[]; // bindable
     multiple?: boolean; // (true)
     ariaDescId?: string;
     ariaErrMsgId?: string; // bindable
     action?: Action;
+    elements?: HTMLButtonElement[]; // bindable
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
-    [key: string]: unknown | Snippet<[string]>; // contents instead of the text
   }
   export type ToggleGroupReqdProps = "options";
-  export type ToggleGroupBindProps = "values" | "ariaErrMsgId" | "variant";
+  export type ToggleGroupBindProps = "values" | "ariaErrMsgId" | "elements" | "variant";
 
   const preset = "svs-toggle-group";
-
-  function getSnippet(text: string, rest: Record<string, unknown>): Snippet<[string]> | undefined {
-    if (!Object.hasOwn(rest, text)) return;
-    if (typeof rest[text] !== "function") return;
-    return rest[text] as Snippet<[string]>;
-  }
 
   import { type Snippet } from "svelte";
   import { type Action } from "svelte/action";
@@ -45,7 +41,7 @@
 </script>
 
 <script lang="ts">
-  let { options, values = $bindable([]), multiple = true, ariaDescId, ariaErrMsgId = $bindable(), attributes, action, styling, variant = $bindable(""), ...rest }: ToggleGroupProps = $props();
+  let { options, children, values = $bindable([]), multiple = true, ariaDescId, ariaErrMsgId = $bindable(), action, elements = $bindable([]), styling, variant = $bindable("") }: ToggleGroupProps = $props();
 
   // *** Initialize *** //
   if (!variant) variant = VARIANT.NEUTRAL;
@@ -70,25 +66,25 @@
 
 {#if opts.length}
   <span class={cls(PARTS.WHOLE, variant)} role={roleGroup} aria-describedby={ariaDescId} aria-invalid={!multiple ? invalid : undefined} aria-errormessage={!multiple ? ariaErrMsgId : undefined}>
-    {#each opts as { value, text, checked } (value)}
-      {@const c = cls(PARTS.MAIN, checked ? VARIANT.ACTIVE : variant)}
+    {#each opts as { value, text, checked }, i (value)}
+      {@const v = checked ? VARIANT.ACTIVE : variant}
+      {@const c = cls(PARTS.MAIN, v)}
       {#if action}
-        <button class={c} aria-checked={checked} aria-invalid={multiple ? invalid : undefined} aria-errormessage={multiple ? ariaErrMsgId : undefined} onclick={updateValues(value)} type="button" {role} use:action>
-          {@render content(value, text)}
+        <button bind:this={elements[i]} class={c} aria-checked={checked} aria-invalid={multiple ? invalid : undefined} aria-errormessage={multiple ? ariaErrMsgId : undefined} onclick={updateValues(value)} type="button" {role} use:action>
+          {@render content(value, text, v)}
         </button>
       {:else}
-        <button class={c} aria-checked={checked} aria-invalid={multiple ? invalid : undefined} aria-errormessage={multiple ? ariaErrMsgId : undefined} onclick={updateValues(value)} type="button" {role}>
-          {@render content(value, text)}
+        <button bind:this={elements[i]} class={c} aria-checked={checked} aria-invalid={multiple ? invalid : undefined} aria-errormessage={multiple ? ariaErrMsgId : undefined} onclick={updateValues(value)} type="button" {role}>
+          {@render content(value, text, v)}
         </button>
       {/if}
     {/each}
   </span>
 {/if}
 
-{#snippet content(value: string, text: string)}
-  {@const snippet = getSnippet(text, rest)}
-  {#if snippet}
-    {@render snippet(value)}
+{#snippet content(value: string, text: string, variant: string)}
+  {#if children}
+    {@render children(value, text, variant)}
   {:else}
     {text}
   {/if}
