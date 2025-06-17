@@ -40,7 +40,7 @@
     multiple?: boolean; // (true)
     validations?: ToggleGroupFieldValidation[];
     name?: string;
-    elements?: HTMLButtonElement[];
+    elements?: HTMLButtonElement[]; // bindable
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
     deps?: ToggleGroupFieldDeps;
