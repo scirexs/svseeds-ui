@@ -19,7 +19,7 @@
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
   }
-  interface TagsInputEvents { // cancel if true
+  interface TagsInputEvents { // cancel if returns true
     onadd?: (values: string[], value: string) => void | boolean;
     onremove?: (values: string[], value: string, index: number) => void | boolean;
   }
