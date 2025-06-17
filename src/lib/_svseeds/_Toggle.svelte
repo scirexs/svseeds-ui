@@ -3,11 +3,11 @@
   default value: `(value)`
   ```ts
   interface ToggleProps {
-    children?: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
+    children: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
     left?: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
     right?: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
     value?: boolean; // bindable (false)
-    type?: "button" | "switch"; // ("button")
+    role?: "button" | "switch"; // ("button")
     ariaLabel?: string;
     attributes?: HTMLButtonAttributes;
     action?: Action;
@@ -19,11 +19,11 @@
 -->
 <script module lang="ts">
   export interface ToggleProps {
-    children?: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
+    children: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
     left?: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
     right?: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
     value?: boolean; // bindable (false)
-    type?: "button" | "switch"; // ("button")
+    role?: "button" | "switch"; // ("button")
     ariaLabel?: string;
     attributes?: HTMLButtonAttributes;
     action?: Action;
@@ -31,7 +31,7 @@
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
   }
-  export type ToggleReqdProps = never;
+  export type ToggleReqdProps = "children";
   export type ToggleBindProps = "value" | "variant" | "element";
 
   type ToggleTarget = { currentTarget: EventTarget & HTMLButtonElement };
@@ -44,13 +44,14 @@
 </script>
 
 <script lang="ts">
-  let { children, left, right, value = $bindable(false), type = "button", ariaLabel, attributes, action, element = $bindable(), styling, variant = $bindable("") }: ToggleProps = $props();
+  let { children, left, right, value = $bindable(false), role = "button", ariaLabel, attributes, action, element = $bindable(), styling, variant = $bindable("") }: ToggleProps = $props();
 
   // *** Initialize *** //
   if (!variant) variant = VARIANT.NEUTRAL;
   const cls = fnClass(preset, styling);
   const attrs = omit(attributes, "class", "type", "role", "aria-checked", "aria-pressed", "onclick");
   let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
+  let state = $derived(role === "button" ? { "aria-pressed": value } : { "aria-checked": value });
 
   // *** Bind Handlers *** //
   $effect(() => { neutral = isNeutral(variant) ? variant : neutral });
@@ -73,11 +74,11 @@
 {#if left || right}
   <span class={cls(PARTS.WHOLE, variant)} role="group">
     {@render side(PARTS.LEFT, left)}
-    {@render button(type)}
+    {@render button()}
     {@render side(PARTS.RIGHT, right)}
   </span>
 {:else}
-  {@render button(type)}
+  {@render button()}
 {/if}
 
 {#snippet side(area: string, body?: Snippet<[boolean, string, HTMLButtonElement | undefined]>)}
@@ -85,38 +86,16 @@
     <span class={cls(area, variant)}>{@render body(value, variant, element)}</span>
   {/if}
 {/snippet}
-{#snippet contents()}
-  {#if children}
-    {@render children(value, variant, element)}
-  {/if}
-{/snippet}
-{#snippet button(role: string)}
+{#snippet button()}
+  {@const r = role === "button" ? undefined : role}
   {@const c = cls(PARTS.MAIN, variant)}
-  {#if role === "button"}
-    {#if action}
-      <button bind:this={element} class={c} type="button" aria-pressed={value} aria-label={ariaLabel} {onclick} {...attrs} use:action>
-        {@render contents()}
-      </button>
-    {:else}
-      <button bind:this={element} class={c} type="button" aria-pressed={value} aria-label={ariaLabel} {onclick} {...attrs}>
-        {@render contents()}
-      </button>
-    {/if}
+  {#if action}
+    <button bind:this={element} class={c} type="button" role={r} aria-label={ariaLabel} {onclick} {...state} {...attrs} use:action>
+      {@render children(value, variant, element)}
+    </button>
   {:else}
-    {@const style = "position: relative;"}
-    {#if action}
-      <button bind:this={element} class={c} {style} type="button" {role} aria-checked={value} aria-label={ariaLabel} {onclick} {...attrs} use:action>
-        {@render thumb()}
-      </button>
-    {:else}
-      <button bind:this={element} class={c} {style} type="button" {role} aria-checked={value} aria-label={ariaLabel} {onclick} {...attrs}>
-        {@render thumb()}
-      </button>
-    {/if}
+    <button bind:this={element} class={c} type="button" role={r} aria-label={ariaLabel} {onclick} {...state} {...attrs}>
+      {@render children(value, variant, element)}
+    </button>
   {/if}
-{/snippet}
-{#snippet thumb()}
-  <span class={cls(PARTS.AUX, variant)} style="position: absolute;">
-    {@render contents()}
-  </span>
 {/snippet}
