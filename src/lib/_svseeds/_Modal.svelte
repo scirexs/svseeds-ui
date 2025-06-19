@@ -91,7 +91,7 @@
 
 <style>
   :global {
-    html:has(dialog[open]) {
+    :root:has(dialog[open]) {
       overflow: hidden;
     }
   }
