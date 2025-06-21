@@ -13,7 +13,7 @@
     variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   type Vector = { x: number, y: number };
-  type Position = "top" | "left" | "bottom" | "right";
+  type Position = "top" | "right" | "bottom" | "left";
   type Align = "start" | "center" | "end";
   ```
 -->
@@ -37,7 +37,7 @@
     return (node) => { return core.action(node, text, delay, cursor, name); };
   }
   export type Vector = { x: number, y: number };
-  export type Position = "top" | "left" | "bottom" | "right";
+  export type Position = "top" | "right" | "bottom" | "left";
   export type Align = "start" | "center" | "end";
 
   type valueof<T> = T[keyof T];
