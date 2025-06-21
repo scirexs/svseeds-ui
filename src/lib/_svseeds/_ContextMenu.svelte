@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface ContextMenuProps {
     children: Snippet<[string]>; // Snippet<[variant]>
@@ -11,6 +12,12 @@
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
   }
+  ```
+  ### Anatomy
+  ```svelte
+  <nav class="whole" bind:this={element}>
+    {children}
+  </nav>
   ```
 -->
 <script module lang="ts">

@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface ButtonProps {
     children: Snippet<[string]>; // Snippet<[variant]>
@@ -15,6 +16,14 @@
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
   }
+  ```
+  ### Anatomy
+  ```svelte
+  <button class="whole" {type} {onclick} {...attributes} bind:this={element} use:action>
+    <span class="left" conditional>{left}</span>
+    <span class="main">{children}</span>
+    <span class="right" conditional>{right}</span>
+  </button>
   ```
 -->
 <script module lang="ts">

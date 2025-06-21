@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface TabsProps {
     labels?: string[];
@@ -10,6 +11,19 @@
     variant?: string; // bindable (VARIANT.NEUTRAL)
     [key: string]: unknown | Snippet; // labels or contents of each tab
   }
+  ```
+  ### Anatomy
+  ```svelte
+  <div class="whole">
+    <div class="top" aria-orientation={ariaOrientation}>
+      {#each labels as label}
+        <button class="label">{label}</button>
+      {/each}
+    </div>
+    {#each restProps as snippet}
+      <div class="main">{snippet}</div>
+    {/each}
+  </div>
   ```
 -->
 <script module lang="ts">

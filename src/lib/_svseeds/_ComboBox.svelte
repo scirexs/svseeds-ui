@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface ComboBoxProps {
     options: SvelteSet<string> | Set<string>;
@@ -14,6 +15,18 @@
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
   }
+  ```
+  ### Anatomy
+  ```svelte
+  <span class="whole">
+    <input class="main" type="text" {...attributes} bind:value bind:this={element} use:action />
+    <div class="extra" conditional>{extra}</div>
+    <ul class="bottom">
+      {#each options as option}
+        <li class="label">{option}</li>
+      {/each}
+    </ul>
+  </span>
   ```
 -->
 <script module lang="ts">

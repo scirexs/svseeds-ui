@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface SelectFieldProps {
     options: SvelteMap<string, string> | Map<string, string>;
@@ -20,6 +21,28 @@
     variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   type SelectFieldValidation = (value: string, validity: ValidityState) => string | undefined;
+  ```
+  ### Anatomy
+  ```svelte
+  <div class="whole">
+    <div class="top" conditional>
+      <label class="label" conditional>
+        {label}
+        <span class="extra" conditional>{extra}</span>
+      </label>
+      <span class="aux" conditional>{aux}</span>
+    </div>
+    <div class="middle">
+      <span class="left" conditional>{left}</span>
+      <select class="main" {...attributes} bind:value bind:this={element} use:action>
+        {#each options as { option, text }}
+          <option value={option}>{text}</option>
+        {/each}
+      </select>
+      <span class="right" conditional>{right}</span>
+    </div>
+    <div class="bottom" conditional>{bottom}</div>
+  </div>
   ```
 -->
 <script module lang="ts">

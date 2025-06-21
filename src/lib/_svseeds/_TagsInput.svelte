@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface TagsInputProps {
     label?: Snippet<[string, string]>; // Snippet<[value,variant]>
@@ -23,6 +24,30 @@
     onadd?: (values: string[], value: string) => void | boolean;
     onremove?: (values: string[], value: string, index: number) => void | boolean;
   }
+  ```
+  ### Anatomy
+  ```svelte
+  <div class="whole">
+    <span class="aux" conditional>
+      {#each values as text, i}
+        <span class="label">
+          {#if label}
+            {label}
+          {:else}
+            {text}
+          {/if}
+          <button class="extra">
+            {#if extra}
+              {extra}
+            {:else}
+              // Default Icon
+            {/if}
+          </button>
+        </span>
+      {/each}
+    </span>
+    <input class="main" type="text" {...attributes} aria-errormessage={ariaErrMsgId} bind:value bind:this={element} use:action />
+  </div>
   ```
 -->
 <script module lang="ts">

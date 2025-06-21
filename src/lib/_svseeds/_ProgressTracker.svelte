@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface ProgressTrackerProps {
     current: number; // bindable (0)
@@ -12,6 +13,20 @@
     variant?: string; // bindable (VARIANT.NEUTRAL)
     eachVariant?: SvelteMap<number, string> | Map<number, string>;
   }
+  ```
+  ### Anatomy
+  ```svelte
+  <ol class="whole">
+    {#each labels as label}
+      <li class="middle">
+        <div class="main">
+          <div class="aux" conditional>{aux}</div>
+          <div class="label">{label} or {children}</div>
+        </div>
+        <div class="extra" conditional>{extra}</div>
+      </li>
+    {/each}
+  </ol>
   ```
 -->
 <script module lang="ts">

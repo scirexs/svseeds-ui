@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface SortableProps {
     items: SortableItems; // wrapper around string array to handle drag and drop
@@ -17,6 +18,17 @@
     styling?: SVSClass;
     variant?: string;     // bindable (VARIANT.NEUTRAL)
   }
+  ```
+  ### Anatomy
+  ```svelte
+  <ul class="whole">
+    {#each items.values as value, i}
+      <li class="main">{item(value)}</li>
+    {/each}
+  </ul>
+  ```
+  ### Exports
+  ```ts
   // Methods have the same functionality as standard array methods
   class SortableItems {
     constructor(values: string[])

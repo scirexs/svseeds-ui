@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface DrawerProps {
     children: Snippet<[string]>; // Snippet<[variant]>
@@ -16,6 +17,12 @@
     variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   type Position = "top" | "right" | "bottom" | "left";
+  ```
+  ### Anatomy
+  ```svelte
+  <div class="whole" {id} {...attributes} bind:this={element}>
+    {children}
+  </div>
   ```
 -->
 <script module lang="ts">

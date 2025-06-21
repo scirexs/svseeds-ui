@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface HotkeyCaptureProps {
     value?: string; // bindable
@@ -11,6 +12,10 @@
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
   }
+  ```
+  ### Anatomy
+  ```svelte
+  <input class="main" type="text" {placeholder} {disabled} bind:value bind:this={element} />
   ```
 -->
 <script module lang="ts">

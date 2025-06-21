@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface SliderProps {
     range: Range; // bindable
@@ -17,6 +18,19 @@
     variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   type Range = { min: number, max: number };
+  ```
+  ### Anatomy
+  ```svelte
+  <span class={cls(PARTS.WHOLE, variant)}>
+    <span class="left">{left}</span>
+    <input class="main" type="range" min={range.min} max={range.max} {step} {...attrs} bind:value bind:this={element} use:action />
+    <datalist conditional>
+      {#each options as option}
+        <option value={option}></option>
+      {/each}
+    </datalist>
+    <span class="right" conditional>{right}</span>
+  </span>
   ```
 -->
 <script module lang="ts">

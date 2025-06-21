@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface ToggleGroupProps {
     options: SvelteMap<string, string> | Map<string, string>;
@@ -14,6 +15,16 @@
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
   }
+  ```
+  ### Anatomy
+  ```svelte
+  <span class="whole" aria-describedby={ariaDescId} aria-errormessage={ariaErrMsgId}>
+    {#each options as { value, text }}
+      <button class="main" use:action>
+        {text} or {children}
+      </button>
+    {/each}
+  </span>
   ```
 -->
 <script module lang="ts">

@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface ToggleProps {
     children: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
@@ -15,6 +16,16 @@
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
   }
+  ```
+  ### Anatomy
+  ```svelte
+  <span class="whole" conditional>
+    <span class="left" conditional>{left}</span>
+    <button class="main" aria-pressed={value} aria-label={ariaLabel} {role} {...attributes} bind:this={element} use:action>
+      {children}
+    </button>
+    <span class="right" conditional>{right}</span>
+  </span>
   ```
 -->
 <script module lang="ts">

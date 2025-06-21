@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface ColorPickerProps {
     value?: string; // bindable ("#000000")
@@ -12,6 +13,17 @@
     variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   ```
+  ### Anatomy
+  ```svelte
+  <label class="whole">
+    <div class="middle"> // this middle element is background for transparency color
+      <div class="main"> // this main element is color sample
+        <input type="color" {...attributes} bind:value bind:this={element} use:action />
+      </div>
+    </div>
+  </label>
+  ```
+  ### Exports
   ```ts
   type RgbColor = [number, number, number];
   function getHex(rgb: RgbColor): string

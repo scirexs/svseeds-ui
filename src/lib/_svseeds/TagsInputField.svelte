@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface TagsInputFieldProps {
     label?: string;
@@ -30,6 +31,24 @@
     value: number;
     message: string;
   };
+  ```
+  ### Anatomy
+  ```svelte
+  <div class="whole">
+    <div class="top" conditional>
+      <label class="label" conditional>
+        {label}
+        <span class="extra" conditional>{extra}</span>
+      </label>
+      <span class="aux" conditional>{aux}</span>
+    </div>
+    <div class="middle">
+      <span class="left" conditional>{left}</span>
+      <TagsInput bind:values bind:element {...deps.svsTagsInput} />
+      <span class="right" conditional>{right}</span>
+    </div>
+    <div class="bottom" conditional>{bottom}</div>
+  </div>
   ```
 -->
 <script module lang="ts">

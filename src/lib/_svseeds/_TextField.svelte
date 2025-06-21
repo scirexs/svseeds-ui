@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface TextFieldProps {
     label?: string;
@@ -21,6 +22,33 @@
     variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   type TextFieldValidation = (value: string, validity: ValidityState) => string | undefined;
+  ```
+  ### Anatomy
+  ```svelte
+  <div class="whole">
+    <div class="top" conditional>
+      <label class="label" conditional>
+        {label}
+        <span class="extra" conditional>{extra}</span>
+      </label>
+      <span class="aux" conditional>{aux}</span>
+    </div>
+    <div class="middle">
+      <span class="left" conditional>{left}</span>
+      {#if type === "area"}
+        <textarea class={"main"} {...attributes} bind:value bind:this={element} use:action></textarea>
+      {:else}
+        <input class={"main"} {type} {...attributes} bind:value bind:this={element} use:action />
+        <datalist conditional>
+          {#each options as option}
+            <option value={option}></option>
+          {/each}
+        </datalist>
+      {/if}
+      <span class="right" conditional>{right}</span>
+    </div>
+    <div class="bottom" conditional>{bottom}</div>
+  </div>
   ```
 -->
 <script module lang="ts">

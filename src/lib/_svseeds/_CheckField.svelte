@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface CheckFieldProps {
     options: SvelteMap<string, string> | Map<string, string>;
@@ -19,6 +20,27 @@
     variant?: string; // bindable (VARIANT.NEUTRAL)
   }
   type CheckFieldValidation = (values: string[], validity: ValidityState) => string | undefined;
+  ```
+  ### Anatomy
+  ```svelte
+  <div class="whole">
+    <div class="top" conditional>
+      <span class="label" conditional>
+        {label}
+        <span class="extra" conditional>{extra}</span>
+      </span>
+      <span class="aux" conditional>{aux}</span>
+    </div>
+    <div class="middle">
+      {#each options as { value, text }, i}
+        <label class="main">
+          <input class="left" bind:this={elements[i]} use:action />
+          <span class="right">{text}</span>
+        </label>
+      {/each}
+    </div>
+    <div class="bottom" conditional>{bottom}</div>
+  </div>
   ```
 -->
 <script module lang="ts">

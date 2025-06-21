@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface ModalProps {
     children: Snippet<[string]>; // Snippet<[variant]>
@@ -13,6 +14,14 @@
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
   }
+  ```
+  ### Anatomy
+  ```svelte
+  <dialog class="whole" {id} aria-label={ariaLabel} {...attributes} bind:this={element}>
+    <div class="main">
+      {children}
+    </div>
+  </dialog>
   ```
 -->
 <script module lang="ts">

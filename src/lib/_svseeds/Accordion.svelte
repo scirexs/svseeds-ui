@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface AccordionProps {
     labels?: string[];
@@ -13,6 +14,16 @@
   interface AccordionDeps {
     svsDisclosure?: Omit<DisclosureProps, DisclosureReqdProps | DisclosureBindProps>;
   }
+  ```
+  ### Anatomy
+  ```svelte
+  <div class="whole">
+    {#each labels as label, i}
+      <Disclosure {label}>
+        {@render restProps[i]()}
+      </Disclosure>
+    {/each}
+  </div>
   ```
 -->
 <script module lang="ts">

@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface DarkToggleProps {
     dark?: boolean; // bindable (prefers-color-scheme)
@@ -11,6 +12,16 @@
   interface DarkToggleDeps {
     svsToggle?: Omit<ToggleProps, ToggleReqdProps | ToggleBindProps>;
   }
+  ```
+  ### Anatomy
+  ```svelte
+  <Toggle {...deps.svsToggle} bind:value={dark} bind:element>
+    {#if deps.svsToggle.children}
+      {deps.svsToggle.children}
+    {:else}
+      // Default Icon
+    {/if}
+  </Toggle>
   ```
 -->
 <script module lang="ts">

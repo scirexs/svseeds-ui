@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface DisclosureProps {
     label: string | Snippet<[boolean, string]>; // Snippet<[open,variant]>
@@ -13,6 +14,17 @@
     styling?: SVSClass;
     variant?: string; // bindable (VARIANT.NEUTRAL)
   }
+  ```
+  ### Anatomy
+  ```svelte
+  <details class="whole" {...attributes} bind:this={element} use:action>
+    <summary class="label">
+      {label}
+    </summary>
+    <div class="main" transition:slide={{ duration }}>
+      {children}
+    </div>
+  </details>
   ```
 -->
 <script module lang="ts">

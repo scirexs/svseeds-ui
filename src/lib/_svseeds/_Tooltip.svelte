@@ -1,6 +1,7 @@
 <!--
   @component
-  default value: `(value)`
+  ### Types
+  default value: *`(value)`*
   ```ts
   interface TooltipProps {
     children?: Snippet<[string, string, boolean]>; // Snippet<[text,variant,isFlipped]>
@@ -15,6 +16,16 @@
   type Vector = { x: number, y: number };
   type Position = "top" | "right" | "bottom" | "left";
   type Align = "start" | "center" | "end";
+  ```
+  ### Anatomy
+  ```svelte
+  <div class="whole" bind:this={element} conditional>
+    {#if children}
+      {children}
+    {:else}
+      {text} // `text` is an argument of the tooltip/tooltipAction function
+    {/if}
+  </div>
   ```
 -->
 <script module lang="ts">
