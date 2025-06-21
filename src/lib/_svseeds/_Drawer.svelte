@@ -57,8 +57,8 @@
   function getSizeProp(position: Position, size: string): string {
     const interpolate = ["auto", "min-content", "max-content", "fit-content", "content"].includes(size) ? "interpolate-size:allow-keywords;" : "";
     return ["top", "bottom"].includes(position)
-      ? `--width-from:100dvw;--width-to:100dvw;--height-from:0;--height-to:${size};${interpolate}`
-      : `--width-from:0;--width-to:${size};--height-from:100dvh;--height-to:100dvh;${interpolate}`;
+      ? `--width-from:100%;--width-to:100%;--height-from:0;--height-to:${size};${interpolate}`
+      : `--width-from:0;--width-to:${size};--height-from:100%;--height-to:100%;${interpolate}`;
   }
 
   import { type Snippet, untrack } from "svelte";
