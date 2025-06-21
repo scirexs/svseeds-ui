@@ -41,15 +41,15 @@
   "imports": {
     "@deno/vite-plugin": "npm:@deno/vite-plugin@^1.0.4",
     "@sveltejs/adapter-auto": "npm:@sveltejs/adapter-auto@^6.0.0",
-    "@sveltejs/kit": "npm:@sveltejs/kit@^2.20.1",
-    "@sveltejs/vite-plugin-svelte": "npm:@sveltejs/vite-plugin-svelte@^5.0.3",
+    "@sveltejs/kit": "npm:@sveltejs/kit@^2.22.0",
+    "@sveltejs/vite-plugin-svelte": "npm:@sveltejs/vite-plugin-svelte@^5.1.0",
     "@testing-library/jest-dom": "npm:@testing-library/jest-dom@^6.6.3",
     "@testing-library/svelte": "npm:@testing-library/svelte@^5.2.7",
     "@testing-library/user-event": "npm:@testing-library/user-event@^14.6.1",
     "jsdom": "npm:jsdom@^26.0.0",
-    "svelte": "npm:svelte@^5.33.4",
-    "svelte-check": "npm:svelte-check@^4.1.5",
+    "svelte": "npm:svelte@^5.34.7",
+    "svelte-check": "npm:svelte-check@^4.2.2",
     "vite": "npm:vite@^6.2.2",
-    "vitest": "npm:vitest@^3.0.9"
+    "vitest": "npm:vitest@^3.2.4"
   }
 }

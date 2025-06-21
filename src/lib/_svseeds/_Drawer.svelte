@@ -101,7 +101,7 @@
 
 <style>
   [popover] {
-		position: absolute;
+    position: fixed;
     top: var(--top);
     left: var(--left);
     bottom: var(--bottom);
