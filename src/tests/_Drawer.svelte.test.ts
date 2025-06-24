@@ -119,8 +119,8 @@ describe("Drawer position and size", () => {
     const drawer = container.querySelector("[popover]") as HTMLDivElement;
     expect(drawer.style.cssText).toContain("--top: 0");
     expect(drawer.style.cssText).toContain("--left: 0");
-    expect(drawer.style.cssText).toContain("--width-from: 100dvw");
-    expect(drawer.style.cssText).toContain("--width-to: 100dvw");
+    expect(drawer.style.cssText).toContain("--width-from: 100%");
+    expect(drawer.style.cssText).toContain("--width-to: 100%");
   });
 
   test("position right sets correct CSS variables", () => {
@@ -143,8 +143,8 @@ describe("Drawer position and size", () => {
     const drawer = container.querySelector("[popover]") as HTMLDivElement;
     expect(drawer.style.cssText).toContain("--bottom: 0");
     expect(drawer.style.cssText).toContain("--top: auto");
-    expect(drawer.style.cssText).toContain("--width-from: 100dvw");
-    expect(drawer.style.cssText).toContain("--width-to: 100dvw");
+    expect(drawer.style.cssText).toContain("--width-from: 100%");
+    expect(drawer.style.cssText).toContain("--width-to: 100%");
   });
 
   test("custom size is applied", () => {

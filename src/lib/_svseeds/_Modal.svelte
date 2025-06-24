@@ -55,7 +55,7 @@
   // *** Initialize *** //
   if (!variant) variant = VARIANT.NEUTRAL;
   const cls = fnClass(preset, styling);
-  const attrs = omit(attributes, "class", "id", "autofocus", "aria-label", "onclick", "onkeydown", "ontoggle");
+  const attrs = omit(attributes, "class", "id", "aria-label", "onclick", "onkeydown", "ontoggle");
 
   // *** Bind Handlers *** //
   $effect.pre(() => {
@@ -90,7 +90,7 @@
 
 <!---------------------------------------->
 
-<dialog bind:this={element} class={cls(PARTS.WHOLE, variant)} aria-label={ariaLabel} {id} {onclick} {onkeydown} {ontoggle} autofocus={true} {...attrs} style="margin:auto;background-color:transparent;">
+<dialog bind:this={element} class={cls(PARTS.WHOLE, variant)} aria-label={ariaLabel} {id} {onclick} {onkeydown} {ontoggle} {...attrs} style="margin:auto;background-color:transparent;">
   {#if open}
     <div class={cls(PARTS.MAIN, variant)} transition:fade={{ duration, easing: cubicOut }}>
       {@render children(variant)}
