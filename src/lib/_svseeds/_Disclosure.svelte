@@ -7,7 +7,7 @@
     label: string | Snippet<[boolean, string]>; // Snippet<[open,variant]>
     children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false)
-    duration?: number; // (400)
+    duration?: number; // (200)
     attributes?: HTMLDetailsAttributes;
     action?: Action;
     element?: HTMLDetailsElement; // bindable
@@ -32,7 +32,7 @@
     label: string | Snippet<[boolean, string]>; // Snippet<[open,variant]>
     children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false)
-    duration?: number; // (400)
+    duration?: number; // (200)
     attributes?: HTMLDetailsAttributes;
     action?: Action;
     element?: HTMLDetailsElement; // bindable
@@ -43,9 +43,13 @@
   export type DisclosureBindProps = "open" | "variant" | "element";
 
   type DisclosureTarget = { currentTarget: EventTarget & HTMLDetailsElement };
-  const DEFAULT_DURATION = 400;
+  const DEFAULT_DURATION = 200;
   const preset = "svs-disclosure";
 
+  function isPrefersReducedMotion(): boolean {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
   class ToggleGurad {
     #active = false;
     get active(): boolean {
@@ -69,6 +73,7 @@
 
   // *** Initialize *** //
   if (!variant) variant = VARIANT.NEUTRAL;
+  if (isPrefersReducedMotion()) duration = 0;
   if (!isUnsignedInteger(duration)) duration = DEFAULT_DURATION;
   const cls = fnClass(preset, styling);
   const attrs = omit(attributes, "class", "open", "ontoggle");

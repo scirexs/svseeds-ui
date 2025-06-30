@@ -43,8 +43,13 @@
   export type DrawerReqdProps = "children";
   export type DrawerBindProps = "open" | "variant" | "element";
 
+  const DEFAULT_DURATION = 200;
   const preset = "svs-drawer";
 
+  function isPrefersReducedMotion(): boolean {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
   function getPositionProp(position: Position): string {
     switch (position) {
       case "top":
@@ -62,14 +67,16 @@
 
   import { type Snippet, untrack } from "svelte";
   import { type HTMLAttributes } from "svelte/elements";
-  import { type SVSClass, VARIANT, PARTS, fnClass, omit } from "./core";
+  import { type SVSClass, VARIANT, PARTS, fnClass, isUnsignedInteger, omit } from "./core";
 </script>
 
 <script lang="ts">
-  let { children, open = $bindable(false), position = "left", size = "auto", duration = 200, closable = true, id, attributes, element = $bindable(), styling, variant = $bindable("") }: DrawerProps = $props();
+  let { children, open = $bindable(false), position = "left", size = "auto", duration = -1, closable = true, id, attributes, element = $bindable(), styling, variant = $bindable("") }: DrawerProps = $props();
 
   // *** Initialize *** //
   if (!variant) variant = VARIANT.NEUTRAL;
+  if (isPrefersReducedMotion()) duration = 0;
+  if (!isUnsignedInteger(duration)) duration = DEFAULT_DURATION;
   const cls = fnClass(preset, styling);
   const attrs = omit(attributes, "class", "id", "style", "popover", "ontoggle");
   const popover = closable ? "auto" : "manual";
