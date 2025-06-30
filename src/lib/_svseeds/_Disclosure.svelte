@@ -46,7 +46,6 @@
   const DEFAULT_DURATION = 400;
   const preset = "svs-disclosure";
 
-  const sleep = (msec: number) => new Promise(resolve => setTimeout(resolve, msec));
   class ToggleGurad {
     #active = false;
     get active(): boolean {
@@ -54,7 +53,7 @@
     }
     activate(duration: number) {
       this.#active = true;
-      sleep(duration).then(() => this.#active = false);
+      setTimeout(() => this.#active = false, duration);
     }
   }
 
@@ -88,7 +87,7 @@
     if (open) {
       toggle(true);
     } else {
-      sleep(duration).then(() => toggle(false));
+      setTimeout(() => toggle(false), duration);
     }
   }
   function toggle(bool: boolean) {

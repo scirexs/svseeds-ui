@@ -45,7 +45,6 @@
 
   const preset = "svs-drawer";
 
-  const sleep = (msec: number) => new Promise(resolve => setTimeout(resolve, msec));
   function getPositionProp(position: Position): string {
     switch (position) {
       case "top":
@@ -95,7 +94,7 @@
     attributes?.["ontoggle"]?.(ev as any);
     open = ev.newState === "open";
     style = baseStyle + "overflow:hidden;";
-    sleep(duration).finally(() => style = baseStyle);
+    setTimeout(() => style = baseStyle, duration);
   }
   $effect(() => untrack(() => { if (open) element?.showPopover(); }));
 </script>
