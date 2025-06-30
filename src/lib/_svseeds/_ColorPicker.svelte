@@ -25,10 +25,17 @@
   ```
   ### Exports
   ```ts
-  type RgbColor = [number, number, number];
-  function getHex(rgb: RgbColor): string
-  // getHex([255, 123, 34])  => "#ff7b22"
-  // getHex([255, 255, 255]) => "#ffffff"
+  /**
+  * Converts RGB color values to hexadecimal color code.
+  *
+  * @param rgb - Array of RGB values [red, green, blue] where each value is 0-255
+  * @returns Hexadecimal color code string starting with '#'
+  *
+  * @example
+  * getHex([255, 123, 34])  // "#ff7b22"
+  * getHex([255, 255, 255]) // "#ffffff"
+  */
+  function getHex(rgb: [number, number, number]): string
   ```
 -->
 <script module lang="ts">

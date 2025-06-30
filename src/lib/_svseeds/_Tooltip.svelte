@@ -27,6 +27,22 @@
     {/if}
   </div>
   ```
+  ### Exports
+  ```ts
+  /**
+  * Action function for use with SvSeeds components.
+  *
+  * @param text - Text content for the tooltip's aria-label
+  * @param delay - Delay in milliseconds before the tooltip appears (default: 1000)
+  * @param cursor - Whether the tooltip should follow cursor movement
+  * @param name - Unique identifier for the tooltip component
+  */
+  function tooltipAction(text: string, delay?: number, cursor?: boolean, name?: string): Action
+  /**
+  * Action function for use with standard HTML elements.
+  */
+  function tooltip(node: HTMLElement, params: { text: string, delay?: number, cursor?: boolean, name?: string }): ActionReturn
+  ```
 -->
 <script module lang="ts">
   export interface TooltipProps {
