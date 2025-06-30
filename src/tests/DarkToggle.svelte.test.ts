@@ -211,13 +211,8 @@ describe("DarkToggle - Dependencies and customization", () => {
   });
 
   test("renders custom main snippet", () => {
-    const deps = {
-      svsToggle: {
-        children: customMainSnippet,
-      },
-    };
-    const props = $state({ dark: false, variant: VARIANT.NEUTRAL, deps });
-    const { getByTestId } = render(DarkToggle, { ...props, deps });
+    const props = $state({ children: customMainSnippet, dark: false, variant: VARIANT.NEUTRAL });
+    const { getByTestId } = render(DarkToggle, { ...props });
     const customMain = getByTestId("custom-main");
 
     waitFor(() => {
@@ -229,14 +224,9 @@ describe("DarkToggle - Dependencies and customization", () => {
   });
 
   test("custom main snippet updates with state changes", async () => {
-    const deps = {
-      svsToggle: {
-        children: customMainSnippet,
-      },
-    };
-    const props = $state({ dark: false, variant: VARIANT.NEUTRAL });
+    const props = $state({ children: customMainSnippet, dark: false, variant: VARIANT.NEUTRAL });
     const user = userEvent.setup();
-    const { getByTestId, getByRole } = render(DarkToggle, { ...props, deps });
+    const { getByTestId, getByRole } = render(DarkToggle, { ...props });
     const button = getByRole("button") as HTMLButtonElement;
     const customMain = getByTestId("custom-main");
 
@@ -360,7 +350,7 @@ describe("DarkToggle - Error handling and edge cases", () => {
   test("handles missing window object gracefully", () => {
     // This test simulates SSR environment
     const originalWindow = globalThis.window;
-    // @ts-ignore
+    // @ts-ignore:
     delete globalThis.window;
 
     expect(() => {
