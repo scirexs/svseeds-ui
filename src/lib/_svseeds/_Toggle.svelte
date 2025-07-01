@@ -66,7 +66,8 @@
 
   // *** Bind Handlers *** //
   $effect(() => { neutral = isNeutral(variant) ? variant : neutral });
-  $effect.pre(() => { value;
+  $effect.pre(() => {
+    value;
     untrack(() => toggle());
   });
   function toggle() {
