@@ -49,7 +49,7 @@
   function getSnippetNames(role: string, rest: Record<string, unknown>): string[] {
     return Object.keys(rest)
       .filter((x) => x.startsWith(role) && typeof rest[x] === "function")
-      .toSorted((x,y) => x.localeCompare(y));
+      .sort((x,y) => x.localeCompare(y));
   }
   function toNamedId(names: string[]): NamedId[] {
     return names.map((x) => ({ id: elemId.id, name: x }));
