@@ -287,7 +287,8 @@
   let point: Vector = $state.raw(INIT_VEC);
 
   // *** Reactive Handlers *** //
-  $effect.pre(() => { core.visible;
+  $effect.pre(() => {
+    core.visible;
     untrack(() => setPosition());
   });
   function setPosition() {
