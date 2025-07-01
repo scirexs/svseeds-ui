@@ -101,7 +101,7 @@
 <style>
   :global {
     :root:has(dialog[open]) {
-      overflow: hidden;
+      overflow: clip;
     }
   }
 </style>
