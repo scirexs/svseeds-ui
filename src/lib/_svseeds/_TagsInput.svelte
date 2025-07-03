@@ -75,8 +75,6 @@
     onremove?: (values: string[], value: string, index: number) => void | boolean;
   }
 
-  type TagsInputTarget = { currentTarget: EventTarget & HTMLInputElement };
-  type BadgeTarget = { currentTarget: EventTarget & HTMLButtonElement; };
   const preset = "svs-tags-input";
   const CONFIRM_KEY = "Enter";
 
@@ -97,8 +95,8 @@
   let invalid = $derived(ariaErrMsgId ? true : undefined);
 
   // *** Event Handlers *** //
-  function onkeydown(ev: KeyboardEvent & TagsInputTarget) {
-    attributes?.onkeydown?.(ev);
+  function onkeydown(ev: KeyboardEvent) {
+    attributes?.onkeydown?.(ev as any);
     if (!confirmKeys.has(ev.key) || ev.isComposing) return;
     ev.preventDefault();
     if (events?.onadd?.(values, value)) return;
@@ -111,7 +109,7 @@
     values = [...values, value];
     value = "";
   }
-  function remove(index: number): (ev: MouseEvent & BadgeTarget) => void {
+  function remove(index: number): (ev: MouseEvent) => void {
     return () => {
       if (events?.onremove?.(values, values[index], index)) return;
       values = values.filter((_, i) => i !== index);

@@ -45,7 +45,6 @@
   export type ToggleReqdProps = "children";
   export type ToggleBindProps = "value" | "variant" | "element";
 
-  type ToggleTarget = { currentTarget: EventTarget & HTMLButtonElement };
   const preset = "svs-toggle";
 
   import { type Snippet, untrack } from "svelte";
@@ -75,9 +74,9 @@
   }
 
   // *** Event Handlers *** //
-  function onclick(ev: MouseEvent & ToggleTarget) {
+  function onclick(ev: MouseEvent) {
     value = !value;
-    attributes?.["onclick"]?.(ev);
+    attributes?.["onclick"]?.(ev as any);
   }
 </script>
 

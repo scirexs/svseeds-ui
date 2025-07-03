@@ -42,7 +42,6 @@
   export type DisclosureReqdProps = "label" | "children";
   export type DisclosureBindProps = "open" | "variant" | "element";
 
-  type DisclosureTarget = { currentTarget: EventTarget & HTMLDetailsElement };
   const DEFAULT_DURATION = 200;
   const preset = "svs-disclosure";
 
@@ -109,7 +108,7 @@
     if (!element?.open) hidden = false;
     open = !open;
   }
-  function ontoggle(ev: Event & DisclosureTarget) {
+  function ontoggle(ev: Event & { currentTarget: HTMLDetailsElement }) {
     attributes?.ontoggle?.(ev);
     if (element?.open && !open) {
       hidden = false;
