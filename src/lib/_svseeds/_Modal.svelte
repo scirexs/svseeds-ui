@@ -7,6 +7,7 @@
     children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false)
     closable?: boolean; // (true)
+    delay?: number; // (200)
     id?: string;
     ariaLabel?: string;
     attributes?: HTMLDialogAttributes;
@@ -18,9 +19,7 @@
   ### Anatomy
   ```svelte
   <dialog class="whole" {id} aria-label={ariaLabel} {...attributes} bind:this={element}>
-    <div class="main">
-      {children}
-    </div>
+    {children}
   </dialog>
   ```
 -->
@@ -29,6 +28,7 @@
     children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false)
     closable?: boolean; // (true)
+    delay?: number; // (200)
     id?: string;
     ariaLabel?: string;
     attributes?: HTMLDialogAttributes;
@@ -39,25 +39,32 @@
   export type ModalReqdProps = "children";
   export type ModalBindProps = "open" | "variant" | "element";
 
-  const duration = 200;
+  const DEFAULT_DELAY = 200;
   const preset = "svs-modal";
+
+  function isPrefersReducedMotion(): boolean {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
 
   import { type Snippet, untrack } from "svelte";
   import { type HTMLDialogAttributes } from "svelte/elements";
-  import { fade } from "svelte/transition";
-  import { cubicOut } from "svelte/easing";
-  import { type SVSClass, VARIANT, PARTS, fnClass, omit } from "./core";
+  import { type SVSClass, VARIANT, PARTS, fnClass, isNeutral, isUnsignedInteger, omit } from "./core";
 </script>
 
 <script lang="ts">
-  let { children, open = $bindable(false), closable = true, id, ariaLabel, attributes, element = $bindable(), styling, variant = $bindable("") }: ModalProps = $props();
+  let { children, open = $bindable(false), closable = true, delay = -1, id, ariaLabel, attributes, element = $bindable(), styling, variant = $bindable("") }: ModalProps = $props();
 
   // *** Initialize *** //
   if (!variant) variant = VARIANT.NEUTRAL;
+  if (isPrefersReducedMotion()) delay = 0;
+  if (!isUnsignedInteger(delay)) delay = DEFAULT_DELAY;
   const cls = fnClass(preset, styling);
   const attrs = omit(attributes, "class", "id", "aria-label", "onclick", "onkeydown", "ontoggle");
+  let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
 
   // *** Bind Handlers *** //
+  $effect(() => { neutral = isNeutral(variant) ? variant : neutral });
   $effect.pre(() => {
     open;
     untrack(() => toggle());
@@ -65,15 +72,17 @@
   function toggle() {
     if (open) {
       element?.showModal();
+      variant = neutral;
     } else {
-      element?.close();
+      variant = VARIANT.INACTIVE;
+      setTimeout(() => element?.close(), delay);
     }
   }
 
   // *** Event Handlers *** //
   function click(ev: MouseEvent) {
     attributes?.["onclick"]?.(ev as any);
-    if (ev.currentTarget === element) open = false;
+    if (ev.target === element) open = false;
   }
   function keydown(ev: KeyboardEvent) {
     attributes?.["onkeydown"]?.(ev as any);
@@ -85,23 +94,17 @@
     attributes?.["ontoggle"]?.(ev as any);
     open = element?.open ?? false;
   }
-  $effect(() => untrack(() => { if (open) element?.showModal(); }));
+  $effect(() => untrack(() => { if (open) toggle(); }));
 </script>
 
 <!---------------------------------------->
 
-<dialog bind:this={element} class={cls(PARTS.WHOLE, variant)} aria-label={ariaLabel} {id} {onclick} {onkeydown} {ontoggle} {...attrs} style="margin:auto;background-color:transparent;">
-  {#if open}
-    <div class={cls(PARTS.MAIN, variant)} transition:fade={{ duration, easing: cubicOut }}>
-      {@render children(variant)}
-    </div>
-  {/if}
+<dialog bind:this={element} class={cls(PARTS.WHOLE, variant)} aria-label={ariaLabel} {id} {onclick} {onkeydown} {ontoggle} {...attrs} style="margin:auto;">
+  {@render children(variant)}
 </dialog>
 
 <style>
-  :global {
-    :root:has(dialog[open]) {
-      overflow: clip;
-    }
+  :root:has(dialog[open]) {
+    overflow: clip;
   }
 </style>
