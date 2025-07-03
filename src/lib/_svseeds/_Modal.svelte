@@ -73,7 +73,7 @@
   // *** Event Handlers *** //
   function click(ev: MouseEvent) {
     attributes?.["onclick"]?.(ev as any);
-    if (ev.target === element) open = false;
+    if (ev.currentTarget === element) open = false;
   }
   function keydown(ev: KeyboardEvent) {
     attributes?.["onkeydown"]?.(ev as any);
