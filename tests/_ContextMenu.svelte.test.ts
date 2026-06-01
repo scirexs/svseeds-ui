@@ -1,8 +1,8 @@
 import { describe, expect, test, vi } from "vitest";
 import { fireEvent, render } from "@testing-library/svelte";
 import { createRawSnippet } from "svelte";
-import ContextMenu from "../lib/_svseeds/_ContextMenu.svelte";
-import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
+import ContextMenu from "#svs/_ContextMenu.svelte";
+import { PARTS, VARIANT } from "#svs/core";
 import { userEvent } from "@testing-library/user-event";
 
 const childrenContent = "Menu Item";

@@ -2,8 +2,8 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, waitFor, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
-import ToggleGroup from "../lib/_svseeds/_ToggleGroup.svelte";
-import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
+import ToggleGroup from "#svs/_ToggleGroup.svelte";
+import { PARTS, VARIANT } from "#svs/core";
 
 const options = new Map([
   ["option1", "Option 1"],

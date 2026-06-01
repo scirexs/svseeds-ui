@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { BASE, debounce, elemId, fnClass, omit, PARTS, throttle, UniqueId, VARIANT } from "../lib/_svseeds/core.ts";
+import { BASE, debounce, elemId, fnClass, omit, PARTS, throttle, UniqueId, VARIANT } from "#svs/core";
 
 describe("const vars", () => {
   test("VARIANT", () => {

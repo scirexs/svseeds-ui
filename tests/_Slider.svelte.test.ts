@@ -2,8 +2,8 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, waitFor, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
-import Slider from "../lib/_svseeds/_Slider.svelte";
-import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
+import Slider from "#svs/_Slider.svelte";
+import { PARTS, VARIANT } from "#svs/core";
 
 const leftid = "test-left";
 const rightid = "test-right";

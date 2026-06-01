@@ -2,8 +2,8 @@ import { describe, expect, test, vi } from "vitest";
 import { render, waitFor } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
-import Disclosure from "../lib/_svseeds/_Disclosure.svelte";
-import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
+import Disclosure from "#svs/_Disclosure.svelte";
+import { PARTS, VARIANT } from "#svs/core";
 
 const label = "Disclosure Label";
 const childrenContent = "Disclosure Content";
@@ -72,7 +72,7 @@ describe("Switching existence of elements", () => {
   test("w/ attributes", () => {
     const customAttrs = {
       "data-testid": "custom-disclosure",
-      "aria-expanded": "false",
+      "aria-expanded": "false" as const,
     };
     const { getByTestId } = render(Disclosure, {
       label,

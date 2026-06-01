@@ -2,8 +2,8 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
-import TagsInputField from "../lib/_svseeds/TagsInputField.svelte";
-import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
+import TagsInputField from "#svs/TagsInputField.svelte";
+import { PARTS, VARIANT } from "#svs/core";
 
 type TagsInputFieldElement = HTMLInputElement | undefined;
 const label = "label_text";
@@ -14,8 +14,8 @@ const leftid = "test-left";
 const rightid = "test-right";
 const auxfn = createRawSnippet(
   (
-    variant: () => string,
     values: () => string[],
+    variant: () => string,
     element: () => TagsInputFieldElement,
   ) => {
     return { render: () => `<span data-testid="${auxid}">${variant().length},${values().length},${element?.toString()}</span>` };
@@ -23,8 +23,8 @@ const auxfn = createRawSnippet(
 );
 const leftfn = createRawSnippet(
   (
-    variant: () => string,
     values: () => string[],
+    variant: () => string,
     element: () => TagsInputFieldElement,
   ) => {
     return { render: () => `<span data-testid="${leftid}">${variant().length},${values().length},${element?.toString()}</span>` };
@@ -32,8 +32,8 @@ const leftfn = createRawSnippet(
 );
 const rightfn = createRawSnippet(
   (
-    variant: () => string,
     values: () => string[],
+    variant: () => string,
     element: () => TagsInputFieldElement,
   ) => {
     return { render: () => `<span data-testid="${rightid}">${variant().length},${values().length},${element?.toString()}</span>` };

@@ -1,5 +1,5 @@
-import { makeIndex } from "./make_index.ts";
-import { makeDep } from "./make_dep.ts";
+import { makeIndex } from "./make_index";
+import { makeDep } from "./make_dep";
 
 makeIndex();
 makeDep();

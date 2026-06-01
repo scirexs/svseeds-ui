@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, waitFor } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
-import DarkToggle, { setThemeToRoot, THEME } from "../lib/_svseeds/DarkToggle.svelte";
-import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
+import DarkToggle, { setThemeToRoot, THEME } from "#svs/DarkToggle.svelte";
+import { PARTS, VARIANT } from "#svs/core";
 
 // Mock window.matchMedia for testing
 const mockMatchMedia = vi.fn();
@@ -21,8 +21,8 @@ Object.defineProperty(document, "styleSheets", {
 // Custom snippet for testing deps.svsToggle.main
 const customMainSnippet = createRawSnippet(
   (
-    variant: () => string,
     value: () => boolean,
+    variant: () => string,
     element: () => HTMLButtonElement | undefined,
   ) => {
     return {

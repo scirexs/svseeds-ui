@@ -2,8 +2,8 @@ import { describe, expect, test, vi } from "vitest";
 import { fireEvent, render, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
-import CheckField from "../lib/_svseeds/_CheckField.svelte";
-import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
+import CheckField from "#svs/_CheckField.svelte";
+import { PARTS, VARIANT } from "#svs/core";
 
 const label = "label_text";
 const extra = "(optional)";
@@ -16,8 +16,8 @@ const options = new Map([
 ]);
 const auxfn = createRawSnippet(
   (
-    variant: () => string,
     values: () => string[],
+    variant: () => string,
     elements: () => HTMLInputElement[],
   ) => {
     return { render: () => `<span data-testid="${auxid}">${variant()},${values().length},${elements().length}</span>` };

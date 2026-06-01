@@ -278,7 +278,7 @@ function omit<T extends object, K extends keyof T>(obj?: T, ...keys: K[]): Omit<
  * ```
  */
 function debounce<Args extends unknown[], R>(delay: number, fn: (...args: Args) => R): (...args: Args) => void {
-  let timer: number | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   return (...args: Args) => {
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => {
@@ -306,7 +306,7 @@ function debounce<Args extends unknown[], R>(delay: number, fn: (...args: Args) 
  * ```
  */
 function throttle<Args extends unknown[], R>(interval: number, fn: (...args: Args) => R): (...args: Args) => void {
-  let timer: number | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   let last: number = 0;
   const elapsed = () => Date.now() - last;
   const run = (args: Args) => {

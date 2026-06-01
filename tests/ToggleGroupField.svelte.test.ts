@@ -3,8 +3,8 @@ import { fireEvent, render, waitFor, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import { SvelteMap } from "svelte/reactivity";
-import ToggleGroupField from "../lib/_svseeds/ToggleGroupField.svelte";
-import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
+import ToggleGroupField from "#svs/ToggleGroupField.svelte";
+import { PARTS, VARIANT } from "#svs/core";
 
 const label = "label_text";
 const extra = "(optional)";
@@ -14,24 +14,24 @@ const leftid = "test-left";
 const rightid = "test-right";
 const auxfn = createRawSnippet(
   (
-    variant: () => string,
     values: () => string[],
+    variant: () => string,
   ) => {
     return { render: () => `<span data-testid="${auxid}">${variant()},${values().length}</span>` };
   },
 );
 const leftfn = createRawSnippet(
   (
-    variant: () => string,
     values: () => string[],
+    variant: () => string,
   ) => {
     return { render: () => `<span data-testid="${leftid}">${variant()},${values().length}</span>` };
   },
 );
 const rightfn = createRawSnippet(
   (
-    variant: () => string,
     values: () => string[],
+    variant: () => string,
   ) => {
     return { render: () => `<span data-testid="${rightid}">${variant()},${values().length}</span>` };
   },
@@ -45,7 +45,7 @@ describe("Switching existence of elements", () => {
   ]);
 
   test("no options", () => {
-    const emptyOptions = new SvelteMap();
+    const emptyOptions = new SvelteMap<string, string>();
     try {
       const { container } = render(ToggleGroupField, { options: emptyOptions });
       expect(container.firstChild).toBeNull();

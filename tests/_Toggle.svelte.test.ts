@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
-import { createRawSnippet } from "svelte";
-import Toggle from "../lib/_svseeds/_Toggle.svelte";
-import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
+import { createRawSnippet, tick } from "svelte";
+import Toggle, { type ToggleProps } from "#svs/_Toggle.svelte";
+import { PARTS, VARIANT } from "#svs/core";
 
 type ToggleElement = HTMLButtonElement | undefined;
 const ariaLabel = "toggle_label";
@@ -57,7 +57,7 @@ describe("Switching existence of elements", () => {
 
   test("switch to switch type", () => {
     const children = vi.fn().mockImplementation(mainfn);
-    const props = { children, role: "switch" };
+    const props = { children, role: "switch" as const };
     const { getByRole } = render(Toggle, props);
     const main = getByRole("switch") as HTMLButtonElement;
     expect(main.tagName).toBe("BUTTON");
@@ -99,7 +99,7 @@ describe("Switching existence of elements", () => {
 
   test("w/ main snippet of switch", () => {
     const children = vi.fn().mockImplementation(mainfn);
-    const props = { children, role: "switch" };
+    const props = { children, role: "switch" as const };
     const { getByRole, getByTestId } = render(Toggle, props);
     const button = getByRole("switch") as HTMLButtonElement;
     const mainsp = getByTestId(mainid);
@@ -110,7 +110,7 @@ describe("Switching existence of elements", () => {
   test("w/ children snippet of action switch", () => {
     const children = vi.fn().mockImplementation(mainfn);
     const action = vi.fn().mockImplementation(actionfn);
-    const props = { children, role: "switch", action };
+    const props = { children, role: "switch" as const, action };
     const { getByRole, getByTestId } = render(Toggle, props);
     const button = getByRole("switch") as HTMLButtonElement;
     const mainsp = getByTestId(mainid);
@@ -174,7 +174,7 @@ describe("Switching existence of elements", () => {
     const children = vi.fn().mockImplementation(mainfn);
     const left = vi.fn().mockImplementation(leftfn);
     const right = vi.fn().mockImplementation(rightfn);
-    const props = { children, left, right, role: "switch" };
+    const props = { children, left, right, role: "switch" as const };
     const { getByRole, getByTestId } = render(Toggle, props);
     const whole = getByRole("group") as HTMLSpanElement;
     const button = getByRole("switch") as HTMLButtonElement;
@@ -207,7 +207,7 @@ describe("Specify attrs & state transition & event handlers", () => {
 
   test("w/ default value true of switch", () => {
     const children = vi.fn().mockImplementation(mainfn);
-    const props = { children, value: true, role: "switch" };
+    const props = { children, value: true, role: "switch" as const };
     const { getByRole } = render(Toggle, props);
     const main = getByRole("switch") as HTMLButtonElement;
     expect(main).toHaveAttribute("aria-checked", "true");
@@ -224,7 +224,7 @@ describe("Specify attrs & state transition & event handlers", () => {
 
   test("w/ specify ignored attrs", () => {
     const children = vi.fn().mockImplementation(mainfn);
-    const props = { children, attributes: { class: "c", type: "submit", role: "checkbox", "aria-checked": "mixed" } };
+    const props: ToggleProps = { children, attributes: { class: "c", type: "submit", role: "checkbox", "aria-checked": "mixed" } };
     const { getByRole } = render(Toggle, props);
     const main = getByRole("button") as HTMLButtonElement;
     expect(main).not.toHaveAttribute("class", "c");
@@ -242,7 +242,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(main).toHaveAttribute("disabled");
     expect(main).toHaveAttribute("tabindex", "-1");
 
-    await rerender({ role: "switch", ...props });
+    await rerender({ role: "switch" as const, ...props });
     main = getByRole("switch") as HTMLButtonElement;
     expect(main).toHaveAttribute("name", "n");
     expect(main).toHaveAttribute("disabled");
@@ -280,7 +280,7 @@ describe("Specify attrs & state transition & event handlers", () => {
       children,
       value: false,
       variant: VARIANT.NEUTRAL,
-      role: "switch",
+      role: "switch" as const,
     });
     const user = userEvent.setup();
     const { getByRole } = render(Toggle, props);
@@ -351,15 +351,15 @@ describe("Specify attrs & state transition & event handlers", () => {
       value: false,
       variant: VARIANT.NEUTRAL,
     });
-    const { rerender } = render(Toggle, props);
+    render(Toggle, props);
     expect(props.variant).toBe(VARIANT.NEUTRAL);
 
     props.value = true;
-    await rerender(props);
+    await tick();
     expect(props.variant).toBe(VARIANT.ACTIVE);
 
     props.value = false;
-    await rerender(props);
+    await tick();
     expect(props.variant).toBe(VARIANT.NEUTRAL);
   });
 
@@ -400,7 +400,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const children = vi.fn().mockImplementation(mainfn);
     const props = $state({
       children,
-      role: "switch",
+      role: "switch" as const,
       value: false,
       variant: VARIANT.NEUTRAL,
     });
@@ -472,7 +472,7 @@ describe("Specify attrs & state transition & event handlers", () => {
       children,
       left,
       right,
-      role: "switch",
+      role: "switch" as const,
       value: false,
       variant: VARIANT.NEUTRAL,
       styling,

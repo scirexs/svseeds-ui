@@ -13,6 +13,10 @@
     }
   },
   "svelte": "./index.js",
+  "imports": {
+    "#svs/core": "./src/lib/_svseeds/core.ts",
+    "#svs/*": "./src/lib/_svseeds/*"
+  },
   "files": [
     "_svseeds",
     "!_svseeds/core.ts",
@@ -36,5 +40,34 @@
   },
   "peerDependencies": {
     "svelte": "^5.0.0"
+  },
+  "scripts": {
+    "build": "bun run ./src/script/prep.ts && bunx @sveltejs/package && bun run post",
+    "post": "mv ./dist/* ./ && cp ./src/lib/_svseeds/core.ts ./_svseeds && bunx terser --module -m -c -o ./_svseeds/core.js -- ./_svseeds/core.js",
+    "check": "bunx svelte-kit sync && bunx svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "bunx svelte-kit sync && bunx svelte-check --tsconfig ./tsconfig.json --watch",
+    "test": "bunx vitest --run",
+    "lint": "bunx oxlint",
+    "fmt": "bunx oxfmt"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-auto": "7.0.1",
+    "@sveltejs/kit": "2.61.1",
+    "@sveltejs/package": "2.5.7",
+    "@sveltejs/vite-plugin-svelte": "7.1.2",
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/svelte": "5.3.1",
+    "@testing-library/user-event": "14.6.1",
+    "@types/node": "25.9.1",
+    "jsdom": "29.1.1",
+    "oxfmt": "0.52.0",
+    "oxlint": "1.67.0",
+    "oxlint-tsgolint": "0.23.0",
+    "svelte": "5.56.0",
+    "svelte-check": "4.5.0",
+    "terser": "5.48.0",
+    "typescript": "6.0.3",
+    "vite": "8.0.16",
+    "vitest": "4.1.8"
   }
 }

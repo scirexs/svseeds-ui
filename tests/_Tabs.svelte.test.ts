@@ -2,8 +2,8 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
-import Tabs from "../lib/_svseeds/_Tabs.svelte";
-import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
+import Tabs from "#svs/_Tabs.svelte";
+import { PARTS, VARIANT } from "#svs/core";
 
 const label1id = "test-label1";
 const label2id = "test-label2";

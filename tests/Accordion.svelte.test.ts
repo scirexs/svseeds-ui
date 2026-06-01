@@ -2,8 +2,8 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, waitFor, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
-import Accordion from "../lib/_svseeds/Accordion.svelte";
-import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
+import Accordion from "#svs/Accordion.svelte";
+import { PARTS, VARIANT } from "#svs/core";
 
 const label1 = "First Section";
 const label2 = "Second Section";
@@ -138,7 +138,7 @@ describe("Accordion state management and interactions", () => {
       panel1: panel1fn,
       panel2: panel2fn,
       panel3: panel3fn,
-      deps: { duration: 0 },
+      deps: { svsDisclosure: { duration: 0 } },
     });
     const user = userEvent.setup();
     const { getByText } = render(Accordion, props);
@@ -185,7 +185,7 @@ describe("Accordion state management and interactions", () => {
       panel1: panel1fn,
       panel2: panel2fn,
       panel3: panel3fn,
-      deps: { duration: 0 },
+      deps: { svsDisclosure: { duration: 0 } },
     });
     const { getByText, rerender } = render(Accordion, props);
 

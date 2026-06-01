@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, waitFor, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
-import TagsInput from "../lib/_svseeds/_TagsInput.svelte";
-import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
+import TagsInput from "#svs/_TagsInput.svelte";
+import { PARTS, VARIANT } from "#svs/core";
 
 const preset = "svs-tags-input";
 
 // Mock Badge component to avoid dependency issues
-vi.mock("../lib/_svseeds/_Badge.svelte", () => ({
+vi.mock("#svs/_Badge.svelte", () => ({
   default: vi.fn().mockImplementation(({ children, onclick, ...props }) => ({
     render: () => `<button class="mock-badge" onclick="${onclick}">${children}</button>`,
   })),

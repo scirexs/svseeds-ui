@@ -1,8 +1,8 @@
 import { describe, expect, test, vi } from "vitest";
 import { fireEvent, render, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
-import ComboBox from "../lib/_svseeds/_ComboBox.svelte";
-import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
+import ComboBox from "#svs/_ComboBox.svelte";
+import { PARTS, VARIANT } from "#svs/core";
 
 const actionfn = () => {
   return {};

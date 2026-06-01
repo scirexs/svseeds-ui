@@ -1,7 +1,7 @@
 export { makeIndex };
 
-import { existsSync } from "jsr:@std/fs@^1.0.14";
-import * as p from "jsr:@std/path@^1.0.8";
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import * as p from "node:path";
 
 function makeIndex() {
   const DIR = "./src/lib/_svseeds";
@@ -9,7 +9,7 @@ function makeIndex() {
 
   try {
     const index = extractExports(DIR, OUT);
-    Deno.writeTextFileSync(p.resolve(OUT), index);
+    writeFileSync(p.resolve(OUT), index);
   } catch (e) {
     Err.show(e);
   }
@@ -17,13 +17,13 @@ function makeIndex() {
 
 function extractExports(path: string, out: string): string {
   const dir = p.resolve(path);
-  if (!existsSync(dir, { isDirectory: true })) Err.error("not exists library dir");
+  if (!existsSync(dir) || !statSync(dir).isDirectory()) Err.error("not exists library dir");
 
   const parser = new ExportParser(out);
   return findFiles(path).map((file) => parser.parse(file)).join("");
 }
 function findFiles(path: string): string[] {
-  const files = [...Deno.readDirSync(path).filter((x) => x.isFile).map((x) => x.name)];
+  const files = readdirSync(path, { withFileTypes: true }).filter((x) => x.isFile()).map((x) => x.name);
   return [
     ...getExtPath(files, path, ExportParser.EXT.ts),
     ...getExtPath(files, path, ExportParser.EXT.svelte),
@@ -70,7 +70,7 @@ class ExportParser {
     return "";
   }
   #prep(path: string) {
-    this.#code = Deno.readTextFileSync(path);
+    this.#code = readFileSync(path, "utf-8");
     this.#path = path;
   }
   #default(ext: string): string {
@@ -108,7 +108,7 @@ class Err {
     if (e instanceof Error && e.cause !== Err.CANCEL_CODE) this.#code = 1;
   }
   exitError() {
-    if (this.#code) Deno.exit(this.#code);
+    if (this.#code) process.exit(this.#code);
   }
 
   static error(msg: string) {

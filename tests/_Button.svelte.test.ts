@@ -2,8 +2,8 @@ import { describe, expect, test, vi } from "vitest";
 import { render } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
-import Button from "../lib/_svseeds/_Button.svelte";
-import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
+import Button, { type ButtonProps } from "#svs/_Button.svelte";
+import { PARTS, VARIANT } from "#svs/core";
 
 const leftid = "test-left";
 const rightid = "test-right";
@@ -44,14 +44,14 @@ describe("Switching existence of elements", () => {
   });
 
   test("w/ submit type", () => {
-    const props = { children, type: "submit" };
+    const props: ButtonProps = { children, type: "submit" };
     const { getByRole } = render(Button, props);
     const btn = getByRole("button") as HTMLButtonElement;
     expect(btn).toHaveAttribute("type", "submit");
   });
 
   test("w/ reset type", () => {
-    const props = { children, type: "reset" };
+    const props: ButtonProps = { children, type: "reset" };
     const { getByRole } = render(Button, props);
     const btn = getByRole("button") as HTMLButtonElement;
     expect(btn).toHaveAttribute("type", "reset");
@@ -154,7 +154,7 @@ describe("Specify attrs & form validation & event handlers", () => {
 
   test("w/ ignored attributes", () => {
     const mockClick = vi.fn();
-    const props = {
+    const props: ButtonProps = {
       children,
       onclick: mockClick,
       attributes: {

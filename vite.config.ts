@@ -1,15 +1,13 @@
 import { sveltekit } from "@sveltejs/kit/vite";
 import { defineConfig } from "vite";
-import deno from "@deno/vite-plugin";
 import { svelteTesting } from "@testing-library/svelte/vite";
 
 export default defineConfig({
   plugins: [
-    deno(),
     sveltekit(),
   ],
   test: {
-    workspace: [{
+    projects: [{
       extends: "./vite.config.ts",
       plugins: [svelteTesting()],
       test: {
@@ -17,10 +15,10 @@ export default defineConfig({
         environment: "jsdom",
         clearMocks: true,
         include: [
-          "src/tests/**/*.svelte.test.ts",
-          "src/tests/**/*.test.ts",
+          "tests/**/*.svelte.test.ts",
+          "tests/**/*.test.ts",
         ],
-        setupFiles: ["./src/tests/setup.ts"],
+        setupFiles: ["./tests/setup.ts"],
       },
     }],
   },

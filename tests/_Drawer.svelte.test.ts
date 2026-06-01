@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, waitFor } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
-import { createRawSnippet } from "svelte";
-import Drawer from "../lib/_svseeds/_Drawer.svelte";
-import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
+import { createRawSnippet, tick } from "svelte";
+import Drawer from "#svs/_Drawer.svelte";
+import { PARTS, VARIANT } from "#svs/core";
 
 afterEach(() => {
   // Clean up any remaining popovers
@@ -183,17 +183,17 @@ describe("Drawer open/close behavior", () => {
       children: childrenSnippet,
       open: false,
     });
-    const { container, rerender } = render(Drawer, props);
+    const { container } = render(Drawer, props);
     const drawer = container.querySelector("[popover]") as HTMLDivElement;
 
     expect(drawer.hidePopover).not.toHaveBeenCalled();
 
     props.open = true;
-    await rerender(props);
+    await tick();
     expect(drawer.showPopover).toHaveBeenCalled();
 
     props.open = false;
-    await rerender(props);
+    await tick();
     expect(drawer.hidePopover).toHaveBeenCalled();
   });
 
@@ -337,7 +337,7 @@ describe("Drawer attributes", () => {
     const attributes = {
       class: "should-be-omitted",
       style: "should-be-omitted",
-      popover: "should-be-omitted",
+      popover: "manual" as const,
       "data-test": "should-be-applied",
     };
     const { container } = render(Drawer, {

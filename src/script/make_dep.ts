@@ -1,7 +1,7 @@
 export { makeDep };
 
-import { existsSync } from "jsr:@std/fs@^1.0.14";
-import * as p from "jsr:@std/path@^1.0.8";
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import * as p from "node:path";
 
 type EachDescription = {
   dependencies: string[];
@@ -16,7 +16,7 @@ function makeDep() {
 
   try {
     const dep = buildDependency(DIR);
-    Deno.writeTextFileSync(p.resolve(OUT), JSON.stringify(dep));
+    writeFileSync(p.resolve(OUT), JSON.stringify(dep));
   } catch (e) {
     Err.show(e);
   }
@@ -24,7 +24,7 @@ function makeDep() {
 
 function buildDependency(path: string): DependencyObject {
   const dir = p.resolve(path);
-  if (!existsSync(dir, { isDirectory: true })) Err.error("not exists library dir");
+  if (!existsSync(dir) || !statSync(dir).isDirectory()) Err.error("not exists library dir");
 
   const parser = new SvelteParser();
   const dep: DependencyObject = { components: {} };
@@ -34,7 +34,7 @@ function buildDependency(path: string): DependencyObject {
   return dep;
 }
 function findDependFiles(path: string): string[] {
-  return [...Deno.readDirSync(path).filter((x) => x.isFile && x.name.endsWith(".svelte")).map((x) => x.name)];
+  return readdirSync(path, { withFileTypes: true }).filter((x) => x.isFile() && x.name.endsWith(".svelte")).map((x) => x.name);
 }
 
 class SvelteParser {
@@ -44,7 +44,7 @@ class SvelteParser {
   };
 
   parse(path: string): EachDescription {
-    const code = Deno.readTextFileSync(path);
+    const code = readFileSync(path, "utf-8");
     const dependencies = this.#extractDeps(code);
     return { dependencies };
   }
@@ -67,7 +67,7 @@ class Err {
     if (e instanceof Error && e.cause !== Err.CANCEL_CODE) this.#code = 1;
   }
   exitError() {
-    if (this.#code) Deno.exit(this.#code);
+    if (this.#code) process.exit(this.#code);
   }
 
   static error(msg: string) {

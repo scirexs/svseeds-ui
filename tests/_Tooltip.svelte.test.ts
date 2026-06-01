@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/svelte";
 // import userEvent from "@testing-library/user-event"; // userEvent can also be used
 import { createRawSnippet } from "svelte";
-import Tooltip, { tooltip, tooltipAction, type TooltipProps } from "../lib/_svseeds/_Tooltip.svelte"; // Adjust path if needed
-import { PARTS, VARIANT } from "../lib/_svseeds/core.ts"; // Adjust path if needed
+import Tooltip, { tooltip, tooltipAction, type TooltipProps } from "#svs/_Tooltip.svelte"; // Adjust path if needed
+import { PARTS, VARIANT } from "#svs/core"; // Adjust path if needed
 
 // Helper to create a trigger element host for tooltip action
 function setupTriggerHost() {

@@ -1,18 +1,49 @@
-.devcontainer/
-.vscode/
-.svelte-kit/
-.vite/
-dist/
-node_modules/
+# Output
+/.svelte-kit
+/build
+/dist
+.wrangler
 *.tgz
+/npm/
+
+# Env
 .env
 .env.*
-logs
-*.log
+
+# Vite
+.vite/
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
-deno.lock
-/_svseeds/
-/index.js
-/index.d.ts
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Node
+node_modules/
+.npmrc
+
+# Cache
+*.tsbuildinfo
+.npm
+.eslintcache
+.stylelintcache
+
+# Test
+*.sqlite
+
+# VSCode
+.devcontainer/
+.vscode/
+.vscode-test
+
+# Claude
+.claude/
+CLAUDE.md
+
+# Others
+.devconfig/
+.ref/
+/zzz.ts
 /publish.sh

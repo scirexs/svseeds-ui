@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { render, within } from "@testing-library/svelte";
 import { createRawSnippet } from "svelte";
-import ProgressTracker from "../lib/_svseeds/_ProgressTracker.svelte";
-import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
+import ProgressTracker from "#svs/_ProgressTracker.svelte";
+import { PARTS, VARIANT } from "#svs/core";
 
 const labels = ["Step 1", "Step 2", "Step 3", "Step 4"];
 const auxid = "test-aux";
@@ -10,8 +10,9 @@ const extraid = "test-extra";
 
 const auxfn = createRawSnippet(
   (
-    variant: () => string,
     index: () => number,
+    label: () => string,
+    variant: () => string,
   ) => {
     return { render: () => `<span data-testid="${auxid}">${variant()}-${index()}</span>` };
   },
@@ -19,8 +20,9 @@ const auxfn = createRawSnippet(
 
 const extrafn = createRawSnippet(
   (
-    variant: () => string,
     index: () => number,
+    label: () => string,
+    variant: () => string,
   ) => {
     return { render: () => `<span data-testid="${extraid}">${variant()}-${index()}</span>` };
   },

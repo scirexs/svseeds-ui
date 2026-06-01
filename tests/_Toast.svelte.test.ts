@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { fireEvent, render, waitFor, waitForElementToBeRemoved } from "@testing-library/svelte";
+import { configure, fireEvent, render, waitFor, waitForElementToBeRemoved } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
-import Toast, { removeToast, toast } from "../lib/_svseeds/_Toast.svelte";
-import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
+import Toast, { removeToast, toast } from "#svs/_Toast.svelte";
+import { PARTS, VARIANT } from "#svs/core";
 
 type ToastSnippetParams = [string, string, string, string]; // [message, type, id, variant]
 const testid = "test-toast";
@@ -41,12 +41,16 @@ HTMLElement.prototype.hidePopover = vi.fn();
 
 beforeEach(() => {
   vi.useFakeTimers();
+  // jsdom>=29 implements the Popover API, so the toast container (popover="manual")
+  // is treated as hidden until shown. Include hidden elements in role queries here.
+  configure({ defaultHidden: true });
 });
 
 afterEach(() => {
   vi.clearAllTimers();
   vi.useRealTimers();
   vi.clearAllMocks();
+  configure({ defaultHidden: false });
 });
 
 describe("Toast component initialization", () => {

@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, waitFor, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
-import { createRawSnippet } from "svelte";
-import Modal from "../lib/_svseeds/_Modal.svelte";
-import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
+import { createRawSnippet, tick } from "svelte";
+import Modal from "#svs/_Modal.svelte";
+import { PARTS, VARIANT } from "#svs/core";
 
 afterEach(() => {
   // Clean up any remaining dialogs
@@ -38,7 +38,7 @@ if (typeof HTMLDialogElement === "undefined") {
       this.open = true;
       this.setAttribute("open", "");
     }
-  };
+  } as unknown as typeof HTMLDialogElement;
 } else {
   if (!HTMLDialogElement.prototype.showModal) {
     HTMLDialogElement.prototype.showModal = vi.fn(function (this: HTMLDialogElement) {
@@ -242,13 +242,13 @@ describe("Modal variant and styling", () => {
       open: true,
       variant: "",
     });
-    const { getByRole, rerender } = render(Modal, props);
+    const { getByRole } = render(Modal, props);
 
     let dialog = getByRole("dialog") as HTMLDialogElement;
     expect(dialog).toHaveClass(preset, PARTS.WHOLE, VARIANT.NEUTRAL);
 
     props.variant = VARIANT.ACTIVE;
-    await rerender(props);
+    await tick();
     dialog = getByRole("dialog") as HTMLDialogElement;
     expect(dialog).toHaveClass(preset, PARTS.WHOLE, VARIANT.ACTIVE);
   });
@@ -261,16 +261,14 @@ describe("Modal variant and styling", () => {
       styling: customStyle,
     });
     const dialog = getByRole("dialog") as HTMLDialogElement;
-    const mainDiv = dialog.firstElementChild;
 
+    // Modal renders children directly inside the dialog (WHOLE only, no MAIN part)
     expect(dialog).toHaveClass(customStyle, PARTS.WHOLE, VARIANT.NEUTRAL);
-    expect(mainDiv).toHaveClass(customStyle, PARTS.MAIN, VARIANT.NEUTRAL);
   });
 
   test("custom styling object is applied", () => {
     const customStyle = {
       whole: { base: "modal-base", neutral: "modal-neutral" },
-      main: { base: "content-base", neutral: "content-neutral" },
     };
     const { getByRole } = render(Modal, {
       children: childrenSnippet,
@@ -278,10 +276,9 @@ describe("Modal variant and styling", () => {
       styling: customStyle,
     });
     const dialog = getByRole("dialog") as HTMLDialogElement;
-    const mainDiv = dialog.firstElementChild;
 
+    // Modal has only the WHOLE part (the dialog itself)
     expect(dialog).toHaveClass("modal-base", "modal-neutral");
-    expect(mainDiv).toHaveClass("content-base", "content-neutral");
   });
 });
 
@@ -292,11 +289,11 @@ describe("Modal structure and classes", () => {
       open: true,
     });
     const dialog = getByRole("dialog") as HTMLDialogElement;
-    const mainDiv = dialog.firstElementChild as HTMLDivElement;
 
+    // children render directly inside the dialog (the test snippet is a <p>)
     expect(dialog.children).toHaveLength(1);
-    expect(mainDiv.tagName).toBe("DIV");
-    expect(mainDiv).toHaveClass(preset, PARTS.MAIN, VARIANT.NEUTRAL);
+    expect(dialog.firstElementChild?.tagName).toBe("P");
+    expect(dialog).toHaveClass(preset, PARTS.WHOLE, VARIANT.NEUTRAL);
   });
 });
 

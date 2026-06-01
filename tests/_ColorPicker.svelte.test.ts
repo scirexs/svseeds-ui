@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from "vitest";
 import { fireEvent, render } from "@testing-library/svelte";
-import ColorPicker, { getHex } from "../lib/_svseeds/_ColorPicker.svelte";
-import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
+import ColorPicker, { getHex } from "#svs/_ColorPicker.svelte";
+import { PARTS, VARIANT } from "#svs/core";
 
 describe("Switching existence of elements and basic functionality", () => {
   const actionfn = () => {

@@ -1,8 +1,9 @@
 import { describe, expect, test, vi } from "vitest";
 import { fireEvent, render, waitFor } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
-import HotkeyCapture from "../lib/_svseeds/_HotkeyCapture.svelte";
-import { PARTS, VARIANT } from "../lib/_svseeds/core.ts";
+import { tick } from "svelte";
+import HotkeyCapture from "#svs/_HotkeyCapture.svelte";
+import { PARTS, VARIANT } from "#svs/core";
 // import { PointerEvent } from "jsdom";
 
 const placeholder = "Press a key combination...";
@@ -66,17 +67,17 @@ describe("Active state and focus management", () => {
 
   test("programmatic active change focuses/blurs element", async () => {
     const props = $state({ active: false });
-    const { getByRole, rerender } = render(HotkeyCapture, props);
+    const { getByRole } = render(HotkeyCapture, props);
     const input = getByRole("textbox") as HTMLInputElement;
 
     expect(document.activeElement).not.toBe(input);
 
     props.active = true;
-    await rerender(props);
+    await tick();
     expect(document.activeElement).toBe(input);
 
     props.active = false;
-    await rerender(props);
+    await tick();
     expect(document.activeElement).not.toBe(input);
   });
 
@@ -370,17 +371,17 @@ describe("Status management", () => {
   test("custom neutral variant is preserved", async () => {
     const customNeutral = "custom-neutral";
     const props = $state({ variant: customNeutral, active: false });
-    const { getByRole, rerender } = render(HotkeyCapture, props);
+    const { getByRole } = render(HotkeyCapture, props);
     const input = getByRole("textbox") as HTMLInputElement;
 
     expect(input).toHaveClass(preset, PARTS.MAIN, customNeutral);
 
     props.active = true;
-    await rerender(props);
+    await tick();
     expect(props.variant).toBe(VARIANT.ACTIVE);
 
     props.active = false;
-    await rerender(props);
+    await tick();
     expect(props.variant).toBe(customNeutral);
   });
 });
