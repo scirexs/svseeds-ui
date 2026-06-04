@@ -3,25 +3,25 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface ToggleProps {
+  interface ToggleProps extends Omit<HTMLButtonAttributes, "children" | "value" | "type" | "role" | "aria-pressed" | "aria-checked" | "aria-label"> {
     children: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
     left?: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
     right?: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
     value?: boolean; // bindable (false)
     role?: "button" | "switch"; // ("button")
     ariaLabel?: string;
-    attributes?: HTMLButtonAttributes;
-    action?: Action;
+    attach?: Attachment;
     element?: HTMLButtonElement; // bindable
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
+    // other HTMLButtonAttributes are passed to <button> via ...rest; `class` is merged onto the button
   }
   ```
   ### Anatomy
   ```svelte
   <span class="whole" conditional>
     <span class="left" conditional>{left}</span>
-    <button class="main" aria-pressed={value} aria-label={ariaLabel} {role} {...attributes} bind:this={element} use:action>
+    <button class={["main", class]} aria-pressed={value} aria-label={ariaLabel} {role} {...rest} bind:this={element} {@attach attach}>
       {children}
     </button>
     <span class="right" conditional>{right}</span>
@@ -29,18 +29,20 @@
   ```
 -->
 <script module lang="ts">
-  export interface ToggleProps {
+  export interface ToggleProps extends Omit<
+    HTMLButtonAttributes,
+    "children" | "value" | "type" | "role" | "aria-pressed" | "aria-checked" | "aria-label"
+  > {
     children: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
     left?: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
     right?: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
     value?: boolean; // bindable (false)
     role?: "button" | "switch"; // ("button")
     ariaLabel?: string;
-    attributes?: HTMLButtonAttributes;
-    action?: Action;
+    attach?: Attachment;
     element?: HTMLButtonElement; // bindable
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
   }
   export type ToggleReqdProps = "children";
   export type ToggleBindProps = "value" | "variant" | "element";
@@ -48,23 +50,26 @@
   const preset = "svs-toggle";
 
   import { type Snippet, untrack } from "svelte";
-  import { type Action } from "svelte/action";
+  import { type Attachment } from "svelte/attachments";
   import { type HTMLButtonAttributes } from "svelte/elements";
-  import { type SVSClass, VARIANT, PARTS, fnClass, isNeutral, omit } from "./core";
+  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isNeutral } from "./core";
 </script>
 
 <script lang="ts">
-  let { children, left, right, value = $bindable(false), role = "button", ariaLabel, attributes, action, element = $bindable(), styling, variant = $bindable("") }: ToggleProps = $props();
+  // prettier-ignore
+  let { children, left, right, value = $bindable(false), role = "button", ariaLabel, onclick, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, ...rest }: ToggleProps = $props();
 
   // *** Initialize *** //
-  if (!variant) variant = VARIANT.NEUTRAL;
-  const cls = fnClass(preset, styling);
-  const attrs = omit(attributes, "class", "type", "role", "aria-checked", "aria-pressed", "onclick");
+  const cls = $derived(fnClass(preset, styling));
   let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
-  let state = $derived(role === "button" ? { "aria-pressed": value } : { "aria-checked": value });
+  let state = $derived(
+    role === "button" ? { "aria-pressed": value, "aria-checked": undefined } : { "aria-checked": value, "aria-pressed": undefined },
+  );
 
   // *** Bind Handlers *** //
-  $effect(() => { neutral = isNeutral(variant) ? variant : neutral });
+  $effect(() => {
+    neutral = isNeutral(variant) ? variant : neutral;
+  });
   $effect.pre(() => {
     value;
     untrack(() => toggle());
@@ -74,9 +79,9 @@
   }
 
   // *** Event Handlers *** //
-  function onclick(ev: MouseEvent) {
+  function hclick(ev: MouseEvent) {
     value = !value;
-    attributes?.["onclick"]?.(ev as any);
+    onclick?.(ev as any);
   }
 </script>
 
@@ -99,14 +104,17 @@
 {/snippet}
 {#snippet button()}
   {@const r = role === "button" ? undefined : role}
-  {@const c = cls(PARTS.MAIN, variant)}
-  {#if action}
-    <button bind:this={element} class={c} type="button" role={r} aria-label={ariaLabel} {onclick} {...state} {...attrs} use:action>
-      {@render children(value, variant, element)}
-    </button>
-  {:else}
-    <button bind:this={element} class={c} type="button" role={r} aria-label={ariaLabel} {onclick} {...state} {...attrs}>
-      {@render children(value, variant, element)}
-    </button>
-  {/if}
+  <button
+    bind:this={element}
+    class={[cls(PARTS.MAIN, variant), c]}
+    aria-label={ariaLabel}
+    onclick={hclick}
+    {...rest}
+    type="button"
+    role={r}
+    {...state}
+    {@attach attach}
+  >
+    {@render children(value, variant, element)}
+  </button>
 {/snippet}

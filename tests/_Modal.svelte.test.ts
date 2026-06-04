@@ -198,7 +198,7 @@ describe("Modal open/close behavior", () => {
     expect(dialog.onkeydown).toBeNull();
   });
 
-  test("modal closes on close event", () => {
+  test("modal closes on close event", async () => {
     const props = $state({
       children: childrenSnippet,
       open: true,
@@ -207,9 +207,10 @@ describe("Modal open/close behavior", () => {
 
     const dialog = getByRole("dialog") as HTMLDialogElement;
 
-    // Simulate close event
-    fireEvent(dialog, new Event("close"));
-    waitFor(() => {
+    // Simulate close: dialog closes natively, syncing via the toggle event
+    dialog.open = false;
+    await fireEvent(dialog, new Event("toggle"));
+    await waitFor(() => {
       expect(props.open).toBe(false);
     });
   });
@@ -240,7 +241,7 @@ describe("Modal variant and styling", () => {
     const props = $state({
       children: childrenSnippet,
       open: true,
-      variant: "",
+      variant: VARIANT.NEUTRAL as string,
     });
     const { getByRole } = render(Modal, props);
 
@@ -302,7 +303,7 @@ describe("Modal edge cases", () => {
     const { getByRole } = render(Modal, {
       children: childrenSnippet,
       open: true,
-      variant: "",
+      variant: VARIANT.NEUTRAL,
     });
     const dialog = getByRole("dialog") as HTMLDialogElement;
     expect(dialog).toHaveClass(preset, PARTS.WHOLE, VARIANT.NEUTRAL);

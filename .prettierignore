@@ -1,0 +1,8 @@
+# Build output / generated (anchored to repo root)
+/dist/
+/_svseeds/
+/.svelte-kit/
+node_modules/
+
+# Lockfiles
+bun.lock

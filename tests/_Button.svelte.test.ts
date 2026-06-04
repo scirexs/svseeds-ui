@@ -28,9 +28,7 @@ const children = createRawSnippet(() => {
 });
 
 describe("Switching existence of elements", () => {
-  const actionfn = () => {
-    return {};
-  };
+  const attachfn = () => {};
 
   test("minimal props", () => {
     const { getByRole } = render(Button, { children });
@@ -97,20 +95,52 @@ describe("Switching existence of elements", () => {
     expect(right).toHaveBeenCalled();
   });
 
-  test("w/ action", () => {
-    const action = vi.fn().mockImplementation(actionfn);
-    const props = { children, action };
+  test("passes variant to left and right snippets", () => {
+    const props = { children, left: leftfn, right: rightfn, variant: VARIANT.ACTIVE };
+    const { getByTestId } = render(Button, props);
+
+    expect(getByTestId(leftid).textContent).toContain(VARIANT.ACTIVE);
+    expect(getByTestId(rightid).textContent).toContain(VARIANT.ACTIVE);
+  });
+
+  test("passes element to left and right snippets", () => {
+    const left = vi.fn().mockImplementation(leftfn);
+    const right = vi.fn().mockImplementation(rightfn);
+
+    const { getByRole } = render(Button, { children, left, right });
+    const btn = getByRole("button") as HTMLButtonElement;
+    const leftElement = left.mock.calls[0]?.[2] as (() => HTMLButtonElement | undefined) | undefined;
+    const rightElement = right.mock.calls[0]?.[2] as (() => HTMLButtonElement | undefined) | undefined;
+
+    expect(leftElement?.()).toBe(btn);
+    expect(rightElement?.()).toBe(btn);
+  });
+
+  test("passes variant to children snippet", () => {
+    const childid = "test-child-variant";
+    const variantChildren = createRawSnippet((variant: () => string) => {
+      return { render: () => `<span data-testid="${childid}">${variant()}</span>` };
+    });
+
+    const { getByTestId } = render(Button, { children: variantChildren, variant: VARIANT.ACTIVE });
+
+    expect(getByTestId(childid).textContent).toBe(VARIANT.ACTIVE);
+  });
+
+  test("w/ attach", () => {
+    const attach = vi.fn().mockImplementation(attachfn);
+    const props = { children, attach };
     const { getByRole } = render(Button, props);
     const btn = getByRole("button") as HTMLButtonElement;
     expect(btn).toHaveTextContent("Button Text");
-    expect(action).toHaveBeenCalled();
+    expect(attach).toHaveBeenCalled();
   });
 
-  test("w/ action and snippets", () => {
-    const action = vi.fn().mockImplementation(actionfn);
+  test("w/ attach and snippets", () => {
+    const attach = vi.fn().mockImplementation(attachfn);
     const left = vi.fn().mockImplementation(leftfn);
     const right = vi.fn().mockImplementation(rightfn);
-    const props = { children, left, right, action };
+    const props = { children, left, right, attach };
     const { getByRole, getByTestId } = render(Button, props);
     const btn = getByRole("button") as HTMLButtonElement;
     const leftsp = getByTestId(leftid);
@@ -118,7 +148,7 @@ describe("Switching existence of elements", () => {
     expect(btn.firstElementChild).toBe(leftsp.parentElement);
     expect(btn.children[1]?.textContent).toBe("Button Text");
     expect(btn.lastElementChild).toBe(rightsp.parentElement);
-    expect(action).toHaveBeenCalled();
+    expect(attach).toHaveBeenCalled();
     expect(left).toHaveBeenCalled();
     expect(right).toHaveBeenCalled();
   });
@@ -134,15 +164,13 @@ describe("Switching existence of elements", () => {
 describe("Specify attrs & form validation & event handlers", () => {
   const seed = "svs-button";
 
-  test("w/ basic attributes", () => {
-    const props = {
+  test("w/ rest attributes", () => {
+    const props: ButtonProps = {
       children,
-      attributes: {
-        name: "test-button",
-        value: "test-value",
-        disabled: true,
-        "aria-label": "Test Button",
-      },
+      name: "test-button",
+      value: "test-value",
+      disabled: true,
+      "aria-label": "Test Button",
     };
     const { getByRole } = render(Button, props);
     const btn = getByRole("button") as HTMLButtonElement;
@@ -152,21 +180,26 @@ describe("Specify attrs & form validation & event handlers", () => {
     expect(btn).toHaveAttribute("aria-label", "Test Button");
   });
 
-  test("w/ ignored attributes", () => {
-    const mockClick = vi.fn();
-    const props: ButtonProps = {
-      children,
-      onclick: mockClick,
-      attributes: {
-        class: "ignored-class",
-        type: "submit", // Should be ignored in favor of prop
-        onclick: vi.fn(), // Should be ignored in favor of prop
-      },
-    };
+  test("w/ string class merged onto root", () => {
+    const props: ButtonProps = { children, class: "custom-class" };
     const { getByRole } = render(Button, props);
     const btn = getByRole("button") as HTMLButtonElement;
-    expect(btn).not.toHaveAttribute("class", "ignored-class");
-    expect(btn).toHaveAttribute("type", "button"); // Default type, not from attributes
+    expect(btn).toHaveClass("custom-class", seed, PARTS.WHOLE, VARIANT.NEUTRAL);
+  });
+
+  test("w/ array class merged onto root", () => {
+    const props: ButtonProps = { children, class: ["custom-a", "custom-b"] };
+    const { getByRole } = render(Button, props);
+    const btn = getByRole("button") as HTMLButtonElement;
+    expect(btn).toHaveClass("custom-a", "custom-b", seed, PARTS.WHOLE);
+  });
+
+  test("w/ object class merged onto root", () => {
+    const props: ButtonProps = { children, class: { "custom-on": true, "custom-off": false } };
+    const { getByRole } = render(Button, props);
+    const btn = getByRole("button") as HTMLButtonElement;
+    expect(btn).toHaveClass("custom-on", seed, PARTS.WHOLE);
+    expect(btn).not.toHaveClass("custom-off");
   });
 
   test("form validation - valid form", async () => {
@@ -223,37 +256,115 @@ describe("Specify attrs & form validation & event handlers", () => {
     expect(mockClick).toHaveBeenCalled();
   });
 
-  test("onclick from attributes when no onclick prop", async () => {
+  test("form attribute - outputs form id", () => {
+    const f = document.createElement("form");
+    f.id = "my-form";
+
+    const { getByRole } = render(Button, { children, form: f });
+    const btn = getByRole("button") as HTMLButtonElement;
+
+    expect(btn).toHaveAttribute("form", "my-form");
+  });
+
+  test("form attribute - omits empty form id", () => {
+    const f = document.createElement("form");
+
+    const { getByRole } = render(Button, { children, form: f });
+    const btn = getByRole("button") as HTMLButtonElement;
+
+    expect(btn).not.toHaveAttribute("form");
+  });
+
+  test("disabled suppresses onclick", async () => {
     const mockClick = vi.fn();
     const user = userEvent.setup();
 
-    const props = {
-      children,
-      attributes: { onclick: mockClick },
-    };
-    const { getByRole } = render(Button, props);
+    const { getByRole } = render(Button, { children, onclick: mockClick, disabled: true });
     const btn = getByRole("button") as HTMLButtonElement;
 
     await user.click(btn);
+    expect(mockClick).not.toHaveBeenCalled();
+  });
+
+  test("keyboard activation - enter fires onclick", async () => {
+    const mockClick = vi.fn();
+    const user = userEvent.setup();
+
+    const { getByRole } = render(Button, { children, onclick: mockClick });
+    const btn = getByRole("button") as HTMLButtonElement;
+
+    btn.focus();
+    await user.keyboard("{Enter}");
     expect(mockClick).toHaveBeenCalled();
   });
 
-  test("onclick prop takes precedence over attributes onclick", async () => {
-    const mockClickProp = vi.fn();
-    const mockClickAttr = vi.fn();
+  test("keyboard activation - space fires onclick", async () => {
+    const mockClick = vi.fn();
     const user = userEvent.setup();
 
-    const props = {
-      children,
-      onclick: mockClickProp,
-      attributes: { onclick: mockClickAttr },
-    };
-    const { getByRole } = render(Button, props);
+    const { getByRole } = render(Button, { children, onclick: mockClick });
     const btn = getByRole("button") as HTMLButtonElement;
 
-    await user.click(btn);
-    expect(mockClickProp).toHaveBeenCalled();
-    expect(mockClickAttr).not.toHaveBeenCalled();
+    btn.focus();
+    await user.keyboard("[Space]");
+    expect(mockClick).toHaveBeenCalled();
+  });
+
+  test("keyboard activation - invalid form suppresses onclick", async () => {
+    const mockClick = vi.fn();
+    const user = userEvent.setup();
+    const mockForm = { checkValidity: vi.fn().mockReturnValue(false) } as any;
+
+    const { getByRole } = render(Button, { children, onclick: mockClick, form: mockForm });
+    const btn = getByRole("button") as HTMLButtonElement;
+
+    btn.focus();
+    await user.keyboard("{Enter}");
+    expect(mockForm.checkValidity).toHaveBeenCalled();
+    expect(mockClick).not.toHaveBeenCalled();
+  });
+
+  test("real form validation - invalid required field suppresses onclick", async () => {
+    const mockClick = vi.fn();
+    const user = userEvent.setup();
+    const f = document.createElement("form");
+    const input = document.createElement("input");
+    input.required = true;
+    f.appendChild(input);
+    document.body.appendChild(f);
+
+    try {
+      const { getByRole } = render(Button, { children, onclick: mockClick, form: f });
+      const btn = getByRole("button") as HTMLButtonElement;
+
+      await user.click(btn);
+      expect(f.checkValidity()).toBe(false);
+      expect(mockClick).not.toHaveBeenCalled();
+    } finally {
+      f.remove();
+    }
+  });
+
+  test("real form validation - valid required field fires onclick", async () => {
+    const mockClick = vi.fn();
+    const user = userEvent.setup();
+    const f = document.createElement("form");
+    const input = document.createElement("input");
+    input.required = true;
+    input.value = "x";
+    f.appendChild(input);
+    document.body.appendChild(f);
+
+    try {
+      const { getByRole } = render(Button, { children, onclick: mockClick, form: f });
+      const btn = getByRole("button") as HTMLButtonElement;
+
+      await user.click(btn);
+      expect(f.checkValidity()).toBe(true);
+      expect(mockClick).toHaveBeenCalled();
+    } finally {
+      f.remove();
+    }
   });
 
   test("default class of neutral variant", () => {

@@ -1,30 +1,34 @@
 // deno-fmt-ignore
 export {
   type SVSClass,
+  type SVSVariant,
+  type SVSPart,
   BASE,
   VARIANT,
   PARTS,
-  elemId,
   fnClass,
   isNeutral,
   isUnsignedInteger,
+  shouldReduceMotion,
   omit,
   debounce,
   throttle,
-  UniqueId,
-}
+};
 
 type ClassDictionary = Record<string, unknown>;
 type ClassArray = (ClassArray | ClassDictionary | string | number | bigint | null | boolean | undefined)[];
 type ClassPartialValue = string | ClassArray;
 type ClassValue = ClassPartialValue | ClassDictionary;
-type ClassRule = Record<string, ClassValue> | ClassPartialValue;
+// A part value is either a class value applied to every variant (string / array / clsx condition object)
+// or a variant map (Record<variant, ClassValue>). Including ClassDictionary lets a bare clsx object be
+// written directly without the historical array-wrap workaround; see _isVariantMap for runtime disambiguation.
+type ClassRule = ClassPartialValue | ClassDictionary | Record<string, ClassValue>;
 type ClassRuleSet = Record<string, Record<string, ClassValue>>;
 type SVSClass = Record<string, ClassRule> | string;
 type ClassFn = (part: string, variant: string) => ClassValue | undefined;
 
 const BASE = "base";
-const VARIANT = Object.freeze({ NEUTRAL: "neutral", ACTIVE: "active", INACTIVE: "inactive" });
+const VARIANT = Object.freeze({ NEUTRAL: "neutral", ACTIVE: "active", INACTIVE: "inactive" } as const);
 const PARTS = Object.freeze({
   WHOLE: "whole",
   MIDDLE: "middle",
@@ -36,7 +40,9 @@ const PARTS = Object.freeze({
   LABEL: "label",
   AUX: "aux",
   EXTRA: "extra",
-});
+} as const);
+type SVSVariant = (typeof VARIANT)[keyof typeof VARIANT] | (string & {});
+type SVSPart = (typeof PARTS)[keyof typeof PARTS] | (string & {});
 /**
  * Creates a function that dynamically generates CSS classes based on component parts and variant.
  *
@@ -84,124 +90,30 @@ const PARTS = Object.freeze({
  * classFn("button", "active"); // ["btn", "btn-active"]
  */
 function fnClass(preset: SVSClass, style?: SVSClass): ClassFn {
-  const rule = prepRule(style) ?? prepRule(preset);
+  const rule = _prepRule(style) ?? _prepRule(preset);
   if (rule == null) return (_, __) => undefined;
   if (typeof rule === "string") return (part, variant) => `${rule} ${part} ${variant}`;
-  return (part, variant) => ruleClass(rule, part, variant);
+  return (part, variant) => _ruleClass(rule, part, variant);
 }
-function prepRule(rule?: SVSClass): ClassRuleSet | string | undefined {
+function _prepRule(rule?: SVSClass): ClassRuleSet | string | undefined {
   if (rule == null) return;
   if (typeof rule === "string") return rule.trim() ? rule : undefined;
   const entries = Object.entries(rule);
   if (!entries.length) return;
-  return Object.fromEntries(entries.map(([k, v]) => {
-    return v !== null && typeof v === "object" && !Array.isArray(v) ? [k, v] : [k, { base: v }];
-  }));
+  return Object.fromEntries(entries.map(([k, v]) => (_isVariantMap(v) ? [k, v] : [k, { base: v }])));
 }
-function ruleClass(rule: ClassRuleSet, part: string, variant: string): ClassValue | undefined {
+function _isVariantMap(v: ClassRule): v is Record<string, ClassValue> {
+  if (v === null || typeof v !== "object" || Array.isArray(v)) return false;
+  // A clsx condition object (e.g. { foo, bar: !foo }) has boolean values; a variant map's values are ClassValue (never boolean).
+  return !Object.values(v).some((x) => typeof x === "boolean");
+}
+function _ruleClass(rule: ClassRuleSet, part: string, variant: string): ClassValue | undefined {
   const base = rule[part]?.[BASE] ?? "";
   const dyn = rule[part]?.[variant] ?? rule[part]?.[VARIANT.NEUTRAL] ?? "";
   if (!base && !dyn) return;
   if (base && dyn) return [base, dyn];
   return base ? base : dyn;
 }
-/**
- * Generates unique random alphabetic ID strings with collision detection.
- * Uses a carefully selected character set of 50 letters (A-Y, a-y) to ensure
- * uniform distribution when using Math.random(), and provides a reserved
- * character space (Z, z) for manual ID injection without conflicts.
- *
- * In default, internal store for detecting collision is automatically cleared
- * when it exceeds 100,000 entries to manage memory usage in long-running.
- *
- * @example
- * ```typescript
- * const idGen = new UniqueId(5);
- * const id1 = idGen.id; // "AbCdE"
- * const id2 = idGen.id; // "XyaBc" (guaranteed to be different from id1)
- *
- * // Conditional generation
- * const conditionalId = idGen.get(someCondition); // string | undefined
- *
- * // Manual injection with reserved characters
- * const manualId = "zTest"; // Will never conflict with generated IDs
- * ```
- */
-class UniqueId {
-  static #ALPHABETIC = [...Array.from(Array(25).keys(), (x) => x + 65), ...Array.from(Array(25).keys(), (x) => x + 97)];
-  #store = new Set<string>();
-  #LEN = 3;
-  #LIMIT = 100000;
-
-  /**
-   * Gets a new unique ID string. Always returns a string (never undefined).
-   *
-   * @returns A unique alphabetic ID string
-   *
-   * @example
-   * ```typescript
-   * const generator = new UniqueId();
-   * const myId = generator.id; // "AbC"
-   * ```
-   */
-  get id(): string {
-    return this.get(true)!;
-  }
-  /**
-   * Creates a new UniqueId generator instance.
-   *
-   * @param len   - The length of generated ID strings (minimum 3, defaults to 3)
-   * @param limit - Maximum number of IDs to store before clearing the internal store (defaults to 100,000)
-   *
-   * @example
-   * ```typescript
-   * const shortIds = new UniqueId(4); // Generates 4-character IDs
-   * const longIds = new UniqueId(8);  // Generates 8-character IDs
-   * ```
-   */
-  constructor(len: number = 3, limit: number = 100000) {
-    if (len > 2) this.#LEN = len;
-    limit = Math.trunc(limit);
-    if (limit > 0 && limit < Math.min(Math.pow(50, this.#LEN), Number.MAX_SAFE_INTEGER)) this.#LIMIT = limit;
-  }
-  /**
-   * Conditionally generates a unique ID string based on the provided value.
-   * Returns undefined if the value is falsy. The internal store is automatically
-   * cleared if it exceeds 100,000 entries to prevent excessive memory usage.
-   *
-   * @param v - A value to check for truthiness
-   * @returns A unique ID string if the value is truthy, undefined otherwise
-   *
-   * @example
-   * ```typescript
-   * const generator = new UniqueId(4);
-   * const id1 = generator.get(true);        // "AbCd"
-   * const id2 = generator.get(false);       // undefined
-   * const id3 = generator.get("hello");     // "XyAb"
-   * const id4 = generator.get(null);        // undefined
-   * ```
-   */
-  get(v: unknown): string | undefined {
-    if (!v) return;
-    if (this.#store.size > this.#LIMIT) this.#store.clear();
-    return this.#add();
-  }
-  #char(): number {
-    return UniqueId.#ALPHABETIC[Math.trunc(Math.random() * UniqueId.#ALPHABETIC.length)];
-  }
-  #gen(): string {
-    return String.fromCharCode(...Array(this.#LEN).fill(null).map(() => this.#char()));
-  }
-  #add(): string {
-    let id = this.#gen();
-    while (this.#store.has(id)) {
-      id = this.#gen();
-    }
-    this.#store.add(id);
-    return id;
-  }
-}
-const elemId = new UniqueId();
 /**
  * Determines whether a variant is in a neutral variant (neither ACTIVE nor INACTIVE).
  *
@@ -237,6 +149,23 @@ function isNeutral(variant: string): boolean {
  */
 function isUnsignedInteger(num: number): boolean {
   return Number.isInteger(num) && num >= 0;
+}
+/**
+ * Checks whether the user prefers reduced motion via the `prefers-reduced-motion` media query.
+ *
+ * Returns `false` in non-browser environments (e.g. SSR) where `window` is unavailable,
+ * so that motion is treated as allowed by default during server-side rendering.
+ *
+ * @returns True if the user has requested reduced motion, false otherwise (including SSR)
+ *
+ * @example
+ * ```typescript
+ * shouldReduceMotion(); // true when OS/browser setting is "reduce"
+ * ```
+ */
+function shouldReduceMotion(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 /**
  * Creates a new object with specified keys omitted from the original object.

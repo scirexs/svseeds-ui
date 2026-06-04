@@ -3,7 +3,7 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface CheckFieldProps {
+  interface CheckFieldProps extends Omit<HTMLInputAttributes, "type" | "value"> {
     options: SvelteMap<string, string> | Map<string, string>;
     label?: string;
     extra?: string;
@@ -13,11 +13,11 @@
     values?: string[]; // bindable
     multiple?: boolean; // (true)
     validations?: CheckFieldValidation[];
-    attributes?: HTMLInputAttributes;
-    action?: Action;
+    attach?: Attachment;
     elements?: HTMLInputElement[]; // bindable
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
+    // class & other HTMLInputAttributes are passed to each <input> via ...rest (class is merged onto each input)
   }
   type CheckFieldValidation = (values: string[], validity: ValidityState) => string | undefined;
   ```
@@ -34,7 +34,7 @@
     <div class="middle">
       {#each options as { value, text }, i}
         <label class="main">
-          <input class="left" bind:this={elements[i]} use:action />
+          <input class={["left", class]} bind:this={elements[i]} {@attach attach} />
           <span class="right">{text}</span>
         </label>
       {/each}
@@ -44,7 +44,7 @@
   ```
 -->
 <script module lang="ts">
-  export interface CheckFieldProps {
+  export interface CheckFieldProps extends Omit<HTMLInputAttributes, "type" | "value" | "id"> {
     options: SvelteMap<string, string> | Map<string, string>;
     label?: string;
     extra?: string;
@@ -54,11 +54,10 @@
     values?: string[]; // bindable
     multiple?: boolean; // (true)
     validations?: CheckFieldValidation[];
-    attributes?: HTMLInputAttributes;
-    action?: Action;
+    attach?: Attachment<HTMLInputElement>;
     elements?: HTMLInputElement[]; // bindable
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
   }
   export type CheckFieldReqdProps = "options";
   export type CheckFieldBindProps = "values" | "variant" | "elements";
@@ -67,37 +66,40 @@
   const preset = "svs-check-field";
 
   import { type Snippet, untrack } from "svelte";
-  import { type Action } from "svelte/action";
+  import { type Attachment } from "svelte/attachments";
   import { type SvelteMap } from "svelte/reactivity";
-  import { type HTMLInputAttributes } from "svelte/elements";
-  import { type SVSClass, VARIANT, PARTS, elemId, fnClass, isNeutral, omit } from "./core";
+  import { type HTMLInputAttributes, type ChangeEventHandler, type EventHandler } from "svelte/elements";
+  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isNeutral } from "./core";
 </script>
 
 <script lang="ts">
-  let { options, label, extra, aux, bottom, values = $bindable([]), multiple = true, descFirst = false, validations = [], attributes, action, elements = $bindable([]), styling, variant = $bindable("") }: CheckFieldProps = $props();
+  // prettier-ignore
+  let { options, label, extra, aux, bottom, values = $bindable([]), multiple = true, descFirst = false, validations = [], name, onchange, oninvalid, attach, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, ...rest }: CheckFieldProps = $props();
 
   // *** Initialize *** //
-  if (!variant) variant = VARIANT.NEUTRAL;
-  const cls = fnClass(preset, styling);
-  const type = multiple ? "checkbox" : "radio";
-  const name = attributes?.["name"] ? attributes?.["name"] : elemId.id;
-  const idLabel = elemId.get(label?.trim());
-  const idDesc = elemId.get(bottom?.trim());
-  const idErr = idDesc ?? elemId.id;
-  const attrs = omit(attributes, "class", "id", "type", "name", "value", "onchange", "oninvalid");
-  const roleGroup = multiple ? "group" : "radiogroup";
+  const cls = $derived(fnClass(preset, styling));
+  const type = $derived(multiple ? "checkbox" : "radio");
+  const uid = $props.id();
+  const nm = $derived(name?.trim() ? name : `${uid}-name`);
+  const idLabel = $derived(label?.trim() ? `${uid}-label` : undefined);
+  const idDesc = $derived(bottom?.trim() ? `${uid}-desc` : undefined);
+  const idErr = $derived(idDesc ?? `${uid}-err`);
+  const roleGroup = $derived(multiple ? "group" : "radiogroup");
+  // svelte-ignore state_referenced_locally
   let message = $state(bottom);
 
   // *** States *** //
   let neutral = $state(isNeutral(variant) ? variant : VARIANT.NEUTRAL);
-  $effect(() => { neutral = isNeutral(variant) ? variant : neutral });
-  let live = $derived(variant === VARIANT.INACTIVE ? "alert" : "status");
-  let invalid = $derived(variant === VARIANT.INACTIVE ? true : undefined);
-  let idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
+  $effect(() => {
+    neutral = isNeutral(variant) ? variant : neutral;
+  });
+  const live = $derived(variant === VARIANT.INACTIVE ? "alert" : "status");
+  const invalid = $derived(variant === VARIANT.INACTIVE ? true : undefined);
+  const idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
   function shift(oninvalid?: boolean) {
     const vmsg = elements[0]?.validationMessage ?? "";
-    variant = oninvalid && vmsg ? VARIANT.INACTIVE : (!values.length || vmsg) ? neutral : VARIANT.ACTIVE;
-    message = variant === VARIANT.INACTIVE ? vmsg ? vmsg : bottom : bottom;
+    variant = oninvalid && vmsg ? VARIANT.INACTIVE : !values.length || vmsg ? neutral : VARIANT.ACTIVE;
+    message = variant === VARIANT.INACTIVE ? (vmsg ? vmsg : bottom) : bottom;
   }
   function verify() {
     if (!elements[0]) return;
@@ -120,12 +122,12 @@
   }
 
   // *** Event Handlers *** //
-  function onchange(ev: Event) {
-    attributes?.onchange?.(ev as any);
+  function hchange(ev: Parameters<ChangeEventHandler<HTMLInputElement>>[0]) {
+    onchange?.(ev);
     values = elements.filter((el) => el.checked).map((el) => el.value);
   }
-  function oninvalid(ev: Event) {
-    attributes?.oninvalid?.(ev as any);
+  function hinvalid(ev: Parameters<EventHandler<Event, HTMLInputElement>>[0]) {
+    oninvalid?.(ev);
     ev.preventDefault();
     shift(true);
   }
@@ -161,15 +163,30 @@
   {/if}
 {/snippet}
 {#snippet main()}
-  <div class={cls(PARTS.MIDDLE, variant)} role={roleGroup} aria-describedby={idDesc} aria-invalid={!multiple ? invalid : undefined} aria-errormessage={!multiple ? idMsg : undefined}>
-    {#each opts as {value, text, checked}, i (value)}
+  <div
+    class={cls(PARTS.MIDDLE, variant)}
+    role={roleGroup}
+    aria-describedby={idDesc}
+    aria-invalid={!multiple ? invalid : undefined}
+    aria-errormessage={!multiple ? idMsg : undefined}
+  >
+    {#each opts as { value, text, checked }, i (value)}
       {@const stat = checked ? VARIANT.ACTIVE : neutral}
       <label class={cls(PARTS.MAIN, stat)}>
-        {#if action}
-          <input bind:this={elements[i]} class={cls(PARTS.LEFT, stat)} aria-invalid={multiple ? invalid : undefined} aria-errormessage={multiple ? idMsg : undefined} {value} {name} {type} {checked} {onchange} {oninvalid} {...attrs} use:action />
-        {:else}
-          <input bind:this={elements[i]} class={cls(PARTS.LEFT, stat)} aria-invalid={multiple ? invalid : undefined} aria-errormessage={multiple ? idMsg : undefined} {value} {name} {type} {checked} {onchange} {oninvalid} {...attrs} />
-        {/if}
+        <input
+          bind:this={elements[i]}
+          class={[cls(PARTS.LEFT, stat), c]}
+          {...rest}
+          aria-invalid={multiple ? invalid : undefined}
+          aria-errormessage={multiple ? idMsg : undefined}
+          {value}
+          name={nm}
+          {type}
+          {checked}
+          onchange={hchange}
+          oninvalid={hinvalid}
+          {@attach attach}
+        />
         <span class={cls(PARTS.RIGHT, stat)}>{text}</span>
       </label>
     {/each}

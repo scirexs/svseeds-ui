@@ -29,12 +29,10 @@ describe("Basic rendering and structure", () => {
     const values = ["tag1", "tag2"];
     const { container } = render(TagsInput, { values });
 
-    const badges = container.querySelectorAll(`.${preset}.svs-badge.main`);
-    waitFor(() => {
-      expect(badges).toHaveLength(2);
-      expect(badges[0]).toHaveTextContent("tag1");
-      expect(badges[1]).toHaveTextContent("tag2");
-    });
+    const badges = container.querySelectorAll(`.${preset}.${PARTS.LABEL}`);
+    expect(badges).toHaveLength(2);
+    expect(badges[0]).toHaveTextContent("tag1");
+    expect(badges[1]).toHaveTextContent("tag2");
   });
 
   test("renders with initial value", () => {
@@ -69,13 +67,13 @@ describe("Basic rendering and structure", () => {
     expect(input?.nextElementSibling).toBe(tagsSpan);
   });
 
-  test("renders with action", () => {
-    const action = vi.fn().mockImplementation(() => ({}));
-    const { container } = render(TagsInput, { action });
+  test("renders with attach", () => {
+    const attach = vi.fn().mockImplementation(() => ({}));
+    const { container } = render(TagsInput, { attach });
     const input = container.querySelector("input");
 
     expect(input).toBeInTheDocument();
-    expect(action).toHaveBeenCalled();
+    expect(attach).toHaveBeenCalled();
   });
 });
 
@@ -265,7 +263,7 @@ describe("Event handlers", () => {
     const badges = container.querySelectorAll(".svs-tags-input.extra");
     await user.click(badges[0]);
 
-    waitFor(() => {
+    await waitFor(() => {
       expect(onremove).toHaveBeenCalledWith(["tag1", "tag2"], "tag1", 0);
       expect(props.values).toEqual(["tag2"]);
     });
@@ -280,10 +278,10 @@ describe("Event handlers", () => {
     const user = userEvent.setup();
     const { container } = render(TagsInput, { props });
 
-    const badges = container.querySelectorAll(".mock-badge");
+    const badges = container.querySelectorAll(".svs-tags-input.extra");
     await user.click(badges[0]);
 
-    waitFor(() => {
+    await waitFor(() => {
       expect(onremove).toHaveBeenCalledWith(["tag1", "tag2"], "tag1", 0);
       expect(props.values).toEqual(["tag1", "tag2"]);
     });
@@ -292,12 +290,11 @@ describe("Event handlers", () => {
 
 describe("Attributes and styling", () => {
   test("applies custom attributes to input", () => {
-    const attributes = {
+    const { container } = render(TagsInput, {
       placeholder: "Enter tags...",
       "data-testid": "tags-input",
       name: "tags",
-    };
-    const { container } = render(TagsInput, { attributes });
+    });
     const input = container.querySelector("input") as HTMLInputElement;
 
     expect(input).toHaveAttribute("placeholder", "Enter tags...");
@@ -305,24 +302,20 @@ describe("Attributes and styling", () => {
     expect(input).toHaveAttribute("name", "tags");
   });
 
-  test("ignores class, type, and onkeydown attributes", () => {
-    const attributes = {
-      class: "custom-class",
-      type: "password",
-      onkeydown: vi.fn(),
-    };
-    const { container } = render(TagsInput, { attributes });
+  test("class merged onto control, input type forced to text", () => {
+    const { container } = render(TagsInput, { class: "custom-class" });
+    const root = container.querySelector("div") as HTMLDivElement;
     const input = container.querySelector("input") as HTMLInputElement;
 
-    expect(input).not.toHaveAttribute("class", "custom-class");
+    expect(input).toHaveClass("custom-class"); // merged onto the control (same as ...rest)
+    expect(root).not.toHaveClass("custom-class"); // not on the WHOLE root
     expect(input).toHaveAttribute("type", "text");
   });
 
   test("calls original onkeydown handler", async () => {
     const onkeydown = vi.fn();
-    const attributes = { onkeydown };
     const user = userEvent.setup();
-    const { container } = render(TagsInput, { attributes });
+    const { container } = render(TagsInput, { onkeydown });
     const input = container.querySelector("input") as HTMLInputElement;
 
     await user.type(input, "test");
@@ -360,10 +353,10 @@ describe("Attributes and styling", () => {
 
 describe("Status and state management", () => {
   test("initializes with neutral variant by default", () => {
-    const props = $state({ variant: "" });
-    const { container } = render(TagsInput, props);
+    const { container } = render(TagsInput, { variant: VARIANT.NEUTRAL });
+    const whole = container.querySelector(`.${preset}`);
 
-    expect(props.variant).toBe(VARIANT.NEUTRAL);
+    expect(whole).toHaveClass(preset, PARTS.WHOLE, VARIANT.NEUTRAL);
   });
 
   test("maintains provided variant", () => {

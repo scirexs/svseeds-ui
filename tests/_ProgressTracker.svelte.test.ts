@@ -157,7 +157,7 @@ describe("Status management and step states", () => {
     const props = $state({
       current: 1,
       labels,
-      variant: "",
+      variant: VARIANT.NEUTRAL as string,
     });
     const { rerender, getAllByRole } = render(ProgressTracker, props);
 

@@ -19,7 +19,7 @@
     name?: string;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
     deps?: TagsInputFieldDeps;
   }
   interface TagsInputFieldDeps extends TagsInputDeps {
@@ -68,7 +68,7 @@
     name?: string;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
     deps?: TagsInputFieldDeps;
   }
   export interface TagsInputFieldDeps {
@@ -78,54 +78,62 @@
   export type TagsInputFieldBindProps = "values" | "variant" | "element";
   export type TagsInputFieldConstraint = (value: string, validity: ValidityState) => string | undefined;
   export type TagsInputFieldValidation = (values: string[], validity: ValidityState) => string | undefined;
-  export type TagsInputFieldCountValidation = { value: number, message: string };
+  export type TagsInputFieldCountValidation = { value: number; message: string };
 
   const preset = "svs-tags-input-field";
 
   import { type Snippet, untrack } from "svelte";
-  import { type SVSClass, VARIANT, PARTS, elemId, fnClass, isNeutral, omit } from "./core";
+  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isNeutral, omit } from "./core";
   import TagsInput, { type TagsInputProps, type TagsInputReqdProps, type TagsInputBindProps } from "./_TagsInput.svelte";
 </script>
 
 <script lang="ts">
-  let { label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), min, max, constraints = [], validations = [], name, element = $bindable(), styling, variant = $bindable(""), deps }: TagsInputFieldProps = $props();
+  // prettier-ignore
+  let { label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), min, max, constraints = [], validations = [], name, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), deps }: TagsInputFieldProps = $props();
 
   // *** Initialize *** //
-  if (!variant) variant = VARIANT.NEUTRAL;
-  const cls = fnClass(preset, styling);
-  const id = deps?.svsTagsInput?.attributes?.id ? deps.svsTagsInput.attributes.id : elemId.get(label?.trim());
-  const idLabel = elemId.get(label?.trim());
-  const idDesc = elemId.get(bottom?.trim());
-  const idErr = idDesc ?? elemId.id;
+  const cls = $derived(fnClass(preset, styling));
+  const uid = $props.id();
+  // svelte-ignore state_referenced_locally
+  const id = deps?.svsTagsInput?.id ? deps.svsTagsInput.id : label?.trim() ? `${uid}-ctrl` : undefined;
+  // svelte-ignore state_referenced_locally
+  const idLabel = label?.trim() ? `${uid}-label` : undefined;
+  // svelte-ignore state_referenced_locally
+  const idDesc = bottom?.trim() ? `${uid}-desc` : undefined;
+  const idErr = idDesc ?? `${uid}-err`;
+  // svelte-ignore state_referenced_locally
   let message = $state(bottom);
   let value = $state("");
-  if (!name) name = deps?.svsTagsInput?.attributes?.name as string | undefined;
-  if (max) constraints.unshift(() => values.length >= max.value ? max.message : "");
-  if (min) validations.unshift(() => values.length < min.value ? min.message : "");
+  // svelte-ignore state_referenced_locally
+  if (!name) name = deps?.svsTagsInput?.name as string | undefined;
+  // svelte-ignore state_referenced_locally
+  if (max) constraints.unshift(() => (values.length >= max.value ? max.message : ""));
+  // svelte-ignore state_referenced_locally
+  if (min) validations.unshift(() => (values.length < min.value ? min.message : ""));
 
   // *** Initialize Deps *** //
+  // svelte-ignore state_referenced_locally
   const svsTagsInput = {
-    ...omit(deps?.svsTagsInput, "styling", "attributes"),
+    ...omit(deps?.svsTagsInput, "styling", "id", "name", "onchange", "oninvalid", "aria-describedby"),
     events: { onadd, onremove: deps?.svsTagsInput?.events?.onremove },
     styling: deps?.svsTagsInput?.styling ?? `${preset} svs-tags-input`,
-    attributes: {
-      ...omit(deps?.svsTagsInput?.attributes, "id", "name", "onchange", "oninvalid", "aria-describedby"),
-      id,
-      onchange,
-      oninvalid,
-      "aria-describedby": idDesc,
-    },
+    id,
+    onchange,
+    oninvalid,
+    "aria-describedby": idDesc,
   };
 
   // *** States *** //
   let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
-  $effect(() => { neutral = isNeutral(variant) ? variant : neutral });
+  $effect(() => {
+    neutral = isNeutral(variant) ? variant : neutral;
+  });
   let live = $derived(variant === VARIANT.INACTIVE ? "alert" : "status");
   let idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
   function shift(oninvalid: boolean = false, msg?: string) {
     const vmsg = element?.validationMessage ?? "";
     variant = getStatus(oninvalid, vmsg, msg);
-    message = variant === VARIANT.INACTIVE ? msg ? msg : vmsg ? vmsg : bottom : bottom;
+    message = variant === VARIANT.INACTIVE ? (msg ? msg : vmsg ? vmsg : bottom) : bottom;
   }
   function getStatus(oninvalid: boolean, vmsg: string, msg?: string): string {
     if (msg || (oninvalid && vmsg)) return VARIANT.INACTIVE;
@@ -166,11 +174,11 @@
     }
   }
   function onchange(ev: Event) {
-    deps?.svsTagsInput?.attributes?.onchange?.(ev as any);
+    deps?.svsTagsInput?.onchange?.(ev as any);
     if (!isNeutral(variant)) shift();
   }
   function oninvalid(ev: Event) {
-    deps?.svsTagsInput?.attributes?.oninvalid?.(ev as any);
+    deps?.svsTagsInput?.oninvalid?.(ev as any);
     ev.preventDefault();
     shift(true);
   }
@@ -192,7 +200,7 @@
   <div class={cls(PARTS.MIDDLE, variant)}>
     {@render side(PARTS.LEFT, left)}
     {@render fnForm()}
-    <TagsInput bind:values bind:value bind:variant bind:element bind:ariaErrMsgId={idMsg} {...svsTagsInput} />
+    <TagsInput bind:values bind:value {variant} bind:element ariaErrMsgId={idMsg} {...svsTagsInput} />
     {@render side(PARTS.RIGHT, right)}
   </div>
   {@render desc(!descFirst)}

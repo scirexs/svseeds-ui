@@ -11,7 +11,7 @@
     offset?: Vector; // ({ x: 0, y: 0 })
     element?: HTMLDivElement; // bindable
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
   type Vector = { x: number, y: number };
   type Position = "top" | "right" | "bottom" | "left";
@@ -23,25 +23,20 @@
     {#if children}
       {children}
     {:else}
-      {text} // `text` is an argument of the tooltip/tooltipAction function
+      {text} // `text` is a property of the tooltip function's params
     {/if}
   </div>
   ```
   ### Exports
   ```ts
-  /**
-  * Action function for use with SvSeeds components.
-  *
-  * @param text - Text content for the tooltip's aria-label
-  * @param delay - Delay in milliseconds before the tooltip appears (default: 1000)
-  * @param cursor - Whether the tooltip should follow cursor movement
-  * @param name - Unique identifier for the tooltip component
-  */
-  function tooltipAction(text: string, delay?: number, cursor?: boolean, name?: string): Action
-  /**
-  * Action function for use with standard HTML elements.
-  */
-  function tooltip(node: HTMLElement, params: { text: string, delay?: number, cursor?: boolean, name?: string }): ActionReturn
+  // Attachment factory for both standard HTML elements (`{@attach tooltip(params)}`)
+  // and SvSeeds components (`attach={tooltip(params)}`).
+  //
+  // *@param* text - Text content for the tooltip's aria-label
+  // *@param* delay - Delay in milliseconds before the tooltip appears (default: 1000)
+  // *@param* cursor - Whether the tooltip should follow cursor movement
+  // *@param* name - Unique identifier for the tooltip component
+  function tooltip(params: { text: string, delay?: number, cursor?: boolean, name?: string }): Attachment<HTMLElement>
   ```
 -->
 <script module lang="ts">
@@ -53,17 +48,14 @@
     offset?: Vector; // ({ x: 0, y: 0 })
     element?: HTMLDivElement; // bindable
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
   export type TooltipReqdProps = never;
-  export type TooltipBindProps = "variant" | "element";
-  export function tooltip(node: HTMLElement, params: { text: string, delay?: number, cursor?: boolean, name?: string }): ActionReturn {
-    return core.action(node, params.text, params.delay, params.cursor, params.name);
+  export type TooltipBindProps = "element";
+  export function tooltip(params: { text: string; delay?: number; cursor?: boolean; name?: string }): Attachment<HTMLElement> {
+    return (node) => core.attach(node, params.text, params.delay, params.cursor, params.name);
   }
-  export function tooltipAction(text: string, delay?: number, cursor?: boolean, name?: string): Action {
-    return (node) => { return core.action(node, text, delay, cursor, name); };
-  }
-  export type Vector = { x: number, y: number };
+  export type Vector = { x: number; y: number };
   export type Position = "top" | "right" | "bottom" | "left";
   export type Align = "start" | "center" | "end";
 
@@ -106,10 +98,10 @@
     isTarget(id: string): boolean {
       return this.#uniqueId.current === id;
     }
-    action(node: HTMLElement, text: string, delay?: number, cursor?: boolean, name?: string): ActionReturn {
+    attach(node: HTMLElement, text: string, delay?: number, cursor?: boolean, name?: string): () => void {
       node.ariaDescription = text;
       if (!delay || delay < 0) delay = TooltipCore.#DELAY;
-      return { destroy: this.#cleanup(on(node, "pointerenter", this.#setEnter(node, text, delay, cursor, name))) };
+      return this.#cleanup(on(node, "pointerenter", this.#setEnter(node, text, delay, cursor, name)));
     }
     #cleanup(unlisten: Unlisten): () => void {
       return () => {
@@ -129,12 +121,12 @@
     #show(text: string, delay: number, name?: string) {
       this.#hide();
       this.#prep(text, name);
-      this.#tid = setTimeout(() => this.visible = VISIBLE.VISIBLE, delay);
+      this.#tid = setTimeout(() => (this.visible = VISIBLE.VISIBLE), delay);
     }
     #hide() {
       clearTimeout(this.#tid);
       this.visible = VISIBLE.NONE;
-      this.#listeners.forEach(x => x());
+      this.#listeners.forEach((x) => x());
     }
     #prep(text: string, name?: string) {
       this.text = text;
@@ -163,11 +155,11 @@
       if (this.#ids.has(id)) this.#current = id;
     }
     register(name?: string): string {
-      const id = name ? name : elemId.id;
-      if (this.#ids.has(id)) return "";
-      if (!this.#default) this.#default = id;
-      this.#ids.add(id);
-      return id;
+      if (!name) return "";
+      if (this.#ids.has(name)) return "";
+      if (!this.#default) this.#default = name;
+      this.#ids.add(name);
+      return name;
     }
   }
   class TooltipPosition {
@@ -210,11 +202,11 @@
       this.isFlipped = !Number.isNaN(adj[main]);
       if (!Number.isNaN(adj[sub])) point[sub] = adj[sub];
       if (this.isFlipped) point[main] = this.#getPoint(this.#isVertical, true);
-      this.point =  point;
+      this.point = point;
     }
     #getPoint(y: boolean, flipped: boolean): number {
       const len = this.#getElemLength(y, flipped);
-      const base = (y ? this.#anchor.y : this.#anchor.x);
+      const base = y ? this.#anchor.y : this.#anchor.x;
       const c = y ? this.#offset.y * (flipped ? -1 : 1) : this.#offset.x * (flipped ? -1 : 1);
       return base + len - this.#baseOffset(y, flipped) + c;
     }
@@ -257,7 +249,7 @@
     #getAlignBaseOffset(): number {
       if (this.#align === "start") return 0;
       const len = this.#isVertical ? this.#size.x : this.#size.y;
-      return this.#align === "end" ? len : (len / 2);
+      return this.#align === "end" ? len : len / 2;
     }
     #getOnScreenPoint(point: Vector): Vector {
       const ret: Vector = { x: NaN, y: NaN };
@@ -273,17 +265,19 @@
 
   import { type Snippet, untrack } from "svelte";
   import { on } from "svelte/events";
-  import { type Action, type ActionReturn } from "svelte/action";
-  import { type SVSClass, VARIANT, PARTS, elemId, fnClass, throttle } from "./core";
+  import { type Attachment } from "svelte/attachments";
+  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, throttle } from "./core";
 </script>
 
 <script lang="ts">
-  let { children, name, position = "top", align = "center", offset = { ...INIT_VEC }, element = $bindable(), styling, variant = $bindable("") }: TooltipProps = $props();
+  // prettier-ignore
+  let { children, name, position = "top", align = "center", offset = { ...INIT_VEC }, element = $bindable(), styling, variant = VARIANT.NEUTRAL }: TooltipProps = $props();
 
   // *** Initialize *** //
-  if (!variant) variant = VARIANT.NEUTRAL;
-  const cls = fnClass(preset, styling);
-  const id = core.register(name);
+  const cls = $derived(fnClass(preset, styling));
+  const uid = $props.id();
+  // svelte-ignore state_referenced_locally
+  const id = core.register(name ?? uid);
   let point: Vector = $state.raw(INIT_VEC);
 
   // *** Reactive Handlers *** //
@@ -296,14 +290,16 @@
     const size = { x: element?.offsetWidth ?? 0, y: element?.offsetHeight ?? 0 };
     point = core.getPoint(position, align, size, offset);
   }
-  let visibility = $derived(core.visible === VISIBLE.VISIBLE && core.isTarget(id) ? "visibility: visible;" : "visibility: hidden; z-index: -9999;");
-  let dynStyle = $derived(`position: fixed; left: ${point.x}px; top: ${point.y}px; ${visibility}`);
+  const visibility = $derived(
+    core.visible === VISIBLE.VISIBLE && core.isTarget(id) ? "visibility: visible;" : "visibility: hidden; z-index: -9999;",
+  );
+  const style = $derived(`position: fixed; left: ${point.x}px; top: ${point.y}px; ${visibility}`);
 </script>
 
 <!---------------------------------------->
 
 {#if core.mount(id)}
-  <div bind:this={element} class={cls(PARTS.WHOLE, variant)} style={dynStyle} {id} role="tooltip">
+  <div bind:this={element} class={cls(PARTS.WHOLE, variant)} {style} {id} role="tooltip">
     {#if children}
       {@render children(core.text, variant, core.flipped)}
     {:else}

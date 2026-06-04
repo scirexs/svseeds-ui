@@ -7,7 +7,7 @@
     labels?: string[];
     current?: number; // bindable (-1)
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // (VARIANT.NEUTRAL)
     deps?: AccordionDeps;
     [key: string]: unknown | Snippet; // labels or contents of each disclosure
   }
@@ -31,7 +31,7 @@
     labels?: string[];
     current?: number; // bindable (-1)
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // (VARIANT.NEUTRAL)
     deps?: AccordionDeps;
     [key: string]: unknown | Snippet; // labels or contents of each disclosure
   }
@@ -39,9 +39,9 @@
     svsDisclosure?: Omit<DisclosureProps, DisclosureReqdProps | DisclosureBindProps>;
   }
   export type AccordionReqdProps = never;
-  export type AccordionBindProps = "current" | "variant";
+  export type AccordionBindProps = "current";
 
-  type NamedId = { id: string, name: string };
+  type NamedId = { id: string; name: string };
   const preset = "svs-accordion";
   const roleLabel = "label";
   const rolePanel = "panel";
@@ -49,64 +49,35 @@
   function getSnippetNames(role: string, rest: Record<string, unknown>): string[] {
     return Object.keys(rest)
       .filter((x) => x.startsWith(role) && typeof rest[x] === "function")
-      .sort((x,y) => x.localeCompare(y));
+      .sort((x, y) => x.localeCompare(y));
   }
-  function toNamedId(names: string[]): NamedId[] {
-    return names.map((x) => ({ id: elemId.id, name: x }));
+  function toNamedId(uid: string, names: string[]): NamedId[] {
+    return names.map((x, i) => ({ id: `${uid}-${i}`, name: x }));
   }
 
-  import { type Snippet, untrack } from "svelte";
-  import { type SVSClass, VARIANT, PARTS, elemId, fnClass, omit } from "./core";
+  import { type Snippet } from "svelte";
+  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, omit } from "./core";
   import Disclosure, { type DisclosureProps, type DisclosureReqdProps, type DisclosureBindProps } from "./_Disclosure.svelte";
 </script>
 
 <script lang="ts">
-  let { labels = [], current = $bindable(-1), styling, variant = $bindable(""), deps, ...rest }: AccordionProps = $props();
+  // prettier-ignore
+  let { labels = [], current = $bindable(-1), styling, variant = VARIANT.NEUTRAL, deps, ...rest }: AccordionProps = $props();
 
   // *** Initialize *** //
-  if (!variant) variant = VARIANT.NEUTRAL;
-  const cls = fnClass(preset, styling);
-  const isStrLabel = labels.length > 0;
-  const lbls = toNamedId(isStrLabel ? labels : getSnippetNames(roleLabel, rest));
-  const panels = getSnippetNames(rolePanel, rest);
-  const isValidAccordion = lbls.length && panels.length && lbls.length === panels.length;
-  let guard = current >= 0 && current < lbls.length;
-  let event = false;
-  let opens = $state(Array(lbls.length).fill(false));
-  let elems: HTMLDetailsElement[] = $state([]);
+  const cls = $derived(fnClass(preset, styling));
+  const uid = $props.id();
+  const isStrLabel = $derived(labels.length > 0);
+  const lbls = $derived(toNamedId(uid, isStrLabel ? labels : getSnippetNames(roleLabel, rest)));
+  const panels = $derived(getSnippetNames(rolePanel, rest));
+  const isValidAccordion = $derived(lbls.length && panels.length && lbls.length === panels.length);
 
   // *** Initialize Deps *** //
+  // svelte-ignore state_referenced_locally
   const svsDisclosure = {
-    ...omit(deps?.svsDisclosure, "attributes", "styling"),
+    ...omit(deps?.svsDisclosure, "styling"),
     styling: deps?.svsDisclosure?.styling ?? `${preset} svs-disclosure`,
   };
-
-  // *** Bind Handlers *** //
-  $effect.pre(() => {
-    current;
-    untrack(() => toggle());
-  });
-  function toggle() {
-    if (!event) opens = opens.fill(false).map((_, i) => i === current);
-    event = false;
-  }
-  function setCurrent(index: number) {
-    current = index;
-    if (guard) return guard = false;
-    event = true;
-  }
-
-  // *** Event Handlers *** //
-  function exclusiveToggle(index: number): (ev: Event) => void {
-    return (ev) => {
-      deps?.svsDisclosure?.attributes?.ontoggle?.(ev as any);
-      if (opens.every((x) => !x)) return setCurrent(-1);
-      if (elems[index].open) {
-        opens = opens.map((_, i) => i === index);
-        setCurrent(index);
-      }
-    };
-  }
 </script>
 
 <!---------------------------------------->
@@ -114,8 +85,11 @@
 {#if isValidAccordion}
   <div class={cls(PARTS.WHOLE, variant)} role="group">
     {#each lbls as { id, name }, i (id)}
-      {@const ontoggle = exclusiveToggle(i)}
-      <Disclosure bind:open={opens[i]} bind:element={elems[i]} label={isStrLabel ? name : (rest[name] as Snippet)} attributes={{...deps?.svsDisclosure?.attributes, ontoggle}} {...svsDisclosure}>
+      <Disclosure
+        bind:open={() => current === i, (v) => (current = v ? i : -1)}
+        label={isStrLabel ? name : (rest[name] as Snippet)}
+        {...svsDisclosure}
+      >
         {@render (rest[panels[i]] as Snippet)()}
       </Disclosure>
     {/each}

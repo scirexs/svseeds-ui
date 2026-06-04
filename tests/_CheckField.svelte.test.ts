@@ -25,9 +25,7 @@ const auxfn = createRawSnippet(
 );
 
 describe("Switching existence of elements", () => {
-  const actionfn = () => {
-    return {};
-  };
+  const attachfn = () => {};
 
   test("w/ options only", () => {
     const props = { options };
@@ -116,8 +114,8 @@ describe("Switching existence of elements", () => {
     expect(middle).toHaveAccessibleDescription(bottom);
   });
 
-  test("w/ bottom of action input", () => {
-    const props = { options, bottom, action: actionfn };
+  test("w/ bottom of attach input", () => {
+    const props = { options, bottom, attach: attachfn };
     const { getByRole, getAllByRole } = render(CheckField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
     const btm = getByRole("status") as HTMLDivElement;
@@ -177,32 +175,28 @@ describe("Specify attrs & state transition & event handlers", () => {
   test("w/ specify ignored attrs", () => {
     const props = {
       options,
-      attributes: {
-        value: "v",
-        class: "c",
-        type: "hidden",
-        name: "custom_name",
-        onchange: vi.fn(),
-      },
-    };
+      value: "v",
+      class: "c",
+      type: "hidden",
+      name: "custom_name",
+      onchange: vi.fn(),
+    } as any;
     const { getAllByRole } = render(CheckField, props);
     const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
     checkboxes.forEach((checkbox) => {
-      expect(checkbox).not.toHaveAttribute("value", "v");
-      expect(checkbox).not.toHaveAttribute("class", "c");
-      expect(checkbox).not.toHaveAttribute("type", "hidden");
-      expect(checkbox).toHaveAttribute("name", "custom_name");
+      expect(checkbox).not.toHaveAttribute("value", "v"); // per-option value wins
+      expect(checkbox).toHaveClass("c"); // class merged onto each input (same as ...rest)
+      expect(checkbox).not.toHaveAttribute("type", "hidden"); // controlled (checkbox)
+      expect(checkbox).toHaveAttribute("name", "custom_name"); // name prop applied
     });
   });
 
   test("w/ specify major attrs", () => {
     const props = {
       options,
-      attributes: {
-        required: true,
-        disabled: true,
-        "data-testid": "test-input",
-      },
+      required: true,
+      disabled: true,
+      "data-testid": "test-input",
     };
     const { getAllByTestId } = render(CheckField, props);
     const checkboxes = getAllByTestId("test-input") as HTMLInputElement[];
@@ -279,7 +273,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const props = $state({
       options,
       variant: VARIANT.NEUTRAL,
-      attributes: { required: true },
+      required: true,
       values: [],
     });
     const { getAllByRole, getByRole } = render(CheckField, props);
@@ -298,7 +292,7 @@ describe("Specify attrs & state transition & event handlers", () => {
       bottom,
       variant: VARIANT.NEUTRAL,
       validations,
-      attributes: { required: true },
+      required: true,
       values: [],
     });
     const { getAllByRole, getByRole } = render(CheckField, props);
@@ -318,7 +312,9 @@ describe("Specify attrs & state transition & event handlers", () => {
       options,
       variant: VARIANT.NEUTRAL,
       validations,
-      attributes: { onchange, oninvalid, required: true },
+      onchange,
+      oninvalid,
+      required: true,
       values: [],
     });
     const user = userEvent.setup();

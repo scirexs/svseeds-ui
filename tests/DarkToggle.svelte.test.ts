@@ -2,8 +2,18 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, waitFor } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
-import DarkToggle, { setThemeToRoot, THEME } from "#svs/DarkToggle.svelte";
+import DarkToggle, { setTheme, setThemeToRoot, THEME } from "#svs/DarkToggle.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+
+// The theme state is a module-level singleton (one theme per page). matchMedia is only
+// read once at import, so per-test matchMedia changes cannot re-derive it. Drive it
+// deterministically via setTheme instead. Calling setTheme(!dark) then setTheme(dark)
+// guarantees a real transition, so the <html> class is (re)applied regardless of the
+// singleton's prior state (and of beforeEach clearing the class).
+function forceTheme(dark: boolean) {
+  setTheme(!dark);
+  setTheme(dark);
+}
 
 // Mock window.matchMedia for testing
 const mockMatchMedia = vi.fn();
@@ -25,11 +35,23 @@ const customMainSnippet = createRawSnippet(
     variant: () => string,
     element: () => HTMLButtonElement | undefined,
   ) => {
+    const text = () => `${variant()},${value()},${element()?.tagName}`;
     return {
-      render: () => `<span data-testid="custom-main">${variant()},${value()},${element()?.tagName}</span>`,
+      render: () => `<span data-testid="custom-main">${text()}</span>`,
+      // render() only produces the initial markup; without a reactive setup the snippet
+      // never reflects later changes (bound element, toggled value).
+      setup: (node: Element) => {
+        $effect(() => { node.textContent = text(); });
+      },
     };
   },
 );
+
+// Reset the singleton theme before every test so the shared state does not leak between
+// tests (e.g. a test that toggles to dark must not affect a later test that renders default).
+beforeEach(() => {
+  setTheme(false);
+});
 
 describe("DarkToggle - Basic functionality", () => {
   beforeEach(() => {
@@ -57,34 +79,28 @@ describe("DarkToggle - Basic functionality", () => {
     expect(button).toHaveClass("svs-dark-toggle", "svs-toggle");
   });
 
-  test("initializes with system preference (light)", () => {
-    mockMatchMedia.mockReturnValue({
-      matches: false,
-      media: "(prefers-color-scheme: light)",
-    });
+  test("initializes from the shared theme (light)", async () => {
+    forceTheme(false);
 
     const props = $state({ dark: undefined });
     const { getByRole } = render(DarkToggle, props);
     const button = getByRole("button") as HTMLButtonElement;
 
-    waitFor(() => {
+    await waitFor(() => {
       expect(props.dark).toBe(false);
       expect(button).toBeInTheDocument();
       expect(document.documentElement).toHaveClass(THEME.LIGHT);
     });
   });
 
-  test("initializes with system preference (dark)", () => {
-    mockMatchMedia.mockReturnValue({
-      matches: true,
-      media: "(prefers-color-scheme: dark)",
-    });
+  test("initializes from the shared theme (dark)", async () => {
+    forceTheme(true);
 
     const props = $state({ dark: undefined });
     const { getByRole } = render(DarkToggle, props);
     const button = getByRole("button") as HTMLButtonElement;
 
-    waitFor(() => {
+    await waitFor(() => {
       expect(props.dark).toBe(true);
       expect(button).toBeInTheDocument();
       expect(document.documentElement).toHaveClass(THEME.DARK);
@@ -123,26 +139,27 @@ describe("DarkToggle - User interactions", () => {
   });
 
   test("toggles dark and light mode on click", async () => {
+    forceTheme(true); // baseline opposite, so rendering dark:false is a real transition to light
     const props = $state({ dark: false, variant: VARIANT.NEUTRAL });
     const user = userEvent.setup();
     const { getByRole } = render(DarkToggle, props);
     const button = getByRole("button") as HTMLButtonElement;
 
-    waitFor(() => {
+    await waitFor(() => {
       expect(props.dark).toBe(false);
       expect(document.documentElement).toHaveClass(THEME.LIGHT);
     });
 
     await user.click(button);
 
-    waitFor(() => {
+    await waitFor(() => {
       expect(props.dark).toBe(true);
       expect(document.documentElement).toHaveClass(THEME.DARK);
     });
 
     await user.click(button);
 
-    waitFor(() => {
+    await waitFor(() => {
       expect(props.dark).toBe(false);
       expect(document.documentElement).toHaveClass(THEME.LIGHT);
     });
@@ -197,10 +214,8 @@ describe("DarkToggle - Dependencies and customization", () => {
   test("applies custom attributes from deps", () => {
     const deps = {
       svsToggle: {
-        attributes: {
-          "data-testid": "custom-toggle",
-          title: "Custom toggle title",
-        },
+        "data-testid": "custom-toggle",
+        title: "Custom toggle title",
       },
     };
     const { getByTestId } = render(DarkToggle, { deps });
@@ -210,12 +225,12 @@ describe("DarkToggle - Dependencies and customization", () => {
     expect(button).toHaveAttribute("aria-label", "Toggle theme color"); // Still has default aria-label
   });
 
-  test("renders custom main snippet", () => {
+  test("renders custom main snippet", async () => {
     const props = $state({ children: customMainSnippet, dark: false, variant: VARIANT.NEUTRAL });
     const { getByTestId } = render(DarkToggle, { ...props });
     const customMain = getByTestId("custom-main");
 
-    waitFor(() => {
+    await waitFor(() => {
       expect(customMain).toBeInTheDocument();
       expect(customMain.textContent).toContain(VARIANT.NEUTRAL);
       expect(customMain.textContent).toContain("false");
@@ -234,7 +249,7 @@ describe("DarkToggle - Dependencies and customization", () => {
 
     await user.click(button);
 
-    waitFor(() => {
+    await waitFor(() => {
       expect(customMain.textContent).toContain("true");
     });
   });
@@ -250,53 +265,56 @@ describe("DarkToggle - Theme class management", () => {
     });
   });
 
-  test("applies light theme class to document root on initialization", () => {
+  test("applies light theme class to document root on initialization", async () => {
+    forceTheme(true); // baseline dark, so initializing to light is a real transition
     render(DarkToggle, { dark: false });
 
-    waitFor(() => {
+    await waitFor(() => {
       expect(document.documentElement).toHaveClass(THEME.LIGHT);
       expect(document.documentElement).not.toHaveClass(THEME.DARK);
     });
   });
 
-  test("applies dark theme class to document root on initialization", () => {
+  test("applies dark theme class to document root on initialization", async () => {
+    forceTheme(false); // baseline light, so initializing to dark is a real transition
     render(DarkToggle, { dark: true });
 
-    waitFor(() => {
+    await waitFor(() => {
       expect(document.documentElement).toHaveClass(THEME.DARK);
       expect(document.documentElement).not.toHaveClass(THEME.LIGHT);
     });
   });
 
   test("switches theme classes when toggled", async () => {
+    forceTheme(true); // baseline dark, so rendering dark:false is a real transition to light
     const props = $state({ dark: false });
     const user = userEvent.setup();
     const { getByRole } = render(DarkToggle, props);
     const button = getByRole("button");
 
-    waitFor(() => {
+    await waitFor(() => {
       expect(document.documentElement).toHaveClass(THEME.LIGHT);
     });
 
     await user.click(button);
 
-    waitFor(() => {
+    await waitFor(() => {
       expect(document.documentElement).toHaveClass(THEME.DARK);
       expect(document.documentElement).not.toHaveClass(THEME.LIGHT);
     });
   });
 
-  test("setThemeToRoot function works in browser environment", () => {
+  test("setThemeToRoot function works in browser environment", async () => {
     // Clear any existing classes
     document.documentElement.className = "";
 
     setThemeToRoot(THEME.DARK);
-    waitFor(() => {
+    await waitFor(() => {
       expect(document.documentElement).toHaveClass(THEME.DARK);
     });
 
     setThemeToRoot(THEME.LIGHT);
-    waitFor(() => {
+    await waitFor(() => {
       expect(document.documentElement).toHaveClass(THEME.LIGHT);
     });
   });
@@ -322,7 +340,7 @@ describe("DarkToggle - Status states", () => {
   });
 
   test("initializes with neutral variant", () => {
-    const props = $state({ variant: "" });
+    const props = $state({ variant: VARIANT.NEUTRAL });
     render(DarkToggle, props);
 
     expect(props.variant).toBe(VARIANT.NEUTRAL);

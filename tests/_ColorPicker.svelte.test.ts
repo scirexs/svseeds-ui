@@ -4,9 +4,7 @@ import ColorPicker, { getHex } from "#svs/_ColorPicker.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 
 describe("Switching existence of elements and basic functionality", () => {
-  const actionfn = () => {
-    return {};
-  };
+  const attachfn = () => {};
 
   test("no props", () => {
     const { container } = render(ColorPicker);
@@ -44,19 +42,18 @@ describe("Switching existence of elements and basic functionality", () => {
     expect(colorDiv).toHaveStyle("background-color: rgba(255,0,0,0.5)");
   });
 
-  test("w/ action", () => {
-    const action = vi.fn().mockImplementation(actionfn);
-    const props = { action };
+  test("w/ attach", () => {
+    const attach = vi.fn().mockImplementation(attachfn);
+    const props = { attach };
     const { container } = render(ColorPicker, props);
     const input = container.querySelector("input") as HTMLInputElement;
 
     expect(input).toBeTruthy();
-    expect(action).toHaveBeenCalled();
+    expect(attach).toHaveBeenCalled();
   });
 
   test("w/ attributes", () => {
-    const attributes = { name: "test-color", id: "color-input", disabled: true };
-    const props = { attributes };
+    const props = { name: "test-color", id: "color-input", disabled: true };
     const { container } = render(ColorPicker, props);
     const input = container.querySelector("input") as HTMLInputElement;
 
@@ -230,7 +227,7 @@ describe("User interaction and binding", () => {
   });
 
   test("variant binding works", async () => {
-    const props = $state({ variant: "" });
+    const props = $state({ variant: VARIANT.NEUTRAL as string });
     const { container } = render(ColorPicker, props);
     const label = container.querySelector("label") as HTMLLabelElement;
 

@@ -1,439 +1,363 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/svelte";
-// import userEvent from "@testing-library/user-event"; // userEvent can also be used
-import { createRawSnippet } from "svelte";
-import Tooltip, { tooltip, tooltipAction, type TooltipProps } from "#svs/_Tooltip.svelte"; // Adjust path if needed
+import { fireEvent, render, screen, within } from "@testing-library/svelte";
+import { createRawSnippet, tick } from "svelte";
+import Tooltip, { tooltip, type TooltipProps } from "#svs/_Tooltip.svelte"; // Adjust path if needed
 import { PARTS, VARIANT } from "#svs/core"; // Adjust path if needed
 
-// Helper to create a trigger element host for tooltip action
-function setupTriggerHost() {
-  const host = document.createElement("div");
-  document.body.appendChild(host);
-  return host;
+// The `tooltip` export is an attachment factory: `tooltip(params)` returns an
+// Attachment `(node) => cleanup`. The default `Tooltip` component is a global
+// renderer driven by the shared singleton; a host element opts in by applying
+// the attachment. Because that singleton persists across tests, every test uses
+// a unique `name` so the rendered tooltip only targets its own host.
+
+// *** Shared helpers *** //
+let nameSeq = 0;
+const nextName = () => `tt-${nameSeq++}`;
+
+const triggers: HTMLElement[] = [];
+const cleanups: Array<() => void> = [];
+
+function makeTrigger(): HTMLButtonElement {
+  const btn = document.createElement("button");
+  document.body.appendChild(btn);
+  triggers.push(btn);
+  return btn;
+}
+// Apply the tooltip attachment to a host node, tracking its cleanup.
+function attach(node: HTMLElement, params: { text: string; delay?: number; cursor?: boolean; name?: string }) {
+  // The attachment always returns a teardown function (Attachment's type is the
+  // wider `void | (() => void)`); narrow it for test bookkeeping.
+  const cleanup = tooltip(params)(node) as () => void;
+  cleanups.push(cleanup);
+  return cleanup;
 }
 
-// Mock for the main slot
-const mainSlotTestId = "main-slot-content";
-const createMainSlotSnippet = (
-  dynamicStatus: () => string,
-  dynamicText: () => string,
-  dynamicIsFlipped: () => boolean,
-) =>
-  createRawSnippet(
-    () => {
-      return {
-        render: () =>
-          `<div data-testid="${mainSlotTestId}">Status: ${dynamicStatus()}, Text: ${dynamicText()}, Flipped: ${dynamicIsFlipped()}</div>`,
-      };
-    },
-  );
+const STD_RECT = { x: 50, y: 50, width: 100, height: 30, top: 50, left: 50, right: 150, bottom: 80 };
+function mockRect(rect: Partial<DOMRect>) {
+  const full = { ...STD_RECT, ...rect } as DOMRect;
+  HTMLElement.prototype.getBoundingClientRect = vi.fn(() => ({ ...full, toJSON: () => full }) as DOMRect);
+}
 
-describe("Tooltip Basic Rendering and Props", () => {
-  let host: HTMLElement;
+// Override the tooltip's own measured size (jsdom reports 0 for offsetWidth/Height).
+let restoreSize: (() => void) | undefined;
+function mockTooltipSize(width: number, height: number) {
+  const ow = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetWidth");
+  const oh = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetHeight");
+  Object.defineProperty(HTMLElement.prototype, "offsetWidth", { configurable: true, get: () => width });
+  Object.defineProperty(HTMLElement.prototype, "offsetHeight", { configurable: true, get: () => height });
+  restoreSize = () => {
+    if (ow) Object.defineProperty(HTMLElement.prototype, "offsetWidth", ow);
+    if (oh) Object.defineProperty(HTMLElement.prototype, "offsetHeight", oh);
+    restoreSize = undefined;
+  };
+}
 
-  beforeEach(() => {
-    host = setupTriggerHost();
-    vi.useFakeTimers();
-    // Mock getBoundingClientRect for predictable positioning for these basic tests if needed
-    HTMLElement.prototype.getBoundingClientRect = vi.fn(() => ({
-      x: 50,
-      y: 50,
-      width: 100,
-      height: 30,
-      top: 50,
-      left: 50,
-      right: 150,
-      bottom: 80,
-      toJSON: () => ({ x: 50, y: 50, width: 100, height: 30, top: 50, left: 50, right: 150, bottom: 80 }),
-    }));
-  });
+async function enter(trigger: HTMLElement, pointer: Record<string, number> = {}) {
+  // Svelte's `on()` defers registration of pointer/touch/wheel listeners to a
+  // microtask, so flush before dispatching or the handler misses the event.
+  await tick();
+  await fireEvent.pointerEnter(trigger, pointer);
+  await tick();
+}
+async function advance(ms: number) {
+  vi.advanceTimersByTime(ms);
+  await tick();
+}
+// The tooltip element stays mounted (with `visibility: hidden`) during the
+// pre-delay window, so role queries must opt into hidden nodes; visibility is
+// asserted separately via `style.visibility`.
+const getTip = () => screen.getByRole("tooltip", { hidden: true });
+const queryTip = () => screen.queryByRole("tooltip", { hidden: true });
 
-  afterEach(() => {
-    vi.clearAllTimers();
-    vi.restoreAllMocks();
-    host.remove();
-    // Attempt to reset core state by ensuring any visible tooltip is hidden
-    // This is an indirect way; a direct reset method on core would be cleaner.
-    const triggerForCleanup = document.createElement("button"); // Dummy trigger
-    host.appendChild(triggerForCleanup);
-    fireEvent.pointerEnter(triggerForCleanup); // Make something potentially active
-    vi.advanceTimersByTime(1000); // Let it show
-    fireEvent.pointerLeave(triggerForCleanup); // Then hide it
-    vi.advanceTimersByTime(100); // Let hide complete
-    triggerForCleanup.remove();
-    document.body.innerHTML = ""; // Final cleanup of DOM
-  });
-
-  test("no props - tooltip is not initially rendered", () => {
-    render(Tooltip, { target: host });
-    expect(screen.queryByRole("tooltip")).toBeNull();
-  });
-
-  // test("w/ name - tooltip uses name for id when rendered via an action", async () => {
-  //   const tooltipName = "my-named-tooltip";
-  //   const { container, getByRole } = render(Tooltip, { target: host, props: { name: tooltipName } });
-
-  //   const tooltipElement = container.firstChild;
-  //   const trigger = document.createElement("button");
-  //   host.appendChild(trigger);
-  //   const action = tooltip(trigger, { text: "Tooltip Text", delay: 0, name: tooltipName });
-
-  //   await fireEvent.pointerEnter(trigger);
-  //   vi.advanceTimersByTime(0); // Advance by delay
-
-  //   // const tooltipElement = getByRole("tooltip");
-  //   expect(tooltipElement).toHaveAttribute("id", tooltipName);
-
-  //   action?.destroy?.();
-  //   trigger.remove();
-  // });
-
-  // test("w/ main slot - renders content from slot when visible", async () => {
-  //   const tooltipName = "slot-tooltip";
-  //   const expectedText = "Slot Text Content";
-  //   const currentStatus = VARIANT.NEUTRAL;
-  //   const currentFlipped = false;
-
-  //   const props: TooltipProps = {
-  //     name: tooltipName,
-  //     main: createMainSlotSnippet(
-  //       () => currentStatus,
-  //       () => expectedText, // core.text will be this due to action
-  //       () => currentFlipped,
-  //     ),
-  //   };
-  //   render(Tooltip, { target: host, props });
-
-  //   const trigger = document.createElement("button");
-  //   host.appendChild(trigger);
-  //   const action = tooltip(trigger, { text: expectedText, delay: 0, name: tooltipName });
-
-  //   await fireEvent.pointerEnter(trigger);
-  //   vi.advanceTimersByTime(0);
-
-  //   const tooltipElement = await screen.findByRole("tooltip");
-  //   expect(tooltipElement).toBeInTheDocument();
-  //   const slotContent = within(tooltipElement).getByTestId(mainSlotTestId);
-  //   expect(slotContent).toHaveTextContent(`Status: ${currentStatus}, Text: ${expectedText}, Flipped: ${currentFlipped}`);
-
-  //   action?.destroy?.();
-  //   trigger.remove();
-  // });
-
-  // test("default variant and style classes are applied", async () => {
-  //   const tooltipName = "default-style-tooltip";
-  //   const presetClass = "svs-tooltip"; // from component's module script
-  //   render(Tooltip, { target: host, props: { name: tooltipName, variant: VARIANT.NEUTRAL } });
-
-  //   const trigger = document.createElement("button");
-  //   host.appendChild(trigger);
-  //   const action = tooltip(trigger, { text: "Default Style", delay: 0, name: tooltipName });
-
-  //   await fireEvent.pointerEnter(trigger);
-  //   vi.advanceTimersByTime(0);
-
-  //   const tooltipElement = await screen.findByRole("tooltip");
-  //   // Expected: "svs-tooltip whole neutral" (if fnClass behaves like example)
-  //   expect(tooltipElement).toHaveClass(presetClass);
-  //   expect(tooltipElement).toHaveClass(PARTS.WHOLE);
-  //   expect(tooltipElement).toHaveClass(VARIANT.NEUTRAL); // variant is part of the class list
-  //   // More precise check for combined class if fnClass output is strictly `${rule} ${part} ${variant}`
-  //   expect(tooltipElement.className).toContain(`${presetClass} ${PARTS.WHOLE} ${VARIANT.NEUTRAL}`);
-
-  //   action?.destroy?.();
-  //   trigger.remove();
-  // });
+beforeEach(() => {
+  vi.useFakeTimers();
+  mockRect({});
 });
 
-// describe("Tooltip Action (`tooltip` and `tooltipAction`)", () => {
-//   let host: HTMLElement;
-//   let trigger: HTMLButtonElement;
+afterEach(async () => {
+  // Hide any active tooltip and detach listeners so the singleton resets.
+  cleanups.forEach((c) => c());
+  cleanups.length = 0;
+  await tick();
+  triggers.forEach((t) => t.remove());
+  triggers.length = 0;
+  restoreSize?.();
+  vi.clearAllTimers();
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
-//   beforeEach(() => {
-//     host = setupTriggerHost();
-//     trigger = document.createElement("button");
-//     trigger.textContent = "Action Trigger";
-//     host.appendChild(trigger);
-//     vi.useFakeTimers();
+describe("Basic rendering", () => {
+  test("is not rendered before any interaction", () => {
+    render(Tooltip, { name: nextName() });
+    expect(queryTip()).toBeNull();
+  });
 
-//     HTMLElement.prototype.getBoundingClientRect = vi.fn(() => ({
-//       x: 50,
-//       y: 50,
-//       width: 100,
-//       height: 30,
-//       top: 50,
-//       left: 50,
-//       right: 150,
-//       bottom: 80,
-//       toJSON: () => ({ x: 50, y: 50, width: 100, height: 30, top: 50, left: 50, right: 150, bottom: 80 }),
-//     }));
-//     vi.stubGlobal("innerWidth", 800);
-//     vi.stubGlobal("innerHeight", 600);
-//   });
+  test("mounts on pointerenter and becomes visible only after the delay", async () => {
+    const name = nextName();
+    render(Tooltip, { name });
+    const trigger = makeTrigger();
+    attach(trigger, { text: "Hello", delay: 100, name });
 
-//   afterEach(() => {
-//     vi.clearAllTimers();
-//     vi.restoreAllMocks();
-//     host.remove();
-//     document.body.innerHTML = "";
-//   });
+    await enter(trigger);
+    // The element is mounted during the pre-delay window, but kept invisible.
+    const el = getTip();
+    expect(el.style.visibility).toBe("hidden");
+    expect(el).toHaveTextContent("Hello");
 
-//   test("`tooltip` action shows tooltip on pointerenter and hides on pointerleave", async () => {
-//     render(Tooltip, { target: host }); // Global tooltip renderer
-//     const tooltipText = "Action Tooltip";
-//     const delay = 100;
-//     const action = tooltip(trigger, { text: tooltipText, delay });
+    await advance(99);
+    expect(getTip().style.visibility).toBe("hidden");
 
-//     expect(screen.queryByRole("tooltip")).toBeNull();
+    await advance(1);
+    expect(getTip().style.visibility).toBe("visible");
+  });
 
-//     await fireEvent.pointerEnter(trigger);
-//     vi.advanceTimersByTime(delay - 1);
-//     expect(screen.queryByRole("tooltip")).toBeNull(); // Not yet visible
+  test("hides on pointerleave", async () => {
+    const name = nextName();
+    render(Tooltip, { name });
+    const trigger = makeTrigger();
+    attach(trigger, { text: "Bye", delay: 10, name });
 
-//     vi.advanceTimersByTime(1); // Meet the delay
-//     const tooltipElement = await screen.findByRole("tooltip");
-//     expect(tooltipElement).toBeInTheDocument();
-//     expect(tooltipElement).toHaveTextContent(tooltipText);
+    await enter(trigger);
+    await advance(10);
+    expect(queryTip()).not.toBeNull();
 
-//     await fireEvent.pointerLeave(trigger);
-//     expect(screen.queryByRole("tooltip")).toBeNull(); // Should hide
+    await fireEvent.pointerLeave(trigger);
+    await tick();
+    expect(queryTip()).toBeNull();
+  });
 
-//     action?.destroy?.();
-//   });
+  test("hides on pointercancel", async () => {
+    const name = nextName();
+    render(Tooltip, { name });
+    const trigger = makeTrigger();
+    attach(trigger, { text: "Cancel", delay: 10, name });
 
-//   test("`tooltip` action with `cursor: true` tracks pointermove", async () => {
-//     render(Tooltip, { target: host });
-//     const action = tooltip(trigger, { text: "Cursor Track", delay: 0, cursor: true });
+    await enter(trigger);
+    await advance(10);
+    expect(queryTip()).not.toBeNull();
 
-//     await fireEvent.pointerEnter(trigger, { clientX: 100, clientY: 100 });
-//     vi.advanceTimersByTime(0);
-//     let tooltipElement = await screen.findByRole("tooltip");
-//     const initialStyle = tooltipElement.getAttribute("style");
+    await fireEvent.pointerCancel(trigger);
+    await tick();
+    expect(queryTip()).toBeNull();
+  });
+});
 
-//     await fireEvent.pointerMove(trigger, { clientX: 150, clientY: 150 });
-//     vi.advanceTimersByTime(20); // Throttle interval for pointermove in core
+describe("tooltip attachment factory", () => {
+  test("returns an attachment that yields a cleanup function", () => {
+    const factory = tooltip({ text: "x" });
+    expect(typeof factory).toBe("function");
+    const cleanup = factory(makeTrigger());
+    expect(typeof cleanup).toBe("function");
+    (cleanup as () => void)();
+  });
 
-//     await waitFor(() => {
-//       tooltipElement = screen.getByRole("tooltip"); // Re-query
-//       expect(tooltipElement.getAttribute("style")).not.toBe(initialStyle);
-//     });
+  test("sets aria-description on the host element", () => {
+    const trigger = makeTrigger();
+    attach(trigger, { text: "Describe me", name: nextName() });
+    expect(trigger).toHaveAttribute("aria-description", "Describe me");
+  });
 
-//     action?.destroy?.();
-//   });
+  test("uses the default 1000ms delay when delay is omitted", async () => {
+    const name = nextName();
+    render(Tooltip, { name });
+    const trigger = makeTrigger();
+    attach(trigger, { text: "Default", name });
 
-//   test("`tooltipAction` factory function creates a working action", async () => {
-//     render(Tooltip, { target: host });
-//     const tooltipText = "Factory Action";
-//     const delay = 50;
-//     const actionFn = tooltipAction(tooltipText, delay);
-//     const action = actionFn(trigger); // Apply to node
+    await enter(trigger);
+    await advance(999);
+    expect(getTip().style.visibility).toBe("hidden");
+    await advance(1);
+    expect(getTip().style.visibility).toBe("visible");
+  });
 
-//     await fireEvent.pointerEnter(trigger);
-//     vi.advanceTimersByTime(delay);
-//     const tooltipElement = await screen.findByRole("tooltip");
-//     expect(tooltipElement).toBeInTheDocument();
-//     expect(tooltipElement).toHaveTextContent(tooltipText);
+  test("treats a negative delay as the default delay", async () => {
+    const name = nextName();
+    render(Tooltip, { name });
+    const trigger = makeTrigger();
+    attach(trigger, { text: "Neg", delay: -50, name });
 
-//     action?.destroy?.();
-//   });
-// });
+    await enter(trigger);
+    await advance(999);
+    expect(getTip().style.visibility).toBe("hidden");
+    await advance(1);
+    expect(getTip().style.visibility).toBe("visible");
+  });
 
-// describe("Tooltip Positioning and Flipping", () => {
-//   let host: HTMLElement;
-//   let trigger: HTMLButtonElement;
-//   const tooltipName = "pos-tooltip";
+  test("cleanup detaches the listener so the tooltip no longer shows", async () => {
+    const name = nextName();
+    render(Tooltip, { name });
+    const trigger = makeTrigger();
+    const cleanup = attach(trigger, { text: "Gone", delay: 10, name });
 
-//   beforeEach(() => {
-//     host = setupTriggerHost();
-//     trigger = document.createElement("button");
-//     host.appendChild(trigger);
-//     vi.useFakeTimers();
-//     vi.stubGlobal("innerWidth", 1000);
-//     vi.stubGlobal("innerHeight", 800);
-//   });
+    await tick(); // let the deferred listener registration run, then detach it
+    cleanup();
+    await enter(trigger);
+    await advance(10);
+    expect(queryTip()).toBeNull();
+  });
+});
 
-//   afterEach(() => {
-//     vi.clearAllTimers();
-//     vi.restoreAllMocks();
-//     host.remove();
-//     document.body.innerHTML = "";
-//   });
+describe("Name targeting", () => {
+  test("uses the provided name as the element id", async () => {
+    const name = nextName();
+    render(Tooltip, { name });
+    const trigger = makeTrigger();
+    attach(trigger, { text: "Named", delay: 10, name });
 
-//   async function showTooltipWithMocks(
-//     tooltipProps: TooltipProps,
-//     triggerRect: Partial<DOMRect>,
-//     tooltipSize: { width: number; height: number },
-//   ) {
-//     HTMLElement.prototype.getBoundingClientRect = vi.fn(() => ({
-//       x: 0,
-//       y: 0,
-//       width: 0,
-//       height: 0,
-//       top: 0,
-//       left: 0,
-//       right: 0,
-//       bottom: 0,
-//       ...triggerRect,
-//       toJSON: () => ({
-//         x: 0,
-//         y: 0,
-//         width: 0,
-//         height: 0,
-//         top: 0,
-//         left: 0,
-//         right: 0,
-//         bottom: 0,
-//         ...triggerRect,
-//       }),
-//     }));
+    await enter(trigger);
+    await advance(10);
+    expect(getTip()).toHaveAttribute("id", name);
+  });
 
-//     // const { component } = render(Tooltip, {
-//     //   target: host,
-//     //   props: { name: tooltipName, ...tooltipProps },
-//     // });
-//     const props = { name: tooltipName, ...tooltipProps };
-//     const { component, rerender } = render(Tooltip, props);
+  test("only the component registered with the matching name is shown", async () => {
+    const nameA = nextName();
+    const nameB = nextName();
+    render(Tooltip, { name: nameA });
+    render(Tooltip, { name: nameB });
+    const trigger = makeTrigger();
+    attach(trigger, { text: "ForA", delay: 10, name: nameA });
 
-//     const action = tooltip(trigger, { text: "Position Test", delay: 0, name: tooltipName });
-//     await fireEvent.pointerEnter(trigger);
-//     vi.advanceTimersByTime(0);
-//     const tooltipElement = await screen.findByRole("tooltip");
+    await enter(trigger);
+    await advance(10);
 
-//     // Mock tooltip's own dimensions
-//     Object.defineProperty(tooltipElement, "offsetWidth", { configurable: true, value: tooltipSize.width });
-//     Object.defineProperty(tooltipElement, "offsetHeight", { configurable: true, value: tooltipSize.height });
+    const shown = screen.getAllByRole("tooltip", { hidden: true });
+    expect(shown).toHaveLength(1);
+    expect(shown[0]).toHaveAttribute("id", nameA);
+  });
+});
 
-//     // Force a tick for Svelte to re-evaluate derived properties based on new (mocked) dimensions
-//     // This relies on an effect rerunning setPosition. A more direct trigger might be needed
-//     // if the effect doesn't naturally pick up the mocked offsetWidth/Height change.
-//     rerender(props);
-//     // await component.$set({}); // Trigger a prop update to force effect re-run if necessary
-//     vi.advanceTimersByTime(1); // Allow Svelte effects to run
-//     await waitFor(() => {}); // Wait for DOM updates
+describe("children snippet", () => {
+  const contentId = "tooltip-content";
+  const contentSnippet = createRawSnippet<[string, string, boolean]>((text, variant, flipped) => ({
+    render: () =>
+      `<span data-testid="${contentId}">text=${text()};variant=${variant()};flipped=${flipped()}</span>`,
+  }));
 
-//     return { tooltipElement, action, component };
-//   }
+  test("renders custom content with text, variant, and flipped args", async () => {
+    const name = nextName();
+    render(Tooltip, { name, variant: VARIANT.ACTIVE, children: contentSnippet });
+    const trigger = makeTrigger();
+    attach(trigger, { text: "Custom", delay: 10, name });
 
-//   test("default position (top, center) calculation", async () => {
-//     const { tooltipElement, action } = await showTooltipWithMocks(
-//       { position: "top", align: "center", offset: { x: 0, y: 0 } }, // Tooltip props
-//       { top: 200, left: 200, width: 100, height: 40 }, // Trigger rect
-//       { width: 60, height: 30 }, // Tooltip size
-//     );
-//     // Expected Y: anchor.top(200) - tooltip.height(30) - offset.y(0) = 170
-//     // Expected X: anchor.left(200) + (anchor.width(100)/2) - (tooltip.width(60)/2) - offset.x(0) = 200 + 50 - 30 = 220
-//     expect(tooltipElement.style.top).toBe("170px");
-//     expect(tooltipElement.style.left).toBe("220px");
-//     action?.destroy?.();
-//   });
+    await enter(trigger);
+    await advance(10);
 
-//   test("flips from top to bottom if not enough space above", async () => {
-//     let capturedFlipped: boolean | undefined;
-//     const flippingSlot = (variant: () => string, text: () => string, isFlipped: () => boolean) =>
-//       createRawSnippet(() => {
-//         return {
-//           render: () => {
-//             capturedFlipped = isFlipped();
-//             return `<div>Flipped: ${isFlipped()}</div>`;
-//           },
-//         };
-//       });
+    const el = getTip();
+    expect(within(el).getByTestId(contentId)).toHaveTextContent(
+      "text=Custom;variant=active;flipped=false",
+    );
+  });
+});
 
-//     const { tooltipElement, action } = await showTooltipWithMocks(
-//       { position: "top", align: "center", offset: { x: 0, y: 0 }, main: flippingSlot },
-//       { top: 10, left: 200, width: 100, height: 40 }, // Trigger rect (near top of screen)
-//       { width: 60, height: 30 }, // Tooltip size
-//     );
-//     // Initial Y without flip: anchor.top(10) - tooltip.height(30) = -20. Should flip.
-//     // Flipped to "bottom".
-//     // Expected Y (bottom): anchor.bottom(10+40=50) + offset.y(0) = 50
-//     expect(capturedFlipped).toBe(true);
-//     expect(tooltipElement.style.top).toBe("50px");
-//     action?.destroy?.();
-//   });
-// });
+describe("Variant and styling classes", () => {
+  async function show(props: Partial<TooltipProps>) {
+    const name = nextName();
+    render(Tooltip, { name, ...props });
+    const trigger = makeTrigger();
+    attach(trigger, { text: "Styled", delay: 10, name });
+    await enter(trigger);
+    await advance(10);
+    return getTip();
+  }
 
-// describe("Tooltip Styling with `style` prop", () => {
-//   let host: HTMLElement;
-//   let trigger: HTMLButtonElement;
-//   const tooltipName = "styling-tooltip";
+  test("applies preset, part, and neutral variant classes by default", async () => {
+    const el = await show({});
+    expect(el).toHaveClass("svs-tooltip", PARTS.WHOLE, VARIANT.NEUTRAL);
+  });
 
-//   beforeEach(() => {
-//     host = setupTriggerHost();
-//     trigger = document.createElement("button");
-//     host.appendChild(trigger);
-//     vi.useFakeTimers();
-//     HTMLElement.prototype.getBoundingClientRect = vi.fn(() => ({
-//       x: 50,
-//       y: 50,
-//       width: 100,
-//       height: 30,
-//       top: 50,
-//       left: 50,
-//       right: 150,
-//       bottom: 80,
-//       toJSON: () => ({ x: 50, y: 50, width: 100, height: 30, top: 50, left: 50, right: 150, bottom: 80 }),
-//     }));
-//   });
+  test("reflects a custom variant", async () => {
+    const el = await show({ variant: VARIANT.ACTIVE });
+    expect(el).toHaveClass("svs-tooltip", PARTS.WHOLE, VARIANT.ACTIVE);
+    expect(el).not.toHaveClass(VARIANT.NEUTRAL);
+  });
 
-//   afterEach(() => {
-//     vi.clearAllTimers();
-//     vi.restoreAllMocks();
-//     host.remove();
-//     document.body.innerHTML = "";
-//   });
+  test("a string styling overrides the preset", async () => {
+    const el = await show({ styling: "custom-tt", variant: VARIANT.ACTIVE });
+    expect(el).toHaveClass("custom-tt", PARTS.WHOLE, VARIANT.ACTIVE);
+    expect(el).not.toHaveClass("svs-tooltip");
+  });
 
-//   async function showStyledTooltip(props: TooltipProps) {
-//     const { component, rerender } = render(Tooltip, { target: host, props: { name: tooltipName, ...props } });
-//     const action = tooltip(trigger, { text: "Styled", delay: 0, name: tooltipName });
-//     await fireEvent.pointerEnter(trigger);
-//     vi.advanceTimersByTime(0);
-//     const tooltipElement = await screen.findByRole("tooltip");
-//     return { tooltipElement, action, component, rerender };
-//   }
+  test("an object styling maps base and variant classes", async () => {
+    const styling = {
+      [PARTS.WHOLE]: { base: "base-c", [VARIANT.NEUTRAL]: "neu-c", [VARIANT.ACTIVE]: "act-c" },
+    };
+    const el = await show({ styling, variant: VARIANT.NEUTRAL });
+    expect(el).toHaveClass("base-c", "neu-c");
+    expect(el).not.toHaveClass("act-c");
+  });
+});
 
-//   test("applies classes from string `style` prop", async () => {
-//     const customClass = "my-custom-tooltip-style";
-//     const { tooltipElement, action } = await showStyledTooltip({ style: customClass, variant: VARIANT.ACTIVE });
-//     // fnClass(preset, customClass)("whole", "active") -> "my-custom-tooltip-style whole active"
-//     expect(tooltipElement.className).toContain(`${customClass} ${PARTS.WHOLE} ${VARIANT.ACTIVE}`);
-//     action?.destroy?.();
-//   });
+describe("Positioning and flipping", () => {
+  beforeEach(() => {
+    vi.stubGlobal("innerWidth", 1000);
+    vi.stubGlobal("innerHeight", 800);
+    mockTooltipSize(60, 30);
+  });
 
-//   test("applies classes from object `style` prop for different statuses", async () => {
-//     const styleObj: TooltipProps["style"] = {
-//       [PARTS.WHOLE]: { // Assuming PARTS.WHOLE is "whole"
-//         base: "base-class",
-//         [VARIANT.NEUTRAL]: "neutral-class",
-//         [VARIANT.ACTIVE]: "active-class",
-//       },
-//     };
+  async function showAt(rect: Partial<DOMRect>, props: Partial<TooltipProps> = {}) {
+    mockRect(rect);
+    const name = nextName();
+    render(Tooltip, { name, ...props });
+    const trigger = makeTrigger();
+    attach(trigger, { text: "Pos", delay: 10, name });
+    await enter(trigger);
+    await advance(10);
+    return getTip();
+  }
 
-//     // Test with NEUTRAL variant
-//     const { tooltipElement: elNeutral, action: actionNeutral, component, rerender } = await showStyledTooltip({
-//       style: styleObj,
-//       variant: VARIANT.NEUTRAL,
-//     });
-//     expect(elNeutral).toHaveClass("base-class");
-//     expect(elNeutral).toHaveClass("neutral-class");
-//     expect(elNeutral).not.toHaveClass("active-class");
-//     actionNeutral?.destroy?.(); // Clean up before potential re-trigger
+  test("positions at top-center by default", async () => {
+    // anchor (x,y) = (200,200), trigger 100x40, tooltip 60x30
+    // x = 200 + 100/2 - 60/2 = 220 ; y = 200 - 30 = 170
+    const el = await showAt({ x: 200, y: 200, width: 100, height: 40 });
+    expect(el.style.left).toBe("220px");
+    expect(el.style.top).toBe("170px");
+  });
 
-//     // Ensure tooltip is hidden before next interaction if component instance is reused
-//     await fireEvent.pointerLeave(trigger);
-//     vi.advanceTimersByTime(10); // Allow hide to complete
+  test("flips from top to bottom when there is no room above", async () => {
+    // anchor.y = 10, unflipped top would be 10 - 30 = -20 (< 0) -> flip to bottom
+    // flipped top = anchor.y(10) + trigger.height(40) = 50
+    const el = await showAt({ x: 200, y: 10, width: 100, height: 40 });
+    expect(el.style.top).toBe("50px");
+  });
+});
 
-//     // Test with ACTIVE variant (re-using the component instance and updating props)
-//     rerender({ variant: VARIANT.ACTIVE });
-//     // await component.$set({ variant: VARIANT.ACTIVE });
-//     const actionActive = tooltip(trigger, { text: "Styled Active", delay: 0, name: tooltipName }); // Re-apply or ensure action allows re-show
-//     await fireEvent.pointerEnter(trigger); // Re-trigger to show
-//     vi.advanceTimersByTime(0);
-//     const elActive = await screen.findByRole("tooltip"); // Re-query
+describe("Cursor tracking", () => {
+  beforeEach(() => {
+    vi.stubGlobal("innerWidth", 800);
+    vi.stubGlobal("innerHeight", 600);
+    mockTooltipSize(60, 30);
+  });
 
-//     expect(elActive).toHaveClass("base-class");
-//     expect(elActive).toHaveClass("active-class");
-//     expect(elActive).not.toHaveClass("neutral-class");
-//     actionActive?.destroy?.();
-//   });
-// });
+  test("anchors to the pointer position when cursor is enabled", async () => {
+    const name = nextName();
+    render(Tooltip, { name });
+    const trigger = makeTrigger();
+    attach(trigger, { text: "Cursor", delay: 10, cursor: true, name });
+
+    await enter(trigger, { clientX: 100, clientY: 100 });
+    await advance(10);
+    const el = getTip();
+    // top-center around cursor: x = 100 - 60/2 = 70 ; y = 100 - 30 = 70
+    expect(el.style.left).toBe("70px");
+    expect(el.style.top).toBe("70px");
+  });
+
+  test("follows pointermove that happens before the tooltip becomes visible", async () => {
+    const name = nextName();
+    render(Tooltip, { name });
+    const trigger = makeTrigger();
+    attach(trigger, { text: "Track", delay: 100, cursor: true, name });
+
+    await enter(trigger, { clientX: 100, clientY: 100 });
+    await fireEvent.pointerMove(trigger, { clientX: 150, clientY: 150 });
+    await tick();
+    await advance(100);
+
+    const el = getTip();
+    // anchored to the latest cursor (150,150): x = 150 - 30 = 120 ; y = 150 - 30 = 120
+    expect(el.style.left).toBe("120px");
+    expect(el.style.top).toBe("120px");
+  });
+});

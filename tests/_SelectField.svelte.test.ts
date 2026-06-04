@@ -43,9 +43,7 @@ const rightfn = createRawSnippet(
 
 describe("Switching existence of elements", () => {
   const options = new SvelteMap([["value1", "Option 1"], ["value2", "Option 2"], ["value3", "Option 3"]]);
-  const actionfn = () => {
-    return {};
-  };
+  const attachfn = () => {};
 
   test("minimum props (options only)", () => {
     const { getByRole } = render(SelectField, { options });
@@ -81,9 +79,9 @@ describe("Switching existence of elements", () => {
     expect(whole.lastElementChild?.tagName).toBe("DIV");
     expect(whole.lastElementChild).toBe(main.parentElement);
   });
-  test("w/ label of action select", () => {
-    const action = vi.fn().mockImplementation(actionfn);
-    const props = { options, label, action };
+  test("w/ label of attach select", () => {
+    const attach = vi.fn().mockImplementation(attachfn);
+    const props = { options, label, attach };
     const { getByRole, getByText } = render(SelectField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("combobox") as HTMLSelectElement;
@@ -93,7 +91,7 @@ describe("Switching existence of elements", () => {
     expect(whole.firstElementChild).toBe(lbl);
     expect(whole.lastElementChild?.tagName).toBe("DIV");
     expect(whole.lastElementChild).toBe(main.parentElement);
-    expect(action).toHaveBeenCalled();
+    expect(attach).toHaveBeenCalled();
   });
   test("w/ extra, w/o label", () => {
     const props = { options, extra };
@@ -166,8 +164,8 @@ describe("Switching existence of elements", () => {
     expect(whole.lastElementChild).toBe(btm);
     expect(main).toHaveAccessibleDescription(bottom);
   });
-  test("w/ bottom of action select", () => {
-    const props = { options, bottom, action: actionfn };
+  test("w/ bottom of attach select", () => {
+    const props = { options, bottom, attach: attachfn };
     const { getByRole } = render(SelectField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("combobox") as HTMLSelectElement;
@@ -217,20 +215,21 @@ describe("Specify attrs & state transition & event handlers", () => {
   });
   test("w/ specify id", () => {
     const id = "id_foo";
-    const props = { options, attributes: { id } };
+    const props = { options, id };
     const { getByRole } = render(SelectField, props);
     const main = getByRole("combobox") as HTMLSelectElement;
     expect(main).toHaveAttribute("id", id);
   });
-  test("w/ specify ignored attrs", () => {
-    const props = { options, attributes: { value: "ignored", class: "ignored-class" } };
-    const { getByRole } = render(SelectField, props);
+  test("class merged onto select control", () => {
+    const props = { options, class: "merged-class" } as any;
+    const { getByRole, container } = render(SelectField, props);
     const main = getByRole("combobox") as HTMLSelectElement;
-    expect(main).not.toHaveValue("ignored");
-    expect(main).not.toHaveAttribute("class", "ignored-class");
+    const root = container.querySelector('[role="group"]') as HTMLElement;
+    expect(main).toHaveClass("merged-class"); // merged onto the control (same as ...rest)
+    expect(root).not.toHaveClass("merged-class"); // not on the WHOLE root
   });
   test("w/ specify major attrs", () => {
-    const props = { options, attributes: { name: "select-name", required: true, disabled: true } };
+    const props = { options, name: "select-name", required: true, disabled: true };
     const { getByRole } = render(SelectField, props);
     const main = getByRole("combobox") as HTMLSelectElement;
     expect(main).toHaveAttribute("name", "select-name");
@@ -270,7 +269,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const props = $state({
       options: optionsWithEmpty,
       variant: VARIANT.NEUTRAL,
-      attributes: { required: true },
+      required: true,
     });
     const { getByRole } = render(SelectField, props);
     const main = getByRole("combobox") as HTMLSelectElement;
@@ -286,7 +285,7 @@ describe("Specify attrs & state transition & event handlers", () => {
       bottom,
       variant: VARIANT.NEUTRAL,
       validations: [(value: string) => value === "" ? "required" : ""],
-      attributes: { required: true },
+      required: true,
     });
     const { getByRole } = render(SelectField, props);
     const main = getByRole("combobox") as HTMLSelectElement;
@@ -302,7 +301,8 @@ describe("Specify attrs & state transition & event handlers", () => {
       options,
       variant: VARIANT.NEUTRAL,
       validations,
-      attributes: { oninvalid, required: true },
+      oninvalid,
+      required: true,
     });
     const user = userEvent.setup();
     const { getByRole } = render(SelectField, props);

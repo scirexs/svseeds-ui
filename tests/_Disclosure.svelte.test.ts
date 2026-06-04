@@ -18,9 +18,7 @@ const labelSnippet = createRawSnippet((open: () => boolean, variant: () => strin
 });
 
 describe("Switching existence of elements", () => {
-  const actionfn = () => {
-    return {};
-  };
+  const attachfn = () => {};
 
   test("minimum props (label as string, children)", () => {
     const { getByRole, getByText } = render(Disclosure, {
@@ -57,27 +55,24 @@ describe("Switching existence of elements", () => {
     expect(content).toHaveTextContent(childrenContent);
   });
 
-  test("w/ action", () => {
-    const action = vi.fn().mockImplementation(actionfn);
+  test("w/ attach", () => {
+    const attach = vi.fn().mockImplementation(attachfn);
     const { getByRole } = render(Disclosure, {
       label,
       children: childrenSnippet,
-      action,
+      attach,
     });
     const details = getByRole("group") as HTMLDetailsElement;
     expect(details).toBeInTheDocument();
-    expect(action).toHaveBeenCalled();
+    expect(attach).toHaveBeenCalled();
   });
 
   test("w/ attributes", () => {
-    const customAttrs = {
-      "data-testid": "custom-disclosure",
-      "aria-expanded": "false" as const,
-    };
     const { getByTestId } = render(Disclosure, {
       label,
       children: childrenSnippet,
-      attributes: customAttrs,
+      "data-testid": "custom-disclosure",
+      "aria-expanded": "false" as const,
     });
     const details = getByTestId("custom-disclosure");
     expect(details).toHaveAttribute("aria-expanded", "false");
@@ -143,7 +138,7 @@ describe("Interactions and state transitions", () => {
       label,
       children: childrenSnippet,
       open: false,
-      variant: "",
+      variant: VARIANT.NEUTRAL,
       duration: 0,
     });
     const user = userEvent.setup();
@@ -225,7 +220,7 @@ describe("Interactions and state transitions", () => {
     const props = {
       label,
       children: childrenSnippet,
-      attributes: { ontoggle },
+      ontoggle,
       duration: 0,
     };
     const { getByText } = render(Disclosure, props);

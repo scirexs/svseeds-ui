@@ -38,12 +38,17 @@ node_modules/
 .vscode/
 .vscode-test
 
-# Claude
-.claude/
+# AI
+/.trash/
+/.plan/
+/.claude/
+/.codex/
 CLAUDE.md
+AGENTS.md
 
 # Others
 .devconfig/
 .ref/
 /zzz.ts
 /publish.sh
+/backup.sh

@@ -3,7 +3,7 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface TextFieldProps {
+  interface TextFieldProps extends Omit<HTMLInputAttributes, "type" | "value"> {
     label?: string;
     extra?: string;
     aux?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[value,variant,element]>
@@ -12,14 +12,14 @@
     bottom?: string;
     descFirst?: boolean; // (false)
     value?: string; // bindable
-    type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url";  // bindable ("text")
+    type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url";  // ("text")
     options?: SvelteSet<string> | Set<string>;
     validations?: TextFieldValidation[];
-    attributes?: HTMLInputAttributes | HTMLTextareaAttributes;
-    action?: Action;
+    attach?: Attachment;
     element?: HTMLInputElement | HTMLTextAreaElement; // bindable
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
+    // class & other input/textarea attributes are passed to the control via ...rest (class is merged onto the control)
   }
   type TextFieldValidation = (value: string, validity: ValidityState) => string | undefined;
   ```
@@ -36,9 +36,9 @@
     <div class="middle">
       <span class="left" conditional>{left}</span>
       {#if type === "area"}
-        <textarea class={"main"} {...attributes} bind:value bind:this={element} use:action></textarea>
+        <textarea class={["main", class]} {...rest} bind:value bind:this={element} {@attach attach}></textarea>
       {:else}
-        <input class={"main"} {type} {...attributes} bind:value bind:this={element} use:action />
+        <input class={["main", class]} {...rest} {type} bind:value bind:this={element} {@attach attach} />
         <datalist conditional>
           {#each options as option}
             <option value={option}></option>
@@ -52,7 +52,7 @@
   ```
 -->
 <script module lang="ts">
-  export interface TextFieldProps {
+  export interface TextFieldProps extends Omit<HTMLInputAttributes, "type" | "value"> {
     label?: string;
     extra?: string;
     aux?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[value,variant,element]>
@@ -61,52 +61,54 @@
     bottom?: string;
     descFirst?: boolean; // (false)
     value?: string; // bindable
-    type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url";  // bindable ("text")
+    type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url"; // ("text")
     options?: SvelteSet<string> | Set<string>;
     validations?: TextFieldValidation[];
-    attributes?: HTMLInputAttributes | HTMLTextareaAttributes;
-    action?: Action;
+    attach?: Attachment;
     element?: HTMLInputElement | HTMLTextAreaElement; // bindable
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
   }
   export type TextFieldReqdProps = never;
-  export type TextFieldBindProps = "value" | "type" | "variant" | "element";
+  export type TextFieldBindProps = "value" | "variant" | "element";
   export type TextFieldValidation = (value: string, validity: ValidityState) => string | undefined;
 
   const preset = "svs-text-field";
 
   import { type Snippet, untrack } from "svelte";
-  import { type Action } from "svelte/action";
+  import { type Attachment } from "svelte/attachments";
   import { type SvelteSet } from "svelte/reactivity";
-  import { type HTMLInputAttributes, type HTMLTextareaAttributes } from "svelte/elements";
-  import { type SVSClass, VARIANT, PARTS, elemId, fnClass, isNeutral, omit } from "./core";
+  import { type HTMLInputAttributes } from "svelte/elements";
+  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isNeutral } from "./core";
 </script>
 
 <script lang="ts">
-  let { label, extra, aux, left, right, bottom, descFirst = false, value = $bindable(""), type = $bindable("text"), options, validations = [], attributes, action, element = $bindable(), styling, variant = $bindable("") }: TextFieldProps = $props();
+  // prettier-ignore
+  let { label, extra, aux, left, right, bottom, descFirst = false, value = $bindable(""), type = "text", options, validations = [], id, onchange, oninvalid, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, ...rest }: TextFieldProps = $props();
 
   // *** Initialize *** //
-  if (!variant) variant = VARIANT.NEUTRAL;
-  const cls = fnClass(preset, styling);
-  const id = attributes?.id ? attributes.id : elemId.get(label?.trim());
-  const idLabel = elemId.get(label?.trim());
-  const idDesc = elemId.get(bottom?.trim());
-  const idList = elemId.get(options?.size);
-  const idErr = idDesc ?? elemId.id;
-  const attrs = omit(attributes as any, "class", "id", "type", "value", "list", "onchange", "oninvalid");
+  const cls = $derived(fnClass(preset, styling));
+  const uid = $props.id();
+  const idMain = $derived(id ? id : label?.trim() ? `${uid}-ctrl` : undefined);
+  const idLabel = $derived(label?.trim() ? `${uid}-label` : undefined);
+  const idDesc = $derived(bottom?.trim() ? `${uid}-desc` : undefined);
+  const idList = $derived(options?.size ? `${uid}-list` : undefined);
+  const idErr = $derived(idDesc ?? `${uid}-err`);
+  // svelte-ignore state_referenced_locally
   let message = $state(bottom);
 
   // *** States *** //
   let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
-  $effect(() => { neutral = isNeutral(variant) ? variant : neutral });
+  $effect(() => {
+    neutral = isNeutral(variant) ? variant : neutral;
+  });
   let live = $derived(variant === VARIANT.INACTIVE ? "alert" : "status");
   let invalid = $derived(variant === VARIANT.INACTIVE ? true : undefined);
   let idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
   function shift(oninvalid?: boolean) {
     const vmsg = element?.validationMessage ?? "";
     variant = !value && !oninvalid ? neutral : vmsg ? VARIANT.INACTIVE : VARIANT.ACTIVE;
-    message = variant === VARIANT.INACTIVE ? vmsg ? vmsg : bottom : bottom;
+    message = variant === VARIANT.INACTIVE ? (vmsg ? vmsg : bottom) : bottom;
   }
   function verify() {
     if (!element) return;
@@ -129,12 +131,12 @@
   }
 
   // *** Event Handlers *** //
-  function onchange(ev: Event) {
-    attributes?.onchange?.(ev as any);
+  function hchange(ev: Event) {
+    onchange?.(ev as any);
     validate();
   }
-  function oninvalid(ev: Event) {
-    attributes?.oninvalid?.(ev as any);
+  function hinvalid(ev: Event) {
+    oninvalid?.(ev as any);
     ev.preventDefault();
     shift(true);
   }
@@ -163,7 +165,7 @@
 
 {#snippet lbl()}
   {#if label?.trim()}
-    <label class={cls(PARTS.LABEL, variant)} for={id} id={idLabel}>
+    <label class={cls(PARTS.LABEL, variant)} for={idMain} id={idLabel}>
       {label}
       {#if extra?.trim()}
         <span class={cls(PARTS.EXTRA, variant)}>{extra}</span>
@@ -177,19 +179,36 @@
   {/if}
 {/snippet}
 {#snippet main()}
-  {@const c = cls(PARTS.MAIN, variant)}
   {#if type === "area"}
-    {#if action}
-      <textarea bind:value bind:this={element} class={c} {id} {onchange} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={idMsg} use:action></textarea>
-    {:else}
-      <textarea bind:value bind:this={element} class={c} {id} {onchange} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={idMsg}></textarea>
-    {/if}
+    <textarea
+      bind:value
+      bind:this={element}
+      class={[cls(PARTS.MAIN, variant), c]}
+      {...rest as any}
+      id={idMain}
+      onchange={hchange}
+      oninvalid={hinvalid}
+      aria-describedby={idDesc}
+      aria-invalid={invalid}
+      aria-errormessage={idMsg}
+      {@attach attach}
+    ></textarea>
   {:else}
-    {#if action}
-      <input bind:value bind:this={element} class={c} list={idList} {id} {type} {onchange} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={idMsg} use:action />
-    {:else}
-      <input bind:value bind:this={element} class={c} list={idList} {id} {type} {onchange} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={idMsg} />
-    {/if}
+    <input
+      bind:value
+      bind:this={element}
+      class={[cls(PARTS.MAIN, variant), c]}
+      {...rest}
+      list={idList}
+      id={idMain}
+      {type}
+      onchange={hchange}
+      oninvalid={hinvalid}
+      aria-describedby={idDesc}
+      aria-invalid={invalid}
+      aria-errormessage={idMsg}
+      {@attach attach}
+    />
     {#if options?.size}
       <datalist id={idList}>
         {#each options as option (option)}

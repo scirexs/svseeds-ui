@@ -11,9 +11,7 @@ const options = new Map([
   ["option3", "Option 3"],
 ]);
 
-const actionfn = () => {
-  return {};
-};
+const attachfn = () => {};
 
 const customSnippet = createRawSnippet(
   (value: () => string) => {
@@ -55,13 +53,13 @@ describe("Switching existence of elements", () => {
     });
   });
 
-  test("with action", () => {
-    const action = vi.fn().mockImplementation(actionfn);
-    const { getAllByRole } = render(ToggleGroup, { options, action });
+  test("with attach", () => {
+    const attach = vi.fn().mockImplementation(attachfn);
+    const { getAllByRole } = render(ToggleGroup, { options, attach });
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
     expect(buttons).toHaveLength(3);
-    expect(action).toHaveBeenCalledTimes(3);
+    expect(attach).toHaveBeenCalledTimes(3);
   });
 
   test("with initial values", () => {
@@ -279,22 +277,22 @@ describe("User interactions", () => {
     expect(buttons[0]).toHaveFocus();
 
     // Space to activate
-    await user.keyboard("{Space}");
-    waitFor(() => {
+    await user.keyboard("[Space]");
+    await waitFor(() => {
       expect(buttons[0]).toHaveAttribute("aria-checked", "true");
     });
   });
 
-  test("with action and user interaction", async () => {
-    const action = vi.fn().mockImplementation(actionfn);
-    const props = $state({ options, values: [], action });
+  test("with attach and user interaction", async () => {
+    const attach = vi.fn().mockImplementation(attachfn);
+    const props = $state({ options, values: [], attach });
     const user = userEvent.setup();
     const { getAllByRole } = render(ToggleGroup, props);
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
     await user.click(buttons[0]);
     expect(props.values).toEqual(["option1"]);
-    expect(action).toHaveBeenCalledTimes(3); // Called once for each button during mount
+    expect(attach).toHaveBeenCalledTimes(3); // Called once for each button during mount
   });
 });
 

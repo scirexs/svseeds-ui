@@ -18,7 +18,7 @@
     name?: string;
     elements?: HTMLButtonElement[];
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
     deps?: ToggleGroupFieldDeps;
   }
   interface ToggleGroupFieldDeps {
@@ -61,7 +61,7 @@
     name?: string;
     elements?: HTMLButtonElement[]; // bindable
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
     deps?: ToggleGroupFieldDeps;
   }
   export interface ToggleGroupFieldDeps {
@@ -74,41 +74,48 @@
   const preset = "svs-toggle-group-field";
 
   import { type Snippet, untrack } from "svelte";
-  import { type Action } from "svelte/action";
+  import { type Attachment } from "svelte/attachments";
   import { type SvelteMap } from "svelte/reactivity";
-  import { type SVSClass, VARIANT, PARTS, elemId, fnClass, isNeutral } from "./core";
+  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isNeutral } from "./core";
   import ToggleGroup, { type ToggleGroupProps, type ToggleGroupReqdProps, type ToggleGroupBindProps } from "./_ToggleGroup.svelte";
 </script>
 
 <script lang="ts">
-  let { options, label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), multiple = true, validations = [], name, elements = $bindable([]), styling, variant = $bindable(""), deps }: ToggleGroupFieldProps = $props();
+  // prettier-ignore
+  let { options, label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), multiple = true, validations = [], name, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), deps }: ToggleGroupFieldProps = $props();
 
   // *** Initialize *** //
-  if (!variant) variant = VARIANT.NEUTRAL;
-  const cls = fnClass(preset, styling);
-  const idLabel = elemId.get(label?.trim());
-  const idDesc = elemId.get(bottom?.trim());
-  const idErr = idDesc ?? elemId.id;
+  const cls = $derived(fnClass(preset, styling));
+  const uid = $props.id();
+  // svelte-ignore state_referenced_locally
+  const idLabel = label?.trim() ? `${uid}-label` : undefined;
+  // svelte-ignore state_referenced_locally
+  const idDesc = bottom?.trim() ? `${uid}-desc` : undefined;
+  const idErr = idDesc ?? `${uid}-err`;
+  // svelte-ignore state_referenced_locally
   let message = $state(bottom);
   let element: HTMLInputElement | undefined = $state();
 
   // *** Initialize Deps *** //
+  // svelte-ignore state_referenced_locally
   const svsToggleGroup = {
     children: deps?.svsToggleGroup?.children,
     ariaDescId: idDesc,
-    styling: deps?.svsToggleGroup?.styling as SVSClass ?? `${preset} svs-toggle-group`,
-    action: deps?.svsToggleGroup?.action as Action,
+    styling: (deps?.svsToggleGroup?.styling as SVSClass) ?? `${preset} svs-toggle-group`,
+    attach: deps?.svsToggleGroup?.attach as Attachment,
   };
 
   // *** States *** //
   let neutral = $state(isNeutral(variant) ? variant : VARIANT.NEUTRAL);
-  $effect(() => { neutral = isNeutral(variant) ? variant : neutral });
+  $effect(() => {
+    neutral = isNeutral(variant) ? variant : neutral;
+  });
   let live = $derived(variant === VARIANT.INACTIVE ? "alert" : "status");
   let idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
   function shift(oninvalid?: boolean) {
     const vmsg = element?.validationMessage ?? "";
-    variant = oninvalid && vmsg ? VARIANT.INACTIVE : (!values.length || vmsg) ? neutral : VARIANT.ACTIVE;
-    message = variant === VARIANT.INACTIVE ? vmsg ? vmsg : bottom : bottom;
+    variant = oninvalid && vmsg ? VARIANT.INACTIVE : !values.length || vmsg ? neutral : VARIANT.ACTIVE;
+    message = variant === VARIANT.INACTIVE ? (vmsg ? vmsg : bottom) : bottom;
   }
   function verify() {
     if (!element) return;
@@ -132,7 +139,7 @@
   // *** Event Handlers *** //
   function oninvalid(ev: Event) {
     ev.preventDefault();
-    shift(true)
+    shift(true);
   }
   $effect(() => untrack(() => verify()));
 </script>
@@ -153,7 +160,7 @@
     <div class={cls(PARTS.MIDDLE, variant)}>
       {@render side(PARTS.LEFT, left)}
       {@render fnForm()}
-      <ToggleGroup bind:values bind:elements bind:ariaErrMsgId={idMsg} bind:variant={neutral} {options} {multiple} {...svsToggleGroup} />
+      <ToggleGroup bind:values bind:elements ariaErrMsgId={idMsg} variant={neutral} {options} {multiple} {...svsToggleGroup} />
       {@render side(PARTS.RIGHT, right)}
     </div>
     {@render desc(!descFirst)}

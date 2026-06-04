@@ -6,11 +6,11 @@
   interface HotkeyCaptureProps {
     value?: string; // bindable
     placeholder?: string;
-    active?: boolean; // bindable, (false)
-    disabled?: boolean; // bindable, (false)
+    active?: boolean; // bindable (false)
+    disabled?: boolean; //  (false)
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
   }
   ```
   ### Anatomy
@@ -22,38 +22,40 @@
   export interface HotkeyCaptureProps {
     value?: string; // bindable
     placeholder?: string;
-    active?: boolean; // bindable, (false)
-    disabled?: boolean; // bindable, (false)
+    active?: boolean; // bindable (false)
+    disabled?: boolean; // (false)
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
   }
   export type HotkeyCaptureReqdProps = never;
-  export type HotkeyCaptureBindProps = "value" | "active" | "disable" | "variant" | "element";
+  export type HotkeyCaptureBindProps = "value" | "active" | "variant" | "element";
 
   const preset = "svs-hotkey-capture";
   const KEY_MODIFIER = new Set(["Control", "Alt", "Shift", "Meta"]);
   const LABEL_SPACE = "SPACE";
-  const LABEL_POINTER = ["BTN_MAIN","BTN_WHEEL","BTN_SUB","BTN_BACK","BTN_FORWARD"] as const;
+  const LABEL_POINTER = ["BTN_MAIN", "BTN_WHEEL", "BTN_SUB", "BTN_BACK", "BTN_FORWARD"] as const;
   const LABEL_WHEEL = ["WHEELUP", "WHEELDOWN"] as const;
   function getModifierLabel(ev: KeyboardEvent | PointerEvent | WheelEvent): string {
     return `${ev.ctrlKey ? "Ctrl " : ""}${ev.altKey ? "Alt " : ""}${ev.shiftKey ? "Shift " : ""}${ev.metaKey ? "Meta " : ""}`;
   }
 
   import { untrack } from "svelte";
-  import { type SVSClass, VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isNeutral } from "./core";
 </script>
 
 <script lang="ts">
-  let { value = $bindable(""), placeholder, active = $bindable(false), disabled = $bindable(false), element = $bindable(), styling, variant = $bindable("") }: HotkeyCaptureProps = $props();
+  // prettier-ignore
+  let { value = $bindable(""), placeholder, active = $bindable(false), disabled = false, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL) }: HotkeyCaptureProps = $props();
 
   // *** Initialize *** //
-  if (!variant) variant = VARIANT.NEUTRAL;
-  const cls = fnClass(preset, styling);
+  const cls = $derived(fnClass(preset, styling));
   let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
 
   // *** Bind Handlers *** //
-  $effect(() => { neutral = isNeutral(variant) ? variant : neutral });
+  $effect(() => {
+    neutral = isNeutral(variant) ? variant : neutral;
+  });
   $effect.pre(() => {
     disabled;
     untrack(() => shiftStatus());
@@ -72,7 +74,7 @@
     }
   }
   function shiftStatus() {
-    if (disabled) return variant = VARIANT.INACTIVE;
+    if (disabled) return (variant = VARIANT.INACTIVE);
     variant = active ? VARIANT.ACTIVE : neutral;
   }
 
@@ -99,7 +101,9 @@
     prep(ev);
     value = getModifierLabel(ev) + LABEL_WHEEL[ev.deltaY < 0 ? 0 : 1];
   }
-  function oncontextmenu(ev: MouseEvent) { prep(ev); }
+  function oncontextmenu(ev: MouseEvent) {
+    prep(ev);
+  }
   function onfocus() {
     active = true;
   }
@@ -110,4 +114,18 @@
 
 <!---------------------------------------->
 
-<input bind:value bind:this={element} class={cls(PARTS.MAIN, variant)} type="text" readonly={true} {placeholder} {disabled} {onkeydown} {onpointerdown} {onwheel} {oncontextmenu} {onfocus} {onblur} />
+<input
+  bind:value
+  bind:this={element}
+  class={cls(PARTS.MAIN, variant)}
+  type="text"
+  readonly={true}
+  {placeholder}
+  {disabled}
+  {onkeydown}
+  {onpointerdown}
+  {onwheel}
+  {oncontextmenu}
+  {onfocus}
+  {onblur}
+/>

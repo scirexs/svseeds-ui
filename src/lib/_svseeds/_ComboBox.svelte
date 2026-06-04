@@ -3,23 +3,23 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface ComboBoxProps {
+  interface ComboBoxProps extends Omit<HTMLInputAttributes, "type" | "value" | "list" | "role" | "aria-haspopup" | "aria-autocomplete" | "aria-controls" | "aria-expanded"> {
     options: SvelteSet<string> | Set<string>;
     extra?: Snippet<[boolean, string]>; // Snippet<[expanded,variant]>
     value?: string; // bindable
     expanded?: boolean; // bindable
     search?: boolean // (true)
-    attributes?: HTMLInputAttributes;
-    action?: Action;
+    attach?: Attachment;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // (VARIANT.NEUTRAL)
+    // class & other HTMLInputAttributes are passed to <input> via ...rest (class is merged onto the control)
   }
   ```
   ### Anatomy
   ```svelte
   <span class="whole">
-    <input class="main" type="text" {...attributes} bind:value bind:this={element} use:action />
+    <input class={["main", class]} type="text" {...rest} bind:value bind:this={element} {@attach attach} />
     <div class="extra" conditional>{extra}</div>
     <ul class="bottom">
       {#each options as option}
@@ -30,47 +30,57 @@
   ```
 -->
 <script module lang="ts">
-  export interface ComboBoxProps {
+  export interface ComboBoxProps extends Omit<
+    HTMLInputAttributes,
+    "type" | "value" | "list" | "role" | "aria-haspopup" | "aria-autocomplete" | "aria-controls" | "aria-expanded"
+  > {
     options: SvelteSet<string> | Set<string>;
     extra?: Snippet<[boolean, string]>; // Snippet<[expanded,variant]>
     value?: string; // bindable
     expanded?: boolean; // bindable
-    search?: boolean // (true)
-    attributes?: HTMLInputAttributes;
-    action?: Action;
+    search?: boolean; // (true)
+    attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
   export type ComboBoxReqdProps = "options";
-  export type ComboBoxBindProps = "value" | "expanded" | "variant" | "element";
+  export type ComboBoxBindProps = "value" | "expanded" | "element";
 
   const preset = "svs-combo-box";
   const NA = -1;
 
   import { type Snippet } from "svelte";
-  import { type Action } from "svelte/action";
+  import { type Attachment } from "svelte/attachments";
   import { type SvelteSet } from "svelte/reactivity";
-  import { type HTMLInputAttributes } from "svelte/elements";
-  import { type SVSClass, VARIANT, PARTS, elemId, fnClass, omit } from "./core";
+  import {
+    type HTMLInputAttributes,
+    type EventHandler,
+    type FormEventHandler,
+    type KeyboardEventHandler,
+    type FocusEventHandler,
+  } from "svelte/elements";
+  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass } from "./core";
 </script>
 
 <script lang="ts">
-  let { options, extra, value = $bindable(""), expanded = $bindable(false), search = true, attributes, action, element = $bindable(), styling, variant = $bindable("") }: ComboBoxProps = $props();
+  // prettier-ignore
+  let { options, extra, value = $bindable(""), expanded = $bindable(false), search = true, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, onkeydown, oninput, onfocus, onblur, ...rest }: ComboBoxProps = $props();
 
   // *** Initialize *** //
-  if (!variant) variant = VARIANT.NEUTRAL;
-  const cls = fnClass(preset, styling);
-  const idList = elemId.id;
-  const attrs = omit(attributes, "class", "type", "value", "list", "role", "aria-haspopup", "aria-autocomplete", "aria-controls", "aria-expanded");
+  const cls = $derived(fnClass(preset, styling));
+  const uid = $props.id();
+  const idList = `${uid}-list`;
   let selected = $state(NA);
-  let overflow = $state({x: false, y: false});
-  let listElem: HTMLUListElement | undefined = $state();
+  let overflow = $state({ x: false, y: false });
+  let listElem = $state<HTMLUListElement>();
 
   // *** Bind Handlers *** //
-  let listboxStyle = $derived(`position:absolute;cursor:default;user-select:none;visibility: ${expanded ? "visible" : "hidden"};${overflow.x ? "right:0%;" : ""}${overflow.y ? "bottom:100%;" : ""}`);
-  let opts = $derived([...options.keys()]);
-  let maxlen = $derived(opts.reduce((max, x) => Math.max(max, [...x].length), 0));
+  const listboxStyle = $derived(
+    `position:absolute;cursor:default;user-select:none;visibility: ${expanded ? "visible" : "hidden"};${overflow.x ? "right:0%;" : ""}${overflow.y ? "bottom:100%;" : ""}`,
+  );
+  const opts = $derived([...options.keys()]);
+  const maxlen = $derived(opts.reduce((max, x) => Math.max(max, [...x].length), 0));
 
   // *** Event Handlers *** //
   function open(activate: boolean = false, bottom: boolean = false) {
@@ -96,8 +106,17 @@
     expanded = false;
     selected = NA;
   }
-  function oninput(ev: Event) {
-    if ((ev as InputEvent).isComposing) return;
+  function hfocus(ev: Parameters<FocusEventHandler<HTMLInputElement>>[0]) {
+    onfocus?.(ev);
+    open();
+  }
+  function hblur(ev: Parameters<FocusEventHandler<HTMLInputElement>>[0]) {
+    onblur?.(ev);
+    close();
+  }
+  function hinput(ev: Parameters<FormEventHandler<HTMLInputElement>>[0]) {
+    oninput?.(ev);
+    if ((ev as Parameters<EventHandler<InputEvent, HTMLInputElement>>[0]).isComposing) return;
     if ([...value].length > maxlen) return;
     if (options.has(value)) {
       selected = opts.indexOf(value);
@@ -106,14 +125,23 @@
     if (!search) return;
     selected = opts.findIndex((x) => x.startsWith(value));
   }
-  function onkeydown(ev: KeyboardEvent) {
+  function hkeydown(ev: Parameters<KeyboardEventHandler<HTMLInputElement>>[0]) {
+    onkeydown?.(ev);
     if (ev.isComposing) return;
     if (ev.ctrlKey || ev.shiftKey || ev.metaKey) return;
     switch (ev.key) {
-      case "Escape": if (!ev.altKey && expanded) close(); break;
-      case "Enter": if (!ev.altKey && expanded && selected > NA) apply(); break;
-      case "ArrowDown": caseArrowDown(ev, ev.altKey); break;
-      case "ArrowUp": caseArrowUp(ev, ev.altKey); break;
+      case "Escape":
+        if (!ev.altKey && expanded) close();
+        break;
+      case "Enter":
+        if (!ev.altKey && expanded && selected > NA) apply();
+        break;
+      case "ArrowDown":
+        caseArrowDown(ev, ev.altKey);
+        break;
+      case "ArrowUp":
+        caseArrowUp(ev, ev.altKey);
+        break;
     }
   }
   function caseArrowDown(ev: KeyboardEvent, alt: boolean) {
@@ -139,11 +167,23 @@
 
 {#if options.size}
   <span class={cls(PARTS.WHOLE, variant)} style="position:relative;">
-    {#if action}
-      <input bind:value bind:this={element} class={cls(PARTS.MAIN, variant)} type="text" role="combobox" aria-haspopup="listbox" aria-autocomplete="none" aria-controls={idList} aria-expanded={expanded} onfocus={() => open()} onblur={close} {onkeydown} {oninput} {...attrs} use:action />
-    {:else}
-      <input bind:value bind:this={element} class={cls(PARTS.MAIN, variant)} type="text" role="combobox" aria-haspopup="listbox" aria-autocomplete="none" aria-controls={idList} aria-expanded={expanded} onfocus={() => open()} onblur={close} {onkeydown} {oninput} {...attrs} />
-    {/if}
+    <input
+      bind:value
+      bind:this={element}
+      class={[cls(PARTS.MAIN, variant), c]}
+      {...rest}
+      type="text"
+      role="combobox"
+      aria-haspopup="listbox"
+      aria-autocomplete="none"
+      aria-controls={idList}
+      aria-expanded={expanded}
+      onfocus={hfocus}
+      onblur={hblur}
+      onkeydown={hkeydown}
+      oninput={hinput}
+      {@attach attach}
+    />
     {#if extra}
       <div class={cls(PARTS.EXTRA, variant)} style="position:absolute;top:50%;right:0%;transform:translateY(-50%);pointer-events:none;">
         {@render extra(expanded, variant)}
@@ -153,7 +193,7 @@
       {#each opts as opt, i (opt)}
         {@const isSelected = i === selected}
         {@const labelStatus = isSelected ? VARIANT.ACTIVE : variant}
-        {@const onpointerenter = () => selected = i}
+        {@const onpointerenter = () => (selected = i)}
         <li class={cls(PARTS.LABEL, labelStatus)} aria-selected={isSelected} role="option" onpointerdown={apply} {onpointerenter}>
           {opt}
         </li>

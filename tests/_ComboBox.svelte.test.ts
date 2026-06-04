@@ -4,9 +4,7 @@ import { userEvent } from "@testing-library/user-event";
 import ComboBox from "#svs/_ComboBox.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 
-const actionfn = () => {
-  return {};
-};
+const attachfn = () => {};
 
 describe("Switching existence of elements", () => {
   const options = new Set(["option1", "option2", "option3"]);
@@ -31,13 +29,13 @@ describe("Switching existence of elements", () => {
     expect(items[2]).toHaveTextContent("option3");
   });
 
-  test("w/ action", () => {
-    const action = vi.fn().mockImplementation(actionfn);
-    const { getByRole } = render(ComboBox, { options, action });
+  test("w/ attach", () => {
+    const attach = vi.fn().mockImplementation(attachfn);
+    const { getByRole } = render(ComboBox, { options, attach });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
     expect(combobox).toHaveAttribute("role", "combobox");
-    expect(action).toHaveBeenCalled();
+    expect(attach).toHaveBeenCalled();
   });
 
   test("w/ default value", () => {
@@ -65,12 +63,12 @@ describe("Switching existence of elements", () => {
   });
 
   test("w/ attributes", () => {
-    const attributes = {
+    const { getByRole } = render(ComboBox, {
+      options,
       placeholder: "Select option",
       name: "combo",
       required: true,
-    };
-    const { getByRole } = render(ComboBox, { options, attributes });
+    });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
     expect(combobox).toHaveAttribute("placeholder", "Select option");
@@ -78,21 +76,15 @@ describe("Switching existence of elements", () => {
     expect(combobox).toHaveAttribute("required");
   });
 
-  test("w/ ignored attributes", () => {
-    const attributes = {
-      class: "custom-class",
-      type: "email",
-      value: "ignored",
-      list: "ignored-list",
-      role: "ignored-role",
-    };
-    const { getByRole } = render(ComboBox, { options, attributes });
+  test("class merged onto control, type/role forced", () => {
+    const { getByRole } = render(ComboBox, { options, class: "custom-class", type: "email", role: "spinbutton" } as any);
     const combobox = getByRole("combobox") as HTMLInputElement;
+    const root = combobox.parentElement as HTMLElement;
 
-    expect(combobox).not.toHaveClass("custom-class");
-    expect(combobox).toHaveAttribute("type", "text");
-    expect(combobox).toHaveAttribute("role", "combobox");
-    expect(combobox).not.toHaveAttribute("list", "ignored-list");
+    expect(combobox).toHaveClass("custom-class"); // merged onto the control (same as ...rest)
+    expect(root).not.toHaveClass("custom-class"); // not on the WHOLE root
+    expect(combobox).toHaveAttribute("type", "text"); // forced, not from rest
+    expect(combobox).toHaveAttribute("role", "combobox"); // forced, not from rest
   });
 });
 
@@ -347,7 +339,7 @@ describe("State management and bindings", () => {
   });
 
   test("variant binding works", async () => {
-    const props = $state({ options, variant: "" });
+    const props = $state({ options, variant: VARIANT.NEUTRAL as string });
     const { getByRole, rerender } = render(ComboBox, props);
     const combobox = getByRole("combobox") as HTMLInputElement;
 

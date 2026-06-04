@@ -42,9 +42,7 @@ const rightfn = createRawSnippet(
 
 describe("Switching existence of elements", () => {
   const options = new Set(["test1", "test2"]);
-  const actionfn = () => {
-    return {};
-  };
+  const attachfn = () => {};
 
   test("no props", () => {
     const { getByRole } = render(TextField);
@@ -75,9 +73,9 @@ describe("Switching existence of elements", () => {
     expect(whole.lastElementChild?.tagName).toBe("DIV");
     expect(whole.lastElementChild).toBe(main.parentElement);
   });
-  test("w/ label of action input", () => {
-    const action = vi.fn().mockImplementation(actionfn);
-    const props = { label, action };
+  test("w/ label of attach input", () => {
+    const attach = vi.fn().mockImplementation(attachfn);
+    const props = { label, attach };
     const { getByRole, getByLabelText, getByText } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByLabelText(label, { selector: "input" }) as HTMLInputElement;
@@ -87,7 +85,7 @@ describe("Switching existence of elements", () => {
     expect(whole.firstElementChild).toBe(lbl);
     expect(whole.lastElementChild?.tagName).toBe("DIV");
     expect(whole.lastElementChild).toBe(main.parentElement);
-    expect(action).toHaveBeenCalled();
+    expect(attach).toHaveBeenCalled();
   });
   test("w/ label of area", () => {
     const props = { label, type: "area" as const };
@@ -101,9 +99,9 @@ describe("Switching existence of elements", () => {
     expect(whole.lastElementChild?.tagName).toBe("DIV");
     expect(whole.lastElementChild).toBe(main.parentElement);
   });
-  test("w/ label of action area", () => {
-    const action = vi.fn().mockImplementation(actionfn);
-    const props = { label, type: "area" as const, action };
+  test("w/ label of attach area", () => {
+    const attach = vi.fn().mockImplementation(attachfn);
+    const props = { label, type: "area" as const, attach };
     const { getByRole, getByLabelText, getByText } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByLabelText(label, { selector: "textarea" }) as HTMLTextAreaElement;
@@ -113,7 +111,7 @@ describe("Switching existence of elements", () => {
     expect(whole.firstElementChild).toBe(lbl);
     expect(whole.lastElementChild?.tagName).toBe("DIV");
     expect(whole.lastElementChild).toBe(main.parentElement);
-    expect(action).toHaveBeenCalled();
+    expect(attach).toHaveBeenCalled();
   });
   test("w/ extra, w/o label", () => {
     const props = { extra };
@@ -186,8 +184,8 @@ describe("Switching existence of elements", () => {
     expect(whole.lastElementChild).toBe(btm);
     expect(main).toHaveAccessibleDescription(bottom);
   });
-  test("w/ bottom of action input", () => {
-    const props = { bottom, action: actionfn };
+  test("w/ bottom of attach input", () => {
+    const props = { bottom, attach: attachfn };
     const { getByRole } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
@@ -208,8 +206,8 @@ describe("Switching existence of elements", () => {
     expect(whole.lastElementChild).toBe(btm);
     expect(main).toHaveAccessibleDescription(bottom);
   });
-  test("w/ bottom of action area", () => {
-    const props = { bottom, type: "area" as const, action: actionfn };
+  test("w/ bottom of attach area", () => {
+    const props = { bottom, type: "area" as const, attach: attachfn };
     const { getByRole } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
@@ -242,8 +240,8 @@ describe("Switching existence of elements", () => {
     expect(main).toHaveAttribute("list", listid);
     expect(list?.children).toHaveLength(2);
   });
-  test("w/ options of action input", () => {
-    const props = { options, action: actionfn };
+  test("w/ options of attach input", () => {
+    const props = { options, attach: attachfn };
     const { getByRole } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("combobox") as HTMLInputElement;
@@ -319,22 +317,22 @@ describe("Specify attrs & state transition & event handlers", () => {
   });
   test("w/ specify id", () => {
     const id = "id_foo";
-    const props = { attributes: { id } };
+    const props = { id };
     const { getByRole } = render(TextField, props);
     const main = getByRole("textbox") as HTMLInputElement;
     expect(main).toHaveAttribute("id", id);
   });
-  test("w/ specify ignored attrs", () => {
-    const props = { attributes: { value: "v", class: "c", type: "hidden", list: "l" } };
-    const { getByRole } = render(TextField, props);
+  test("class merged onto control, list controlled", () => {
+    const props = { class: "c", list: "l" } as any;
+    const { getByRole, container } = render(TextField, props);
     const main = getByRole("textbox") as HTMLInputElement;
-    expect(main).not.toHaveValue("v");
-    expect(main).not.toHaveAttribute("class", "c");
-    expect(main).not.toHaveAttribute("type", "hidden");
-    expect(main).not.toHaveAttribute("list");
+    const root = container.querySelector('[role="group"]') as HTMLElement;
+    expect(main).toHaveClass("c"); // merged onto the control (same as ...rest)
+    expect(root).not.toHaveClass("c"); // not on the WHOLE root
+    expect(main).not.toHaveAttribute("list"); // controlled (no options)
   });
   test("w/ specify major attrs", async () => {
-    const props = { attributes: { name: "n", placeholder: "p", maxlength: 5, required: true, readonly: true } };
+    const props = { name: "n", placeholder: "p", maxlength: 5, required: true, readonly: true };
     const { rerender, getByPlaceholderText } = render(TextField, props);
     let main: HTMLInputElement | HTMLTextAreaElement = getByPlaceholderText("p") as HTMLInputElement;
     expect(main).toHaveAttribute("name", "n");
@@ -381,7 +379,7 @@ describe("Specify attrs & state transition & event handlers", () => {
   test("w/ required and no validations", async () => {
     const props = $state({
       variant: VARIANT.NEUTRAL,
-      attributes: { required: true },
+      required: true,
     });
     const { getByRole } = render(TextField, props);
     const main = getByRole("textbox") as HTMLInputElement;
@@ -396,7 +394,7 @@ describe("Specify attrs & state transition & event handlers", () => {
       bottom,
       variant: VARIANT.NEUTRAL,
       validations,
-      attributes: { required: true },
+      required: true,
     });
     const { getByRole } = render(TextField, props);
     const main = getByRole("textbox") as HTMLInputElement;
@@ -413,7 +411,10 @@ describe("Specify attrs & state transition & event handlers", () => {
     const props = $state({
       variant: VARIANT.NEUTRAL,
       validations,
-      attributes: { onchange, oninput, oninvalid, required: true },
+      onchange,
+      oninput,
+      oninvalid,
+      required: true,
     });
     const user = userEvent.setup();
     const { getByRole } = render(TextField, props);

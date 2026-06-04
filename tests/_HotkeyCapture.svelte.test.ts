@@ -55,14 +55,12 @@ describe("Active state and focus management", () => {
 
   test("becomes inactive on blur", async () => {
     const props = $state({ active: true });
-    const user = userEvent.setup();
     const { getByRole } = render(HotkeyCapture, props);
+    const input = getByRole("textbox") as HTMLInputElement;
 
     expect(props.active).toBe(true);
-    await user.tab(); // blur the input
-    waitFor(() => {
-      expect(props.active).toBe(false);
-    });
+    await fireEvent.blur(input); // blur the input
+    expect(props.active).toBe(false);
   });
 
   test("programmatic active change focuses/blurs element", async () => {
@@ -201,7 +199,7 @@ describe("Pointer event handling", () => {
 
     input.focus();
     await fireEvent.pointerDown(input, { button: 0 });
-    waitFor(() => {
+    await waitFor(() => {
       expect(props.value).toBe("BTN_MAIN");
     });
   });
@@ -213,7 +211,7 @@ describe("Pointer event handling", () => {
 
     input.focus();
     await fireEvent.pointerDown(input, { button: 1 });
-    waitFor(() => {
+    await waitFor(() => {
       expect(props.value).toBe("BTN_WHEEL");
     });
   });
@@ -225,7 +223,7 @@ describe("Pointer event handling", () => {
 
     input.focus();
     await fireEvent.pointerDown(input, { button: 2 });
-    waitFor(() => {
+    await waitFor(() => {
       expect(props.value).toBe("BTN_SUB");
     });
   });
@@ -237,7 +235,7 @@ describe("Pointer event handling", () => {
 
     input.focus();
     await fireEvent.pointerDown(input, { button: 3 });
-    waitFor(() => {
+    await waitFor(() => {
       expect(props.value).toBe("BTN_BACK");
     });
   });
@@ -249,7 +247,7 @@ describe("Pointer event handling", () => {
 
     input.focus();
     await fireEvent.pointerDown(input, { button: 4 });
-    waitFor(() => {
+    await waitFor(() => {
       expect(props.value).toBe("BTN_FORWARD");
     });
   });
@@ -261,7 +259,7 @@ describe("Pointer event handling", () => {
 
     input.focus();
     await fireEvent.pointerDown(input, { button: 0, ctrlKey: true, shiftKey: true });
-    waitFor(() => {
+    await waitFor(() => {
       expect(props.value).toBe("Ctrl Shift BTN_MAIN");
     });
   });

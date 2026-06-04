@@ -229,18 +229,19 @@ describe("Specify state transition & event handlers", () => {
     expect(props.variant).toBe(VARIANT.NEUTRAL);
   });
 
-  test("required validation without custom validations", async () => {
+  test("required validation shows alert and inactive variant", async () => {
     const props = $state({
       options,
       variant: VARIANT.NEUTRAL,
       values: [] as string[],
+      validations: [(v: string[]) => (v.length ? "" : "This field is required")],
     });
     const { getAllByRole, getByRole } = render(ToggleGroupField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
     const hiddenInput = whole.querySelector('input[style*="display: none"]') as HTMLInputElement;
 
     await fireEvent.invalid(hiddenInput);
-    waitFor(() => {
+    await waitFor(() => {
       const alert = getByRole("alert") as HTMLDivElement;
       expect(alert).toBeInTheDocument();
       expect(props.variant).toBe(VARIANT.INACTIVE);
@@ -260,8 +261,8 @@ describe("Specify state transition & event handlers", () => {
     const whole = getAllByRole("group")[0] as HTMLDivElement;
     const hiddenInput = whole.querySelector('input[style*="display: none"]') as HTMLInputElement;
 
-    await fireEvent.change(hiddenInput);
-    waitFor(() => {
+    await fireEvent.invalid(hiddenInput);
+    await waitFor(() => {
       expect(validation1).toHaveBeenCalled();
       expect(validation2).toHaveBeenCalled();
       expect(props.variant).toBe(VARIANT.INACTIVE);

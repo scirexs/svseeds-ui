@@ -3,23 +3,23 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface ButtonProps {
+  interface ButtonProps extends Omit<HTMLButtonAttributes, "children" | "form" | "type" | "onclick"> {
     children: Snippet<[string]>; // Snippet<[variant]>
     left?: Snippet<[string, HTMLButtonElement | undefined]>; // Snippet<[variant,element]>
     right?: Snippet<[string, HTMLButtonElement | undefined]>; // Snippet<[variant,element]>
     type?: "submit" | "reset" | "button"; // ("button")
     onclick?: MouseEventHandler<HTMLButtonElement> | null;
-    form?: HTMLFormElement; // bindable
-    attributes?: HTMLButtonAttributes;
-    action?: Action;
+    form?: HTMLFormElement;
+    attach?: Attachment;
     element?: HTMLButtonElement; // bindable
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // (VARIANT.NEUTRAL)
+    // other HTMLButtonAttributes are passed to <button> via ...rest; `class` is merged onto root <button>
   }
   ```
   ### Anatomy
   ```svelte
-  <button class="whole" {type} {onclick} {...attributes} bind:this={element} use:action>
+  <button class={["whole", class]} {type} {onclick} {...rest} bind:this={element} {@attach attach}>
     <span class="left" conditional>{left}</span>
     <span class="main">{children}</span>
     <span class="right" conditional>{right}</span>
@@ -27,56 +27,47 @@
   ```
 -->
 <script module lang="ts">
-  export interface ButtonProps {
+  export interface ButtonProps extends Omit<HTMLButtonAttributes, "children" | "form" | "type"> {
     children: Snippet<[string]>; // Snippet<[variant]>
     left?: Snippet<[string, HTMLButtonElement | undefined]>; // Snippet<[variant,element]>
     right?: Snippet<[string, HTMLButtonElement | undefined]>; // Snippet<[variant,element]>
     type?: "submit" | "reset" | "button"; // ("button")
-    onclick?: MouseEventHandler<HTMLButtonElement> | null;
-    form?: HTMLFormElement; // bindable
-    attributes?: HTMLButtonAttributes;
-    action?: Action;
+    form?: HTMLFormElement;
+    attach?: Attachment<HTMLButtonElement>;
     element?: HTMLButtonElement; // bindable
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
   export type ButtonReqdProps = "children";
-  export type ButtonBindProps = "form" | "variant" | "element";
+  export type ButtonBindProps = "element";
 
   const preset = "svs-button";
 
   import { type Snippet } from "svelte";
-  import { type Action } from "svelte/action";
+  import { type Attachment } from "svelte/attachments";
   import { type HTMLButtonAttributes, type MouseEventHandler } from "svelte/elements";
-  import { type SVSClass, VARIANT, PARTS, fnClass, omit } from "./core";
+  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass } from "./core";
 </script>
 
 <script lang="ts">
-  let { children, left, right, type = "button", onclick, form = $bindable(), attributes, action, element = $bindable(), styling, variant = $bindable("") }: ButtonProps = $props();
+  // prettier-ignore
+  let { children, left, right, type = "button", onclick, form, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: ButtonProps = $props();
 
   // *** Initialize *** //
-  if (!variant) variant = VARIANT.NEUTRAL;
-  const cls = fnClass(preset, styling);
-  const click = onclick ?? attributes?.["onclick"];
-  const attrs = omit(attributes, "class", "type", "onclick");
+  const cls = $derived(fnClass(preset, styling));
+  const idForm = $derived(form?.id || undefined);
 
   // *** Event Handlers *** //
-  onclick = (ev) => {
-    if (form?.checkValidity() ?? true) click?.(ev);
+  const hclick: MouseEventHandler<HTMLButtonElement> = (ev) => {
+    if (form?.checkValidity() ?? true) onclick?.(ev);
   };
 </script>
 
 <!---------------------------------------->
 
-{#if action}
-  <button bind:this={element} class={cls(PARTS.WHOLE, variant)} {type} {onclick} {...attrs} use:action>
-    {@render whole()}
-  </button>
-{:else}
-  <button bind:this={element} class={cls(PARTS.WHOLE, variant)} {type} {onclick} {...attrs}>
-    {@render whole()}
-  </button>
-{/if}
+<button bind:this={element} class={[cls(PARTS.WHOLE, variant), c]} {type} onclick={hclick} form={idForm} {...rest} {@attach attach}>
+  {@render whole()}
+</button>
 
 {#snippet side(area: string, body?: Snippet<[string, HTMLButtonElement | undefined]>)}
   {#if body}

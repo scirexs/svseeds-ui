@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { BASE, debounce, elemId, fnClass, omit, PARTS, throttle, UniqueId, VARIANT } from "#svs/core";
+import { BASE, debounce, fnClass, omit, PARTS, shouldReduceMotion, throttle, VARIANT } from "#svs/core";
 
 describe("const vars", () => {
   test("VARIANT", () => {
@@ -27,27 +27,6 @@ describe("const vars", () => {
   });
   test("BASE", () => {
     expect(BASE).toBe("base");
-  });
-});
-
-describe("elemId (UniqueId class)", () => {
-  test("id", () => {
-    expect(typeof elemId.id).toBe("string");
-  });
-  test("get w/ undefined", () => {
-    expect(elemId.get(undefined)).toBeUndefined();
-  });
-  test("get w/ null", () => {
-    expect(elemId.get(null)).toBeUndefined();
-  });
-  test("get w/ truthly value", () => {
-    expect(typeof elemId.get("test")).toBe("string");
-    expect(typeof elemId.get(1)).toBe("string");
-    expect(typeof elemId.get(true)).toBe("string");
-  });
-  test("id is fixed format", () => {
-    const id = elemId.id;
-    expect(id).toMatch(/^[a-yA-Y]{3}$/);
   });
 });
 
@@ -686,30 +665,45 @@ describe("throttle", () => {
   });
 });
 
-describe("UniqueId", () => {
-  test("construct without arg", () => {
-    const unique = new UniqueId();
-    expect(unique.id.length).toBe(3);
+describe("fnClass styling object heuristic", () => {
+  test("clsx condition object (boolean values) is treated as a class value, not a variant map", () => {
+    const cls = fnClass("preset", { [PARTS.WHOLE]: { foo: true, bar: false } });
+    // detected as clsx dict -> wrapped as { base: {...} }, so same value for any variant
+    expect(cls(PARTS.WHOLE, VARIANT.NEUTRAL)).toEqual({ foo: true, bar: false });
+    expect(cls(PARTS.WHOLE, VARIANT.ACTIVE)).toEqual({ foo: true, bar: false });
   });
-  test("construct with len arg", () => {
-    const unique = new UniqueId(7);
-    expect(unique.id.length).toBe(7);
+  test("plain object with class values is treated as a variant map", () => {
+    const cls = fnClass("preset", { [PARTS.WHOLE]: { [BASE]: "b", [VARIANT.ACTIVE]: "a" } });
+    expect(cls(PARTS.WHOLE, VARIANT.NEUTRAL)).toBe("b");
+    expect(cls(PARTS.WHOLE, VARIANT.ACTIVE)).toEqual(["b", "a"]);
   });
-  test("construct with invalid len arg", () => {
-    const unique1 = new UniqueId(NaN);
-    const unique2 = new UniqueId(-10);
-    const unique3 = new UniqueId(2);
-    expect(unique1.id.length).toBe(3);
-    expect(unique2.id.length).toBe(3);
-    expect(unique3.id.length).toBe(3);
+  test("array-wrapped clsx object still works (backward compatible)", () => {
+    const cls = fnClass("preset", { [PARTS.WHOLE]: [{ foo: true, bar: false }] });
+    expect(cls(PARTS.WHOLE, VARIANT.NEUTRAL)).toEqual([{ foo: true, bar: false }]);
+    expect(cls(PARTS.WHOLE, VARIANT.ACTIVE)).toEqual([{ foo: true, bar: false }]);
   });
-  test("ids are unique until limit", () => {
-    const unique = new UniqueId();
-    const count = 100000;
-    const ids = new Set();
-    for (let i = 0; i < count; i++) {
-      ids.add(unique.id);
-    }
-    expect(ids.size).toBe(count);
+});
+
+describe("shouldReduceMotion", () => {
+  const original = window.matchMedia;
+  afterEach(() => {
+    window.matchMedia = original;
+  });
+
+  test("returns true when prefers-reduced-motion is reduce", () => {
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true }) as unknown as typeof window.matchMedia;
+    expect(shouldReduceMotion()).toBe(true);
+  });
+
+  test("returns false when reduced motion is not preferred", () => {
+    window.matchMedia = vi.fn().mockReturnValue({ matches: false }) as unknown as typeof window.matchMedia;
+    expect(shouldReduceMotion()).toBe(false);
+  });
+
+  test("queries the prefers-reduced-motion media feature", () => {
+    const mock = vi.fn().mockReturnValue({ matches: false });
+    window.matchMedia = mock as unknown as typeof window.matchMedia;
+    shouldReduceMotion();
+    expect(mock).toHaveBeenCalledWith("(prefers-reduced-motion: reduce)");
   });
 });

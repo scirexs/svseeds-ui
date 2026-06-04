@@ -272,7 +272,7 @@ describe("Drawer variant and styling", () => {
   test("variant binding works", async () => {
     const props = $state({
       children: childrenSnippet,
-      variant: "",
+      variant: VARIANT.NEUTRAL as string,
     });
     const { container, rerender } = render(Drawer, props);
 
@@ -320,34 +320,36 @@ describe("Drawer attributes", () => {
   });
 
   test("custom attributes are applied", () => {
-    const customAttributes = {
-      "data-testid": "drawer-test",
-      "aria-labelledby": "drawer-label",
-    };
     const { container } = render(Drawer, {
       children: childrenSnippet,
-      attributes: customAttributes,
+      "data-testid": "drawer-test",
+      "aria-labelledby": "drawer-label",
     });
     const drawer = container.querySelector("[popover]") as HTMLDivElement;
     expect(drawer).toHaveAttribute("data-testid", "drawer-test");
     expect(drawer).toHaveAttribute("aria-labelledby", "drawer-label");
   });
 
-  test("omitted attributes are not applied", () => {
-    const attributes = {
-      class: "should-be-omitted",
-      style: "should-be-omitted",
-      popover: "manual" as const,
-      "data-test": "should-be-applied",
-    };
+  test("class is merged onto root", () => {
     const { container } = render(Drawer, {
       children: childrenSnippet,
-      attributes,
+      class: "custom-class",
+    });
+    const drawer = container.querySelector("[popover]") as HTMLDivElement;
+    expect(drawer).toHaveClass("custom-class");
+  });
+
+  test("internally-controlled attributes are not overridden", () => {
+    const { container } = render(Drawer, {
+      children: childrenSnippet,
+      style: "color: red;",
+      popover: "manual" as const,
+      "data-test": "should-be-applied",
     });
     const drawer = container.querySelector("[popover]") as HTMLDivElement;
 
-    expect(drawer).not.toHaveClass("should-be-omitted");
-    expect(drawer.style.cssText).not.toContain("should-be-omitted");
+    expect(drawer.style.cssText).not.toContain("color: red");
+    expect(drawer).toHaveAttribute("popover", "auto"); // internal (closable) wins over consumer "manual"
     expect(drawer).toHaveAttribute("data-test", "should-be-applied");
   });
 
@@ -355,9 +357,7 @@ describe("Drawer attributes", () => {
     const customToggleHandler = vi.fn();
     const { container } = render(Drawer, {
       children: childrenSnippet,
-      attributes: {
-        ontoggle: customToggleHandler,
-      },
+      ontoggle: customToggleHandler,
     });
     const drawer = container.querySelector("[popover]") as HTMLDivElement;
 
@@ -372,7 +372,7 @@ describe("Drawer edge cases", () => {
   test("empty variant defaults to neutral", () => {
     const { container } = render(Drawer, {
       children: childrenSnippet,
-      variant: "",
+      variant: VARIANT.NEUTRAL,
     });
     const drawer = container.querySelector("[popover]") as HTMLDivElement;
     expect(drawer).toHaveClass(preset, PARTS.WHOLE, VARIANT.NEUTRAL);

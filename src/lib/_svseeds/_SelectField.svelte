@@ -3,7 +3,7 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface SelectFieldProps {
+  interface SelectFieldProps extends Omit<HTMLSelectAttributes, "value"> {
     options: SvelteMap<string, string> | Map<string, string>;
     label?: string;
     extra?: string;
@@ -14,11 +14,11 @@
     descFirst?: boolean; // (false)
     value?: string; // bindable
     validations?: SelectFieldValidation[];
-    attributes?: HTMLSelectAttributes;
-    action?: Action;
+    attach?: Attachment;
     element?: HTMLSelectElement; // bindable
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
+    // class & other HTMLSelectAttributes are passed to <select> via ...rest (class is merged onto the control)
   }
   type SelectFieldValidation = (value: string, validity: ValidityState) => string | undefined;
   ```
@@ -34,7 +34,7 @@
     </div>
     <div class="middle">
       <span class="left" conditional>{left}</span>
-      <select class="main" {...attributes} bind:value bind:this={element} use:action>
+      <select class={["main", class]} {...rest} bind:value bind:this={element} {@attach attach}>
         {#each options as { option, text }}
           <option value={option}>{text}</option>
         {/each}
@@ -46,7 +46,7 @@
   ```
 -->
 <script module lang="ts">
-  export interface SelectFieldProps {
+  export interface SelectFieldProps extends Omit<HTMLSelectAttributes, "value"> {
     options: SvelteMap<string, string> | Map<string, string>;
     label?: string;
     extra?: string;
@@ -57,11 +57,10 @@
     descFirst?: boolean; // (false)
     value?: string; // bindable
     validations?: SelectFieldValidation[];
-    attributes?: HTMLSelectAttributes;
-    action?: Action;
+    attach?: Attachment;
     element?: HTMLSelectElement; // bindable
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
   }
   export type SelectFieldReqdProps = "options";
   export type SelectFieldBindProps = "value" | "variant" | "element";
@@ -70,35 +69,38 @@
   const preset = "svs-select-field";
 
   import { type Snippet, untrack } from "svelte";
-  import { type Action } from "svelte/action";
+  import { type Attachment } from "svelte/attachments";
   import { type SvelteMap } from "svelte/reactivity";
-  import { type HTMLSelectAttributes } from "svelte/elements";
-  import { type SVSClass, VARIANT, PARTS, elemId, fnClass, isNeutral, omit } from "./core";
+  import { type HTMLSelectAttributes, type EventHandler } from "svelte/elements";
+  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isNeutral } from "./core";
 </script>
 
 <script lang="ts">
-  let { options, label, extra, aux, left, right, bottom, descFirst = false, value = $bindable(""), validations = [], attributes, action, element = $bindable(), styling, variant = $bindable("") }: SelectFieldProps = $props();
+  // prettier-ignore
+  let { options, label, extra, aux, left, right, bottom, descFirst = false, value = $bindable(""), validations = [], id, oninvalid, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, ...rest }: SelectFieldProps = $props();
 
   // *** Initialize *** //
-  if (!variant) variant = VARIANT.NEUTRAL;
-  const cls = fnClass(preset, styling);
-  const id = attributes?.id ? attributes.id : elemId.get(label?.trim());
-  const idLabel = elemId.get(label?.trim());
-  const idDesc = elemId.get(bottom?.trim());
-  const idErr = idDesc ?? elemId.id;
-  const attrs = omit(attributes, "class", "id", "value", "oninvalid");
+  const cls = $derived(fnClass(preset, styling));
+  const uid = $props.id();
+  const idMain = $derived(id ? id : label?.trim() ? `${uid}-ctrl` : undefined);
+  const idLabel = $derived(label?.trim() ? `${uid}-label` : undefined);
+  const idDesc = $derived(bottom?.trim() ? `${uid}-desc` : undefined);
+  const idErr = $derived(idDesc ?? `${uid}-err`);
+  // svelte-ignore state_referenced_locally
   let message = $state(bottom);
 
   // *** States *** //
   let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
-  $effect(() => { neutral = isNeutral(variant) ? variant : neutral; });
+  $effect(() => {
+    neutral = isNeutral(variant) ? variant : neutral;
+  });
   let live = $derived(variant === VARIANT.INACTIVE ? "alert" : "status");
   let invalid = $derived(variant === VARIANT.INACTIVE ? true : undefined);
   let idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
   function shift(oninvalid?: boolean) {
     const vmsg = element?.validationMessage ?? "";
     variant = !value && !oninvalid ? neutral : vmsg ? VARIANT.INACTIVE : VARIANT.ACTIVE;
-    message = variant === VARIANT.INACTIVE ? vmsg ? vmsg : bottom : bottom;
+    message = variant === VARIANT.INACTIVE ? (vmsg ? vmsg : bottom) : bottom;
   }
   function verify() {
     if (!element) return;
@@ -121,8 +123,8 @@
   }
 
   /*** Handle events ***/
-  function oninvalid(ev: Event) {
-    attributes?.oninvalid?.(ev as any);
+  function hinvalid(ev: Parameters<EventHandler<Event, HTMLSelectElement>>[0]) {
+    oninvalid?.(ev);
     ev.preventDefault();
     shift(true);
   }
@@ -153,7 +155,7 @@
 
 {#snippet lbl()}
   {#if label?.trim()}
-    <label class={cls(PARTS.LABEL, variant)} for={id} id={idLabel}>
+    <label class={cls(PARTS.LABEL, variant)} for={idMain} id={idLabel}>
       {label}
       {#if extra?.trim()}
         <span class={cls(PARTS.EXTRA, variant)}>{extra}</span>
@@ -167,16 +169,20 @@
   {/if}
 {/snippet}
 {#snippet main()}
-  {@const c = cls(PARTS.MAIN, variant)}
-  {#if action}
-    <select bind:value bind:this={element} class={c} {id} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={idMsg} use:action>
-      {@render option()}
-    </select>
-  {:else}
-    <select bind:value bind:this={element} class={c} {id} {oninvalid} {...attrs} aria-describedby={idDesc} aria-invalid={invalid} aria-errormessage={idMsg}>
-      {@render option()}
-    </select>
-  {/if}
+  <select
+    bind:value
+    bind:this={element}
+    class={[cls(PARTS.MAIN, variant), c]}
+    {...rest}
+    id={idMain}
+    oninvalid={hinvalid}
+    aria-describedby={idDesc}
+    aria-invalid={invalid}
+    aria-errormessage={idMsg}
+    {@attach attach}
+  >
+    {@render option()}
+  </select>
 {/snippet}
 {#snippet option()}
   {#each opts as { val, text, selected } (val)}

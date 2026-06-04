@@ -39,9 +39,7 @@ const rightfn = createRawSnippet(
 );
 
 describe("Switching existence of elements", () => {
-  const actionfn = () => {
-    return {};
-  };
+  const attachfn = () => {};
 
   test("no props", () => {
     const children = vi.fn().mockImplementation(mainfn);
@@ -85,16 +83,16 @@ describe("Switching existence of elements", () => {
     expect(children).toHaveBeenCalled();
   });
 
-  test("w/ main snippet of action button", () => {
+  test("w/ main snippet of attach button", () => {
     const children = vi.fn().mockImplementation(mainfn);
-    const action = vi.fn().mockImplementation(actionfn);
-    const props = { children, action };
+    const attach = vi.fn().mockImplementation(attachfn);
+    const props = { children, attach };
     const { getByRole, getByTestId } = render(Toggle, props);
     const button = getByRole("button") as HTMLButtonElement;
     const mainsp = getByTestId(mainid);
     expect(button).toContainElement(mainsp);
     expect(children).toHaveBeenCalled();
-    expect(action).toHaveBeenCalled();
+    expect(attach).toHaveBeenCalled();
   });
 
   test("w/ main snippet of switch", () => {
@@ -107,16 +105,16 @@ describe("Switching existence of elements", () => {
     expect(children).toHaveBeenCalled();
   });
 
-  test("w/ children snippet of action switch", () => {
+  test("w/ children snippet of attach switch", () => {
     const children = vi.fn().mockImplementation(mainfn);
-    const action = vi.fn().mockImplementation(actionfn);
-    const props = { children, role: "switch" as const, action };
+    const attach = vi.fn().mockImplementation(attachfn);
+    const props = { children, role: "switch" as const, attach };
     const { getByRole, getByTestId } = render(Toggle, props);
     const button = getByRole("switch") as HTMLButtonElement;
     const mainsp = getByTestId(mainid);
     expect(button).toContainElement(mainsp);
     expect(children).toHaveBeenCalled();
-    expect(action).toHaveBeenCalled();
+    expect(attach).toHaveBeenCalled();
   });
 
   test("w/ left snippet", () => {
@@ -216,26 +214,25 @@ describe("Specify attrs & state transition & event handlers", () => {
   test("w/ specify id", () => {
     const children = vi.fn().mockImplementation(mainfn);
     const id = "id_foo";
-    const props = { children, attributes: { id } };
+    const props = { children, id };
     const { getByRole } = render(Toggle, props);
     const main = getByRole("button") as HTMLButtonElement;
     expect(main).toHaveAttribute("id", id);
   });
 
-  test("w/ specify ignored attrs", () => {
+  test("w/ class merged & type protected", () => {
     const children = vi.fn().mockImplementation(mainfn);
-    const props: ToggleProps = { children, attributes: { class: "c", type: "submit", role: "checkbox", "aria-checked": "mixed" } };
+    const props = { children, class: "c", type: "submit" } as any;
     const { getByRole } = render(Toggle, props);
     const main = getByRole("button") as HTMLButtonElement;
-    expect(main).not.toHaveAttribute("class", "c");
-    expect(main).not.toHaveAttribute("type", "submit");
-    expect(main).not.toHaveAttribute("role", "checkbox");
-    expect(main).not.toHaveAttribute("aria-checked", "mixed");
+    expect(main).toHaveClass("c"); // class is merged onto root
+    expect(main).toHaveAttribute("type", "button"); // forced to "button", not from rest
+    expect(main).not.toHaveAttribute("aria-checked"); // controlled by state (button role)
   });
 
   test("w/ specify major attrs", async () => {
     const children = vi.fn().mockImplementation(mainfn);
-    const props = { children, attributes: { name: "n", disabled: true, tabindex: -1 } };
+    const props = { children, name: "n", disabled: true, tabindex: -1 };
     const { rerender, getByRole } = render(Toggle, props);
     let main = getByRole("button") as HTMLButtonElement;
     expect(main).toHaveAttribute("name", "n");
@@ -329,7 +326,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const props = $state({
       children,
       value: false,
-      attributes: { onclick },
+      onclick,
     });
     const user = userEvent.setup();
     const { getByRole } = render(Toggle, props);

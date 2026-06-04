@@ -28,13 +28,10 @@ const rightfn = createRawSnippet(
 
 describe("Switching existence of elements", () => {
   const options = new Set([10, 20, 30, 40, 50]);
-  const actionfn = () => {
-    return {};
-  };
+  const attachfn = () => {};
 
   test("no props", () => {
-    const range = { min: 0, max: 100 };
-    const { container } = render(Slider, { range });
+    const { container } = render(Slider, { min: 0, max: 100 });
     const whole = container.firstElementChild as HTMLSpanElement;
     const main = whole.querySelector('input[type="range"]') as HTMLInputElement;
     expect(whole.children).toHaveLength(1);
@@ -42,14 +39,13 @@ describe("Switching existence of elements", () => {
     expect(main).toHaveAttribute("type", "range");
     expect(main).toHaveAttribute("min", "0");
     expect(main).toHaveAttribute("max", "100");
-    expect(main).toHaveAttribute("step", "1");
+    expect(main).not.toHaveAttribute("step");
     expect(main).not.toHaveAttribute("list");
   });
 
   test("w/ left snippet", () => {
-    const range = { min: 0, max: 100 };
     const left = vi.fn().mockImplementation(leftfn);
-    const { container, getByTestId } = render(Slider, { range, left });
+    const { container, getByTestId } = render(Slider, { min: 0, max: 100, left });
     const whole = container.firstElementChild as HTMLSpanElement;
     const main = whole.querySelector('input[type="range"]') as HTMLInputElement;
     const leftsp = getByTestId(leftid);
@@ -60,9 +56,8 @@ describe("Switching existence of elements", () => {
   });
 
   test("w/ right snippet", () => {
-    const range = { min: 0, max: 100 };
     const right = vi.fn().mockImplementation(rightfn);
-    const { container, getByTestId } = render(Slider, { range, right });
+    const { container, getByTestId } = render(Slider, { min: 0, max: 100, right });
     const whole = container.firstElementChild as HTMLSpanElement;
     const main = whole.querySelector('input[type="range"]') as HTMLInputElement;
     const rightsp = getByTestId(rightid);
@@ -73,10 +68,9 @@ describe("Switching existence of elements", () => {
   });
 
   test("w/ both left and right snippets", () => {
-    const range = { min: 0, max: 100 };
     const left = vi.fn().mockImplementation(leftfn);
     const right = vi.fn().mockImplementation(rightfn);
-    const { container, getByTestId } = render(Slider, { range, left, right });
+    const { container, getByTestId } = render(Slider, { min: 0, max: 100, left, right });
     const whole = container.firstElementChild as HTMLSpanElement;
     const main = whole.querySelector('input[type="range"]') as HTMLInputElement;
     const leftsp = getByTestId(leftid);
@@ -90,8 +84,7 @@ describe("Switching existence of elements", () => {
   });
 
   test("w/ options", () => {
-    const range = { min: 0, max: 100 };
-    const { container } = render(Slider, { range, options });
+    const { container } = render(Slider, { min: 0, max: 100, options });
     const whole = container.firstElementChild as HTMLSpanElement;
     const main = whole.querySelector('input[type="range"]') as HTMLInputElement;
     const datalist = whole.querySelector("datalist") as HTMLDataListElement;
@@ -105,21 +98,19 @@ describe("Switching existence of elements", () => {
     expect(datalist.lastElementChild).toHaveAttribute("value", "50");
   });
 
-  test("w/ action", () => {
-    const range = { min: 0, max: 100 };
-    const action = vi.fn().mockImplementation(actionfn);
-    const { container } = render(Slider, { range, action });
+  test("w/ attach", () => {
+    const attach = vi.fn().mockImplementation(attachfn);
+    const { container } = render(Slider, { min: 0, max: 100, attach });
     const whole = container.firstElementChild as HTMLSpanElement;
     const main = whole.querySelector('input[type="range"]') as HTMLInputElement;
     expect(whole.children).toHaveLength(1);
     expect(whole.firstElementChild).toBe(main);
-    expect(action).toHaveBeenCalled();
+    expect(attach).toHaveBeenCalled();
   });
 
   test("w/ empty options", () => {
-    const range = { min: 0, max: 100 };
     const emptyOptions = new Set<number>();
-    const { container } = render(Slider, { range, options: emptyOptions });
+    const { container } = render(Slider, { min: 0, max: 100, options: emptyOptions });
     const whole = container.firstElementChild as HTMLSpanElement;
     const main = whole.querySelector('input[type="range"]') as HTMLInputElement;
     const datalist = whole.querySelector("datalist");
@@ -135,57 +126,50 @@ describe("Specify attrs & value handling & styling", () => {
 
   test("w/ range validation", () => {
     // Test min > max swap
-    const range = { min: 100, max: 0 };
-    const { container } = render(Slider, { range });
+    const { container } = render(Slider, { min: 100, max: 0 });
     const main = container.querySelector('input[type="range"]') as HTMLInputElement;
     expect(main).toHaveAttribute("min", "0");
     expect(main).toHaveAttribute("max", "100");
   });
 
   test("w/ default value calculation", () => {
-    const range = { min: 0, max: 100 };
-    const { container } = render(Slider, { range });
+    const { container } = render(Slider, { min: 0, max: 100 });
     const main = container.querySelector('input[type="range"]') as HTMLInputElement;
     expect(main).toHaveValue("50"); // (0 + 100) / 2
   });
 
   test("w/ out of range value correction", () => {
-    const range = { min: 10, max: 90 };
     const value = 5; // below min
-    const { container } = render(Slider, { range, value });
+    const { container } = render(Slider, { min: 10, max: 90, value });
     const main = container.querySelector('input[type="range"]') as HTMLInputElement;
     expect(main).toHaveValue("50"); // default to middle value
   });
 
   test("w/ valid initial value", () => {
-    const range = { min: 0, max: 100 };
     const value = 75;
-    const { container } = render(Slider, { range, value });
+    const { container } = render(Slider, { min: 0, max: 100, value });
     const main = container.querySelector('input[type="range"]') as HTMLInputElement;
     expect(main).toHaveValue("75");
   });
 
   test("w/ custom step", () => {
-    const range = { min: 0, max: 100 };
     const step = 5;
-    const { container } = render(Slider, { range, step });
+    const { container } = render(Slider, { min: 0, max: 100, step });
     const main = container.querySelector('input[type="range"]') as HTMLInputElement;
     expect(main).toHaveAttribute("step", "5");
   });
 
   test("w/ step any", () => {
-    const range = { min: 0, max: 100 };
     const step = "any";
-    const { container } = render(Slider, { range, step });
+    const { container } = render(Slider, { min: 0, max: 100, step });
     const main = container.querySelector('input[type="range"]') as HTMLInputElement;
     expect(main).toHaveAttribute("step", "any");
   });
 
   test("w/ custom background range", () => {
-    const range = { min: 0, max: 100 };
     const value = 25;
     const background = { min: 10, max: 90 };
-    const { container } = render(Slider, { range, value, background });
+    const { container } = render(Slider, { min: 0, max: 100, value, background });
     const main = container.querySelector('input[type="range"]') as HTMLInputElement;
     // value 25 in range 0-100 should be 25%
     // mapped to background 10-90 should be 30% (10 + 25 * 0.8)
@@ -196,50 +180,44 @@ describe("Specify attrs & value handling & styling", () => {
   });
 
   test("w/ specify attributes", () => {
-    const range = { min: 0, max: 100 };
-    const attributes = { name: "slider", disabled: true, "data-test": "custom" };
-    const { container } = render(Slider, { range, attributes });
+    const { container } = render(Slider, { min: 0, max: 100, name: "slider", disabled: true, "data-test": "custom" });
     const main = container.querySelector('input[type="range"]') as HTMLInputElement;
     expect(main).toHaveAttribute("name", "slider");
     expect(main).toHaveAttribute("disabled");
     expect(main).toHaveAttribute("data-test", "custom");
   });
 
-  test("w/ ignored attributes", () => {
-    const range = { min: 0, max: 100 };
-    const attributes = { class: "ignored", type: "text", value: "ignored", min: 999, max: 999, step: 999, list: "ignored" };
-    const { container } = render(Slider, { range, attributes });
+  test("class merged onto control, input attrs controlled", () => {
+    const { container } = render(Slider, { min: 0, max: 100, class: "merged", list: "ignored" } as any);
     const main = container.querySelector('input[type="range"]') as HTMLInputElement;
-    expect(main).not.toHaveAttribute("class", "ignored");
-    expect(main).toHaveAttribute("type", "range");
-    expect(main).not.toHaveValue("ignored");
-    expect(main).toHaveAttribute("min", "0");
+    const root = main.parentElement as HTMLElement;
+    expect(main).toHaveClass("merged"); // class merged onto the control (same as ...rest)
+    expect(root).not.toHaveClass("merged"); // not on the WHOLE root
+    expect(main).toHaveAttribute("type", "range"); // forced
+    expect(main).toHaveAttribute("min", "0"); // from min/max props
     expect(main).toHaveAttribute("max", "100");
-    expect(main).toHaveAttribute("step", "1");
-    expect(main).not.toHaveAttribute("list", "ignored");
+    expect(main).not.toHaveAttribute("list", "ignored"); // list controlled, not from rest
   });
 
   test("value change interaction", async () => {
-    const range = { min: 0, max: 100 };
-    const props = $state({ range, value: 50 });
+    const props = $state({ min: 0, max: 100, value: 50 });
     const user = userEvent.setup();
     const { container } = render(Slider, props);
     const main = container.querySelector('input[type="range"]') as HTMLInputElement;
 
     expect(main).toHaveValue("50");
 
-    await user.type(main, "75");
-    waitFor(() => {
+    await fireEvent.input(main, { target: { value: "75" } });
+    await waitFor(() => {
       expect(props.value).toBe(75);
     });
   });
 
   test("default class of each variant", () => {
-    const range = { min: 0, max: 100 };
     const left = vi.fn().mockImplementation(leftfn);
     const right = vi.fn().mockImplementation(rightfn);
     const variant = VARIANT.NEUTRAL;
-    const { container, getByTestId } = render(Slider, { range, left, right, variant });
+    const { container, getByTestId } = render(Slider, { min: 0, max: 100, left, right, variant });
     const whole = container.firstElementChild as HTMLSpanElement;
     const main = whole.querySelector('input[type="range"]') as HTMLInputElement;
     const leftdv = getByTestId(leftid).parentElement;
@@ -252,10 +230,9 @@ describe("Specify attrs & value handling & styling", () => {
   });
 
   test("w/ different variant", async () => {
-    const range = { min: 0, max: 100 };
     const left = vi.fn().mockImplementation(leftfn);
     const right = vi.fn().mockImplementation(rightfn);
-    const props = $state({ range, left, right, variant: "" });
+    const props = $state({ min: 0, max: 100, left, right, variant: VARIANT.NEUTRAL as string });
     props.variant = VARIANT.ACTIVE;
     const { container, getByTestId, rerender } = render(Slider, props);
     const whole = container.firstElementChild as HTMLSpanElement;
@@ -278,12 +255,11 @@ describe("Specify attrs & value handling & styling", () => {
   });
 
   test("w/ string styling class", () => {
-    const range = { min: 0, max: 100 };
     const left = vi.fn().mockImplementation(leftfn);
     const right = vi.fn().mockImplementation(rightfn);
     const clsid = "custom-styling";
     const variant = VARIANT.NEUTRAL;
-    const { container, getByTestId } = render(Slider, { range, left, right, variant, styling: clsid });
+    const { container, getByTestId } = render(Slider, { min: 0, max: 100, left, right, variant, styling: clsid });
     const whole = container.firstElementChild as HTMLSpanElement;
     const main = whole.querySelector('input[type="range"]') as HTMLInputElement;
     const leftdv = getByTestId(leftid).parentElement;
@@ -296,7 +272,6 @@ describe("Specify attrs & value handling & styling", () => {
   });
 
   test("w/ object styling", () => {
-    const range = { min: 0, max: 100 };
     const left = vi.fn().mockImplementation(leftfn);
     const right = vi.fn().mockImplementation(rightfn);
     const dynObj = {
@@ -312,7 +287,7 @@ describe("Specify attrs & value handling & styling", () => {
       right: dynObj,
     };
     const variant = VARIANT.NEUTRAL;
-    const { container, getByTestId } = render(Slider, { range, left, right, variant, styling });
+    const { container, getByTestId } = render(Slider, { min: 0, max: 100, left, right, variant, styling });
     const whole = container.firstElementChild as HTMLSpanElement;
     const main = whole.querySelector('input[type="range"]') as HTMLInputElement;
     const leftdv = getByTestId(leftid).parentElement;
@@ -327,32 +302,31 @@ describe("Specify attrs & value handling & styling", () => {
 
 describe("Binding and element reference", () => {
   test("element binding", () => {
-    const range = { min: 0, max: 100 };
-    const props = $state({ range, element: undefined as HTMLInputElement | undefined });
+    const props = $state({ min: 0, max: 100, element: undefined as HTMLInputElement | undefined });
     const { container } = render(Slider, props);
     const main = container.querySelector('input[type="range"]') as HTMLInputElement;
 
     expect(props.element).toBe(main);
   });
 
-  test("range binding", async () => {
-    const props = $state({ range: { min: 0, max: 100 } });
+  test("min/max prop update", async () => {
+    const props = $state({ min: 0, max: 100 });
     const { container, rerender } = render(Slider, props);
     const main = container.querySelector('input[type="range"]') as HTMLInputElement;
 
     expect(main).toHaveAttribute("min", "0");
     expect(main).toHaveAttribute("max", "100");
 
-    props.range = { min: 10, max: 90 };
+    props.min = 10;
+    props.max = 90;
     await rerender(props);
 
     expect(main).toHaveAttribute("min", "10");
     expect(main).toHaveAttribute("max", "90");
   });
 
-  test("variant binding", async () => {
-    const range = { min: 0, max: 100 };
-    const props = $state({ range, variant: "" });
+  test("variant prop update", async () => {
+    const props = $state({ min: 0, max: 100, variant: VARIANT.NEUTRAL as string });
     const { container, rerender } = render(Slider, props);
     const whole = container.firstElementChild as HTMLSpanElement;
 

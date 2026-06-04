@@ -6,5 +6,5 @@
     "strict": true,
     "outDir": "./_svseeds",
   },
-  "exclude": ["_svseeds"]
+  "exclude": ["_svseeds", ".ref"]
 }

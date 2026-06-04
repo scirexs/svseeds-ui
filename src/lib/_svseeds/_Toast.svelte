@@ -9,7 +9,7 @@
     timeout?: number;
     duration?: number; // (200)
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
   ```
   ### Anatomy
@@ -26,22 +26,19 @@
   ```
   ### Exports
   ```ts
-  /**
-   * Displays a toast notification.
-   *
-   * @param message - Text message to display in the toast
-   * @param type - Optional toast type/category (also used for part of aria-label)
-   * @param name - Unique identifier for the toast component
-   * @param timeout - Custom auto-dismiss timeout in milliseconds
-   * @returns ID of the displayed toast
-   */
+  // Displays a toast notification.
+  //
+  // *@param* message - Text message to display in the toast
+  // *@param* type - Optional toast type/category (also used for part of aria-label)
+  // *@param* name - Unique identifier for the toast component
+  // *@param* timeout - Custom auto-dismiss timeout in milliseconds
+  // *@returns* ID of the displayed toast
   function toast(message: string, type?: string, name?: string, timeout?: number): string
-  /**
-   * Removes a specific toast notification.
-   *
-   * @param id - ID of the toast to remove
-   * @param name - Unique identifier for the toast component
-   */
+
+  // Removes a specific toast notification.
+  //
+  // *@param* id - ID of the toast to remove
+  // *@param* name - Unique identifier for the toast component
   function removeToast(id: string, name?: string)
   ```
 -->
@@ -52,10 +49,10 @@
     timeout?: number;
     duration?: number; // (200)
     styling?: SVSClass;
-    variant?: string; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
   export type ToastReqdProps = "children";
-  export type ToastBindProps = "variant";
+  export type ToastBindProps = never;
 
   export function toast(message: string, type?: string, name?: string, timeout?: number): string {
     return core.add(message, type, name, timeout);
@@ -64,13 +61,10 @@
     core.remove(id, name);
   }
 
+  const DEFAULT_DURATION = 200;
+  const noMotion = shouldReduceMotion();
   const preset = "svs-toast";
-  const DEFALT_DURATION = 200;
 
-  function isPrefersReducedMotion(): boolean {
-    if (typeof window === "undefined") return false;
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  }
   function isValidTimeout(timeout?: number): timeout is number {
     return !!timeout && isUnsignedInteger(timeout);
   }
@@ -98,29 +92,32 @@
       return this.#default;
     }
     register(name?: string): string {
-      const id = name ? name : elemId.id;
-      if (this.#ids.has(id)) return "";
-      if (!this.#default) this.#default = id;
-      this.#ids.add(id);
-      return id;
+      if (!name) return "";
+      if (this.#ids.has(name)) return "";
+      if (!this.#default) this.#default = name;
+      this.#ids.add(name);
+      return name;
     }
   }
   class ToastContainer {
     #open: boolean = $state(false);
     #style: string;
     #keydownFn = (ev: KeyboardEvent) => {};
+    #uid: string;
+    #seq = 0;
     element = $state<HTMLDivElement>();
     toasts: Toast[] = $state([]);
     onkeydown = $derived(this.#open ? this.#keydownFn : undefined);
 
-    constructor(duration: number, onkeydown: (ev: KeyboardEvent) => void, timeout?: number) {
+    constructor(duration: number, onkeydown: (ev: KeyboardEvent) => void, uid: string, timeout?: number) {
       this.#style = `position:fixed;background-color:transparent;pointer-events:none;`;
       this.#keydownFn = onkeydown;
+      this.#uid = uid;
       Toast.init(duration, timeout);
     }
     addToast(type: string, message: string, timeout?: number): string {
       if (!this.toasts.length) this.#show();
-      const toast = new Toast(type, message, (id) => this.remove(id), timeout);
+      const toast = new Toast(type, message, (id) => this.remove(id), `${this.#uid}-${this.#seq++}`, timeout);
       this.toasts.push(toast);
       return toast.id;
     }
@@ -157,8 +154,8 @@
     #remove: (id: string) => void;
     #timeout: number;
     #timeoutId: number = 0;
-    constructor(type: string, message: string, remove: (id: string) => void, timeout?: number) {
-      this.#id = elemId.id;
+    constructor(type: string, message: string, remove: (id: string) => void, id: string, timeout?: number) {
+      this.#id = id;
       this.#type = type;
       this.#message = message;
       this.#remove = remove;
@@ -212,19 +209,21 @@
 
   import { type Snippet } from "svelte";
   import { flip } from "svelte/animate";
-  import { type SVSClass, VARIANT, PARTS, elemId, fnClass, isUnsignedInteger } from "./core";
+  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isUnsignedInteger, shouldReduceMotion } from "./core";
 </script>
 
 <script lang="ts">
-  let { children, name, timeout, duration = -1, styling, variant = $bindable("") }: ToastProps = $props();
+  // prettier-ignore
+  let { children, name, timeout, duration = -1, styling, variant = VARIANT.NEUTRAL }: ToastProps = $props();
 
   // *** Initialize *** //
-  if (!variant) variant = VARIANT.NEUTRAL;
-  const cls = fnClass(preset, styling);
-  if (isPrefersReducedMotion()) duration = 0;
-  if (!isUnsignedInteger(duration)) duration = DEFALT_DURATION;
-  const container = new ToastContainer(duration, onkeydown, timeout);
-  core.register(container, name);
+  const cls = $derived(fnClass(preset, styling));
+  const dur = $derived(noMotion ? 0 : !isUnsignedInteger(duration) ? DEFAULT_DURATION : duration);
+  const uid = $props.id();
+  // svelte-ignore state_referenced_locally
+  const container = new ToastContainer(dur, onkeydown, uid, timeout);
+  // svelte-ignore state_referenced_locally
+  core.register(container, name ?? uid);
 
   // *** Event Handlers *** //
   function mount(_node: HTMLDivElement, index: number) {
@@ -246,11 +245,35 @@
 <!---------------------------------------->
 <svelte:body onkeydown={container.onkeydown} />
 
-<div bind:this={container.element} class={cls(PARTS.WHOLE, variant)} role="region" tabindex="-1" popover="manual" aria-label={`${container.toasts.length} notifications`} style={container.style}>
+<div
+  bind:this={container.element}
+  class={cls(PARTS.WHOLE, variant)}
+  role="region"
+  tabindex="-1"
+  popover="manual"
+  aria-label={`${container.toasts.length} notifications`}
+  style={container.style}
+>
   {#each container.toasts as toast, i (toast.id)}
     {@const v = toast.isVisible ? variant : VARIANT.INACTIVE}
-    <div class={cls(PARTS.MIDDLE, v)} style="width:fit-content;height:fit-content;overflow:hidden;" tabindex="-1" animate:flip={{ duration }}>
-      <div class={cls(PARTS.MAIN, v)} role="dialog" aria-modal="false" aria-label={toast.label} tabindex="0" style="pointer-events:auto;" onpointerenter={enter(i)} onpointerleave={leave(i)} onpointercancel={leave(i)} use:mount={i}>
+    <div
+      class={cls(PARTS.MIDDLE, v)}
+      style="width:fit-content;height:fit-content;overflow:hidden;"
+      tabindex="-1"
+      animate:flip={{ duration: dur }}
+    >
+      <div
+        class={cls(PARTS.MAIN, v)}
+        role="dialog"
+        aria-modal="false"
+        aria-label={toast.label}
+        tabindex="0"
+        style="pointer-events:auto;"
+        onpointerenter={enter(i)}
+        onpointerleave={leave(i)}
+        onpointercancel={leave(i)}
+        use:mount={i}
+      >
         {@render children(toast.message, toast.type, toast.id, variant)}
       </div>
     </div>

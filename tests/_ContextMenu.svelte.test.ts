@@ -367,7 +367,7 @@ describe("ContextMenu variant management", () => {
   test("variant binding works correctly", async () => {
     const props = $state({
       children: childrenSnippet,
-      variant: "",
+      variant: VARIANT.NEUTRAL as string,
     });
 
     const { container, rerender } = render(ContextMenu, props);
