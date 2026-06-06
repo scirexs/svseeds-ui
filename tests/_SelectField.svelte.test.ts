@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
-import { createRawSnippet } from "svelte";
+import { createRawSnippet, flushSync } from "svelte";
 import { SvelteMap } from "svelte/reactivity";
 import SelectField from "#svs/_SelectField.svelte";
 import { PARTS, VARIANT } from "#svs/core";
@@ -53,15 +53,21 @@ describe("Switching existence of elements", () => {
     expect(whole.firstElementChild?.tagName).toBe("DIV");
     expect(whole.firstElementChild).toBe(main.parentElement);
     expect(main.tagName).toBe("SELECT");
-    expect(main.children).toHaveLength(3);
+    expect(main.children).toHaveLength(4);
+    const option = main.children[0] as HTMLOptionElement;
+    expect(option.value).toBe("");
+    expect(option.textContent).toBe("");
   });
   test("w/ Map options", () => {
     const mapOptions = new Map([["val1", "Text 1"], ["val2", "Text 2"]]);
     const { getByRole } = render(SelectField, { options: mapOptions });
     const main = getByRole("combobox") as HTMLSelectElement;
-    expect(main.children).toHaveLength(2);
-    const option1 = main.children[0] as HTMLOptionElement;
-    const option2 = main.children[1] as HTMLOptionElement;
+    expect(main.children).toHaveLength(3);
+    const placeholder = main.children[0] as HTMLOptionElement;
+    const option1 = main.children[1] as HTMLOptionElement;
+    const option2 = main.children[2] as HTMLOptionElement;
+    expect(placeholder.value).toBe("");
+    expect(placeholder.textContent).toBe("");
     expect(option1.value).toBe("val1");
     expect(option1.textContent).toBe("Text 1");
     expect(option2.value).toBe("val2");
@@ -235,6 +241,119 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(main).toHaveAttribute("name", "select-name");
     expect(main).toHaveAttribute("required");
     expect(main).toHaveAttribute("disabled");
+  });
+
+  test("stays neutral on mount with a pre-filled value", async () => {
+    const props = $state({
+      options,
+      value: "val2",
+      variant: VARIANT.NEUTRAL,
+      validations,
+    });
+    const user = userEvent.setup();
+    const { getByRole } = render(SelectField, props);
+    const main = getByRole("combobox") as HTMLSelectElement;
+
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
+
+    await user.selectOptions(main, "val1");
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+
+    await user.selectOptions(main, "val2");
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+  });
+  test("programmatic value change does not leave neutral", () => {
+    const props = $state({
+      options,
+      placeholder: "Select...",
+      value: "",
+      variant: VARIANT.NEUTRAL,
+      validations,
+    });
+    render(SelectField, props);
+
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
+
+    props.value = "val2";
+    flushSync();
+
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
+  });
+  test("renders with an empty options map", () => {
+    const { getByRole } = render(SelectField, { options: new SvelteMap<string, string>(), value: "x" });
+    const whole = getByRole("group") as HTMLDivElement;
+    const main = getByRole("combobox") as HTMLSelectElement;
+    expect(whole).toBeInTheDocument();
+    expect(main.children).toHaveLength(0);
+  });
+  test("placeholder injects a leading empty option with text", () => {
+    const { getByRole } = render(SelectField, { options, placeholder: "Select..." });
+    const main = getByRole("combobox") as HTMLSelectElement;
+    expect(main.children).toHaveLength(3);
+    const first = main.children[0] as HTMLOptionElement;
+    expect(first.value).toBe("");
+    expect(first.textContent).toBe("Select...");
+    expect(main).toHaveValue("");
+  });
+  test("placeholder option is persistent and clears back to neutral", async () => {
+    const props = $state({
+      options,
+      placeholder: "Select...",
+      variant: VARIANT.NEUTRAL,
+      validations,
+    });
+    const user = userEvent.setup();
+    const { getByRole } = render(SelectField, props);
+    const main = getByRole("combobox") as HTMLSelectElement;
+
+    await user.selectOptions(main, "val1");
+    expect(main.children).toHaveLength(3);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+
+    await user.selectOptions(main, "");
+    expect(main).toHaveValue("");
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
+  });
+  test("empty value injects an empty option until selection", async () => {
+    const props = $state({
+      options,
+      variant: VARIANT.NEUTRAL,
+    });
+    const user = userEvent.setup();
+    const { getByRole } = render(SelectField, props);
+    const main = getByRole("combobox") as HTMLSelectElement;
+
+    expect(main.children).toHaveLength(3);
+    expect((main.children[0] as HTMLOptionElement).value).toBe("");
+    expect(main.children[0].textContent).toBe("");
+
+    await user.selectOptions(main, "val1");
+    expect(main.children).toHaveLength(2);
+    expect((main.children[0] as HTMLOptionElement).value).toBe("val1");
+  });
+  test("does not double inject when options already has an empty key", () => {
+    const optionsWithEmpty = new SvelteMap([["", "Choose"], ["val1", "Option 1"]]);
+    const { getByRole } = render(SelectField, { options: optionsWithEmpty, placeholder: "Select..." });
+    const main = getByRole("combobox") as HTMLSelectElement;
+    expect(main.children).toHaveLength(2);
+    expect((main.children[0] as HTMLOptionElement).value).toBe("");
+    expect(main.children[0].textContent).toBe("Choose");
+  });
+  test("blank placeholder provides a persistent empty clear option", async () => {
+    const props = $state({
+      options,
+      placeholder: "",
+    });
+    const user = userEvent.setup();
+    const { getByRole } = render(SelectField, props);
+    const main = getByRole("combobox") as HTMLSelectElement;
+
+    expect(main.children).toHaveLength(3);
+    expect((main.children[0] as HTMLOptionElement).value).toBe("");
+    expect(main.children[0].textContent).toBe("");
+
+    await user.selectOptions(main, "val1");
+    expect(main.children).toHaveLength(3);
   });
 
   test("major state transition", async () => {

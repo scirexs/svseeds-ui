@@ -3,8 +3,9 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface SelectFieldProps extends Omit<HTMLSelectAttributes, "value"> {
+  interface SelectFieldProps extends Omit<HTMLSelectAttributes, "value" | "multiple"> {
     options: SvelteMap<string, string> | Map<string, string>;
+    placeholder?: string; // text of the auto-injected empty option
     label?: string;
     extra?: string;
     aux?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[value,variant,element]>
@@ -19,10 +20,13 @@
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
     // class & other HTMLSelectAttributes are passed to <select> via ...rest (class is merged onto the control)
+    // single-select only; multiple is intentionally unsupported
   }
   type SelectFieldValidation = (value: string, validity: ValidityState) => string | undefined;
   ```
   ### Anatomy
+  An empty `<option value="">` is auto-injected at the top when `options` has no `""` key
+  and (`placeholder` is set OR `value === ""`).
   ```svelte
   <div class="whole">
     <div class="top" conditional>
@@ -35,6 +39,7 @@
     <div class="middle">
       <span class="left" conditional>{left}</span>
       <select class={["main", class]} {...rest} bind:value bind:this={element} {@attach attach}>
+        <option value="" conditional>{placeholder}</option>
         {#each options as { option, text }}
           <option value={option}>{text}</option>
         {/each}
@@ -46,8 +51,9 @@
   ```
 -->
 <script module lang="ts">
-  export interface SelectFieldProps extends Omit<HTMLSelectAttributes, "value"> {
+  export interface SelectFieldProps extends Omit<HTMLSelectAttributes, "value" | "multiple"> {
     options: SvelteMap<string, string> | Map<string, string>;
+    placeholder?: string; // text of the auto-injected empty option
     label?: string;
     extra?: string;
     aux?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[value,variant,element]>
@@ -68,16 +74,16 @@
 
   const preset = "svs-select-field";
 
-  import { type Snippet, untrack } from "svelte";
+  import { type Snippet, untrack, onMount } from "svelte";
   import { type Attachment } from "svelte/attachments";
   import { type SvelteMap } from "svelte/reactivity";
-  import { type HTMLSelectAttributes, type EventHandler } from "svelte/elements";
+  import { type HTMLSelectAttributes, type ChangeEventHandler, type EventHandler } from "svelte/elements";
   import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isNeutral } from "./core";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { options, label, extra, aux, left, right, bottom, descFirst = false, value = $bindable(""), validations = [], id, oninvalid, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, ...rest }: SelectFieldProps = $props();
+  let { options, placeholder, label, extra, aux, left, right, bottom, descFirst = false, value = $bindable(""), validations = [], id, onchange, oninvalid, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, ...rest }: SelectFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
@@ -112,46 +118,53 @@
   }
 
   // *** Bind Handlers *** //
-  let opts = $derived(Array.from(options, ([val, text]) => ({ val, text, selected: val === value })));
+  let showPlaceholder = $derived(!options.has("") && (placeholder !== undefined || value === ""));
+  let opts = $derived([
+    ...(showPlaceholder ? [{ val: "", text: placeholder ?? "", selected: value === "" }] : []),
+    ...Array.from(options, ([val, text]) => ({ val, text, selected: val === value })),
+  ]);
   $effect.pre(() => {
     value;
-    untrack(() => validate());
+    untrack(() => validate(true));
   });
-  function validate() {
+  function validate(effect?: boolean) {
+    if (effect && isNeutral(variant)) return;
     verify();
     shift();
   }
 
   /*** Handle events ***/
-  function hinvalid(ev: Parameters<EventHandler<Event, HTMLSelectElement>>[0]) {
+  const hchange: ChangeEventHandler<HTMLSelectElement> = (ev) => {
+    onchange?.(ev);
+    validate();
+  };
+  const hinvalid: EventHandler<Event, HTMLSelectElement> = (ev) => {
     oninvalid?.(ev);
     ev.preventDefault();
     shift(true);
-  }
-  $effect(() => untrack(() => verify()));
+  };
+  onMount(() => verify());
 </script>
 
 <!---------------------------------------->
 
-{#if opts.length}
-  <div class={cls(PARTS.WHOLE, variant)} role="group" aria-labelledby={idLabel}>
-    {#if aux}
-      <div class={cls(PARTS.TOP, variant)}>
-        {@render lbl()}
-        <span class={cls(PARTS.AUX, variant)}>{@render aux(value, variant, element)}</span>
-      </div>
-    {:else}
+<div class={cls(PARTS.WHOLE, variant)} role="group" aria-labelledby={idLabel}>
+  {#if aux}
+    <div class={cls(PARTS.TOP, variant)}>
       {@render lbl()}
-    {/if}
-    {@render desc(descFirst)}
-    <div class={cls(PARTS.MIDDLE, variant)}>
-      {@render side(PARTS.LEFT, left)}
-      {@render main()}
-      {@render side(PARTS.RIGHT, right)}
+      <span class={cls(PARTS.AUX, variant)}>{@render aux(value, variant, element)}</span>
     </div>
-    {@render desc(!descFirst)}
+  {:else}
+    {@render lbl()}
+  {/if}
+  {@render desc(descFirst)}
+  <div class={cls(PARTS.MIDDLE, variant)}>
+    {@render side(PARTS.LEFT, left)}
+    {@render main()}
+    {@render side(PARTS.RIGHT, right)}
   </div>
-{/if}
+  {@render desc(!descFirst)}
+</div>
 
 {#snippet lbl()}
   {#if label?.trim()}
@@ -175,6 +188,7 @@
     class={[cls(PARTS.MAIN, variant), c]}
     {...rest}
     id={idMain}
+    onchange={hchange}
     oninvalid={hinvalid}
     aria-describedby={idDesc}
     aria-invalid={invalid}
@@ -191,6 +205,6 @@
 {/snippet}
 {#snippet desc(show: boolean)}
   {#if show && message?.trim()}
-    <div class={cls(PARTS.BOTTOM, variant)} id={idDesc ?? idErr} role={live}>{message}</div>
+    <div class={cls(PARTS.BOTTOM, variant)} id={idErr} role={live}>{message}</div>
   {/if}
 {/snippet}
