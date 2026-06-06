@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, waitFor } from "@testing-library/svelte";
-import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet, tick } from "svelte";
 import Drawer from "#svs/_Drawer.svelte";
 import { PARTS, VARIANT } from "#svs/core";
@@ -11,6 +10,8 @@ afterEach(() => {
     // (popover as HTMLElement & { hidePopover(): void }).hidePopover();
     (popover as HTMLElement).remove();
   });
+  document.querySelectorAll("[data-drawer-test-bg]").forEach((el) => el.remove());
+  (document.activeElement as HTMLElement)?.blur?.();
 });
 
 // Mock Popover API if not available
@@ -44,6 +45,10 @@ const preset = "svs-drawer";
 
 const childrenSnippet = createRawSnippet(() => {
   return { render: () => `<p>${childrenText}</p>` };
+});
+
+const focusableChildren = createRawSnippet(() => {
+  return { render: () => `<div><button data-x="a">a</button><button data-x="b">b</button></div>` };
 });
 
 describe("Drawer basic functionality", () => {
@@ -163,7 +168,33 @@ describe("Drawer position and size", () => {
       size: "auto",
     });
     const drawer = container.querySelector("[popover]") as HTMLDivElement;
-    // expect(drawer.style.cssText).toContain("interpolate-size: allow-keywords;");
+    expect(drawer.getAttribute("style")).toContain("interpolate-size: allow-keywords");
+  });
+
+  test("default duration is applied", () => {
+    const { container } = render(Drawer, {
+      children: childrenSnippet,
+    });
+    const drawer = container.querySelector("[popover]") as HTMLDivElement;
+    expect(drawer.style.cssText).toContain("--duration: 200ms;");
+  });
+
+  test.each([-5, 3.14, NaN])("invalid duration %s falls back to default", (duration) => {
+    const { container } = render(Drawer, {
+      children: childrenSnippet,
+      duration,
+    });
+    const drawer = container.querySelector("[popover]") as HTMLDivElement;
+    expect(drawer.style.cssText).toContain("--duration: 200ms;");
+  });
+
+  test("zero duration is applied", () => {
+    const { container } = render(Drawer, {
+      children: childrenSnippet,
+      duration: 0,
+    });
+    const drawer = container.querySelector("[popover]") as HTMLDivElement;
+    expect(drawer.style.cssText).toContain("--duration: 0ms;");
   });
 
   test("custom duration is applied", () => {
@@ -174,6 +205,37 @@ describe("Drawer position and size", () => {
     });
     const drawer = container.querySelector("[popover]") as HTMLDivElement;
     expect(drawer.style.cssText).toContain(`--duration: ${customDuration}ms;`);
+  });
+
+  test("changing position updates the position custom props", async () => {
+    const props = $state({
+      children: childrenSnippet,
+      position: "left" as "left" | "right",
+    });
+    const { container } = render(Drawer, props);
+    const drawer = container.querySelector("[popover]") as HTMLDivElement;
+    expect(drawer.style.cssText).toContain("--left: 0");
+
+    props.position = "right";
+    await tick();
+
+    expect(drawer.style.cssText).toContain("--right: 0");
+    expect(drawer.style.cssText).toContain("--left: auto");
+  });
+
+  test("changing duration updates the duration custom prop", async () => {
+    const props = $state({
+      children: childrenSnippet,
+      duration: 200,
+    });
+    const { container } = render(Drawer, props);
+    const drawer = container.querySelector("[popover]") as HTMLDivElement;
+    expect(drawer.style.cssText).toContain("--duration: 200ms;");
+
+    props.duration = 350;
+    await tick();
+
+    expect(drawer.style.cssText).toContain("--duration: 350ms;");
   });
 });
 
@@ -224,29 +286,260 @@ describe("Drawer open/close behavior", () => {
 
   test("style changes during animation", async () => {
     vi.useFakeTimers();
-    const duration = 200;
-    const props = $state({
+    try {
+      const duration = 200;
+      const props = $state({
+        children: childrenSnippet,
+        open: false,
+        duration,
+      });
+      const { container } = render(Drawer, props);
+      const drawer = container.querySelector("[popover]") as HTMLDivElement;
+
+      // Trigger toggle event
+      const toggleEvent = new ToggleEvent("toggle", { oldState: "closed", newState: "open" });
+      fireEvent(drawer, toggleEvent);
+
+      // Check that overflow:hidden is added during animation
+      expect(drawer.style.cssText).toContain("overflow: hidden;");
+
+      // Fast-forward time and check that overflow:hidden is removed
+      vi.advanceTimersByTime(duration);
+      await waitFor(() => {
+        expect(drawer.style.cssText).not.toContain("overflow: hidden;");
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test("re-toggling within the transition does not prematurely clear overflow hidden", async () => {
+    vi.useFakeTimers();
+    try {
+      const props = $state({
+        children: childrenSnippet,
+        open: false,
+        duration: 200,
+      });
+      const { container } = render(Drawer, props);
+      const drawer = container.querySelector("[popover]") as HTMLDivElement;
+
+      props.open = true;
+      await tick();
+      expect(drawer.style.cssText).toContain("overflow: hidden;");
+
+      vi.advanceTimersByTime(100);
+      props.open = false;
+      await tick();
+      props.open = true;
+      await tick();
+      expect(drawer.style.cssText).toContain("overflow: hidden;");
+
+      vi.advanceTimersByTime(100);
+      await tick();
+      expect(drawer.style.cssText).toContain("overflow: hidden;");
+
+      vi.advanceTimersByTime(100);
+      await tick();
+      expect(drawer.style.cssText).not.toContain("overflow: hidden;");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe("Drawer modal semantics", () => {
+  test('root has role="dialog" and aria-modal="true" by default', () => {
+    const { container } = render(Drawer, {
       children: childrenSnippet,
+    });
+    const drawer = container.querySelector("[popover]") as HTMLDivElement;
+    expect(drawer).toHaveAttribute("role", "dialog");
+    expect(drawer).toHaveAttribute("aria-modal", "true");
+  });
+
+  test("consumer can override role via attributes", () => {
+    const { container } = render(Drawer, {
+      children: childrenSnippet,
+      role: "alertdialog",
+    });
+    const drawer = container.querySelector("[popover]") as HTMLDivElement;
+    expect(drawer).toHaveAttribute("role", "alertdialog");
+  });
+});
+
+describe("Drawer focus management", () => {
+  test("focus moves into the drawer on open", async () => {
+    const props = $state({
+      children: focusableChildren,
       open: false,
-      duration,
     });
     const { container } = render(Drawer, props);
     const drawer = container.querySelector("[popover]") as HTMLDivElement;
 
-    // Trigger toggle event
-    const toggleEvent = new ToggleEvent("toggle", { oldState: "closed", newState: "open" });
-    fireEvent(drawer, toggleEvent);
+    props.open = true;
+    await tick();
 
-    // Check that overflow:hidden is added during animation
-    expect(drawer.style.cssText).toContain("overflow: hidden;");
+    expect(drawer.contains(document.activeElement)).toBe(true);
+    expect(document.activeElement).toBe(drawer.querySelector('[data-x="a"]'));
+  });
 
-    // Fast-forward time and check that overflow:hidden is removed
-    vi.advanceTimersByTime(duration);
-    await waitFor(() => {
-      expect(drawer.style.cssText).not.toContain("overflow: hidden;");
+  test("focus restores to the opener on close", async () => {
+    const trigger = document.createElement("button");
+    trigger.dataset.drawerTestBg = "true";
+    document.body.appendChild(trigger);
+    trigger.focus();
+    const props = $state({
+      children: focusableChildren,
+      open: false,
     });
+    render(Drawer, props);
 
-    vi.useRealTimers();
+    props.open = true;
+    await tick();
+    props.open = false;
+    await tick();
+
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  test("drawer with no focusable child receives focus itself", async () => {
+    const props = $state({
+      children: childrenSnippet,
+      open: false,
+    });
+    const { container } = render(Drawer, props);
+    const drawer = container.querySelector("[popover]") as HTMLDivElement;
+
+    props.open = true;
+    await tick();
+
+    expect(document.activeElement).toBe(drawer);
+    expect(drawer.tabIndex).toBe(-1);
+  });
+});
+
+describe("Drawer focus trap", () => {
+  test("Tab from the last focusable wraps to the first", async () => {
+    const { container } = render(Drawer, {
+      children: focusableChildren,
+      open: true,
+    });
+    const drawer = container.querySelector("[popover]") as HTMLDivElement;
+    const first = drawer.querySelector('[data-x="a"]') as HTMLButtonElement;
+    const last = drawer.querySelector('[data-x="b"]') as HTMLButtonElement;
+    last.focus();
+
+    await fireEvent.keyDown(drawer, { key: "Tab" });
+
+    expect(document.activeElement).toBe(first);
+  });
+
+  test("Shift+Tab from the first focusable wraps to the last", async () => {
+    const { container } = render(Drawer, {
+      children: focusableChildren,
+      open: true,
+    });
+    const drawer = container.querySelector("[popover]") as HTMLDivElement;
+    const first = drawer.querySelector('[data-x="a"]') as HTMLButtonElement;
+    const last = drawer.querySelector('[data-x="b"]') as HTMLButtonElement;
+    first.focus();
+
+    await fireEvent.keyDown(drawer, { key: "Tab", shiftKey: true });
+
+    expect(document.activeElement).toBe(last);
+  });
+
+  test("non-Tab keys are ignored and consumer onkeydown still runs", async () => {
+    const onkeydown = vi.fn();
+    const { container } = render(Drawer, {
+      children: focusableChildren,
+      open: true,
+      onkeydown,
+    });
+    const drawer = container.querySelector("[popover]") as HTMLDivElement;
+    const last = drawer.querySelector('[data-x="b"]') as HTMLButtonElement;
+    last.focus();
+
+    await fireEvent.keyDown(drawer, { key: "a" });
+
+    expect(onkeydown).toHaveBeenCalled();
+    expect(document.activeElement).toBe(last);
+  });
+});
+
+describe("Drawer background inert", () => {
+  test("background siblings become inert on open and are restored on close", async () => {
+    const bg = document.createElement("div");
+    bg.dataset.drawerTestBg = "true";
+    bg.innerHTML = "<button>bg</button>";
+    document.body.appendChild(bg);
+    const props = $state({
+      children: childrenSnippet,
+      open: false,
+    });
+    render(Drawer, props);
+
+    props.open = true;
+    await tick();
+    expect(bg.inert).toBe(true);
+
+    props.open = false;
+    await tick();
+    expect(bg.inert).toBe(false);
+  });
+
+  test("the drawer's own container is not inerted", async () => {
+    const bg = document.createElement("div");
+    bg.dataset.drawerTestBg = "true";
+    document.body.appendChild(bg);
+    const props = $state({
+      children: childrenSnippet,
+      open: false,
+    });
+    const { container } = render(Drawer, props);
+
+    props.open = true;
+    await tick();
+
+    expect(container.inert).toBeFalsy();
+  });
+
+  test("inert is cleared if the drawer unmounts while open", async () => {
+    const bg = document.createElement("div");
+    bg.dataset.drawerTestBg = "true";
+    document.body.appendChild(bg);
+    const props = $state({
+      children: childrenSnippet,
+      open: false,
+    });
+    const { unmount } = render(Drawer, props);
+
+    props.open = true;
+    await tick();
+    expect(bg.inert).toBe(true);
+
+    unmount();
+    expect(bg.inert).toBe(false);
+  });
+
+  test("a pre-existing inert sibling is left inert after close", async () => {
+    const bg = document.createElement("div");
+    bg.dataset.drawerTestBg = "true";
+    bg.inert = true;
+    document.body.appendChild(bg);
+    const props = $state({
+      children: childrenSnippet,
+      open: false,
+    });
+    render(Drawer, props);
+
+    props.open = true;
+    await tick();
+    props.open = false;
+    await tick();
+
+    expect(bg.inert).toBe(true);
   });
 });
 
@@ -319,6 +612,15 @@ describe("Drawer attributes", () => {
     expect(drawer).toHaveAttribute("id", customId);
   });
 
+  test("id is forwarded to the root via rest attributes", () => {
+    const { container } = render(Drawer, {
+      children: childrenSnippet,
+      id: "drawer-x",
+    });
+    const drawer = container.querySelector("[popover]") as HTMLDivElement;
+    expect(drawer).toHaveAttribute("id", "drawer-x");
+  });
+
   test("custom attributes are applied", () => {
     const { container } = render(Drawer, {
       children: childrenSnippet,
@@ -342,6 +644,7 @@ describe("Drawer attributes", () => {
   test("internally-controlled attributes are not overridden", () => {
     const { container } = render(Drawer, {
       children: childrenSnippet,
+      // @ts-expect-error style is component-owned and intentionally rejected by the type
       style: "color: red;",
       popover: "manual" as const,
       "data-test": "should-be-applied",
@@ -351,6 +654,18 @@ describe("Drawer attributes", () => {
     expect(drawer.style.cssText).not.toContain("color: red");
     expect(drawer).toHaveAttribute("popover", "auto"); // internal (closable) wins over consumer "manual"
     expect(drawer).toHaveAttribute("data-test", "should-be-applied");
+  });
+
+  test("margin and padding are not inline", () => {
+    const { container } = render(Drawer, {
+      children: childrenSnippet,
+    });
+    const drawer = container.querySelector("[popover]") as HTMLDivElement;
+    const rawStyle = drawer.getAttribute("style");
+
+    expect(rawStyle).not.toContain("margin");
+    expect(rawStyle).not.toContain("padding");
+    expect(rawStyle).toContain("--duration");
   });
 
   test("custom ontoggle handler is called", () => {

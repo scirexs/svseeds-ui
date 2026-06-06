@@ -50,6 +50,7 @@
   export type DisclosureBindProps = "open" | "variant" | "element";
 
   const DEFAULT_DURATION = 200;
+  const noMotion = shouldReduceMotion();
   const preset = "svs-disclosure";
 
   class ToggleGuard {
@@ -76,7 +77,7 @@
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
-  const dur = $derived(shouldReduceMotion() ? 0 : !isUnsignedInteger(duration) ? DEFAULT_DURATION : duration);
+  const dur = $derived(noMotion ? 0 : !isUnsignedInteger(duration) ? DEFAULT_DURATION : duration);
   const guard = new ToggleGuard();
   let hidden = $state(!open);
   let neutral = $state(isNeutral(variant) ? variant : VARIANT.NEUTRAL);
