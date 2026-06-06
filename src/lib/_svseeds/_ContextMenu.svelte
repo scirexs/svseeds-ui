@@ -13,7 +13,7 @@
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
     // other HTMLAttributes are passed to <div> via ...rest; `class` is merged onto root
-    // `style` is used by the component for positioning, visibility, and z-index
+    // style is component-owned (omitted)
   }
   ```
   ### Anatomy

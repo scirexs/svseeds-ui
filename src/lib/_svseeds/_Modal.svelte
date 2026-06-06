@@ -3,16 +3,17 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface ModalProps extends Omit<HTMLDialogAttributes, "children" | "aria-label"> {
+  interface ModalProps extends Omit<HTMLDialogAttributes, "children" | "style" | "aria-label"> {
     children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false)
     closable?: boolean; // (true)
-    delay?: number; // (200)
+    duration?: number; // (200)
     ariaLabel?: string;
     element?: HTMLDialogElement; // bindable
     styling?: SVSClass;
-    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // (VARIANT.NEUTRAL)
     // other HTMLDialogAttributes are passed to <dialog> via ...rest; `class` is merged onto root
+    // style is component-owned (omitted)
   }
   ```
   ### Anatomy
@@ -23,75 +24,64 @@
   ```
 -->
 <script module lang="ts">
-  export interface ModalProps extends Omit<HTMLDialogAttributes, "children" | "aria-label"> {
+  export interface ModalProps extends Omit<HTMLDialogAttributes, "children" | "style" | "aria-label"> {
     children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false)
     closable?: boolean; // (true)
-    delay?: number; // (200)
+    duration?: number; // (200)
     ariaLabel?: string;
     element?: HTMLDialogElement; // bindable
     styling?: SVSClass;
-    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
   export type ModalReqdProps = "children";
-  export type ModalBindProps = "open" | "variant" | "element";
+  export type ModalBindProps = "open" | "element";
 
-  const DEFAULT_DELAY = 200;
+  const DEFAULT_DURATION = 200;
   const noMotion = shouldReduceMotion();
   const preset = "svs-modal";
 
-  import { type Snippet, untrack } from "svelte";
+  import { type Snippet, untrack, onMount } from "svelte";
   import { type HTMLDialogAttributes, type MouseEventHandler, type KeyboardEventHandler, type ToggleEventHandler } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isNeutral, isUnsignedInteger, shouldReduceMotion } from "./core";
+  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isUnsignedInteger, shouldReduceMotion } from "./core";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { children, open = $bindable(false), closable = true, delay = -1, ariaLabel, onclick, onkeydown, ontoggle, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, ...rest }: ModalProps = $props();
+  let { children, open = $bindable(false), closable = true, duration = -1, ariaLabel, onclick, onkeydown, ontoggle, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: ModalProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
-  const lag = $derived(noMotion ? 0 : !isUnsignedInteger(delay) ? DEFAULT_DELAY : delay);
-  let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
+  const dur = $derived(noMotion ? 0 : !isUnsignedInteger(duration) ? DEFAULT_DURATION : duration);
 
   // *** Bind Handlers *** //
-  $effect(() => {
-    neutral = isNeutral(variant) ? variant : neutral;
-  });
   $effect.pre(() => {
     open;
     untrack(() => toggle());
   });
   function toggle() {
-    if (open) {
-      element?.showModal();
-      variant = neutral;
-    } else {
-      variant = VARIANT.INACTIVE;
-      setTimeout(() => element?.close(), lag);
-    }
+    if (open) element?.showModal();
+    else element?.close();
   }
 
   // *** Event Handlers *** //
-  function click(ev: Parameters<MouseEventHandler<HTMLDialogElement>>[0]) {
+  const click: MouseEventHandler<HTMLDialogElement> = (ev) => {
     onclick?.(ev);
     if (ev.target === element) open = false;
-  }
-  function keydown(ev: Parameters<KeyboardEventHandler<HTMLDialogElement>>[0]) {
+  };
+  const keydown: KeyboardEventHandler<HTMLDialogElement> = (ev) => {
     onkeydown?.(ev);
     if (ev.key === "Escape") ev.preventDefault();
-  }
+  };
   const hclick = $derived(closable ? click : onclick);
   const hkeydown = $derived(closable ? onkeydown : keydown);
-  function htoggle(ev: Parameters<ToggleEventHandler<HTMLDialogElement>>[0]) {
+  const htoggle: ToggleEventHandler<HTMLDialogElement> = (ev) => {
     ontoggle?.(ev);
     open = element?.open ?? false;
-  }
-  $effect(() =>
-    untrack(() => {
-      if (open) toggle();
-    }),
-  );
+  };
+  onMount(() => {
+    if (open) toggle();
+  });
 </script>
 
 <!---------------------------------------->
@@ -101,10 +91,10 @@
   class={[cls(PARTS.WHOLE, variant), c]}
   aria-label={ariaLabel}
   {...rest}
+  style={`--duration:${dur}ms;`}
   onclick={hclick}
   onkeydown={hkeydown}
   ontoggle={htoggle}
-  style="margin:auto;"
 >
   {@render children(variant)}
 </dialog>
@@ -112,5 +102,8 @@
 <style>
   :root:has(dialog[open]) {
     overflow: clip;
+  }
+  dialog {
+    margin: auto;
   }
 </style>
