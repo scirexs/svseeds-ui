@@ -3,7 +3,7 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface CheckFieldProps extends Omit<HTMLInputAttributes, "type" | "value"> {
+  interface CheckFieldProps extends Omit<HTMLInputAttributes, "type" | "value" | "id"> {
     options: SvelteMap<string, string> | Map<string, string>;
     label?: string;
     extra?: string;
@@ -17,7 +17,7 @@
     elements?: HTMLInputElement[]; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
-    // class & other HTMLInputAttributes are passed to each <input> via ...rest (class is merged onto each input)
+    // class & other HTMLInputAttributes are passed to each <input> via ...rest (class is merged onto each input; required is applied dynamically)
   }
   type CheckFieldValidation = (values: string[], validity: ValidityState) => string | undefined;
   ```
@@ -65,7 +65,7 @@
 
   const preset = "svs-check-field";
 
-  import { type Snippet, untrack } from "svelte";
+  import { type Snippet, untrack, onMount } from "svelte";
   import { type Attachment } from "svelte/attachments";
   import { type SvelteMap } from "svelte/reactivity";
   import { type HTMLInputAttributes, type ChangeEventHandler, type EventHandler } from "svelte/elements";
@@ -74,7 +74,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { options, label, extra, aux, bottom, values = $bindable([]), multiple = true, descFirst = false, validations = [], name, onchange, oninvalid, attach, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, ...rest }: CheckFieldProps = $props();
+  let { options, label, extra, aux, bottom, values = $bindable([]), multiple = true, descFirst = false, validations = [], name, onchange, oninvalid, attach, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, required = false, ...rest }: CheckFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
@@ -96,9 +96,10 @@
   const live = $derived(variant === VARIANT.INACTIVE ? "alert" : "status");
   const invalid = $derived(variant === VARIANT.INACTIVE ? true : undefined);
   const idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
+  const reqd = $derived(required && (!multiple || !values.length) ? true : undefined);
   function shift(oninvalid?: boolean) {
     const vmsg = elements[0]?.validationMessage ?? "";
-    variant = oninvalid && vmsg ? VARIANT.INACTIVE : !values.length || vmsg ? neutral : VARIANT.ACTIVE;
+    variant = !values.length && !oninvalid ? neutral : vmsg ? VARIANT.INACTIVE : VARIANT.ACTIVE;
     message = variant === VARIANT.INACTIVE ? (vmsg ? vmsg : bottom) : bottom;
   }
   function verify() {
@@ -111,27 +112,29 @@
   }
 
   // *** Bind Handlers *** //
-  let opts = $derived([...options.entries().map(([value, text]) => ({ value, text, checked: values.includes(value) }))]);
+  let opts = $derived(Array.from(options, ([value, text]) => ({ value, text, checked: values.includes(value) })));
   $effect.pre(() => {
     values;
-    untrack(() => validate());
+    untrack(() => validate(true));
   });
-  function validate() {
+  function validate(effect?: boolean) {
+    if (effect && isNeutral(variant)) return;
     verify();
     shift();
   }
 
   // *** Event Handlers *** //
-  function hchange(ev: Parameters<ChangeEventHandler<HTMLInputElement>>[0]) {
+  const hchange: ChangeEventHandler<HTMLInputElement> = (ev) => {
     onchange?.(ev);
     values = elements.filter((el) => el.checked).map((el) => el.value);
-  }
-  function hinvalid(ev: Parameters<EventHandler<Event, HTMLInputElement>>[0]) {
+    validate();
+  };
+  const hinvalid: EventHandler<Event, HTMLInputElement> = (ev) => {
     oninvalid?.(ev);
     ev.preventDefault();
     shift(true);
-  }
-  $effect(() => untrack(() => verify()));
+  };
+  onMount(() => verify());
 </script>
 
 <!---------------------------------------->
@@ -166,6 +169,7 @@
   <div
     class={cls(PARTS.MIDDLE, variant)}
     role={roleGroup}
+    aria-labelledby={idLabel}
     aria-describedby={idDesc}
     aria-invalid={!multiple ? invalid : undefined}
     aria-errormessage={!multiple ? idMsg : undefined}
@@ -177,6 +181,7 @@
           bind:this={elements[i]}
           class={[cls(PARTS.LEFT, stat), c]}
           {...rest}
+          required={reqd}
           aria-invalid={multiple ? invalid : undefined}
           aria-errormessage={multiple ? idMsg : undefined}
           {value}

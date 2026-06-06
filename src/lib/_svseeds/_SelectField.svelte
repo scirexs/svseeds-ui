@@ -112,7 +112,7 @@
   }
 
   // *** Bind Handlers *** //
-  let opts = $derived([...options.entries().map(([val, text]) => ({ val, text, selected: val === value }))]);
+  let opts = $derived(Array.from(options, ([val, text]) => ({ val, text, selected: val === value })));
   $effect.pre(() => {
     value;
     untrack(() => validate());
