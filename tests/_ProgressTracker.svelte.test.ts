@@ -7,26 +7,19 @@ import { PARTS, VARIANT } from "#svs/core";
 const labels = ["Step 1", "Step 2", "Step 3", "Step 4"];
 const auxid = "test-aux";
 const extraid = "test-extra";
+const childrenid = "test-children";
 
-const auxfn = createRawSnippet(
-  (
-    index: () => number,
-    label: () => string,
-    variant: () => string,
-  ) => {
-    return { render: () => `<span data-testid="${auxid}">${variant()}-${index()}</span>` };
-  },
-);
+const auxfn = createRawSnippet((index: () => number, label: () => string, variant: () => string) => {
+  return { render: () => `<span data-testid="${auxid}">${variant()}-${index()}</span>` };
+});
 
-const extrafn = createRawSnippet(
-  (
-    index: () => number,
-    label: () => string,
-    variant: () => string,
-  ) => {
-    return { render: () => `<span data-testid="${extraid}">${variant()}-${index()}</span>` };
-  },
-);
+const extrafn = createRawSnippet((index: () => number, label: () => string, variant: () => string) => {
+  return { render: () => `<span data-testid="${extraid}">${variant()}-${index()}</span>` };
+});
+
+const childrenfn = createRawSnippet((index: () => number, label: () => string, variant: () => string) => {
+  return { render: () => `<span data-testid="${childrenid}">${label()}-${index()}</span>` };
+});
 
 describe("Basic structure and rendering", () => {
   test("basic rendering with labels", () => {
@@ -89,14 +82,48 @@ describe("Basic structure and rendering", () => {
     const items = getAllByRole("listitem");
     const extraElements = getAllByTestId(extraid);
 
-    // Extra elements should be rendered as separators
-    // Should have separators between steps (labels.length - 1)
-    expect(extraElements.length).toBeGreaterThan(0);
-    expect(extra).toHaveBeenCalled();
+    expect(items).toHaveLength(4);
+    expect(extraElements).toHaveLength(labels.length - 1);
+    expect(extra).toHaveBeenCalledTimes(labels.length - 1);
 
-    // Check that separators have role="separator"
-    const separators = getAllByRole("separator");
-    expect(separators.length).toBeGreaterThan(0);
+    extraElements.forEach((extraElement) => {
+      const extraParent = extraElement.parentElement;
+      expect(extraParent).toHaveClass("svs-progress-tracker", PARTS.EXTRA);
+      expect(extraParent).toHaveAttribute("aria-hidden", "true");
+    });
+  });
+
+  test("children snippet replaces label", () => {
+    const children = vi.fn().mockImplementation(childrenfn);
+    const { getAllByRole, getAllByTestId } = render(ProgressTracker, {
+      current: 1,
+      labels,
+      children,
+    });
+
+    const items = getAllByRole("listitem");
+    const childrenElements = getAllByTestId(childrenid);
+
+    expect(childrenElements).toHaveLength(4);
+    expect(children).toHaveBeenCalledTimes(4);
+
+    childrenElements.forEach((childrenElement, index) => {
+      const labelParent = childrenElement.parentElement;
+      expect(labelParent).toHaveClass("svs-progress-tracker", PARTS.LABEL);
+      expect(within(labelParent as HTMLElement).queryByText(labels[index], { exact: true })).toBeNull();
+      expect(items[index]).toContainElement(childrenElement);
+    });
+  });
+
+  test("extra={false} renders no separators", () => {
+    const { container, getAllByRole } = render(ProgressTracker, {
+      current: 1,
+      labels,
+      extra: false,
+    });
+
+    expect(getAllByRole("listitem")).toHaveLength(4);
+    expect(container.querySelectorAll(".extra")).toHaveLength(0);
   });
 });
 
@@ -299,7 +326,7 @@ describe("Styling and CSS classes", () => {
     extraElements.forEach((extraElement) => {
       const extraParent = extraElement.parentElement;
       expect(extraParent).toHaveClass(seed, PARTS.EXTRA);
-      expect(extraParent).toHaveAttribute("role", "separator");
+      expect(extraParent).toHaveAttribute("aria-hidden", "true");
     });
   });
 });
@@ -341,13 +368,78 @@ describe("Accessibility and semantic structure", () => {
       }
     });
   });
+
+  test("statusLabels default folds completed into past-step aria-label", () => {
+    const { getAllByRole } = render(ProgressTracker, {
+      current: 2,
+      labels,
+    });
+
+    const items = getAllByRole("listitem");
+
+    expect(items[0]).toHaveAttribute("aria-label", "Step 1, completed");
+    expect(items[1]).toHaveAttribute("aria-label", "Step 2, completed");
+    expect(items[2]).not.toHaveAttribute("aria-label");
+    expect(items[2]).toHaveAttribute("aria-current", "step");
+    expect(items[3]).not.toHaveAttribute("aria-label");
+    expect(items[3]).toHaveAttribute("aria-current", "false");
+  });
+
+  test("statusLabels override and disable", () => {
+    const override = render(ProgressTracker, {
+      current: 1,
+      labels,
+      statusLabels: { active: "done", inactive: "todo" },
+    });
+
+    let items = override.getAllByRole("listitem");
+
+    expect(items[0]).toHaveAttribute("aria-label", "Step 1, done");
+    expect(items[1]).not.toHaveAttribute("aria-label");
+    expect(items[2]).toHaveAttribute("aria-label", "Step 3, todo");
+    expect(items[3]).toHaveAttribute("aria-label", "Step 4, todo");
+
+    override.unmount();
+
+    const disabled = render(ProgressTracker, {
+      current: 1,
+      labels,
+      statusLabels: {},
+    });
+
+    items = disabled.getAllByRole("listitem");
+    items.forEach((item) => {
+      expect(item).not.toHaveAttribute("aria-label");
+    });
+  });
+
+  test("ol receives pass-through attributes", () => {
+    const { getByRole } = render(ProgressTracker, {
+      current: 1,
+      labels,
+      "aria-label": "Checkout progress",
+    });
+
+    expect(getByRole("list", { name: "Checkout progress" })).toHaveAttribute("aria-label", "Checkout progress");
+  });
+
+  test("class prop merges with computed classes", () => {
+    const { getByRole } = render(ProgressTracker, {
+      current: 1,
+      labels,
+      class: "extra-class",
+    });
+
+    expect(getByRole("list")).toHaveClass("extra-class", "svs-progress-tracker", PARTS.WHOLE);
+  });
 });
 
 describe("Edge cases and error handling", () => {
-  // test("empty labels array", () => {
-  //   const { container } = render(ProgressTracker, { current: 0, labels: [] });
-  //   expect(container.firstChild).toBeNull();
-  // });
+  test("empty labels array", () => {
+    const { queryByRole, queryAllByRole } = render(ProgressTracker, { current: 0, labels: [] });
+    expect(queryByRole("list")).toBeNull();
+    expect(queryAllByRole("listitem")).toHaveLength(0);
+  });
 
   test("current position out of bounds", () => {
     const { getAllByRole } = render(ProgressTracker, {
@@ -387,6 +479,24 @@ describe("Edge cases and error handling", () => {
     });
   });
 
+  test("non-integer current position", () => {
+    const { getAllByRole } = render(ProgressTracker, {
+      current: 1.5,
+      labels,
+      variant: VARIANT.NEUTRAL,
+    });
+
+    const items = getAllByRole("listitem");
+
+    expect(items[0]).toHaveAttribute("aria-current", "step");
+    expect(items[0].className).toContain(VARIANT.NEUTRAL);
+
+    items.slice(1).forEach((item) => {
+      expect(item).toHaveAttribute("aria-current", "false");
+      expect(item.className).toContain(VARIANT.INACTIVE);
+    });
+  });
+
   test("single label", () => {
     const singleLabel = ["Only Step"];
     const { getByRole, getAllByRole } = render(ProgressTracker, {
@@ -404,9 +514,7 @@ describe("Edge cases and error handling", () => {
 
   test("eachVariant with SvelteMap", () => {
     // Test with SvelteMap (though we're using regular Map in tests)
-    const eachVariant = new Map([
-      [1, "special-variant"],
-    ]);
+    const eachVariant = new Map([[1, "special-variant"]]);
 
     const { getAllByRole } = render(ProgressTracker, {
       current: 0,
