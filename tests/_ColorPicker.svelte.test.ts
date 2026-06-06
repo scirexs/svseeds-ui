@@ -16,7 +16,7 @@ describe("Switching existence of elements and basic functionality", () => {
     expect(input).toBeTruthy();
     expect(input).toHaveAttribute("type", "color");
     expect(input).toHaveValue("#000000");
-    expect(input).toHaveStyle("visibility: hidden");
+    expect(input).toHaveStyle("opacity: 0");
     expect(colorDiv).toBeTruthy();
     expect(colorDiv).toHaveStyle("background-color: rgba(0,0,0,1)");
   });
@@ -94,6 +94,36 @@ describe("Switching existence of elements and basic functionality", () => {
 
     expect(input).toHaveValue(`#${value}`);
     expect(colorDiv).toHaveStyle("background-color: rgba(255,0,0,1)");
+  });
+
+  test("invalid value normalizes bound value to default", async () => {
+    const props = $state({ value: "invalid-color" });
+    render(ColorPicker, props);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(props.value).toBe("#000000");
+  });
+
+  test.each(["", "#12", "#GGGGGG", "#zzz"])("invalid edge value %s normalizes to default", async (value) => {
+    const props = $state({ value, alpha: 0.5 });
+    const { container } = render(ColorPicker, props);
+    const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(props.value).toBe("#000000");
+    expect(colorDiv).toHaveStyle("background-color: rgba(0,0,0,0.5)");
+  });
+
+  test.each([
+    ["#f0a", "#ff00aa"],
+    ["ff0000", "#ff0000"],
+  ])("hex value %s normalizes bound value to %s", async (value, expected) => {
+    const props = $state({ value });
+    render(ColorPicker, props);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(props.value).toBe(expected);
   });
 });
 
@@ -218,6 +248,40 @@ describe("User interaction and binding", () => {
     expect(colorDiv).toHaveStyle("background-color: rgba(255,0,0,1)");
   });
 
+  test("external value update is re-normalized reactively", async () => {
+    const props = $state({ value: "#ff0000" });
+    const { container } = render(ColorPicker, props);
+    const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
+
+    props.value = "#0f0";
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(props.value).toBe("#00ff00");
+    expect(colorDiv).toHaveStyle("background-color: rgba(0,255,0,1)");
+  });
+
+  test("external invalid value update normalizes to default", async () => {
+    const props = $state({ value: "#ff0000" });
+    const { container } = render(ColorPicker, props);
+    const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
+
+    props.value = "nope";
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(props.value).toBe("#000000");
+    expect(colorDiv).toHaveStyle("background-color: rgba(0,0,0,1)");
+  });
+
+  test("native input is focusable", () => {
+    const { container } = render(ColorPicker);
+    const input = container.querySelector("input") as HTMLInputElement;
+
+    input.focus();
+
+    expect(document.activeElement).toBe(input);
+    expect(input).not.toHaveStyle("visibility: hidden");
+  });
+
   test("element binding works", () => {
     const props = $state({ element: undefined });
     const { container } = render(ColorPicker, props);
@@ -277,5 +341,13 @@ describe("Transparency background pattern", () => {
 
     expect(patternDiv).toBeTruthy();
     expect(patternDiv.style.backgroundSize).toBe("20px 20px");
+  });
+
+  test("checkered=false removes the transparency background", () => {
+    const { container } = render(ColorPicker, { checkered: false });
+    const middle = container.querySelector("label > div") as HTMLDivElement;
+
+    expect(middle).toHaveStyle("display: inline-block");
+    expect(middle.style.backgroundImage).toBe("");
   });
 });
