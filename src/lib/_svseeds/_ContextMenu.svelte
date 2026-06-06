@@ -3,30 +3,34 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface ContextMenuProps {
+  interface ContextMenuProps extends Omit<HTMLAttributes<HTMLDivElement>, "children"> {
     children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false); to observe state, not to control
     lock?: boolean; // (false)
     target?: HTMLElement;
-    element?: HTMLElement; // bindable
+    attach?: Attachment<HTMLDivElement>;
+    element?: HTMLDivElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
+    // other HTMLAttributes are passed to <div> via ...rest; `class` is merged onto root
+    // `style` is overridden by the component for positioning, visibility, and z-index
   }
   ```
   ### Anatomy
   ```svelte
-  <nav class="whole" bind:this={element}>
+  <div class={["whole", class]} {...rest} style={dynStyle} bind:this={element} {@attach attach}>
     {children}
-  </nav>
+  </div>
   ```
 -->
 <script module lang="ts">
-  export interface ContextMenuProps {
+  export interface ContextMenuProps extends Omit<HTMLAttributes<HTMLDivElement>, "children"> {
     children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false); to observe state, not to control
     lock?: boolean; // (false)
     target?: HTMLElement;
-    element?: HTMLElement; // bindable
+    attach?: Attachment<HTMLDivElement>;
+    element?: HTMLDivElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
@@ -35,7 +39,9 @@
 
   const preset = "svs-context-menu";
 
-  import { type Snippet, onDestroy } from "svelte";
+  import { type Snippet } from "svelte";
+  import { type Attachment } from "svelte/attachments";
+  import { type HTMLAttributes } from "svelte/elements";
   import { on } from "svelte/events";
   import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass } from "./core";
 </script>
@@ -44,17 +50,17 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { children, open = $bindable(false), lock = false, target, element = $bindable(), styling, variant = VARIANT.NEUTRAL }: ContextMenuProps = $props();
+  let { children, open = $bindable(false), lock = false, target, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: ContextMenuProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
   let position = $state({ x: 0, y: 0 });
-  let listeners: (() => void)[] = [];
-  $effect(() => {
-    listeners.push(on(target ?? document, "contextmenu", show));
-    if (target) listeners.push(on(document, "contextmenu", hide));
+  $effect.pre(() => {
+    const cleanups: (() => void)[] = [];
+    cleanups.push(on(target ?? document, "contextmenu", show));
+    if (target) cleanups.push(on(document, "contextmenu", hide));
+    return () => cleanups.forEach((x) => x());
   });
-  onDestroy(() => listeners.forEach((x) => x()));
 
   // *** Bind Handlers *** //
   let dynStyle = $derived(
@@ -69,18 +75,21 @@
 
     const [x, y] = [(ev as MouseEvent).clientX, (ev as MouseEvent).clientY];
     const menu = { width: element?.offsetWidth ?? 0, height: element?.offsetHeight ?? 0 };
-    position.x = window.innerWidth - x < menu.width ? x - menu.width : x;
+    position.x = window.innerWidth - x < menu.width ? (x < menu.width ? x : x - menu.width) : x;
     position.y = window.innerHeight - y < menu.height ? (y < menu.height ? y : y - menu.height) : y;
     open = true;
   }
   function hide() {
     if (!lock) open = false;
   }
+  function onkeydown(ev: KeyboardEvent) {
+    if (ev.key === "Escape") hide();
+  }
 </script>
 
 <!---------------------------------------->
-<svelte:document onclick={hide} />
+<svelte:document onclick={hide} {onkeydown} />
 
-<nav class={cls(PARTS.WHOLE, variant)} style={dynStyle} bind:this={element}>
+<div class={[cls(PARTS.WHOLE, variant), c]} {...rest} style={dynStyle} bind:this={element} {@attach attach}>
   {@render children(variant)}
-</nav>
+</div>

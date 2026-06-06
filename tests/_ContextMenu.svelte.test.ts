@@ -1,13 +1,28 @@
-import { describe, expect, test, vi } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render } from "@testing-library/svelte";
-import { createRawSnippet } from "svelte";
+import { createRawSnippet, tick } from "svelte";
 import ContextMenu from "#svs/_ContextMenu.svelte";
 import { PARTS, VARIANT } from "#svs/core";
-import { userEvent } from "@testing-library/user-event";
 
 const childrenContent = "Menu Item";
 const childrenSnippet = createRawSnippet(() => {
   return { render: () => `<div>${childrenContent}</div>` };
+});
+
+function root(container: HTMLElement) {
+  return container.firstChild as HTMLDivElement;
+}
+
+const targets: HTMLElement[] = [];
+function appendTarget() {
+  const target = document.createElement("div");
+  document.body.appendChild(target);
+  targets.push(target);
+  return target;
+}
+
+afterEach(() => {
+  targets.splice(0).forEach((target) => target.remove());
 });
 
 // Mock window dimensions for position calculations
@@ -29,7 +44,7 @@ describe("ContextMenu rendering and visibility", () => {
       children: childrenSnippet,
     });
 
-    const nav = container.firstChild;
+    const nav = root(container);
     const content = getByText(childrenContent);
 
     expect(nav).toBeInTheDocument();
@@ -42,18 +57,18 @@ describe("ContextMenu rendering and visibility", () => {
       children: childrenSnippet,
     });
 
-    const nav = container.firstChild;
+    const nav = root(container);
     expect(nav).toHaveStyle("visibility: hidden");
     expect(nav).toHaveStyle("z-index: -9999");
   });
 
   test("shows when open prop is true", () => {
-    const { getByRole } = render(ContextMenu, {
+    const { container } = render(ContextMenu, {
       children: childrenSnippet,
       open: true,
     });
 
-    const nav = getByRole("navigation");
+    const nav = root(container);
     expect(nav).toHaveStyle("visibility: visible");
     expect(nav).not.toHaveStyle("z-index: -9999");
   });
@@ -64,7 +79,7 @@ describe("ContextMenu rendering and visibility", () => {
       children: childrenSnippet,
     });
 
-    const nav = container.firstChild;
+    const nav = root(container);
     expect(nav).toHaveClass(preset, PARTS.WHOLE);
   });
 
@@ -76,7 +91,7 @@ describe("ContextMenu rendering and visibility", () => {
       variant: customStatus,
     });
 
-    const nav = container.firstChild;
+    const nav = root(container);
     expect(nav).toHaveClass(preset, PARTS.WHOLE, customStatus);
   });
 
@@ -87,7 +102,7 @@ describe("ContextMenu rendering and visibility", () => {
       styling: customStyle,
     });
 
-    const nav = container.firstChild;
+    const nav = root(container);
     expect(nav).toHaveClass(customStyle, PARTS.WHOLE);
   });
 });
@@ -100,7 +115,7 @@ describe("ContextMenu event handling", () => {
     });
 
     const { container } = render(ContextMenu, props);
-    const nav = container.firstChild;
+    const nav = root(container);
 
     expect(props.open).toBe(false);
     expect(nav).toHaveStyle("visibility: hidden");
@@ -121,8 +136,8 @@ describe("ContextMenu event handling", () => {
       open: true,
     });
 
-    const { getByRole } = render(ContextMenu, props);
-    const nav = getByRole("navigation");
+    const { container } = render(ContextMenu, props);
+    const nav = root(container);
 
     expect(props.open).toBe(true);
     expect(nav).toHaveStyle("visibility: visible");
@@ -188,6 +203,168 @@ describe("ContextMenu event handling", () => {
   });
 });
 
+describe("ContextMenu with target", () => {
+  test("opens on contextmenu on the target", async () => {
+    const target = appendTarget();
+    const props = $state({
+      children: childrenSnippet,
+      open: false,
+      target,
+    });
+
+    const { container } = render(ContextMenu, { props });
+    const nav = root(container);
+
+    await fireEvent.contextMenu(target, {
+      clientX: 100,
+      clientY: 200,
+    });
+
+    expect(props.open).toBe(true);
+    expect(nav).toHaveStyle("visibility: visible");
+  });
+
+  test("does not open on document contextmenu outside the target and closes if open", async () => {
+    const target = appendTarget();
+    const props = $state({
+      children: childrenSnippet,
+      open: true,
+      target,
+    });
+
+    render(ContextMenu, { props });
+
+    await fireEvent.contextMenu(document, {
+      clientX: 100,
+      clientY: 200,
+    });
+
+    expect(props.open).toBe(false);
+  });
+
+  test("contextmenu on target does not also trigger the document hide", async () => {
+    const target = appendTarget();
+    const props = $state({
+      children: childrenSnippet,
+      open: false,
+      target,
+    });
+
+    render(ContextMenu, { props });
+
+    await fireEvent.contextMenu(target, {
+      clientX: 100,
+      clientY: 200,
+    });
+
+    expect(props.open).toBe(true);
+  });
+
+  test("late-bound target does not leave a stale document show listener", async () => {
+    const target = appendTarget();
+    const props = $state({
+      children: childrenSnippet,
+      open: false,
+      target: undefined as HTMLElement | undefined,
+    });
+
+    const { container, rerender } = render(ContextMenu, { props });
+    const nav = root(container);
+
+    props.target = target;
+    await rerender({ target });
+    await tick();
+
+    const event = new MouseEvent("contextmenu", {
+      clientX: 100,
+      clientY: 200,
+      bubbles: true,
+      cancelable: true,
+    });
+    const preventDefaultSpy = vi.spyOn(event, "preventDefault");
+
+    await fireEvent(document, event);
+
+    expect(preventDefaultSpy).not.toHaveBeenCalled();
+    expect(nav).toHaveStyle("visibility: hidden");
+  });
+
+  test("swapping target removes listeners from the old target", async () => {
+    const oldTarget = appendTarget();
+    const newTarget = appendTarget();
+    const props = $state({
+      children: childrenSnippet,
+      open: false,
+      target: oldTarget,
+    });
+
+    const { container, rerender } = render(ContextMenu, { props });
+    const nav = root(container);
+
+    props.target = newTarget;
+    await rerender({ target: newTarget });
+    await tick();
+
+    await fireEvent.contextMenu(oldTarget, {
+      clientX: 100,
+      clientY: 200,
+    });
+
+    expect(nav).toHaveStyle("visibility: hidden");
+
+    await fireEvent.contextMenu(newTarget, {
+      clientX: 100,
+      clientY: 200,
+    });
+
+    expect(nav).toHaveStyle("visibility: visible");
+  });
+});
+
+describe("ContextMenu keyboard", () => {
+  test("Escape closes the menu", async () => {
+    const props = $state({
+      children: childrenSnippet,
+      open: true,
+    });
+
+    const { container } = render(ContextMenu, props);
+    const nav = root(container);
+
+    await fireEvent.keyDown(document, { key: "Escape" });
+
+    expect(props.open).toBe(false);
+    expect(nav).toHaveStyle("visibility: hidden");
+  });
+
+  test("Escape does not close when locked", async () => {
+    const props = $state({
+      children: childrenSnippet,
+      open: true,
+      lock: true,
+    });
+
+    render(ContextMenu, props);
+
+    await fireEvent.keyDown(document, { key: "Escape" });
+
+    expect(props.open).toBe(true);
+  });
+
+  test("non-Escape key does nothing", async () => {
+    const props = $state({
+      children: childrenSnippet,
+      open: true,
+    });
+
+    render(ContextMenu, props);
+
+    await fireEvent.keyDown(document, { key: "Enter" });
+
+    expect(props.open).toBe(true);
+  });
+});
+
 describe("ContextMenu positioning", () => {
   test("positions at cursor location", async () => {
     const props = $state({
@@ -196,7 +373,7 @@ describe("ContextMenu positioning", () => {
     });
 
     const { container } = render(ContextMenu, props);
-    const nav = container.firstChild;
+    const nav = root(container);
 
     const clientX = 300;
     const clientY = 400;
@@ -218,7 +395,7 @@ describe("ContextMenu positioning", () => {
     });
 
     const { container } = render(ContextMenu, props);
-    const nav = container.firstChild;
+    const nav = root(container);
 
     // Mock element dimensions
     Object.defineProperty(nav, "offsetWidth", {
@@ -243,6 +420,38 @@ describe("ContextMenu positioning", () => {
     expect(nav).toHaveStyle(`top: ${clientY}px`);
   });
 
+  test("keeps x at cursor when menu is wider than the left margin", async () => {
+    const props = $state({
+      children: childrenSnippet,
+      open: false,
+    });
+
+    const { container } = render(ContextMenu, props);
+    const nav = root(container);
+
+    // Mock element dimensions
+    Object.defineProperty(nav, "offsetWidth", {
+      configurable: true,
+      value: 800,
+    });
+    Object.defineProperty(nav, "offsetHeight", {
+      configurable: true,
+      value: 100,
+    });
+
+    const clientX = 300;
+    const clientY = 400;
+
+    await fireEvent.contextMenu(document, {
+      clientX,
+      clientY,
+    });
+
+    // Should stay at cursor location instead of becoming negative.
+    expect(nav).toHaveStyle(`left: ${clientX}px`);
+    expect(nav).toHaveStyle(`top: ${clientY}px`);
+  });
+
   test("adjusts position when near bottom edge", async () => {
     const props = $state({
       children: childrenSnippet,
@@ -250,7 +459,7 @@ describe("ContextMenu positioning", () => {
     });
 
     const { container } = render(ContextMenu, props);
-    const nav = container.firstChild;
+    const nav = root(container);
 
     // Mock element dimensions
     Object.defineProperty(nav, "offsetWidth", {
@@ -282,7 +491,7 @@ describe("ContextMenu positioning", () => {
     });
 
     const { container } = render(ContextMenu, props);
-    const nav = container.firstChild;
+    const nav = root(container);
 
     // Mock element dimensions
     Object.defineProperty(nav, "offsetWidth", {
@@ -308,6 +517,67 @@ describe("ContextMenu positioning", () => {
   });
 });
 
+describe("ContextMenu attributes and attach", () => {
+  test("forwards arbitrary HTMLAttributes to the root via rest", () => {
+    const { container } = render(ContextMenu, {
+      children: childrenSnippet,
+      "data-testid": "ctx",
+      "aria-label": "Actions",
+    });
+
+    const nav = root(container);
+    expect(nav).toHaveAttribute("data-testid", "ctx");
+    expect(nav).toHaveAttribute("aria-label", "Actions");
+  });
+
+  test("merges class with the preset part and variant classes", () => {
+    const { container } = render(ContextMenu, {
+      children: childrenSnippet,
+      class: "extra-class",
+    });
+
+    const nav = root(container);
+    expect(nav).toHaveClass("svs-context-menu", PARTS.WHOLE, "extra-class");
+  });
+
+  test("component-owned style wins over a user-passed style", async () => {
+    const props = $state({
+      children: childrenSnippet,
+      open: false,
+      style: "left: 999px",
+    });
+
+    const { container } = render(ContextMenu, props);
+    const nav = root(container);
+
+    await fireEvent.contextMenu(document, {
+      clientX: 100,
+      clientY: 200,
+    });
+
+    expect(nav).toHaveStyle("position: fixed");
+    expect(nav).toHaveStyle("left: 100px");
+    expect(nav).toHaveStyle("top: 200px");
+    expect(nav).not.toHaveStyle("left: 999px");
+  });
+
+  test("runs the attach attachment on the root element", () => {
+    let attached: HTMLDivElement | undefined;
+    const attach = vi.fn((node: HTMLDivElement) => {
+      attached = node;
+    });
+
+    const { container } = render(ContextMenu, {
+      children: childrenSnippet,
+      attach,
+    });
+
+    const nav = root(container);
+    expect(attached).toBe(nav);
+    expect(attach).toHaveBeenCalled();
+  });
+});
+
 describe("ContextMenu with different styles", () => {
   test("applies object-based styling rules", () => {
     const customStyle = {
@@ -324,18 +594,18 @@ describe("ContextMenu with different styles", () => {
       variant: VARIANT.ACTIVE,
     });
 
-    const nav = container.firstChild;
+    const nav = root(container);
     expect(nav).toHaveClass("menu-base", "menu-active");
   });
 
   test("element binding works correctly", () => {
     const props = $state({
       children: childrenSnippet,
-      element: undefined as HTMLElement | undefined,
+      element: undefined as HTMLDivElement | undefined,
     });
 
     const { container } = render(ContextMenu, props);
-    const nav = container.firstChild;
+    const nav = root(container);
 
     expect(props.element).toBe(nav);
   });
@@ -348,7 +618,7 @@ describe("ContextMenu variant management", () => {
       children: childrenSnippet,
     });
 
-    const nav = container.firstChild;
+    const nav = root(container);
     expect(nav).toHaveClass(preset, PARTS.WHOLE, VARIANT.NEUTRAL);
   });
 
@@ -360,7 +630,7 @@ describe("ContextMenu variant management", () => {
       variant: customStatus,
     });
 
-    const nav = container.firstChild;
+    const nav = root(container);
     expect(nav).toHaveClass(preset, PARTS.WHOLE, customStatus);
   });
 
@@ -372,7 +642,7 @@ describe("ContextMenu variant management", () => {
 
     const { container, rerender } = render(ContextMenu, props);
 
-    const nav = container.firstChild;
+    const nav = root(container);
     expect(nav).toHaveClass("svs-context-menu", PARTS.WHOLE, VARIANT.NEUTRAL);
 
     props.variant = VARIANT.ACTIVE;
