@@ -87,7 +87,7 @@
   );
   const style = $derived(`background: linear-gradient(to right, var(--color-active) ${rate}%, var(--color-inactive) ${rate}%);`);
 
-  $effect(() => {
+  $effect.pre(() => {
     if (value !== undefined && (value < rmin || value > rmax)) value = clamp(value);
   });
 </script>
