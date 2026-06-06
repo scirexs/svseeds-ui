@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { render, waitFor } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
@@ -14,7 +14,19 @@ const childrenSnippet = createRawSnippet(() => {
 });
 
 const labelSnippet = createRawSnippet((open: () => boolean, variant: () => string) => {
-  return { render: () => `<span data-testid="test-label">${label} - ${variant()}</span>` };
+  return {
+    render: () => `<span data-testid="test-label">${label} - ${variant()}</span>`,
+    setup: (element) => {
+      $effect(() => {
+        element.textContent = `${label} - ${variant()}`;
+      });
+    },
+  };
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 
 describe("Switching existence of elements", () => {
@@ -159,60 +171,59 @@ describe("Interactions and state transitions", () => {
     });
   });
 
-  // test("programmatic open change", async () => {
-  //   const props = $state({
-  //     label,
-  //     children: childrenSnippet,
-  //     open: false,
-  //     duration: 0,
-  //   });
-  //   const { getByRole, getByTestId, queryByTestId, rerender } = render(Disclosure, props);
+  test("programmatic open change", async () => {
+    const props = $state({
+      label,
+      children: childrenSnippet,
+      open: false,
+      duration: 0,
+      element: undefined as HTMLDetailsElement | undefined,
+    });
+    const { getByRole, getByTestId, rerender } = render(Disclosure, props);
 
-  //   const details = getByRole("group") as HTMLDetailsElement;
+    const details = getByRole("group") as HTMLDetailsElement;
 
-  //   expect(details).not.toHaveAttribute("open");
-  //   expect(queryByTestId(childrenTestId)).toBeNull();
+    expect(details).not.toHaveAttribute("open");
 
-  //   props.open = true;
-  //   await rerender(props);
+    props.open = true;
+    await rerender(props);
 
-  //   await waitFor(() => {
-  //     expect(details).toHaveAttribute("open");
-  //     expect(getByTestId(childrenTestId)).toBeInTheDocument();
-  //   });
+    await waitFor(() => {
+      expect(details).toHaveAttribute("open");
+      expect(getByTestId(childrenTestId)).toBeInTheDocument();
+    });
 
-  //   props.open = false;
-  //   await rerender(props);
+    props.open = false;
+    await rerender(props);
 
-  //   await waitFor(() => {
-  //     expect(details).not.toHaveAttribute("open");
-  //   });
-  // });
+    await waitFor(() => {
+      expect(details).not.toHaveAttribute("open");
+    });
+  });
 
-  // test("toggle guard prevents rapid clicking", async () => {
-  //   const props = $state({
-  //     label,
-  //     children: childrenSnippet,
-  //     open: false,
-  //     duration: 100,
-  //   });
-  //   const user = userEvent.setup();
-  //   const { getByText } = render(Disclosure, props);
+  test("toggle guard prevents rapid clicking", async () => {
+    vi.useFakeTimers();
+    const props = $state({
+      label,
+      children: childrenSnippet,
+      open: false,
+      duration: 100,
+    });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const { getByText } = render(Disclosure, props);
 
-  //   const summary = getByText(label);
+    const summary = getByText(label);
 
-  //   await user.click(summary);
-  //   expect(props.open).toBe(true);
+    await user.click(summary);
+    expect(props.open).toBe(true);
 
-  //   await user.click(summary);
-  //   expect(props.open).toBe(true);
+    await user.click(summary);
+    expect(props.open).toBe(true);
 
-  //   await waitFor(() => {
-  //     return user.click(summary).then(() => {
-  //       expect(props.open).toBe(false);
-  //     });
-  //   }, { timeout: 200 });
-  // });
+    await vi.advanceTimersByTimeAsync(100);
+    await user.click(summary);
+    expect(props.open).toBe(false);
+  });
 
   test("native toggle event handling", async () => {
     const user = userEvent.setup();
@@ -230,20 +241,164 @@ describe("Interactions and state transitions", () => {
     expect(ontoggle).toHaveBeenCalled();
   });
 
-  // test("label snippet receives correct variant", () => {
-  //   const props = $state({
-  //     label: labelSnippet,
-  //     children: childrenSnippet,
-  //     open: false,
-  //     variant: VARIANT.NEUTRAL,
-  //     duration: 0,
-  //   });
-  //   const { getByTestId } = render(Disclosure, props);
+  test("label snippet receives correct variant", async () => {
+    const props = $state({
+      label: labelSnippet,
+      children: childrenSnippet,
+      open: false,
+      variant: VARIANT.NEUTRAL,
+      duration: 0,
+    });
+    const user = userEvent.setup();
+    const { container, getByTestId } = render(Disclosure, props);
 
-  //   const labelEl = getByTestId("test-label");
+    const summary = container.querySelector("summary")!;
 
-  //   expect(labelEl).toHaveTextContent(`${label} - ${VARIANT.NEUTRAL}`);
-  // });
+    expect(getByTestId("test-label")).toHaveTextContent(`${label} - ${VARIANT.NEUTRAL}`);
+
+    await user.click(summary);
+
+    await waitFor(() => {
+      expect(getByTestId("test-label")).toHaveTextContent(`${label} - ${VARIANT.ACTIVE}`);
+    });
+  });
+
+  test("close is deferred by dur when duration is omitted", async () => {
+    vi.useFakeTimers();
+    const props = $state({ label, children: childrenSnippet, open: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const { getByRole, getByText } = render(Disclosure, props);
+    const details = getByRole("group") as HTMLDetailsElement;
+    const summary = getByText(label);
+
+    expect(details.open).toBe(true);
+
+    await user.click(summary);
+    expect(props.open).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(50);
+    expect(details.open).toBe(true);
+
+    await vi.advanceTimersByTimeAsync(200);
+    expect(details.open).toBe(false);
+  });
+
+  test.each([-1, 3.14, NaN])("invalid duration %s falls back to default close delay", async (duration) => {
+    vi.useFakeTimers();
+    const props = $state({ label, children: childrenSnippet, open: true, duration });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const { getByRole, getByText } = render(Disclosure, props);
+    const details = getByRole("group") as HTMLDetailsElement;
+
+    await user.click(getByText(label));
+    expect(props.open).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(50);
+    expect(details.open).toBe(true);
+
+    await vi.advanceTimersByTimeAsync(200);
+    expect(details.open).toBe(false);
+  });
+
+  test("reduced motion collapses without delay", async () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: true,
+      media: query,
+      onchange: null,
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+      dispatchEvent: () => false,
+    }));
+    const props = $state({ label, children: childrenSnippet, open: true });
+    const user = userEvent.setup();
+    const { getByRole, getByText } = render(Disclosure, props);
+    const details = getByRole("group") as HTMLDetailsElement;
+
+    await user.click(getByText(label));
+
+    await waitFor(() => expect(details.open).toBe(false));
+  });
+
+  test("external close of <details> syncs open back to false", async () => {
+    const props = $state({ label, children: childrenSnippet, open: true, duration: 0 });
+    const { getByRole } = render(Disclosure, props);
+    const details = getByRole("group") as HTMLDetailsElement;
+
+    expect(props.open).toBe(true);
+
+    details.open = false;
+    details.dispatchEvent(new Event("toggle"));
+
+    await waitFor(() => expect(props.open).toBe(false));
+  });
+
+  test("external open of <details> syncs open to true", async () => {
+    const props = $state({ label, children: childrenSnippet, open: false, duration: 0 });
+    const { getByRole } = render(Disclosure, props);
+    const details = getByRole("group") as HTMLDetailsElement;
+
+    details.open = true;
+    details.dispatchEvent(new Event("toggle"));
+
+    await waitFor(() => expect(props.open).toBe(true));
+  });
+
+  test("changing variant while open does not affect open state", async () => {
+    const props = $state({ label, children: childrenSnippet, open: true, variant: VARIANT.NEUTRAL as string, duration: 0 });
+    const { getByRole, getByText } = render(Disclosure, props);
+    const details = getByRole("group") as HTMLDetailsElement;
+    const summary = getByText(label);
+
+    await waitFor(() => expect(details).toHaveAttribute("open"));
+
+    props.variant = "custom-variant";
+
+    await waitFor(() => {
+      expect(details).toHaveClass("custom-variant");
+      expect(summary).toHaveClass("custom-variant");
+    });
+    expect(details).toHaveAttribute("open");
+    expect(props.open).toBe(true);
+  });
+
+  test("summary activation toggles the managed open state", async () => {
+    const props = $state({ label, children: childrenSnippet, open: false, duration: 0 });
+    const user = userEvent.setup();
+    const { getByText } = render(Disclosure, props);
+    const summary = getByText(label);
+
+    // jsdom does not synthesize summary keyboard activation into click reliably.
+    await user.click(summary);
+
+    await waitFor(() => expect(props.open).toBe(true));
+  });
+
+  test("forwards onclick on the summary", async () => {
+    const onclick = vi.fn();
+    const props = { label, children: childrenSnippet, onclick, duration: 0 };
+    const user = userEvent.setup();
+    const { getByText } = render(Disclosure, props);
+
+    await user.click(getByText(label));
+
+    expect(onclick).toHaveBeenCalledTimes(1);
+  });
+
+  test("renders exactly one main in steady open and closed states", async () => {
+    const props = $state({ label, children: childrenSnippet, open: false, duration: 0 });
+    const user = userEvent.setup();
+    const { container, getByText } = render(Disclosure, props);
+
+    await waitFor(() => expect(container.querySelectorAll(".main").length).toBe(1));
+
+    await user.click(getByText(label));
+    await waitFor(() => expect(container.querySelectorAll(".main").length).toBe(1));
+
+    await user.click(getByText(label));
+    await waitFor(() => expect(container.querySelectorAll(".main").length).toBe(1));
+  });
 });
 
 describe("CSS classes and styling", () => {
@@ -333,6 +488,18 @@ describe("CSS classes and styling", () => {
       expect(details).toHaveClass(seed, PARTS.WHOLE, VARIANT.NEUTRAL);
       expect(summary).toHaveClass(seed, PARTS.LABEL, VARIANT.NEUTRAL);
     });
+  });
+
+  test("merges class prop onto the root details", () => {
+    const { getByRole } = render(Disclosure, {
+      label,
+      children: childrenSnippet,
+      class: "extra-root",
+      open: true,
+    });
+    const details = getByRole("group") as HTMLDetailsElement;
+
+    expect(details).toHaveClass("svs-disclosure", PARTS.WHOLE, VARIANT.ACTIVE, "extra-root");
   });
 });
 

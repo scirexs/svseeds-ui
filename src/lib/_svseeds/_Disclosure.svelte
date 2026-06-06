@@ -16,14 +16,22 @@
   }
   ```
   ### Anatomy
+  `main` renders through separate animated/static paths; slide uses sanitized `dur`.
   ```svelte
   <details class={["whole", class]} {...rest} bind:this={element} {@attach attach}>
     <summary class="label">
       {label}
     </summary>
-    <div class="main" transition:slide={{ duration }}>
-      {children}
-    </div>
+    {#if open}
+      <div class="main" transition:slide={{ duration: dur }}>
+        {children}
+      </div>
+    {/if}
+    {#if hidden}
+      <div class="main">
+        {children}
+      </div>
+    {/if}
   </details>
   ```
 -->
@@ -42,10 +50,9 @@
   export type DisclosureBindProps = "open" | "variant" | "element";
 
   const DEFAULT_DURATION = 200;
-  const noMotion = shouldReduceMotion();
   const preset = "svs-disclosure";
 
-  class ToggleGurad {
+  class ToggleGuard {
     #active = false;
     get active(): boolean {
       return this.#active;
@@ -56,7 +63,7 @@
     }
   }
 
-  import { type Snippet, untrack } from "svelte";
+  import { type Snippet, untrack, onMount } from "svelte";
   import { type Attachment } from "svelte/attachments";
   import { type HTMLDetailsAttributes, type MouseEventHandler, type ToggleEventHandler } from "svelte/elements";
   import { slide } from "svelte/transition";
@@ -69,50 +76,60 @@
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
-  const dur = $derived(noMotion ? 0 : !isUnsignedInteger(duration) ? DEFAULT_DURATION : duration);
-  const guard = new ToggleGurad();
+  const dur = $derived(shouldReduceMotion() ? 0 : !isUnsignedInteger(duration) ? DEFAULT_DURATION : duration);
+  const guard = new ToggleGuard();
   let hidden = $state(!open);
-  let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
+  let neutral = $state(isNeutral(variant) ? variant : VARIANT.NEUTRAL);
+  let mounted = false;
 
   // *** Bind Handlers *** //
+  // External variant writes are styling-only; preserve the neutral fallback without changing open state.
   $effect(() => {
     neutral = isNeutral(variant) ? variant : neutral;
   });
   $effect.pre(() => {
-    open;
-    untrack(() => toggleOpen());
+    const isOpen = open;
+    if (!mounted) return;
+    untrack(() => toggleOpen(isOpen));
   });
-  function toggleOpen() {
-    guard.activate(duration);
-    if (open) {
+  function toggleOpen(isOpen: boolean) {
+    guard.activate(dur);
+    if (isOpen) {
       toggle(true);
     } else {
-      setTimeout(() => toggle(false), duration);
+      const target = element;
+      setTimeout(() => toggle(false, target), dur);
     }
   }
-  function toggle(bool: boolean) {
-    if (!element) return;
-    element.open = bool;
-    hidden = !element.open;
+  function toggle(bool: boolean, target = element) {
+    if (!target) return;
+    target.open = bool;
+    hidden = !target.open;
     variant = bool ? VARIANT.ACTIVE : neutral;
   }
 
   // *** Event Handlers *** //
-  function hclick(ev: Parameters<MouseEventHandler<HTMLElement>>[0]) {
+  const hclick: MouseEventHandler<HTMLElement> = (ev) => {
     onclick?.(ev as Parameters<MouseEventHandler<HTMLDetailsElement>>[0]);
     ev.preventDefault();
     if (guard.active) return;
     if (!element?.open) hidden = false;
     open = !open;
-  }
-  function htoggle(ev: Parameters<ToggleEventHandler<HTMLDetailsElement>>[0]) {
+  };
+  const htoggle: ToggleEventHandler<HTMLDetailsElement> = (ev) => {
     ontoggle?.(ev);
-    if (element?.open && !open) {
+    if (!element) return;
+    if (element.open && !open) {
       hidden = false;
       open = true;
+    } else if (!element.open && open) {
+      open = false;
     }
-  }
-  $effect(() => untrack(() => toggle(open)));
+  };
+  onMount(() => {
+    toggle(open);
+    mounted = true;
+  });
 </script>
 
 <!---------------------------------------->
@@ -134,6 +151,7 @@
       {@render children(variant)}
     </div>
   {/if}
+  <!-- Keep a static collapsed copy so children remain mounted like native details content. -->
   {#if hidden}
     <div class={cls(PARTS.MAIN, variant)}>
       {@render children(variant)}

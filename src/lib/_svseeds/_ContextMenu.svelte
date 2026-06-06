@@ -3,7 +3,7 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface ContextMenuProps extends Omit<HTMLAttributes<HTMLDivElement>, "children"> {
+  interface ContextMenuProps extends Omit<HTMLAttributes<HTMLDivElement>, "children" | "style"> {
     children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false); to observe state, not to control
     lock?: boolean; // (false)
@@ -13,7 +13,7 @@
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
     // other HTMLAttributes are passed to <div> via ...rest; `class` is merged onto root
-    // `style` is overridden by the component for positioning, visibility, and z-index
+    // `style` is used by the component for positioning, visibility, and z-index
   }
   ```
   ### Anatomy
@@ -24,7 +24,7 @@
   ```
 -->
 <script module lang="ts">
-  export interface ContextMenuProps extends Omit<HTMLAttributes<HTMLDivElement>, "children"> {
+  export interface ContextMenuProps extends Omit<HTMLAttributes<HTMLDivElement>, "children" | "style"> {
     children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false); to observe state, not to control
     lock?: boolean; // (false)
@@ -41,7 +41,7 @@
 
   import { type Snippet } from "svelte";
   import { type Attachment } from "svelte/attachments";
-  import { type HTMLAttributes } from "svelte/elements";
+  import { type HTMLAttributes, type KeyboardEventHandler } from "svelte/elements";
   import { on } from "svelte/events";
   import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass } from "./core";
 </script>
@@ -82,13 +82,13 @@
   function hide() {
     if (!lock) open = false;
   }
-  function onkeydown(ev: KeyboardEvent) {
+  const hkeydown: KeyboardEventHandler<HTMLDocument> = (ev) => {
     if (ev.key === "Escape") hide();
-  }
+  };
 </script>
 
 <!---------------------------------------->
-<svelte:document onclick={hide} {onkeydown} />
+<svelte:document onclick={hide} onkeydown={hkeydown} />
 
 <div class={[cls(PARTS.WHOLE, variant), c]} {...rest} style={dynStyle} bind:this={element} {@attach attach}>
   {@render children(variant)}
