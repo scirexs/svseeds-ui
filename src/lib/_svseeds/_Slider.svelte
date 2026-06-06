@@ -3,7 +3,7 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface SliderProps extends Omit<HTMLInputAttributes, "type" | "value" | "min" | "max" | "list"> {
+  interface SliderProps extends Omit<HTMLInputAttributes, "type" | "value" | "min" | "max" | "list" | "style"> {
     min: number;
     max: number;
     left?: Snippet<[number, string, HTMLInputElement | undefined]>; // Snippet<[value,variant,element]>
@@ -11,12 +11,13 @@
     value?: number; // bindable (min+((max-min)/2))
     step?: number | "any"; // (1)
     options?: SvelteSet<number> | Set<number>;
-    background?: Range; // ({ min: 5, max: 95 }); linear-gradient rate limit of slider's track
+    fillRange?: Range; // ({ min: 5, max: 95 }); linear-gradient rate limit of slider's track
     attach?: Attachment;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
     // class & other HTMLInputAttributes are passed to <input> via ...rest (class is merged onto the control)
+    // style is component-owned (omitted)
   }
   type Range = { min: number, max: number };
   ```
@@ -35,18 +36,19 @@
   ```
 -->
 <script module lang="ts">
-  export interface SliderProps extends Omit<HTMLInputAttributes, "type" | "value" | "min" | "max" | "list"> {
+  export interface SliderProps extends Omit<HTMLInputAttributes, "type" | "value" | "min" | "max" | "list" | "style"> {
     min: number;
     max: number;
     left?: Snippet<[number, string, HTMLInputElement | undefined]>; // Snippet<[value,variant,element]>
     right?: Snippet<[number, string, HTMLInputElement | undefined]>; // Snippet<[value,variant,element]>
     value?: number; // bindable (min+((max-min)/2))
     options?: SvelteSet<number> | Set<number>;
-    background?: Range; // ({ min: 5, max: 95 }); linear-gradient rate limit of slider's track
-    attach?: Attachment;
+    fillRange?: Range; // ({ min: 5, max: 95 }); linear-gradient rate limit of slider's track
+    attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
+    // style is component-owned (omitted)
   }
   export type SliderReqdProps = "min" | "max";
   export type SliderBindProps = "value" | "element";
@@ -63,7 +65,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { min, max, left, right, value = $bindable(), options, background = { min: 5, max: 95 }, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: SliderProps = $props();
+  let { min, max, left, right, value = $bindable(), options, fillRange = { min: 5, max: 95 }, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: SliderProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
@@ -71,13 +73,23 @@
   const idList = $derived(options?.size ? `${uid}-list` : undefined);
   const rmin = $derived(min > max ? max : min);
   const rmax = $derived(min > max ? min : max);
-  const bg = $derived(background.min > background.max ? { min: background.max, max: background.min } : background);
+  const span = $derived(rmax - rmin);
+  const bg = $derived(fillRange.min > fillRange.max ? { min: fillRange.max, max: fillRange.min } : fillRange);
+  const clamp = (v: number) => Math.min(Math.max(v, rmin), rmax);
   // svelte-ignore state_referenced_locally
-  if (value === undefined || value < rmin || value > rmax) value = rmin + (rmax - rmin) / 2;
+  if (value === undefined) value = rmin + span / 2;
+  // svelte-ignore state_referenced_locally
+  else if (value < rmin || value > rmax) value = clamp(value);
 
   // *** Bind Handlers *** //
-  const rate = $derived(Math.trunc(bg.min + ((value - rmin) / (rmax - rmin)) * (bg.max - bg.min)));
+  const rate = $derived(
+    span === 0 ? Math.trunc(bg.min + (bg.max - bg.min) / 2) : Math.trunc(bg.min + ((value - rmin) / span) * (bg.max - bg.min)),
+  );
   const style = $derived(`background: linear-gradient(to right, var(--color-active) ${rate}%, var(--color-inactive) ${rate}%);`);
+
+  $effect(() => {
+    if (value !== undefined && (value < rmin || value > rmax)) value = clamp(value);
+  });
 </script>
 
 <!---------------------------------------->
