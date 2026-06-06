@@ -3,7 +3,7 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface ComboBoxProps extends Omit<HTMLInputAttributes, "type" | "value" | "list" | "role" | "aria-haspopup" | "aria-autocomplete" | "aria-controls" | "aria-expanded"> {
+  interface ComboBoxProps extends Omit<HTMLInputAttributes, "type" | "value" | "list" | "role" | "aria-haspopup" | "aria-autocomplete" | "aria-controls" | "aria-expanded" | "aria-activedescendant"> {
     options: SvelteSet<string> | Set<string>;
     extra?: Snippet<[boolean, string]>; // Snippet<[expanded,variant]>
     value?: string; // bindable
@@ -28,11 +28,12 @@
     </ul>
   </span>
   ```
+  Open/close animations should be layered on the `bottom` part variant classes (`active` = open) with opacity, transform, or scale; the component keeps `visibility` as its structural default.
 -->
 <script module lang="ts">
   export interface ComboBoxProps extends Omit<
     HTMLInputAttributes,
-    "type" | "value" | "list" | "role" | "aria-haspopup" | "aria-autocomplete" | "aria-controls" | "aria-expanded"
+    "type" | "value" | "list" | "role" | "aria-haspopup" | "aria-autocomplete" | "aria-controls" | "aria-expanded" | "aria-activedescendant"
   > {
     options: SvelteSet<string> | Set<string>;
     extra?: Snippet<[boolean, string]>; // Snippet<[expanded,variant]>
@@ -59,19 +60,22 @@
     type FormEventHandler,
     type KeyboardEventHandler,
     type FocusEventHandler,
+    type MouseEventHandler,
   } from "svelte/elements";
   import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass } from "./core";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { options, extra, value = $bindable(""), expanded = $bindable(false), search = true, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, onkeydown, oninput, onfocus, onblur, ...rest }: ComboBoxProps = $props();
+  let { options, extra, value = $bindable(""), expanded = $bindable(false), search = true, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, onclick, onkeydown, oninput, onfocus, onblur, ...rest }: ComboBoxProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
   const uid = $props.id();
   const idList = `${uid}-list`;
   let selected = $state(NA);
+  let typed = $state(false);
+  let wasExpanded = expanded;
   let overflow = $state({ x: false, y: false });
   let listElem = $state<HTMLUListElement>();
 
@@ -80,13 +84,22 @@
     `position:absolute;cursor:default;user-select:none;visibility: ${expanded ? "visible" : "hidden"};${overflow.x ? "right:0%;" : ""}${overflow.y ? "bottom:100%;" : ""}`,
   );
   const opts = $derived([...options.keys()]);
-  const maxlen = $derived(opts.reduce((max, x) => Math.max(max, [...x].length), 0));
+  const view = $derived(search && typed && value ? opts.filter((x) => x.toLowerCase().startsWith(value.toLowerCase())) : opts);
+
+  $effect.pre(() => {
+    if (wasExpanded && !expanded) {
+      selected = NA;
+      typed = false;
+    }
+    wasExpanded = expanded;
+  });
 
   // *** Event Handlers *** //
   function open(activate: boolean = false, bottom: boolean = false) {
     if (expanded) return;
-    selected = opts.indexOf(value);
-    if (activate && selected === NA) selected = bottom ? opts.length - 1 : 0;
+    typed = false;
+    selected = view.indexOf(value);
+    if (activate && selected === NA) selected = bottom ? view.length - 1 : 0;
     observeOverflow();
     expanded = true;
   }
@@ -98,34 +111,35 @@
   }
   function apply() {
     if (!expanded) return;
-    value = opts[selected];
+    if (selected === NA || selected >= view.length) return;
+    value = view[selected];
     if (element) element.selectionStart = value.length;
     close();
   }
   function close() {
     expanded = false;
     selected = NA;
+    typed = false;
   }
-  function hfocus(ev: Parameters<FocusEventHandler<HTMLInputElement>>[0]) {
+  const hfocus: FocusEventHandler<HTMLInputElement> = (ev) => {
     onfocus?.(ev);
     open();
-  }
-  function hblur(ev: Parameters<FocusEventHandler<HTMLInputElement>>[0]) {
+  };
+  const hblur: FocusEventHandler<HTMLInputElement> = (ev) => {
     onblur?.(ev);
     close();
-  }
-  function hinput(ev: Parameters<FormEventHandler<HTMLInputElement>>[0]) {
+  };
+  const hclick: MouseEventHandler<HTMLInputElement> = (ev) => {
+    onclick?.(ev);
+    if (!expanded) open();
+  };
+  const hinput: FormEventHandler<HTMLInputElement> = (ev) => {
     oninput?.(ev);
     if ((ev as Parameters<EventHandler<InputEvent, HTMLInputElement>>[0]).isComposing) return;
-    if ([...value].length > maxlen) return;
-    if (options.has(value)) {
-      selected = opts.indexOf(value);
-      return;
-    }
-    if (!search) return;
-    selected = opts.findIndex((x) => x.startsWith(value));
-  }
-  function hkeydown(ev: Parameters<KeyboardEventHandler<HTMLInputElement>>[0]) {
+    typed = true;
+    selected = options.has(value) ? view.indexOf(value) : NA;
+  };
+  const hkeydown: KeyboardEventHandler<HTMLInputElement> = (ev) => {
     onkeydown?.(ev);
     if (ev.isComposing) return;
     if (ev.ctrlKey || ev.shiftKey || ev.metaKey) return;
@@ -134,7 +148,10 @@
         if (!ev.altKey && expanded) close();
         break;
       case "Enter":
-        if (!ev.altKey && expanded && selected > NA) apply();
+        if (!ev.altKey && expanded && selected > NA) {
+          ev.preventDefault();
+          apply();
+        }
         break;
       case "ArrowDown":
         caseArrowDown(ev, ev.altKey);
@@ -143,13 +160,14 @@
         caseArrowUp(ev, ev.altKey);
         break;
     }
-  }
+  };
   function caseArrowDown(ev: KeyboardEvent, alt: boolean) {
     if (alt && expanded) return;
     ev.preventDefault();
     if (alt && !expanded) return open();
     if (!alt && !expanded) return open(true);
-    if (selected < opts.length - 1) selected++;
+    if (!view.length) return (selected = NA);
+    if (selected < view.length - 1) selected++;
     if (selected === NA) selected = 0;
   }
   function caseArrowUp(ev: KeyboardEvent, alt: boolean) {
@@ -157,8 +175,9 @@
     ev.preventDefault();
     if (alt && expanded) return close();
     if (!alt && !expanded) return open(true, true);
+    if (!view.length) return (selected = NA);
     if (selected > 0) selected--;
-    if (selected === NA) selected = opts.length - 1;
+    if (selected === NA) selected = view.length - 1;
   }
 </script>
 
@@ -175,11 +194,13 @@
       type="text"
       role="combobox"
       aria-haspopup="listbox"
-      aria-autocomplete="none"
+      aria-autocomplete="list"
       aria-controls={idList}
       aria-expanded={expanded}
+      aria-activedescendant={selected > NA ? `${idList}-${selected}` : undefined}
       onfocus={hfocus}
       onblur={hblur}
+      onclick={hclick}
       onkeydown={hkeydown}
       oninput={hinput}
       {@attach attach}
@@ -190,11 +211,18 @@
       </div>
     {/if}
     <ul bind:this={listElem} class={cls(PARTS.BOTTOM, expanded ? VARIANT.ACTIVE : variant)} id={idList} role="listbox" style={listboxStyle}>
-      {#each opts as opt, i (opt)}
+      {#each view as opt, i (opt)}
         {@const isSelected = i === selected}
         {@const labelStatus = isSelected ? VARIANT.ACTIVE : variant}
         {@const onpointerenter = () => (selected = i)}
-        <li class={cls(PARTS.LABEL, labelStatus)} aria-selected={isSelected} role="option" onpointerdown={apply} {onpointerenter}>
+        <li
+          id={`${idList}-${i}`}
+          class={cls(PARTS.LABEL, labelStatus)}
+          aria-selected={isSelected}
+          role="option"
+          onpointerdown={apply}
+          {onpointerenter}
+        >
           {opt}
         </li>
       {/each}
