@@ -3,39 +3,41 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface DrawerProps extends Omit<HTMLAttributes<HTMLDivElement>, "children" | "style"> {
+  interface DrawerProps extends Omit<HTMLDialogAttributes, "children" | "style" | "aria-label"> {
     children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false)
     position?: Position; // ("left")
     size?: string; // ("auto")
     duration?: number; // (200)
     closable?: boolean; // (true)
-    element?: HTMLDivElement; // bindable
+    ariaLabel?: string;
+    element?: HTMLDialogElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
-    // other HTMLAttributes are passed to <div> via ...rest; `class` is merged onto root
+    // other HTMLDialogAttributes are passed to <dialog> via ...rest; `class` is merged onto root
     // style is component-owned (omitted)
   }
   type Position = "top" | "right" | "bottom" | "left";
   ```
-  Drawer is modal: focus is trapped and background siblings are inert while open.
+  Drawer is modal: focus is trapped and background siblings are inert while open by native dialog behavior.
   `closable=false` creates a forced-action modal (no light-dismiss/Escape).
   ### Anatomy
   ```svelte
-  <div class={["whole", class]} role="dialog" aria-modal="true" {...rest} {style} {popover} bind:this={element}>
+  <dialog class={["whole", class]} {...rest} {style} bind:this={element}>
     {children}
-  </div>
+  </dialog>
   ```
 -->
 <script module lang="ts">
-  export interface DrawerProps extends Omit<HTMLAttributes<HTMLDivElement>, "children" | "style"> {
+  export interface DrawerProps extends Omit<HTMLDialogAttributes, "children" | "style" | "aria-label"> {
     children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false)
     position?: Position; // ("left")
     size?: string; // ("auto")
     duration?: number; // (200)
     closable?: boolean; // (true)
-    element?: HTMLDivElement; // bindable
+    ariaLabel?: string;
+    element?: HTMLDialogElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
@@ -66,120 +68,83 @@
   }
 
   import { type Snippet, untrack, onMount } from "svelte";
-  import { type HTMLAttributes, type KeyboardEventHandler, type ToggleEventHandler } from "svelte/elements";
+  import { type HTMLDialogAttributes, type MouseEventHandler, type KeyboardEventHandler, type ToggleEventHandler } from "svelte/elements";
   import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isUnsignedInteger, shouldReduceMotion } from "./core";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { children, open = $bindable(false), position = "left", size = "auto", duration = -1, closable = true, onkeydown, ontoggle, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: DrawerProps = $props();
+  let { children, open = $bindable(false), position = "left", size = "auto", duration = -1, closable = true, ariaLabel, onclick, onkeydown, ontoggle, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: DrawerProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
   const dur = $derived(noMotion ? 0 : !isUnsignedInteger(duration) ? DEFAULT_DURATION : duration);
-  const popover = $derived(closable ? "auto" : "manual");
   const baseStyle = $derived(`${getPositionProp(position)}${getSizeProp(position, size)}--duration:${dur}ms;`);
   let style = $derived(baseStyle);
-  const FOCUSABLE =
-    'a[href],area[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
   let ofTimer: ReturnType<typeof setTimeout> | undefined;
-  let lastFocused: HTMLElement | null = null;
-  let inerted: HTMLElement[] = [];
 
   // *** Bind Handlers *** //
-  const toggle = () => (open ? element?.showPopover() : element?.hidePopover());
+  function toggle() {
+    if (open) {
+      if (!element?.open) element?.showModal();
+    } else {
+      element?.close();
+    }
+  }
   $effect.pre(() => {
     open;
     untrack(() => toggle());
   });
 
   // *** Event Handlers *** //
-  function focusIn() {
-    if (!element) return;
-    const t = element.querySelector<HTMLElement>(FOCUSABLE);
-    if (t) return t.focus();
-    if (element.tabIndex < 0) element.tabIndex = -1;
-    element.focus();
-  }
-  function restoreFocus() {
-    lastFocused?.focus?.();
-    lastFocused = null;
-  }
-  function setBackgroundInert() {
-    if (!element || typeof document === "undefined") return;
-    inerted = [];
-    for (const el of Array.from(document.body.children)) {
-      if (el instanceof HTMLElement && !el.contains(element) && !el.inert) {
-        el.inert = true;
-        inerted.push(el);
-      }
-    }
-  }
-  function clearBackgroundInert() {
-    inerted.forEach((el) => (el.inert = false));
-    inerted = [];
-  }
-  const hkeydown: KeyboardEventHandler<HTMLDivElement> = (ev) => {
-    onkeydown?.(ev);
-    if (ev.key !== "Tab" || !element) return;
-    const f = element.querySelectorAll<HTMLElement>(FOCUSABLE);
-    if (!f.length) return ev.preventDefault();
-
-    const first = f[0];
-    const last = f[f.length - 1];
-    if (ev.shiftKey && document.activeElement === first) {
-      ev.preventDefault();
-      last.focus();
-    } else if (!ev.shiftKey && document.activeElement === last) {
-      ev.preventDefault();
-      first.focus();
-    }
+  const click: MouseEventHandler<HTMLDialogElement> = (ev) => {
+    onclick?.(ev);
+    if (ev.target === element) open = false;
   };
-  const htoggle: ToggleEventHandler<HTMLDivElement> = (ev) => {
+  const keydown: KeyboardEventHandler<HTMLDialogElement> = (ev) => {
+    onkeydown?.(ev);
+    if (ev.key === "Escape") ev.preventDefault();
+  };
+  const hclick = $derived(closable ? click : onclick);
+  const hkeydown = $derived(closable ? onkeydown : keydown);
+  const htoggle: ToggleEventHandler<HTMLDialogElement> = (ev) => {
     ontoggle?.(ev);
-    const opened = ev.newState === "open";
-    open = opened;
-    if (opened) {
-      lastFocused = (document.activeElement as HTMLElement) ?? null;
-      setBackgroundInert();
-      focusIn();
-    } else {
-      clearBackgroundInert();
-      restoreFocus();
-    }
+    open = element?.open ?? false;
     style = baseStyle + "overflow:hidden;";
     clearTimeout(ofTimer);
     ofTimer = setTimeout(() => (style = baseStyle), dur);
   };
   onMount(() => {
     if (open) toggle();
-    return () => {
-      clearBackgroundInert();
-      clearTimeout(ofTimer);
-    };
+    return () => clearTimeout(ofTimer);
   });
 </script>
 
 <!---------------------------------------->
 
-<div
+<dialog
   bind:this={element}
   class={[cls(PARTS.WHOLE, variant), c]}
-  role="dialog"
-  aria-modal="true"
+  aria-label={ariaLabel}
   {...rest}
   {style}
-  {popover}
+  onclick={hclick}
   onkeydown={hkeydown}
   ontoggle={htoggle}
 >
   {@render children(variant)}
-</div>
+</dialog>
 
 <style>
-  [popover] {
+  :root:has(dialog[open]) {
+    overflow: clip;
+  }
+  dialog {
     margin: 0;
     padding: 0;
+    border: 0;
+    max-width: none;
+    max-height: none;
     position: fixed;
     top: var(--top);
     left: var(--left);
@@ -187,11 +152,11 @@
     right: var(--right);
     width: var(--width-from);
     height: var(--height-from);
-    transition-property: display, width, height;
+    transition-property: display, overlay, width, height;
     transition-behavior: allow-discrete;
     transition-duration: var(--duration);
   }
-  [popover]:popover-open {
+  dialog[open] {
     width: var(--width-to);
     height: var(--height-to);
     @starting-style {
