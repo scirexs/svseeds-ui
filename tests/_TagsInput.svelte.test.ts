@@ -75,10 +75,10 @@ describe("Basic rendering and structure", () => {
     expect(getByRole("button", { name: "Remove tag2" })).toBeInTheDocument();
   });
 
-  test("remove button supports custom removeLabel", () => {
+  test("remove button supports custom removeAriaLabel", () => {
     const { getByRole } = render(TagsInput, {
       values: ["x"],
-      removeLabel: (text: string) => `delete ${text}`,
+      removeAriaLabel: (text: string) => `delete ${text}`,
     });
 
     expect(getByRole("button", { name: "delete x" })).toBeInTheDocument();
@@ -122,7 +122,7 @@ describe("Basic rendering and structure", () => {
     const props = $state({
       values: ["tag1"],
       extra,
-      removeLabel: (text: string) => `remove custom ${text}`,
+      removeAriaLabel: (text: string) => `remove custom ${text}`,
     });
     const { container, getByRole, getByTestId } = render(TagsInput, props);
 
@@ -221,7 +221,7 @@ describe("Tag addition functionality", () => {
       events: { onadd },
     });
     const user = userEvent.setup();
-    const { container } = render(TagsInput, props);
+    const { container } = render(TagsInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
 
     await user.type(input, "  spaced  ");
@@ -239,7 +239,7 @@ describe("Tag addition functionality", () => {
       events: { onadd },
     });
     const user = userEvent.setup();
-    const { container } = render(TagsInput, props);
+    const { container } = render(TagsInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
 
     await user.type(input, "   ");
@@ -356,7 +356,7 @@ describe("Event handlers", () => {
       events: { onadd, onremove },
     });
     const user = userEvent.setup();
-    const { getByRole } = render(TagsInput, props);
+    const { getByRole } = render(TagsInput, { props });
     const input = getByRole("textbox") as HTMLInputElement;
 
     await user.type(input, "new tag");
@@ -374,7 +374,7 @@ describe("Event handlers", () => {
       events: { onadd },
     });
     const user = userEvent.setup();
-    const { getByRole } = render(TagsInput, props);
+    const { getByRole } = render(TagsInput, { props });
     const input = getByRole("textbox") as HTMLInputElement;
 
     await user.type(input, "new tag");
@@ -391,7 +391,7 @@ describe("Event handlers", () => {
       events: { onremove },
     });
     const user = userEvent.setup();
-    const { container } = render(TagsInput, props);
+    const { container } = render(TagsInput, { props });
 
     const badges = container.querySelectorAll(".svs-tags-input.extra");
     await user.click(badges[0]);
@@ -409,7 +409,7 @@ describe("Event handlers", () => {
       events: { onremove },
     });
     const user = userEvent.setup();
-    const { container } = render(TagsInput, props);
+    const { container } = render(TagsInput, { props });
 
     const badges = container.querySelectorAll(".svs-tags-input.extra");
     await user.click(badges[0]);
