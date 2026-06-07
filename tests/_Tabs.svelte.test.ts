@@ -1,417 +1,417 @@
-import { afterEach, describe, expect, test, vi } from "vitest";
-import { fireEvent, render, within } from "@testing-library/svelte";
+import { describe, expect, test } from "vitest";
+import { render, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
-import Tabs from "#svs/_Tabs.svelte";
+import Tabs, { type TabItem } from "#svs/_Tabs.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import TabDummy from "./fixtures/TabDummy.svelte";
 
-const label1id = "test-label1";
-const label2id = "test-label2";
-const panel1id = "test-panel1";
-const panel2id = "test-panel2";
+const seed = "svs-tabs";
 
-const label1fn = createRawSnippet(() => {
-  return { render: () => `<span data-testid="${label1id}">Label 1</span>` };
-});
-const label2fn = createRawSnippet(() => {
-  return { render: () => `<span data-testid="${label2id}">Label 2</span>` };
-});
-const panel1fn = createRawSnippet(() => {
-  return { render: () => `<div data-testid="${panel1id}">Panel 1 Content</div>` };
-});
-const panel2fn = createRawSnippet(() => {
-  return { render: () => `<div data-testid="${panel2id}">Panel 2 Content</div>` };
-});
+const panelFn = (id: string, text: string) => createRawSnippet(() => ({ render: () => `<div data-testid="${id}">${text}</div>` }));
+const labelFn = (id: string, text: string) => createRawSnippet(() => ({ render: () => `<span data-testid="${id}">${text}</span>` }));
+const baseTabs = (): TabItem[] => [
+  { value: "a", label: "Tab A", panel: panelFn("panel-a", "Panel A") },
+  { value: "b", label: "Tab B", panel: panelFn("panel-b", "Panel B") },
+  { value: "c", label: "Tab C", panel: panelFn("panel-c", "Panel C") },
+];
+const tabsIn = (tablist: HTMLElement) => within(tablist).getAllByRole("tab") as HTMLButtonElement[];
+const panels = () => document.querySelectorAll('[role="tabpanel"]') as NodeListOf<HTMLElement>;
+const visiblePanels = () => Array.from(panels()).filter((panel) => !panel.hasAttribute("hidden"));
 
-describe("Basic functionality and element existence", () => {
-  test("no props - should not render", () => {
-    try {
-      const { container } = render(Tabs);
-      expect(container.firstChild).toBeNull();
-    } catch (e) {
-      // ok
-    }
-  });
-
-  test("with string labels - basic rendering", () => {
-    const labels = ["Tab 1", "Tab 2"];
-    const props = {
-      labels,
-      panel1: panel1fn,
-      panel2: panel2fn,
-    };
-    const { getByRole, getByText } = render(Tabs, props);
+describe("Rendering and API", () => {
+  test("tabs array renders tablist, tabs, panels, and initial state", () => {
+    const { getByRole, getAllByRole } = render(Tabs, { tabs: baseTabs() });
 
     const tablist = getByRole("tablist");
-    const tab1 = getByRole("tab", { name: "Tab 1" });
-    const tab2 = getByRole("tab", { name: "Tab 2" });
-    const panel1 = getByRole("tabpanel");
+    const tabs = tabsIn(tablist);
+    const allPanels = getAllByRole("tabpanel", { hidden: true });
 
     expect(tablist).toBeInTheDocument();
-    expect(tab1).toHaveAttribute("aria-selected", "true");
-    expect(tab2).toHaveAttribute("aria-selected", "false");
-    expect(tab1).toHaveAttribute("tabindex", "0");
-    expect(tab2).toHaveAttribute("tabindex", "-1");
-    expect(panel1).toBeVisible();
-    expect(getByText("Tab 1")).toBeInTheDocument();
-    expect(getByText("Tab 2")).toBeInTheDocument();
-  });
-
-  test("with snippet labels - basic rendering", () => {
-    const props = {
-      label1: label1fn,
-      label2: label2fn,
-      panel1: panel1fn,
-      panel2: panel2fn,
-    };
-    const { getByRole, getByTestId } = render(Tabs, props);
-
-    const tablist = getByRole("tablist");
-    const tabs = within(tablist).getAllByRole("tab");
-    const panel = getByRole("tabpanel");
-
-    expect(tablist).toBeInTheDocument();
-    expect(tabs).toHaveLength(2);
+    expect(tabs).toHaveLength(3);
+    expect(allPanels).toHaveLength(3);
     expect(tabs[0]).toHaveAttribute("aria-selected", "true");
+    expect(tabs[0]).toHaveAttribute("tabindex", "0");
     expect(tabs[1]).toHaveAttribute("aria-selected", "false");
-    expect(getByTestId(label1id)).toBeInTheDocument();
-    expect(getByTestId(label2id)).toBeInTheDocument();
-    expect(getByTestId(panel1id)).toBeInTheDocument();
+    expect(tabs[1]).toHaveAttribute("tabindex", "-1");
+    expect(allPanels[0]).not.toHaveAttribute("hidden");
+    expect(allPanels[1]).toHaveAttribute("hidden");
   });
 
-  test("mismatched tabs and panels - should not render", () => {
-    const labels = ["Tab 1", "Tab 2"];
-    const props = {
-      labels,
-      panel1: panel1fn, // Only one panel for two tabs
-    };
-    try {
-      const { container } = render(Tabs, props);
-      expect(container.firstChild).toBeNull();
-    } catch (e) {
-      // ok
-    }
+  test("empty tabs render nothing", () => {
+    const { container } = render(Tabs, { tabs: [] });
+    expect(container.childElementCount).toBe(0);
   });
 
-  test("with aria-orientation", () => {
-    const labels = ["Tab 1", "Tab 2"];
-    const props = {
-      labels,
-      ariaOrientation: "vertical" as const,
-      panel1: panel1fn,
-      panel2: panel2fn,
-    };
-    const { getByRole } = render(Tabs, props);
+  test("string, snippet, and TabComponent labels render", () => {
+    const tabs: TabItem[] = [
+      { value: "text", label: "Text Label", panel: panelFn("panel-text", "Text Panel") },
+      { value: "snippet", label: labelFn("snippet-label", "Snippet Label"), panel: panelFn("panel-snippet", "Snippet Panel") },
+      {
+        value: "component",
+        label: { component: TabDummy, props: { text: "Component Label" } },
+        panel: panelFn("panel-component", "Component Panel"),
+      },
+    ];
 
-    const tablist = getByRole("tablist");
-    expect(tablist).toHaveAttribute("aria-orientation", "vertical");
+    const { getByRole, getByTestId } = render(Tabs, { tabs });
+
+    expect(getByRole("tab", { name: "Text Label" })).toBeInTheDocument();
+    expect(getByTestId("snippet-label")).toHaveTextContent("Snippet Label");
+    expect(getByTestId("dummy")).toHaveTextContent("Component Label");
+  });
+
+  test("snippet and TabComponent panels render with props", () => {
+    const tabs: TabItem[] = [
+      { value: "snippet", label: "Snippet", panel: panelFn("snippet-panel", "Snippet Panel") },
+      { value: "component", label: "Component", panel: { component: TabDummy, props: { text: "Component Panel" } } },
+    ];
+
+    const { getByTestId } = render(Tabs, { tabs, current: "component" });
+
+    expect(getByTestId("snippet-panel")).toHaveTextContent("Snippet Panel");
+    expect(getByTestId("dummy")).toHaveTextContent("Component Panel");
   });
 });
 
-describe("State management and interaction", () => {
-  test("current prop controls active tab", async () => {
-    const props = $state({
-      labels: ["Tab 1", "Tab 2", "Tab 3"],
-      current: 1,
-      panel1: panel1fn,
-      panel2: panel2fn,
-      panel3: createRawSnippet(() => ({ render: () => `<div data-testid="panel3">Panel 3</div>` })),
-    });
+describe("Key-string addressing and correction", () => {
+  test("current selects by value", () => {
+    const { getByRole, getByTestId } = render(Tabs, { tabs: baseTabs(), current: "b" });
+
+    expect(getByRole("tab", { name: "Tab B" })).toHaveAttribute("aria-selected", "true");
+    expect(getByTestId("panel-b").parentElement).not.toHaveAttribute("hidden");
+  });
+
+  test("unknown current resolves to first selectable", () => {
+    const { getByRole } = render(Tabs, { tabs: baseTabs(), current: "zzz" });
+
+    expect(getByRole("tab", { name: "Tab A" })).toHaveAttribute("aria-selected", "true");
+    expect(visiblePanels()).toHaveLength(1);
+  });
+
+  test("reordering tabs keeps selection stable by value", async () => {
+    const initial = baseTabs();
+    const props = $state({ tabs: initial, current: "b" });
     const { getByRole, getByTestId, rerender } = render(Tabs, props);
 
-    const tabs = getByRole("tablist").querySelectorAll('[role="tab"]');
-    expect(tabs[0]).toHaveAttribute("aria-selected", "false");
-    expect(tabs[1]).toHaveAttribute("aria-selected", "true");
-    expect(tabs[2]).toHaveAttribute("aria-selected", "false");
-    expect(getByTestId(panel2id)).toBeInTheDocument();
-
-    // Change to third tab
-    props.current = 2;
+    props.tabs = [initial[2], initial[1], initial[0]];
     await rerender(props);
-    expect(tabs[0]).toHaveAttribute("aria-selected", "false");
-    expect(tabs[1]).toHaveAttribute("aria-selected", "false");
-    expect(tabs[2]).toHaveAttribute("aria-selected", "true");
-    expect(getByTestId("panel3")).toBeInTheDocument();
+
+    expect(tabsIn(getByRole("tablist")).map((tab) => tab.textContent)).toEqual(["Tab C", "Tab B", "Tab A"]);
+    expect(getByRole("tab", { name: "Tab B" })).toHaveAttribute("aria-selected", "true");
+    expect(getByTestId("panel-b").parentElement).not.toHaveAttribute("hidden");
   });
 
-  test("current prop boundary correction", () => {
-    // Test negative current
-    const props1 = {
-      labels: ["Tab 1", "Tab 2"],
-      current: -1,
-      panel1: panel1fn,
-      panel2: panel2fn,
-    };
-    const { getByRole: getByRole1 } = render(Tabs, props1);
-    const tabs1 = getByRole1("tablist").querySelectorAll('[role="tab"]');
-    expect(tabs1[0]).toHaveAttribute("aria-selected", "true");
+  test("tabs can be reactively added and removed", async () => {
+    const props = $state({ tabs: baseTabs().slice(0, 2), current: "a" });
+    const { getByRole, rerender } = render(Tabs, props);
 
-    // Test current exceeding length
-    const props2 = {
-      labels: ["Tab 1", "Tab 2"],
-      current: 5,
-      panel1: panel1fn,
-      panel2: panel2fn,
-    };
-    const { getAllByRole } = render(Tabs, props2);
-    const tabs2 = getAllByRole("tablist")[1].querySelectorAll('[role="tab"]');
-    expect(tabs2[1]).toHaveAttribute("aria-selected", "true");
+    expect(tabsIn(getByRole("tablist"))).toHaveLength(2);
+    props.tabs = [...props.tabs, baseTabs()[2]];
+    await rerender(props);
+    expect(tabsIn(getByRole("tablist"))).toHaveLength(3);
+    props.tabs = props.tabs.filter((tab) => tab.value !== "b");
+    await rerender(props);
+    expect(tabsIn(getByRole("tablist"))).toHaveLength(2);
   });
 
-  test("click interaction changes current tab", async () => {
-    const props = $state({
-      labels: ["Tab 1", "Tab 2"],
-      current: 0,
-      panel1: panel1fn,
-      panel2: panel2fn,
-    });
+  test("10+ tabs keep input order", () => {
+    const tabs: TabItem[] = Array.from({ length: 12 }, (_, i) => ({
+      value: String(i),
+      label: `Tab ${i}`,
+      panel: panelFn(`panel-${i}`, `Panel ${i}`),
+    }));
+    const { getByRole } = render(Tabs, { tabs });
+
+    expect(tabsIn(getByRole("tablist")).map((tab) => tab.textContent)).toEqual(tabs.map((tab) => tab.label));
+  });
+});
+
+describe("Activation modes", () => {
+  test("automatic mode click selects a tab", async () => {
+    const props = $state({ tabs: baseTabs(), current: "a" });
     const user = userEvent.setup();
     const { getByRole, getByTestId } = render(Tabs, props);
 
-    const tabs = getByRole("tablist").querySelectorAll('[role="tab"]');
-    expect(props.current).toBe(0);
-    expect(getByTestId(panel1id)).toBeInTheDocument();
+    await user.click(getByRole("tab", { name: "Tab C" }));
 
-    await user.click(tabs[1]);
-    expect(props.current).toBe(1);
-    expect(getByTestId(panel2id)).toBeInTheDocument();
+    expect(props.current).toBe("c");
+    expect(getByTestId("panel-c").parentElement).not.toHaveAttribute("hidden");
   });
 
-  test("variant prop affects styling", () => {
-    const props = {
-      labels: ["Tab 1", "Tab 2"],
-      variant: VARIANT.ACTIVE,
-      panel1: panel1fn,
-      panel2: panel2fn,
-    };
+  test("automatic mode arrow moves focus and selection", async () => {
+    const props = $state({ tabs: baseTabs(), current: "a" });
+    const user = userEvent.setup();
+    const { getByRole, getByTestId } = render(Tabs, props);
+    const tabs = tabsIn(getByRole("tablist"));
+
+    tabs[0].focus();
+    await user.keyboard("{ArrowRight}");
+
+    expect(document.activeElement).toBe(tabs[1]);
+    expect(props.current).toBe("b");
+    expect(getByTestId("panel-b").parentElement).not.toHaveAttribute("hidden");
+  });
+
+  test("manual mode arrow moves only focus", async () => {
+    const props = $state({ tabs: baseTabs(), current: "a", manual: true });
+    const user = userEvent.setup();
+    const { getByRole, getByTestId } = render(Tabs, props);
+    const tabs = tabsIn(getByRole("tablist"));
+
+    tabs[0].focus();
+    await user.keyboard("{ArrowRight}");
+
+    expect(document.activeElement).toBe(tabs[1]);
+    expect(props.current).toBe("a");
+    expect(getByTestId("panel-a").parentElement).not.toHaveAttribute("hidden");
+  });
+
+  test("manual mode Enter and Space confirm selection", async () => {
+    const props = $state({ tabs: baseTabs(), current: "a", manual: true });
+    const user = userEvent.setup();
     const { getByRole } = render(Tabs, props);
+    const tabs = tabsIn(getByRole("tablist"));
 
-    const whole = getByRole("tablist").parentElement;
-    const tablist = getByRole("tablist");
-    const tabs = tablist.querySelectorAll('[role="tab"]');
-    const panel = getByRole("tabpanel");
+    tabs[0].focus();
+    await user.keyboard("{ArrowRight}");
+    await user.keyboard("{Enter}");
+    expect(props.current).toBe("b");
 
-    expect(whole).toHaveClass("svs-tabs", PARTS.WHOLE, VARIANT.ACTIVE);
-    expect(tablist).toHaveClass("svs-tabs", PARTS.TOP, VARIANT.ACTIVE);
-    expect(tabs[0]).toHaveClass("svs-tabs", PARTS.LABEL, VARIANT.ACTIVE); // Selected tab uses ACTIVE
-    expect(tabs[1]).toHaveClass("svs-tabs", PARTS.LABEL, VARIANT.ACTIVE); // Non-selected uses variant
-    expect(panel).toHaveClass("svs-tabs", PARTS.MAIN, VARIANT.ACTIVE);
+    await user.keyboard("{ArrowRight}");
+    await user.keyboard(" ");
+    expect(props.current).toBe("c");
   });
 });
 
 describe("Keyboard navigation", () => {
-  test("arrow key navigation - horizontal", async () => {
-    const props = {
-      labels: ["Tab 1", "Tab 2", "Tab 3"],
-      current: 0,
-      panel1: panel1fn,
-      panel2: panel2fn,
-      panel3: createRawSnippet(() => ({ render: () => `<div>Panel 3</div>` })),
-    };
+  test("horizontal arrows move with wrap and ignore vertical arrows", async () => {
+    const props = $state({ tabs: baseTabs(), current: "a" });
     const user = userEvent.setup();
     const { getByRole } = render(Tabs, props);
+    const tabs = tabsIn(getByRole("tablist"));
 
-    const tabs = getByRole("tablist").querySelectorAll('[role="tab"]') as NodeListOf<HTMLButtonElement>;
-
-    // Focus first tab
     tabs[0].focus();
-    expect(document.activeElement).toBe(tabs[0]);
-
-    // Arrow right should move focus to next tab
     await user.keyboard("{ArrowRight}");
     expect(document.activeElement).toBe(tabs[1]);
-
-    // Arrow right from last tab should wrap to first
     tabs[2].focus();
     await user.keyboard("{ArrowRight}");
     expect(document.activeElement).toBe(tabs[0]);
-
-    // Arrow left should move focus to previous tab
-    tabs[1].focus();
     await user.keyboard("{ArrowLeft}");
-    expect(document.activeElement).toBe(tabs[0]);
-
-    // Arrow left from first tab should wrap to last
-    await user.keyboard("{ArrowLeft}");
+    expect(document.activeElement).toBe(tabs[2]);
+    await user.keyboard("{ArrowDown}");
     expect(document.activeElement).toBe(tabs[2]);
   });
 
-  test("arrow key navigation - vertical", async () => {
-    const props = {
-      labels: ["Tab 1", "Tab 2"],
-      ariaOrientation: "vertical" as const,
-      panel1: panel1fn,
-      panel2: panel2fn,
-    };
+  test("vertical arrows move with wrap and ignore horizontal arrows", async () => {
+    const props = $state({ tabs: baseTabs(), current: "a", ariaOrientation: "vertical" as const });
     const user = userEvent.setup();
     const { getByRole } = render(Tabs, props);
-
-    const tabs = getByRole("tablist").querySelectorAll('[role="tab"]') as NodeListOf<HTMLButtonElement>;
+    const tabs = tabsIn(getByRole("tablist"));
 
     tabs[0].focus();
-
-    // Arrow down should move focus
     await user.keyboard("{ArrowDown}");
     expect(document.activeElement).toBe(tabs[1]);
-
-    // Arrow up should move focus back
     await user.keyboard("{ArrowUp}");
     expect(document.activeElement).toBe(tabs[0]);
+    await user.keyboard("{ArrowLeft}");
+    expect(document.activeElement).toBe(tabs[0]);
+  });
+
+  test("Home and End focus and select edge tabs", async () => {
+    const props = $state({ tabs: baseTabs(), current: "b" });
+    const user = userEvent.setup();
+    const { getByRole } = render(Tabs, props);
+    const tabs = tabsIn(getByRole("tablist"));
+
+    tabs[1].focus();
+    await user.keyboard("{End}");
+    expect(document.activeElement).toBe(tabs[2]);
+    expect(props.current).toBe("c");
+    await user.keyboard("{Home}");
+    expect(document.activeElement).toBe(tabs[0]);
+    expect(props.current).toBe("a");
+  });
+
+  test("roving tabindex follows focus in manual mode", async () => {
+    const props = $state({ tabs: baseTabs(), current: "a", manual: true });
+    const user = userEvent.setup();
+    const { getByRole } = render(Tabs, props);
+    const tabs = tabsIn(getByRole("tablist"));
+
+    tabs[0].focus();
+    await user.keyboard("{ArrowRight}");
+
+    expect(tabs[0]).toHaveAttribute("tabindex", "-1");
+    expect(tabs[1]).toHaveAttribute("tabindex", "0");
+    expect(tabs[2]).toHaveAttribute("tabindex", "-1");
+  });
+
+  test("handled keys prevent default while ignored keys do not", () => {
+    const { getByRole } = render(Tabs, { tabs: baseTabs() });
+    const tabs = tabsIn(getByRole("tablist"));
+    const handled = new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true });
+    const ignored = new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true });
+
+    tabs[0].dispatchEvent(handled);
+    tabs[0].dispatchEvent(ignored);
+
+    expect(handled.defaultPrevented).toBe(true);
+    expect(ignored.defaultPrevented).toBe(false);
   });
 });
 
-describe("Styling and CSS classes", () => {
-  const seed = "svs-tabs";
+describe("Disabled tabs", () => {
+  test("disabled tab is not activatable and exposes aria-disabled", async () => {
+    const props = $state({ tabs: baseTabs().map((tab) => (tab.value === "b" ? { ...tab, disabled: true } : tab)), current: "a" });
+    const user = userEvent.setup();
+    const { getByRole } = render(Tabs, props);
+    const disabled = getByRole("tab", { name: "Tab B" });
 
-  test("default styling classes", () => {
-    const props = {
-      labels: ["Tab 1", "Tab 2"],
-      panel1: panel1fn,
-      panel2: panel2fn,
-    };
+    await user.click(disabled);
+
+    expect(disabled).toHaveAttribute("aria-disabled", "true");
+    expect(props.current).toBe("a");
+  });
+
+  test("navigation skips disabled tabs and wraps", async () => {
+    const props = $state({ tabs: baseTabs().map((tab) => (tab.value === "b" ? { ...tab, disabled: true } : tab)), current: "a" });
+    const user = userEvent.setup();
+    const { getByRole } = render(Tabs, props);
+    const tabs = tabsIn(getByRole("tablist"));
+
+    tabs[0].focus();
+    await user.keyboard("{ArrowRight}");
+    expect(document.activeElement).toBe(tabs[2]);
+    await user.keyboard("{ArrowRight}");
+    expect(document.activeElement).toBe(tabs[0]);
+  });
+
+  test("disabled tabs are excluded from default selection", () => {
+    const tabs = baseTabs().map((tab) => (tab.value === "a" ? { ...tab, disabled: true } : tab));
+    const { getByRole } = render(Tabs, { tabs });
+
+    expect(getByRole("tab", { name: "Tab B" })).toHaveAttribute("aria-selected", "true");
+  });
+
+  test("current pointing to a disabled tab resolves to the first enabled tab", () => {
+    const props = $state({ tabs: baseTabs().map((tab) => (tab.value === "b" ? { ...tab, disabled: true } : tab)), current: "b" });
+    const { getByRole, getByTestId } = render(Tabs, props);
+
+    expect(getByRole("tab", { name: "Tab B" })).toHaveAttribute("aria-selected", "false");
+    expect(getByRole("tab", { name: "Tab A" })).toHaveAttribute("aria-selected", "true");
+    expect(getByTestId("panel-a").parentElement).not.toHaveAttribute("hidden");
+    expect(props.current).toBe("a");
+  });
+
+  test("all disabled tabs remain unselected", () => {
+    const props = $state({ tabs: baseTabs().map((tab) => ({ ...tab, disabled: true })), current: "b" });
     const { getByRole } = render(Tabs, props);
 
-    const whole = getByRole("tablist").parentElement;
-    const tablist = getByRole("tablist");
-    const tabs = tablist.querySelectorAll('[role="tab"]');
-    const panel = getByRole("tabpanel");
+    expect(tabsIn(getByRole("tablist")).every((tab) => tab.getAttribute("aria-selected") === "false")).toBe(true);
+    expect(visiblePanels()).toHaveLength(0);
+    expect(props.current).toBeUndefined();
+  });
+});
 
-    expect(whole).toHaveClass(seed, PARTS.WHOLE);
-    expect(tablist).toHaveClass(seed, PARTS.TOP);
+describe("Accessibility wiring", () => {
+  test("ARIA relationships are correctly wired", () => {
+    const { getByRole, getAllByRole } = render(Tabs, { tabs: baseTabs(), current: "b" });
+    const tabs = tabsIn(getByRole("tablist"));
+    const allPanels = getAllByRole("tabpanel", { hidden: true });
+
+    tabs.forEach((tab, i) => {
+      expect(tab).toHaveAttribute("role", "tab");
+      expect(tab).toHaveAttribute("type", "button");
+      expect(tab).toHaveAttribute("aria-controls", allPanels[i].id);
+      expect(allPanels[i]).toHaveAttribute("role", "tabpanel");
+      expect(allPanels[i]).toHaveAttribute("tabindex", "0");
+      expect(allPanels[i]).toHaveAttribute("aria-labelledby", tab.id);
+    });
+    expect(tabs[1]).toHaveAttribute("aria-selected", "true");
+    expect(allPanels[1]).not.toHaveAttribute("hidden");
+    expect(allPanels[0]).toHaveAttribute("hidden");
+    expect(allPanels[0]).toHaveStyle({ display: "none" });
+  });
+
+  test("aria-orientation is reflected", async () => {
+    const { getByRole, rerender } = render(Tabs, { tabs: baseTabs() });
+    expect(getByRole("tablist")).toHaveAttribute("aria-orientation", "horizontal");
+
+    await rerender({ tabs: baseTabs(), ariaOrientation: "vertical" });
+    expect(getByRole("tablist")).toHaveAttribute("aria-orientation", "vertical");
+  });
+
+  test("panel visibility toggles on selection change", async () => {
+    const props = $state({ tabs: baseTabs(), current: "a" });
+    const user = userEvent.setup();
+    const { getByRole } = render(Tabs, props);
+
+    expect(panels()[0]).not.toHaveAttribute("hidden");
+    expect(panels()[1]).toHaveAttribute("hidden");
+
+    await user.click(getByRole("tab", { name: "Tab B" }));
+
+    expect(panels()[0]).toHaveAttribute("hidden");
+    expect(panels()[0]).toHaveStyle({ display: "none" });
+    expect(panels()[1]).not.toHaveAttribute("hidden");
+    expect(panels()[1]).not.toHaveStyle({ display: "none" });
+  });
+});
+
+describe("Styling", () => {
+  test("default styling classes are applied to parts", () => {
+    const { getByRole } = render(Tabs, { tabs: baseTabs() });
+    const tablist = getByRole("tablist");
+    const tabs = tabsIn(tablist);
+    const panel = panels()[0];
+
+    expect(tablist.parentElement).toHaveClass(seed, PARTS.WHOLE, VARIANT.NEUTRAL);
+    expect(tablist).toHaveClass(seed, PARTS.TOP, VARIANT.NEUTRAL);
     expect(tabs[0]).toHaveClass(seed, PARTS.LABEL, VARIANT.ACTIVE);
     expect(tabs[1]).toHaveClass(seed, PARTS.LABEL, VARIANT.NEUTRAL);
-    expect(panel).toHaveClass(seed, PARTS.MAIN);
+    expect(panel).toHaveClass(seed, PARTS.MAIN, VARIANT.NEUTRAL);
   });
 
-  test("string styling override", () => {
+  test("string styling classes are applied to parts", () => {
     const styleId = "custom-tabs";
-    const props = {
-      labels: ["Tab 1", "Tab 2"],
-      styling: styleId,
-      panel1: panel1fn,
-      panel2: panel2fn,
-    };
-    const { getByRole } = render(Tabs, props);
-
-    const whole = getByRole("tablist").parentElement;
+    const { getByRole } = render(Tabs, { tabs: baseTabs(), styling: styleId });
     const tablist = getByRole("tablist");
-    const tabs = tablist.querySelectorAll('[role="tab"]');
-    const panel = getByRole("tabpanel");
+    const tabs = tabsIn(tablist);
+    const panel = panels()[0];
 
-    expect(whole).toHaveClass(styleId, PARTS.WHOLE);
-    expect(tablist).toHaveClass(styleId, PARTS.TOP);
+    expect(tablist.parentElement).toHaveClass(styleId, PARTS.WHOLE, VARIANT.NEUTRAL);
+    expect(tablist).toHaveClass(styleId, PARTS.TOP, VARIANT.NEUTRAL);
     expect(tabs[0]).toHaveClass(styleId, PARTS.LABEL, VARIANT.ACTIVE);
     expect(tabs[1]).toHaveClass(styleId, PARTS.LABEL, VARIANT.NEUTRAL);
-    expect(panel).toHaveClass(styleId, PARTS.MAIN);
+    expect(panel).toHaveClass(styleId, PARTS.MAIN, VARIANT.NEUTRAL);
   });
 
-  test("object styling override", () => {
-    const dynObj = {
-      base: "base-class",
-      neutral: "neutral-class",
-      active: "active-class",
-      inactive: "inactive-class",
-    };
-    const styling = {
-      whole: dynObj,
-      top: dynObj,
-      label: dynObj,
-      main: dynObj,
-    };
-    const props = {
-      labels: ["Tab 1", "Tab 2"],
-      styling,
-      panel1: panel1fn,
-      panel2: panel2fn,
-    };
-    const { getByRole } = render(Tabs, props);
-
-    const whole = getByRole("tablist").parentElement;
+  test("object styling classes are applied to parts", () => {
+    const dynObj = { base: "base-class", neutral: "neutral-class", active: "active-class", inactive: "inactive-class" };
+    const styling = { whole: dynObj, top: dynObj, label: dynObj, main: dynObj };
+    const { getByRole } = render(Tabs, { tabs: baseTabs(), styling });
     const tablist = getByRole("tablist");
-    const tabs = tablist.querySelectorAll('[role="tab"]');
-    const panel = getByRole("tabpanel");
+    const tabs = tabsIn(tablist);
+    const panel = panels()[0];
 
-    expect(whole).toHaveClass(dynObj.base, dynObj.neutral);
+    expect(tablist.parentElement).toHaveClass(dynObj.base, dynObj.neutral);
     expect(tablist).toHaveClass(dynObj.base, dynObj.neutral);
     expect(tabs[0]).toHaveClass(dynObj.base, dynObj.active);
     expect(tabs[1]).toHaveClass(dynObj.base, dynObj.neutral);
     expect(panel).toHaveClass(dynObj.base, dynObj.neutral);
   });
-});
 
-describe("Accessibility attributes", () => {
-  test("ARIA attributes are correctly set", () => {
-    const props = {
-      labels: ["Tab 1", "Tab 2"],
-      panel1: panel1fn,
-      panel2: panel2fn,
-    };
-    const { getByRole } = render(Tabs, props);
-
+  test("variant prop propagates to whole, top, main, and non-selected labels", () => {
+    const { getByRole } = render(Tabs, { tabs: baseTabs(), variant: VARIANT.INACTIVE });
     const tablist = getByRole("tablist");
-    const tabs = tablist.querySelectorAll('[role="tab"]');
-    const panels = document.querySelectorAll('[role="tabpanel"]');
+    const tabs = tabsIn(tablist);
+    const panel = panels()[0];
 
-    // Tablist should have correct role
-    expect(tablist).toHaveAttribute("role", "tablist");
-
-    // Tabs should have correct attributes
-    expect(tabs[0]).toHaveAttribute("role", "tab");
-    expect(tabs[0]).toHaveAttribute("aria-selected", "true");
-    expect(tabs[0]).toHaveAttribute("tabindex", "0");
-    expect(tabs[0]).toHaveAttribute("type", "button");
-
-    expect(tabs[1]).toHaveAttribute("role", "tab");
-    expect(tabs[1]).toHaveAttribute("aria-selected", "false");
-    expect(tabs[1]).toHaveAttribute("tabindex", "-1");
-
-    // Panels should have correct attributes
-    expect(panels[0]).toHaveAttribute("role", "tabpanel");
-    expect(panels[0]).toHaveAttribute("tabindex", "0");
-    expect(panels[0]).not.toHaveAttribute("hidden");
-
-    expect(panels[1]).toHaveAttribute("role", "tabpanel");
-    expect(panels[1]).toHaveAttribute("tabindex", "0");
-    expect(panels[1]).toHaveAttribute("hidden");
-
-    // Check aria-controls and aria-labelledby relationships
-    const tab1Id = tabs[0].getAttribute("id");
-    const tab2Id = tabs[1].getAttribute("id");
-    const panel1Id = panels[0].getAttribute("id");
-    const panel2Id = panels[1].getAttribute("id");
-
-    expect(tabs[0]).toHaveAttribute("aria-controls", panel1Id);
-    expect(tabs[1]).toHaveAttribute("aria-controls", panel2Id);
-    expect(panels[0]).toHaveAttribute("aria-labelledby", tab1Id);
-    expect(panels[1]).toHaveAttribute("aria-labelledby", tab2Id);
-  });
-
-  test("panel visibility and styling", async () => {
-    const props = $state({
-      labels: ["Tab 1", "Tab 2"],
-      current: 0,
-      panel1: panel1fn,
-      panel2: panel2fn,
-    });
-    const user = userEvent.setup();
-    const { getByRole, rerender } = render(Tabs, props);
-
-    const tabs = getByRole("tablist").querySelectorAll('[role="tab"]');
-    let panels = document.querySelectorAll('[role="tabpanel"]');
-
-    // First panel should be visible, second hidden
-    expect(panels[0]).not.toHaveAttribute("hidden");
-    expect(panels[0]).not.toHaveStyle({ display: "none" });
-    expect(panels[1]).toHaveAttribute("hidden");
-    expect(panels[1]).toHaveStyle({ display: "none" });
-
-    // Switch to second tab
-    await user.click(tabs[1]);
-    panels = document.querySelectorAll('[role="tabpanel"]');
-
-    expect(panels[0]).toHaveAttribute("hidden");
-    expect(panels[0]).toHaveStyle({ display: "none" });
-    expect(panels[1]).not.toHaveAttribute("hidden");
-    expect(panels[1]).not.toHaveStyle({ display: "none" });
+    expect(tablist.parentElement).toHaveClass(seed, PARTS.WHOLE, VARIANT.INACTIVE);
+    expect(tablist).toHaveClass(seed, PARTS.TOP, VARIANT.INACTIVE);
+    expect(tabs[0]).toHaveClass(seed, PARTS.LABEL, VARIANT.ACTIVE);
+    expect(tabs[1]).toHaveClass(seed, PARTS.LABEL, VARIANT.INACTIVE);
+    expect(panel).toHaveClass(seed, PARTS.MAIN, VARIANT.INACTIVE);
   });
 });
