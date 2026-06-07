@@ -12,7 +12,7 @@
     bottom?: string;
     descFirst?: boolean; // (false)
     value?: string; // bindable
-    type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url";  // ("text")
+    type?: "text" | "textarea" | "email" | "password" | "search" | "tel" | "url";  // ("text")
     options?: SvelteSet<string> | Set<string>;
     validations?: TextFieldValidation[];
     attach?: Attachment;
@@ -20,13 +20,17 @@
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
     // class & other input/textarea attributes are passed to the control via ...rest (class is merged onto the control)
+    // --- for textarea attributes ---
+    cols?: number | undefined | null;
+    rows?: number | undefined | null;
+    wrap?: "hard" | "soft" | "off" | undefined | null;
   }
   type TextFieldValidation = (value: string, validity: ValidityState) => string | undefined;
   ```
   ### Anatomy
   ```svelte
   <div class="whole">
-    <div class="top" conditional>
+    <div class="top" conditional: label or aux>
       <label class="label" conditional>
         {label}
         <span class="extra" conditional>{extra}</span>
@@ -35,7 +39,7 @@
     </div>
     <div class="middle">
       <span class="left" conditional>{left}</span>
-      {#if type === "area"}
+      {#if type === "textarea"}
         <textarea class={["main", class]} {...rest} bind:value bind:this={element} {@attach attach}></textarea>
       {:else}
         <input class={["main", class]} {...rest} {type} bind:value bind:this={element} {@attach attach} />
@@ -61,13 +65,17 @@
     bottom?: string;
     descFirst?: boolean; // (false)
     value?: string; // bindable
-    type?: "text" | "area" | "email" | "password" | "search" | "tel" | "url"; // ("text")
+    type?: "text" | "textarea" | "email" | "password" | "search" | "tel" | "url"; // ("text")
     options?: SvelteSet<string> | Set<string>;
     validations?: TextFieldValidation[];
     attach?: Attachment;
     element?: HTMLInputElement | HTMLTextAreaElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
+    // --- for textarea attributes ---
+    cols?: number | undefined | null;
+    rows?: number | undefined | null;
+    wrap?: "hard" | "soft" | "off" | undefined | null;
   }
   export type TextFieldReqdProps = never;
   export type TextFieldBindProps = "value" | "variant" | "element";
@@ -75,7 +83,7 @@
 
   const preset = "svs-text-field";
 
-  import { type Snippet, untrack } from "svelte";
+  import { type Snippet, onMount, untrack } from "svelte";
   import { type Attachment } from "svelte/attachments";
   import { type SvelteSet } from "svelte/reactivity";
   import { type HTMLInputAttributes } from "svelte/elements";
@@ -84,7 +92,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { label, extra, aux, left, right, bottom, descFirst = false, value = $bindable(""), type = "text", options, validations = [], id, onchange, oninvalid, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, ...rest }: TextFieldProps = $props();
+  let { label, extra, aux, left, right, bottom, descFirst = false, value = $bindable(""), type = "text", cols, rows, wrap, options, validations = [], id, onchange, oninvalid, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, ...rest }: TextFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
@@ -94,21 +102,21 @@
   const idDesc = $derived(bottom?.trim() ? `${uid}-desc` : undefined);
   const idList = $derived(options?.size ? `${uid}-list` : undefined);
   const idErr = $derived(idDesc ?? `${uid}-err`);
-  // svelte-ignore state_referenced_locally
-  let message = $state(bottom);
+  let errmsg = $state("");
+  const message = $derived(variant === VARIANT.INACTIVE ? errmsg || bottom : bottom);
 
   // *** States *** //
   let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
   $effect(() => {
     neutral = isNeutral(variant) ? variant : neutral;
   });
-  let live = $derived(variant === VARIANT.INACTIVE ? "alert" : "status");
-  let invalid = $derived(variant === VARIANT.INACTIVE ? true : undefined);
-  let idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
+  const live = $derived(variant === VARIANT.INACTIVE ? "alert" : undefined);
+  const invalid = $derived(variant === VARIANT.INACTIVE ? true : undefined);
+  const idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
   function shift(oninvalid?: boolean) {
     const vmsg = element?.validationMessage ?? "";
     variant = !value && !oninvalid ? neutral : vmsg ? VARIANT.INACTIVE : VARIANT.ACTIVE;
-    message = variant === VARIANT.INACTIVE ? (vmsg ? vmsg : bottom) : bottom;
+    errmsg = vmsg;
   }
   function verify() {
     if (!element) return;
@@ -131,28 +139,28 @@
   }
 
   // *** Event Handlers *** //
-  function hchange(ev: Event) {
+  const hchange = (ev: Event) => {
     onchange?.(ev as any);
     validate();
-  }
-  function hinvalid(ev: Event) {
+  };
+  const hinvalid = (ev: Event) => {
     oninvalid?.(ev as any);
     ev.preventDefault();
     shift(true);
-  }
-  $effect(() => untrack(() => verify()));
+  };
+  onMount(() => verify());
 </script>
 
 <!---------------------------------------->
 
 <div class={cls(PARTS.WHOLE, variant)} role="group" aria-labelledby={idLabel}>
-  {#if aux}
+  {#if label?.trim() || aux}
     <div class={cls(PARTS.TOP, variant)}>
       {@render lbl()}
-      <span class={cls(PARTS.AUX, variant)}>{@render aux(value, variant, element)}</span>
+      {#if aux}
+        <span class={cls(PARTS.AUX, variant)}>{@render aux(value, variant, element)}</span>
+      {/if}
     </div>
-  {:else}
-    {@render lbl()}
   {/if}
   {@render desc(descFirst)}
   <div class={cls(PARTS.MIDDLE, variant)}>
@@ -179,13 +187,16 @@
   {/if}
 {/snippet}
 {#snippet main()}
-  {#if type === "area"}
+  {#if type === "textarea"}
     <textarea
       bind:value
       bind:this={element}
       class={[cls(PARTS.MAIN, variant), c]}
       {...rest as any}
       id={idMain}
+      {cols}
+      {rows}
+      {wrap}
       onchange={hchange}
       oninvalid={hinvalid}
       aria-describedby={idDesc}
@@ -220,6 +231,6 @@
 {/snippet}
 {#snippet desc(show: boolean)}
   {#if show && message?.trim()}
-    <div class={cls(PARTS.BOTTOM, variant)} id={idDesc ?? idErr} role={live}>{message}</div>
+    <div class={cls(PARTS.BOTTOM, variant)} id={idErr} role={live}>{message}</div>
   {/if}
 {/snippet}

@@ -56,7 +56,7 @@ describe("Switching existence of elements", () => {
     expect(main).not.toHaveAttribute("list");
   });
   test("switch to text area", () => {
-    const props = { type: "area" as const };
+    const props = { type: "textarea" as const };
     const { getByRole } = render(TextField, props);
     const main = getByRole("textbox") as HTMLInputElement;
     expect(main.tagName).toBe("TEXTAREA");
@@ -69,7 +69,9 @@ describe("Switching existence of elements", () => {
     const lbl = getByText(label);
     expect(whole).toHaveAttribute("aria-labelledby");
     expect(whole.children).toHaveLength(2);
-    expect(whole.firstElementChild).toBe(lbl);
+    const top = lbl.parentElement;
+    expect(top).toHaveClass("svs-text-field", PARTS.TOP);
+    expect(whole.firstElementChild).toBe(top);
     expect(whole.lastElementChild?.tagName).toBe("DIV");
     expect(whole.lastElementChild).toBe(main.parentElement);
   });
@@ -82,33 +84,39 @@ describe("Switching existence of elements", () => {
     const lbl = getByText(label);
     expect(whole).toHaveAttribute("aria-labelledby");
     expect(whole.children).toHaveLength(2);
-    expect(whole.firstElementChild).toBe(lbl);
+    const top = lbl.parentElement;
+    expect(top).toHaveClass("svs-text-field", PARTS.TOP);
+    expect(whole.firstElementChild).toBe(top);
     expect(whole.lastElementChild?.tagName).toBe("DIV");
     expect(whole.lastElementChild).toBe(main.parentElement);
     expect(attach).toHaveBeenCalled();
   });
   test("w/ label of area", () => {
-    const props = { label, type: "area" as const };
+    const props = { label, type: "textarea" as const };
     const { getByRole, getByLabelText, getByText } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByLabelText(label, { selector: "textarea" }) as HTMLTextAreaElement;
     const lbl = getByText(label);
     expect(whole).toHaveAttribute("aria-labelledby");
     expect(whole.children).toHaveLength(2);
-    expect(whole.firstElementChild).toBe(lbl);
+    const top = lbl.parentElement;
+    expect(top).toHaveClass("svs-text-field", PARTS.TOP);
+    expect(whole.firstElementChild).toBe(top);
     expect(whole.lastElementChild?.tagName).toBe("DIV");
     expect(whole.lastElementChild).toBe(main.parentElement);
   });
   test("w/ label of attach area", () => {
     const attach = vi.fn().mockImplementation(attachfn);
-    const props = { label, type: "area" as const, attach };
+    const props = { label, type: "textarea" as const, attach };
     const { getByRole, getByLabelText, getByText } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByLabelText(label, { selector: "textarea" }) as HTMLTextAreaElement;
     const lbl = getByText(label);
     expect(whole).toHaveAttribute("aria-labelledby");
     expect(whole.children).toHaveLength(2);
-    expect(whole.firstElementChild).toBe(lbl);
+    const top = lbl.parentElement;
+    expect(top).toHaveClass("svs-text-field", PARTS.TOP);
+    expect(whole.firstElementChild).toBe(top);
     expect(whole.lastElementChild?.tagName).toBe("DIV");
     expect(whole.lastElementChild).toBe(main.parentElement);
     expect(attach).toHaveBeenCalled();
@@ -130,7 +138,9 @@ describe("Switching existence of elements", () => {
     const lbl = getByText(label);
     within(lbl).getByText(extra);
     expect(whole.children).toHaveLength(2);
-    expect(whole.firstElementChild).toBe(lbl);
+    const top = lbl.parentElement;
+    expect(top).toHaveClass("svs-text-field", PARTS.TOP);
+    expect(whole.firstElementChild).toBe(top);
     expect(whole.lastElementChild?.tagName).toBe("DIV");
     expect(whole.lastElementChild).toBe(main.parentElement);
   });
@@ -178,7 +188,8 @@ describe("Switching existence of elements", () => {
     const { getByRole } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
+    expect(btm).toHaveTextContent(bottom);
     expect(whole.children).toHaveLength(2);
     expect(whole.firstElementChild).toBe(main.parentElement);
     expect(whole.lastElementChild).toBe(btm);
@@ -189,29 +200,32 @@ describe("Switching existence of elements", () => {
     const { getByRole } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
+    expect(btm).toHaveTextContent(bottom);
     expect(whole.children).toHaveLength(2);
     expect(whole.firstElementChild).toBe(main.parentElement);
     expect(whole.lastElementChild).toBe(btm);
     expect(main).toHaveAccessibleDescription(bottom);
   });
   test("w/ bottom of area", () => {
-    const props = { bottom, type: "area" as const };
+    const props = { bottom, type: "textarea" as const };
     const { getByRole } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
+    expect(btm).toHaveTextContent(bottom);
     expect(whole.children).toHaveLength(2);
     expect(whole.firstElementChild).toBe(main.parentElement);
     expect(whole.lastElementChild).toBe(btm);
     expect(main).toHaveAccessibleDescription(bottom);
   });
   test("w/ bottom of attach area", () => {
-    const props = { bottom, type: "area" as const, attach: attachfn };
+    const props = { bottom, type: "textarea" as const, attach: attachfn };
     const { getByRole } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
+    expect(btm).toHaveTextContent(bottom);
     expect(whole.children).toHaveLength(2);
     expect(whole.firstElementChild).toBe(main.parentElement);
     expect(whole.lastElementChild).toBe(btm);
@@ -256,7 +270,7 @@ describe("Switching existence of elements", () => {
     expect(list?.children).toHaveLength(2);
   });
   test("w/ options of textarea", () => {
-    const props = { type: "area" as const, options };
+    const props = { type: "textarea" as const, options };
     const { getByRole } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLTextAreaElement;
@@ -311,7 +325,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     let main = getByRole("textbox") as HTMLInputElement;
     expect(main).toHaveValue(value);
 
-    await rerender({ type: "area" as const, value });
+    await rerender({ type: "textarea" as const, value });
     main = getByRole("textbox") as HTMLInputElement;
     expect(main).toHaveValue(value);
   });
@@ -340,7 +354,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(main).toHaveAttribute("required");
     expect(main).toHaveAttribute("readonly");
 
-    await rerender({ type: "area" as const, ...props });
+    await rerender({ type: "textarea" as const, ...props });
     main = getByPlaceholderText("p") as HTMLTextAreaElement;
     expect(main).toHaveAttribute("name", "n");
     expect(main).toHaveAttribute("maxlength", "5");
@@ -450,7 +464,8 @@ describe("Specify attrs & state transition & event handlers", () => {
     const main = getByRole("textbox") as HTMLInputElement;
     const rightdv = getByTestId(rightid).parentElement;
     const middle = main.parentElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
+    expect(btm).toHaveTextContent(bottom);
     expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(whole).toHaveClass(seed, PARTS.WHOLE);
     expect(top).toHaveClass(seed, PARTS.TOP);
@@ -475,6 +490,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(main).toHaveClass(seed, PARTS.MAIN, VARIANT.INACTIVE);
     expect(rightdv).toHaveClass(seed, PARTS.RIGHT, VARIANT.INACTIVE);
     expect(btm).toHaveClass(seed, PARTS.BOTTOM, VARIANT.INACTIVE);
+    expect(btm).toHaveAttribute("role", "alert");
     await user.type(main, "a");
     expect(props.variant).toBe(VARIANT.ACTIVE);
     expect(whole).toHaveClass(seed, PARTS.WHOLE, VARIANT.ACTIVE);
@@ -512,7 +528,8 @@ describe("Specify attrs & state transition & event handlers", () => {
     const main = getByRole("textbox") as HTMLInputElement;
     const rightdv = getByTestId(rightid).parentElement;
     const middle = main.parentElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
+    expect(btm).toHaveTextContent(bottom);
     expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(whole).toHaveClass(clsid, PARTS.WHOLE);
     expect(top).toHaveClass(clsid, PARTS.TOP);
@@ -537,6 +554,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(main).toHaveClass(clsid, PARTS.MAIN, VARIANT.INACTIVE);
     expect(rightdv).toHaveClass(clsid, PARTS.RIGHT, VARIANT.INACTIVE);
     expect(btm).toHaveClass(clsid, PARTS.BOTTOM, VARIANT.INACTIVE);
+    expect(btm).toHaveAttribute("role", "alert");
     await user.type(main, "a");
     expect(props.variant).toBe(VARIANT.ACTIVE);
     expect(whole).toHaveClass(clsid, PARTS.WHOLE, VARIANT.ACTIVE);
@@ -591,7 +609,8 @@ describe("Specify attrs & state transition & event handlers", () => {
     const main = getByRole("textbox") as HTMLInputElement;
     const rightdv = getByTestId(rightid).parentElement;
     const middle = main.parentElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
+    expect(btm).toHaveTextContent(bottom);
     expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(whole).toHaveClass(dynObj.base, dynObj.neutral);
     expect(top).toHaveClass(dynObj.base, dynObj.neutral);
@@ -616,6 +635,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(main).toHaveClass(dynObj.base, dynObj.inactive);
     expect(rightdv).toHaveClass(dynObj.base, dynObj.inactive);
     expect(btm).toHaveClass(dynObj.base, dynObj.inactive);
+    expect(btm).toHaveAttribute("role", "alert");
     await user.type(main, "a");
     expect(props.variant).toBe(VARIANT.ACTIVE);
     expect(whole).toHaveClass(dynObj.base, dynObj.active);
@@ -628,5 +648,222 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(main).toHaveClass(dynObj.base, dynObj.active);
     expect(rightdv).toHaveClass(dynObj.base, dynObj.active);
     expect(btm).toHaveClass(dynObj.base, dynObj.active);
+  });
+});
+
+describe("a11y, structure & textarea attrs", () => {
+  const seed = "svs-text-field";
+  const errmsg = "invalid";
+  const validationFn = (value: string) => (value.length < 2 ? errmsg : "");
+  const validations = [validationFn];
+
+  test("bottom role transitions: none, alert, none", async () => {
+    const props = $state({ bottom, variant: VARIANT.NEUTRAL, validations });
+    const user = userEvent.setup();
+    const { getByRole } = render(TextField, props);
+    const whole = getByRole("group") as HTMLDivElement;
+    const main = getByRole("textbox") as HTMLInputElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
+    expect(btm).toHaveTextContent(bottom);
+    expect(btm).not.toHaveAttribute("role");
+
+    await user.type(main, "a");
+    await user.tab();
+    expect(getByRole("alert")).toBe(btm);
+    expect(btm).toHaveTextContent(errmsg);
+
+    await user.type(main, "a");
+    expect(btm).not.toHaveAttribute("role");
+    expect(btm).toHaveTextContent(bottom);
+  });
+
+  test("help text is not a live region in neutral", () => {
+    const props = { bottom };
+    const { getByRole } = render(TextField, props);
+    const main = getByRole("textbox") as HTMLInputElement;
+    expect(() => getByRole("status")).toThrow();
+    expect(main).toHaveAccessibleDescription(bottom);
+  });
+
+  test("label-only field is wrapped in top", () => {
+    const props = { label };
+    const { getByRole, getByText } = render(TextField, props);
+    const whole = getByRole("group") as HTMLDivElement;
+    const lbl = getByText(label);
+    const top = lbl.parentElement as HTMLDivElement;
+    expect(top.tagName).toBe("DIV");
+    expect(top).toHaveClass(seed, PARTS.TOP);
+    expect(whole.firstElementChild).toBe(top);
+  });
+
+  test("aux-only field renders top without a label", () => {
+    const props = { aux: auxfn };
+    const { getByRole, getByTestId } = render(TextField, props);
+    const whole = getByRole("group") as HTMLDivElement;
+    const auxsp = getByTestId(auxid);
+    const top = auxsp.parentElement?.parentElement as HTMLDivElement;
+    expect(top).toHaveClass(seed, PARTS.TOP);
+    expect(whole.firstElementChild).toBe(top);
+    expect(top.querySelector("label")).toBeNull();
+  });
+
+  test("no label and no aux renders no top", () => {
+    const props = { bottom };
+    const { container, getByRole } = render(TextField, props);
+    const whole = getByRole("group") as HTMLDivElement;
+    const main = getByRole("textbox") as HTMLInputElement;
+    expect(container.querySelector(`.${PARTS.TOP}`)).toBeNull();
+    expect(whole.firstElementChild).toBe(main.parentElement);
+  });
+
+  test("dynamic bottom updates reactively", async () => {
+    const { rerender, getByRole, getByText } = render(TextField, { bottom: "help-1" });
+    const main = getByRole("textbox") as HTMLInputElement;
+    getByText("help-1");
+    expect(main).toHaveAccessibleDescription("help-1");
+
+    await rerender({ bottom: "help-2" });
+    getByText("help-2");
+    expect(main).toHaveAccessibleDescription("help-2");
+  });
+
+  test("error message restores bottom text when valid again", async () => {
+    const props = $state({ bottom, variant: VARIANT.NEUTRAL, validations });
+    const user = userEvent.setup();
+    const { getByRole } = render(TextField, props);
+    const whole = getByRole("group") as HTMLDivElement;
+    const main = getByRole("textbox") as HTMLInputElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
+
+    await user.type(main, "a");
+    await user.tab();
+    expect(btm).toHaveTextContent(errmsg);
+
+    await user.type(main, "a");
+    expect(btm).toHaveTextContent(bottom);
+  });
+
+  test('type="textarea" renders a textarea', () => {
+    const props = { type: "textarea" as const };
+    const { getByRole } = render(TextField, props);
+    const main = getByRole("textbox") as HTMLTextAreaElement;
+    expect(main.tagName).toBe("TEXTAREA");
+  });
+
+  test("cols, rows and wrap apply to textarea only", () => {
+    const textareaProps = { type: "textarea" as const, cols: 30, rows: 5, wrap: "hard" as const };
+    const textareaRender = render(TextField, textareaProps);
+    const textarea = textareaRender.getByRole("textbox") as HTMLTextAreaElement;
+    expect(textarea).toHaveAttribute("cols", "30");
+    expect(textarea).toHaveAttribute("rows", "5");
+    expect(textarea).toHaveAttribute("wrap", "hard");
+    textareaRender.unmount();
+
+    const inputProps = { cols: 30, rows: 5, wrap: "hard" as const };
+    const inputRender = render(TextField, inputProps);
+    const input = inputRender.getByRole("textbox") as HTMLInputElement;
+    expect(input).not.toHaveAttribute("cols");
+    expect(input).not.toHaveAttribute("rows");
+    expect(input).not.toHaveAttribute("wrap");
+  });
+
+  test("descFirst controls bottom order", () => {
+    const firstRender = render(TextField, { bottom, descFirst: true });
+    const firstWhole = firstRender.getByRole("group") as HTMLDivElement;
+    const firstMain = firstRender.getByRole("textbox") as HTMLInputElement;
+    expect(firstWhole.firstElementChild).toHaveTextContent(bottom);
+    expect(firstWhole.children[1]).toBe(firstMain.parentElement);
+    firstRender.unmount();
+
+    const lastRender = render(TextField, { bottom, descFirst: false });
+    const lastWhole = lastRender.getByRole("group") as HTMLDivElement;
+    const lastMain = lastRender.getByRole("textbox") as HTMLInputElement;
+    expect(lastWhole.firstElementChild).toBe(lastMain.parentElement);
+    expect(lastWhole.lastElementChild).toHaveTextContent(bottom);
+  });
+
+  test("bindable element exposes the control", () => {
+    const props = $state({ element: undefined as TextFieldElement });
+    const { getByRole } = render(TextField, props);
+    const main = getByRole("textbox") as HTMLInputElement;
+    expect(props.element).toBe(main);
+  });
+
+  test("snippet args receive reactive value, variant and element", async () => {
+    const stateid = "test-state";
+    let valueArg: (() => string) | undefined;
+    let variantArg: (() => string) | undefined;
+    let elementArg: (() => TextFieldElement) | undefined;
+    const statefn = createRawSnippet(
+      (
+        value: () => string,
+        variant: () => string,
+        element: () => TextFieldElement,
+      ) => {
+        valueArg = value;
+        variantArg = variant;
+        elementArg = element;
+        return { render: () => `<span data-testid="${stateid}">${value().length},${variant()},${element()?.tagName}</span>` };
+      },
+    );
+    const props = $state({ left: statefn, value: "", variant: VARIANT.NEUTRAL });
+    const user = userEvent.setup();
+    const { getByRole, getByTestId } = render(TextField, props);
+    const main = getByRole("textbox") as HTMLInputElement;
+    expect(getByTestId(stateid)).toHaveTextContent("0,neutral,undefined");
+
+    await user.type(main, "abc");
+    expect(valueArg?.()).toBe("abc");
+    expect(variantArg?.()).toBe(VARIANT.NEUTRAL);
+    expect(elementArg?.()).toBe(main);
+  });
+
+  test("validations receive ValidityState", async () => {
+    const validation = vi.fn((value: string, validity: ValidityState) => (!value && validity.valueMissing ? errmsg : ""));
+    const props = $state({
+      required: true,
+      variant: VARIANT.NEUTRAL,
+      validations: [validation],
+    });
+    const { getByRole } = render(TextField, props);
+    const main = getByRole("textbox") as HTMLInputElement;
+
+    await fireEvent.invalid(main);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+    expect(getByRole("alert")).toHaveTextContent(errmsg);
+    const actualValidity = validation.mock.calls.at(-1)?.[1] as ValidityState;
+    expect(actualValidity.valueMissing).toBe(true);
+  });
+
+  test("multiple validations short-circuit on first message", async () => {
+    const first = vi.fn((value: string) => (value.length < 2 ? "first" : ""));
+    const second = vi.fn((value: string) => (value.includes("x") ? "second" : ""));
+    const props = $state({ variant: VARIANT.NEUTRAL, validations: [first, second] });
+    const user = userEvent.setup();
+    const { getByRole } = render(TextField, props);
+    const main = getByRole("textbox") as HTMLInputElement;
+    first.mockClear();
+    second.mockClear();
+
+    await user.type(main, "a");
+    await user.tab();
+    expect(getByRole("alert")).toHaveTextContent("first");
+    expect(second).not.toHaveBeenCalled();
+  });
+
+  test("custom neutral variant is preserved and restored", async () => {
+    const props = $state({ variant: "warning", validations });
+    const user = userEvent.setup();
+    const { getByRole } = render(TextField, props);
+    const main = getByRole("textbox") as HTMLInputElement;
+    await user.type(main, "a");
+    await user.tab();
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+
+    await user.type(main, "a");
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+
+    await user.clear(main);
+    expect(props.variant).toBe("warning");
   });
 });
