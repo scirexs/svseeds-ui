@@ -16,7 +16,15 @@ const mainfn = createRawSnippet(
     value: () => boolean,
     element: () => ToggleElement,
   ) => {
-    return { render: () => `<span data-testid="${mainid}">${variant()}-${value()}-${element()?.tagName}</span>` };
+    const text = () => `${variant()}-${value()}-${element()?.tagName}`;
+    return {
+      render: () => `<span data-testid="${mainid}">${text()}</span>`,
+      setup: (node: Element) => {
+        $effect(() => {
+          node.textContent = text();
+        });
+      },
+    };
   },
 );
 const leftfn = createRawSnippet(
@@ -53,6 +61,19 @@ describe("Switching existence of elements", () => {
     expect(main).not.toHaveAttribute("role");
   });
 
+  test("no group wrapper without side snippets", () => {
+    const children = vi.fn().mockImplementation(mainfn);
+    const props = { children };
+    const { queryByRole } = render(Toggle, props);
+    expect(queryByRole("group")).toBeNull();
+  });
+
+  test("children is optional", () => {
+    const { getByRole, queryByTestId } = render(Toggle, { ariaLabel });
+    expect(getByRole("button")).toBeInTheDocument();
+    expect(queryByTestId(mainid)).toBeNull();
+  });
+
   test("switch to switch type", () => {
     const children = vi.fn().mockImplementation(mainfn);
     const props = { children, role: "switch" as const };
@@ -83,6 +104,14 @@ describe("Switching existence of elements", () => {
     expect(children).toHaveBeenCalled();
   });
 
+  test("element is passed to the main snippet", async () => {
+    const children = vi.fn().mockImplementation(mainfn);
+    const props = { children };
+    const { getByTestId } = render(Toggle, props);
+    await tick();
+    expect(getByTestId(mainid).textContent).toContain("BUTTON");
+  });
+
   test("w/ main snippet of attach button", () => {
     const children = vi.fn().mockImplementation(mainfn);
     const attach = vi.fn().mockImplementation(attachfn);
@@ -93,6 +122,7 @@ describe("Switching existence of elements", () => {
     expect(button).toContainElement(mainsp);
     expect(children).toHaveBeenCalled();
     expect(attach).toHaveBeenCalled();
+    expect(attach.mock.calls[0][0]).toBe(button);
   });
 
   test("w/ main snippet of switch", () => {
@@ -179,10 +209,8 @@ describe("Switching existence of elements", () => {
     const mainsp = getByTestId(mainid);
     const leftsp = getByTestId(leftid);
     const rightsp = getByTestId(rightid);
-    const thumb = mainsp.parentElement;
     expect(whole).toContainElement(button);
-    expect(button).toContainElement(thumb);
-    expect(thumb).toContainElement(mainsp);
+    expect(button).toContainElement(mainsp);
     expect(whole).toContainElement(leftsp.parentElement);
     expect(whole).toContainElement(rightsp.parentElement);
     expect(whole.children).toHaveLength(3);
@@ -320,6 +348,27 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(props.variant).toBe(customNeutral); // returns to custom neutral, not default neutral
   });
 
+  test("dynamic custom neutral variant is remembered", async () => {
+    const children = vi.fn().mockImplementation(mainfn);
+    const props = $state({
+      children,
+      value: false,
+      variant: "neutral_a",
+    });
+    const user = userEvent.setup();
+    const { getByRole } = render(Toggle, props);
+    const main = getByRole("button") as HTMLButtonElement;
+    expect(props.variant).toBe("neutral_a");
+
+    props.variant = "neutral_b";
+    await tick();
+    await user.click(main);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+
+    await user.click(main);
+    expect(props.variant).toBe("neutral_b");
+  });
+
   test("w/ custom onclick", async () => {
     const children = vi.fn().mockImplementation(mainfn);
     const onclick = vi.fn();
@@ -339,6 +388,67 @@ describe("Specify attrs & state transition & event handlers", () => {
     await user.click(main);
     expect(onclick).toHaveBeenCalledTimes(2);
     expect(props.value).toBe(false);
+  });
+
+  test("keyboard activation toggles state", async () => {
+    const children = vi.fn().mockImplementation(mainfn);
+    const props = $state({
+      children,
+      value: false,
+      variant: VARIANT.NEUTRAL,
+    });
+    const user = userEvent.setup();
+    const { getByRole } = render(Toggle, props);
+    const main = getByRole("button") as HTMLButtonElement;
+
+    main.focus();
+    await user.keyboard("{Enter}");
+    expect(props.value).toBe(true);
+    expect(main).toHaveAttribute("aria-pressed", "true");
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+
+    await user.keyboard("[Space]");
+    expect(props.value).toBe(false);
+    expect(main).toHaveAttribute("aria-pressed", "false");
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
+  });
+
+  test("disabled prevents toggle and onclick", async () => {
+    const children = vi.fn().mockImplementation(mainfn);
+    const onclick = vi.fn();
+    const props = $state({
+      children,
+      value: false,
+      disabled: true,
+      onclick,
+    });
+    const user = userEvent.setup();
+    const { getByRole } = render(Toggle, props);
+    const main = getByRole("button") as HTMLButtonElement;
+
+    await user.click(main);
+    expect(props.value).toBe(false);
+    expect(onclick).not.toHaveBeenCalled();
+  });
+
+  test("onclick receives native event currentTarget", async () => {
+    const children = vi.fn().mockImplementation(mainfn);
+    let captured: EventTarget | null = null;
+    const onclick = vi.fn((e: MouseEvent) => {
+      captured = e.currentTarget;
+    });
+    const props = $state({
+      children,
+      value: false,
+      onclick,
+    });
+    const user = userEvent.setup();
+    const { getByRole } = render(Toggle, props);
+    const main = getByRole("button") as HTMLButtonElement;
+
+    await user.click(main);
+    expect(onclick).toHaveBeenCalledTimes(1);
+    expect(captured).toBe(main);
   });
 
   test("programmatic value change updates variant", async () => {
@@ -393,7 +503,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(rightdv).toHaveClass(preset, PARTS.RIGHT, VARIANT.ACTIVE);
   });
 
-  test("default class of switch with thumb", async () => {
+  test("default class of switch (main only)", async () => {
     const children = vi.fn().mockImplementation(mainfn);
     const props = $state({
       children,
@@ -402,9 +512,8 @@ describe("Specify attrs & state transition & event handlers", () => {
       variant: VARIANT.NEUTRAL,
     });
     const user = userEvent.setup();
-    const { getByRole, getByTestId } = render(Toggle, props);
+    const { getByRole } = render(Toggle, props);
     const button = getByRole("switch") as HTMLButtonElement;
-    const mainsp = getByTestId(mainid);
 
     expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(button).toHaveClass(preset, PARTS.MAIN);
@@ -460,7 +569,6 @@ describe("Specify attrs & state transition & event handlers", () => {
       main: dynObj,
       left: dynObj,
       right: dynObj,
-      aux: dynObj,
     };
     const children = vi.fn().mockImplementation(mainfn);
     const left = vi.fn().mockImplementation(leftfn);
@@ -481,14 +589,13 @@ describe("Specify attrs & state transition & event handlers", () => {
     const mainsp = getByTestId(mainid);
     const leftdv = getByTestId(leftid).parentElement;
     const rightdv = getByTestId(rightid).parentElement;
-    const thumb = mainsp.parentElement;
 
     expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(whole).toHaveClass(dynObj.base, dynObj.neutral);
     expect(leftdv).toHaveClass(dynObj.base, dynObj.neutral);
     expect(button).toHaveClass(dynObj.base, dynObj.neutral);
     expect(rightdv).toHaveClass(dynObj.base, dynObj.neutral);
-    expect(thumb).toHaveClass(dynObj.base, dynObj.neutral);
+    expect(button).toContainElement(mainsp);
 
     await user.click(button);
     expect(props.variant).toBe(VARIANT.ACTIVE);
@@ -496,6 +603,5 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(leftdv).toHaveClass(dynObj.base, dynObj.active);
     expect(button).toHaveClass(dynObj.base, dynObj.active);
     expect(rightdv).toHaveClass(dynObj.base, dynObj.active);
-    expect(thumb).toHaveClass(dynObj.base, dynObj.active);
   });
 });

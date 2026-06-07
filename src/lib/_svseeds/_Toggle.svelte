@@ -4,25 +4,26 @@
   default value: *`(value)`*
   ```ts
   interface ToggleProps extends Omit<HTMLButtonAttributes, "children" | "value" | "type" | "role" | "aria-pressed" | "aria-checked" | "aria-label"> {
-    children: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
+    children?: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
     left?: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
     right?: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
     value?: boolean; // bindable (false)
     role?: "button" | "switch"; // ("button")
     ariaLabel?: string;
-    attach?: Attachment;
+    attach?: Attachment<HTMLButtonElement>;
     element?: HTMLButtonElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
     // other HTMLButtonAttributes are passed to <button> via ...rest; `class` is merged onto the button
   }
   ```
+  For an icon-only or text-less toggle, provide `ariaLabel` so the button has an accessible name.
   ### Anatomy
   ```svelte
   <span class="whole" conditional>
     <span class="left" conditional>{left}</span>
     <button class={["main", class]} aria-pressed={value} aria-label={ariaLabel} {role} {...rest} bind:this={element} {@attach attach}>
-      {children}
+      {children} conditional
     </button>
     <span class="right" conditional>{right}</span>
   </span>
@@ -33,25 +34,25 @@
     HTMLButtonAttributes,
     "children" | "value" | "type" | "role" | "aria-pressed" | "aria-checked" | "aria-label"
   > {
-    children: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
+    children?: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
     left?: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
     right?: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
     value?: boolean; // bindable (false)
     role?: "button" | "switch"; // ("button")
     ariaLabel?: string;
-    attach?: Attachment;
+    attach?: Attachment<HTMLButtonElement>;
     element?: HTMLButtonElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
   }
-  export type ToggleReqdProps = "children";
+  export type ToggleReqdProps = never;
   export type ToggleBindProps = "value" | "variant" | "element";
 
   const preset = "svs-toggle";
 
   import { type Snippet, untrack } from "svelte";
   import { type Attachment } from "svelte/attachments";
-  import { type HTMLButtonAttributes } from "svelte/elements";
+  import { type HTMLButtonAttributes, type MouseEventHandler } from "svelte/elements";
   import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isNeutral } from "./core";
 </script>
 
@@ -61,15 +62,18 @@
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
+  // Remembers the latest neutral (off-state) variant so OFF restores a caller custom neutral.
   let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
   let state = $derived(
     role === "button" ? { "aria-pressed": value, "aria-checked": undefined } : { "aria-checked": value, "aria-pressed": undefined },
   );
 
   // *** Bind Handlers *** //
+  // Track runtime changes to a custom neutral variant (ignore ACTIVE/INACTIVE).
   $effect(() => {
     neutral = isNeutral(variant) ? variant : neutral;
   });
+  // Drive variant from value: ON -> ACTIVE, OFF -> remembered neutral.
   $effect.pre(() => {
     value;
     untrack(() => toggle());
@@ -79,10 +83,10 @@
   }
 
   // *** Event Handlers *** //
-  function hclick(ev: MouseEvent) {
+  const hclick: MouseEventHandler<HTMLButtonElement> = (ev) => {
     value = !value;
-    onclick?.(ev as any);
-  }
+    onclick?.(ev);
+  };
 </script>
 
 <!---------------------------------------->
@@ -115,6 +119,6 @@
     {...state}
     {@attach attach}
   >
-    {@render children(value, variant, element)}
+    {#if children}{@render children(value, variant, element)}{/if}
   </button>
 {/snippet}
