@@ -1,8 +1,8 @@
-import { afterEach, describe, expect, test, vi } from "vitest";
-import { fireEvent, render, waitFor, within } from "@testing-library/svelte";
+import { describe, expect, test, vi } from "vitest";
+import { render, waitFor } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
-import { createRawSnippet } from "svelte";
-import ToggleGroup from "#svs/_ToggleGroup.svelte";
+import { createRawSnippet, tick } from "svelte";
+import ToggleGroup, { type ToggleOption } from "#svs/_ToggleGroup.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 
 const options = new Map([
@@ -13,11 +13,9 @@ const options = new Map([
 
 const attachfn = () => {};
 
-const customSnippet = createRawSnippet(
-  (value: () => string) => {
-    return { render: () => `<span data-testid="custom-${value()}">${value().toUpperCase()}</span>` };
-  },
-);
+const customSnippet = createRawSnippet((value: () => string) => {
+  return { render: () => `<span data-testid="custom-${value()}">${value().toUpperCase()}</span>` };
+});
 
 describe("Switching existence of elements", () => {
   test("no props", () => {
@@ -48,6 +46,9 @@ describe("Switching existence of elements", () => {
 
     expect(group).toBeInTheDocument();
     expect(buttons).toHaveLength(3);
+    expect(buttons[0]).toHaveAttribute("tabindex", "0");
+    expect(buttons[1]).toHaveAttribute("tabindex", "-1");
+    expect(buttons[2]).toHaveAttribute("tabindex", "-1");
     buttons.forEach((button) => {
       expect(button).toHaveAttribute("role", "radio");
     });
@@ -86,11 +87,11 @@ describe("Switching existence of elements", () => {
     const group = getByRole("group") as HTMLSpanElement;
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
-    expect(group).not.toHaveAttribute("aria-invalid");
-    expect(group).not.toHaveAttribute("aria-errormessage");
+    expect(group).toHaveAttribute("aria-invalid", "true");
+    expect(group).toHaveAttribute("aria-errormessage", ariaErrMsgId);
     buttons.forEach((button) => {
-      expect(button).toHaveAttribute("aria-invalid", "true");
-      expect(button).toHaveAttribute("aria-errormessage", ariaErrMsgId);
+      expect(button).not.toHaveAttribute("aria-invalid");
+      expect(button).not.toHaveAttribute("aria-errormessage");
     });
   });
 
@@ -122,6 +123,76 @@ describe("Switching existence of elements", () => {
     expect(buttons[0]).toHaveTextContent("OPTION1");
     expect(buttons[1]).toContainElement(getByTestId("custom-option2"));
     expect(getByTestId("custom-option2")).toHaveTextContent("OPTION2");
+  });
+
+  test("per-option disabled", async () => {
+    const props = $state({
+      options: new Map<string, string | ToggleOption>([
+        ["a", "A"],
+        ["b", { text: "B", disabled: true }],
+        ["c", "C"],
+      ]),
+      values: ["b"],
+    });
+    const user = userEvent.setup();
+    const { getAllByRole } = render(ToggleGroup, props);
+    const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
+
+    expect(buttons[0]).not.toBeDisabled();
+    expect(buttons[1]).toBeDisabled();
+    expect(buttons[2]).not.toBeDisabled();
+    expect(buttons[1]).toHaveAttribute("aria-checked", "true");
+
+    await user.click(buttons[1]);
+    expect(props.values).toEqual(["b"]);
+    expect(buttons[1]).toHaveAttribute("aria-checked", "true");
+  });
+
+  test("per-option arbitrary attributes and component-owned precedence", () => {
+    const optionsWithAttrs = new Map<string, any>([
+      [
+        "a",
+        {
+          text: "A",
+          title: "tip",
+          "data-testid": "opt-a",
+          type: "submit",
+          role: "button",
+          "aria-checked": false,
+          "aria-invalid": true,
+          "aria-errormessage": "bad",
+        },
+      ],
+    ]);
+    const { getByTestId } = render(ToggleGroup, { options: optionsWithAttrs, values: ["a"] });
+    const button = getByTestId("opt-a") as HTMLButtonElement;
+
+    expect(button).toHaveAttribute("title", "tip");
+    expect(button).toHaveAttribute("type", "button");
+    expect(button).toHaveAttribute("role", "checkbox");
+    expect(button).toHaveAttribute("aria-checked", "true");
+    expect(button).not.toHaveAttribute("aria-invalid");
+    expect(button).not.toHaveAttribute("aria-errormessage");
+  });
+
+  test("string, object, and mixed option forms render", () => {
+    const pureString = render(ToggleGroup, { options: new Map([["a", "A"]]) });
+    expect(pureString.getByRole("checkbox")).toHaveTextContent("A");
+    pureString.unmount();
+
+    const pureObject = render(ToggleGroup, { options: new Map([["b", { text: "B" }]]) });
+    expect(pureObject.getByRole("checkbox")).toHaveTextContent("B");
+    pureObject.unmount();
+
+    const mixed = render(ToggleGroup, {
+      options: new Map<string, string | ToggleOption>([
+        ["a", "A"],
+        ["b", { text: "B" }],
+        ["c", "C"],
+      ]),
+    });
+    const buttons = mixed.getAllByRole("checkbox") as HTMLButtonElement[];
+    expect(buttons.map((button) => button.textContent)).toEqual(["A", "B", "C"]);
   });
 });
 
@@ -267,6 +338,118 @@ describe("User interactions", () => {
     expect(props.values).toEqual(["option1", "option3"]);
   });
 
+  test("multiple selection drops out-of-options values after toggle", async () => {
+    const props = $state({ options, values: ["option1", "ghost", "option2"] });
+    const user = userEvent.setup();
+    const { getAllByRole } = render(ToggleGroup, props);
+    const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
+
+    await user.click(buttons[2]);
+    expect(props.values).toEqual(["option1", "option2", "option3"]);
+
+    await user.click(buttons[1]);
+    expect(props.values).toEqual(["option1", "option3"]);
+  });
+
+  test("single mode roving tabindex", async () => {
+    const selected = render(ToggleGroup, { options, values: ["option2"], multiple: false });
+    let buttons = selected.getAllByRole("radio") as HTMLButtonElement[];
+    expect(buttons[0]).toHaveAttribute("tabindex", "-1");
+    expect(buttons[1]).toHaveAttribute("tabindex", "0");
+    expect(buttons[2]).toHaveAttribute("tabindex", "-1");
+    selected.unmount();
+
+    const firstDisabled = render(ToggleGroup, {
+      options: new Map<string, string | ToggleOption>([
+        ["option1", { text: "Option 1", disabled: true }],
+        ["option2", "Option 2"],
+        ["option3", "Option 3"],
+      ]),
+      multiple: false,
+    });
+    buttons = firstDisabled.getAllByRole("radio") as HTMLButtonElement[];
+    expect(buttons[0]).toHaveAttribute("tabindex", "-1");
+    expect(buttons[1]).toHaveAttribute("tabindex", "0");
+    expect(buttons[2]).toHaveAttribute("tabindex", "-1");
+    firstDisabled.unmount();
+
+    const props = $state({ options, values: [], multiple: true });
+    const user = userEvent.setup();
+    const multipleMode = render(ToggleGroup, props);
+    buttons = multipleMode.getAllByRole("checkbox") as HTMLButtonElement[];
+    buttons.forEach((button) => expect(button).not.toHaveAttribute("tabindex"));
+
+    buttons[0].focus();
+    await user.keyboard("[ArrowRight]");
+    expect(buttons[0]).toHaveFocus();
+    expect(props.values).toEqual([]);
+  });
+
+  test("single mode arrow, Home, and End navigation", async () => {
+    const props = $state({ options, values: [], multiple: false });
+    const user = userEvent.setup();
+    const { getAllByRole } = render(ToggleGroup, props);
+    const buttons = getAllByRole("radio") as HTMLButtonElement[];
+
+    buttons[0].focus();
+    await user.keyboard("[ArrowRight]");
+    expect(buttons[1]).toHaveFocus();
+    expect(props.values).toEqual(["option2"]);
+    expect(buttons[1]).toHaveAttribute("aria-checked", "true");
+
+    await user.keyboard("[ArrowDown]");
+    expect(buttons[2]).toHaveFocus();
+    expect(props.values).toEqual(["option3"]);
+
+    await user.keyboard("[ArrowRight]");
+    expect(buttons[0]).toHaveFocus();
+    expect(props.values).toEqual(["option1"]);
+
+    await user.keyboard("[ArrowLeft]");
+    expect(buttons[2]).toHaveFocus();
+    expect(props.values).toEqual(["option3"]);
+
+    await user.keyboard("[ArrowUp]");
+    expect(buttons[1]).toHaveFocus();
+    expect(props.values).toEqual(["option2"]);
+
+    await user.keyboard("[Home]");
+    expect(buttons[0]).toHaveFocus();
+    expect(props.values).toEqual(["option1"]);
+
+    await user.keyboard("[End]");
+    expect(buttons[2]).toHaveFocus();
+    expect(props.values).toEqual(["option3"]);
+  });
+
+  test("single mode arrow navigation skips disabled options", async () => {
+    const props = $state({
+      options: new Map<string, string | ToggleOption>([
+        ["a", "A"],
+        ["b", { text: "B", disabled: true }],
+        ["c", "C"],
+      ]),
+      values: [],
+      multiple: false,
+    });
+    const user = userEvent.setup();
+    const { getAllByRole } = render(ToggleGroup, props);
+    const buttons = getAllByRole("radio") as HTMLButtonElement[];
+
+    buttons[0].focus();
+    await user.keyboard("[ArrowRight]");
+    expect(buttons[2]).toHaveFocus();
+    expect(props.values).toEqual(["c"]);
+
+    await user.keyboard("[Home]");
+    expect(buttons[0]).toHaveFocus();
+    expect(props.values).toEqual(["a"]);
+
+    await user.keyboard("[End]");
+    expect(buttons[2]).toHaveFocus();
+    expect(props.values).toEqual(["c"]);
+  });
+
   test("keyboard navigation", async () => {
     const user = userEvent.setup();
     const { getAllByRole } = render(ToggleGroup, { options });
@@ -333,9 +516,55 @@ describe("Edge cases", () => {
     expect(buttons[2]).toHaveAttribute("aria-checked", "false"); // option3
   });
 
+  test("multiple to single runtime toggle reconciles values", async () => {
+    const props = $state({
+      options,
+      multiple: true,
+      values: ["option1", "option2", "option3"],
+    });
+    const { rerender, getAllByRole } = render(ToggleGroup, props);
+
+    props.multiple = false;
+    await rerender(props);
+    await tick();
+
+    expect(props.values).toEqual(["option1"]);
+    const buttons = getAllByRole("radio") as HTMLButtonElement[];
+    expect(buttons.filter((button) => button.getAttribute("aria-checked") === "true")).toHaveLength(1);
+    expect(buttons[0]).toHaveAttribute("aria-checked", "true");
+  });
+
+  test("elements bindable array receives buttons", () => {
+    const props = $state({ options, elements: [] as HTMLButtonElement[] });
+    const { getAllByRole } = render(ToggleGroup, props);
+    const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
+
+    expect(props.elements).toHaveLength(3);
+    expect(props.elements[0]).toBe(buttons[0]);
+    expect(props.elements[1]).toBe(buttons[1]);
+    expect(props.elements[2]).toBe(buttons[2]);
+  });
+
+  test("children snippet receives computed variant", () => {
+    const variantSnippet = createRawSnippet((value: () => string, _text: () => string, variant: () => string) => {
+      return { render: () => `<span data-testid="variant-${value()}">${variant()}</span>` };
+    });
+    const { getByTestId } = render(ToggleGroup, {
+      options,
+      values: ["option1"],
+      children: variantSnippet,
+    });
+
+    expect(getByTestId("variant-option1")).toHaveTextContent(VARIANT.ACTIVE);
+    expect(getByTestId("variant-option2")).toHaveTextContent(VARIANT.NEUTRAL);
+  });
+
   test("reactive options update", async () => {
     const props = $state({
-      options: new Map([["a", "A"], ["b", "B"]]),
+      options: new Map([
+        ["a", "A"],
+        ["b", "B"],
+      ]),
       values: ["a"],
     });
     const { rerender, getAllByRole } = render(ToggleGroup, props);
@@ -345,7 +574,11 @@ describe("Edge cases", () => {
     expect(buttons[0]).toHaveAttribute("aria-checked", "true");
 
     // Update options
-    props.options = new Map([["a", "A"], ["c", "C"], ["d", "D"]]);
+    props.options = new Map([
+      ["a", "A"],
+      ["c", "C"],
+      ["d", "D"],
+    ]);
     await rerender(props);
 
     buttons = getAllByRole("checkbox") as HTMLButtonElement[];

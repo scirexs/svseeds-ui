@@ -4,7 +4,7 @@
   default value: *`(value)`*
   ```ts
   interface ToggleGroupFieldProps {
-    options: SvelteMap<string, string> | Map<string, string>;
+    options: SvelteMap<string, string | ToggleOption> | Map<string, string | ToggleOption>;
     label?: string;
     extra?: string;
     aux?: Snippet<[string[], string]>; // Snippet<[values,variant]>
@@ -47,7 +47,7 @@
 -->
 <script module lang="ts">
   export interface ToggleGroupFieldProps {
-    options: SvelteMap<string, string> | Map<string, string>;
+    options: SvelteMap<string, string | ToggleOption> | Map<string, string | ToggleOption>;
     label?: string;
     extra?: string;
     aux?: Snippet<[string[], string]>; // Snippet<[values,variant]>
@@ -77,7 +77,12 @@
   import { type Attachment } from "svelte/attachments";
   import { type SvelteMap } from "svelte/reactivity";
   import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isNeutral } from "./core";
-  import ToggleGroup, { type ToggleGroupProps, type ToggleGroupReqdProps, type ToggleGroupBindProps } from "./_ToggleGroup.svelte";
+  import ToggleGroup, {
+    type ToggleOption,
+    type ToggleGroupProps,
+    type ToggleGroupReqdProps,
+    type ToggleGroupBindProps,
+  } from "./_ToggleGroup.svelte";
 </script>
 
 <script lang="ts">
