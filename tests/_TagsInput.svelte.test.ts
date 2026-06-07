@@ -1,17 +1,11 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { fireEvent, render, waitFor, within } from "@testing-library/svelte";
+import { fireEvent, render, waitFor } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
+import { createRawSnippet } from "svelte";
 import TagsInput from "#svs/_TagsInput.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 
 const preset = "svs-tags-input";
-
-// Mock Badge component to avoid dependency issues
-vi.mock("#svs/_Badge.svelte", () => ({
-  default: vi.fn().mockImplementation(({ children, onclick, ...props }) => ({
-    render: () => `<button class="mock-badge" onclick="${onclick}">${children}</button>`,
-  })),
-}));
 
 describe("Basic rendering and structure", () => {
   test("renders with no props", () => {
@@ -55,9 +49,9 @@ describe("Basic rendering and structure", () => {
     expect(tagsSpan?.nextElementSibling).toBe(input);
   });
 
-  test("renders tags on right when type='right'", () => {
+  test("renders tags on right when side='right'", () => {
     const values = ["tag1"];
-    const { container } = render(TagsInput, { values, type: "right" });
+    const { container } = render(TagsInput, { values, side: "right" });
 
     const whole = container.querySelector(`.${preset}`);
     const tagsSpan = whole?.querySelector(`.${preset}.aux`);
@@ -65,6 +59,81 @@ describe("Basic rendering and structure", () => {
 
     expect(tagsSpan).toBeInTheDocument();
     expect(input?.nextElementSibling).toBe(tagsSpan);
+  });
+
+  test("remove button is type='button'", () => {
+    const { container } = render(TagsInput, { values: ["tag1"] });
+    const btn = container.querySelector(`.${preset}.${PARTS.EXTRA}`) as HTMLButtonElement;
+
+    expect(btn).toHaveAttribute("type", "button");
+  });
+
+  test("remove button has default accessible name", () => {
+    const { getByRole } = render(TagsInput, { values: ["tag1", "tag2"] });
+
+    expect(getByRole("button", { name: "Remove tag1" })).toBeInTheDocument();
+    expect(getByRole("button", { name: "Remove tag2" })).toBeInTheDocument();
+  });
+
+  test("remove button supports custom removeLabel", () => {
+    const { getByRole } = render(TagsInput, {
+      values: ["x"],
+      removeLabel: (text: string) => `delete ${text}`,
+    });
+
+    expect(getByRole("button", { name: "delete x" })).toBeInTheDocument();
+  });
+
+  test("default icon is decorative", () => {
+    const { container } = render(TagsInput, { values: ["tag1"] });
+    const svg = container.querySelector("svg");
+
+    expect(svg).toHaveAttribute("aria-hidden", "true");
+    expect(svg).toHaveAttribute("focusable", "false");
+  });
+
+  test("label snippet renders custom per-tag content", () => {
+    const label = vi.fn().mockImplementation(
+      createRawSnippet((text: () => string, variant: () => string) => {
+        return { render: () => `<span data-testid="custom-label">${variant()}:${text()}</span>` };
+      }),
+    );
+    const { container, getAllByTestId } = render(TagsInput, {
+      values: ["tag1", "tag2"],
+      label,
+      variant: VARIANT.ACTIVE,
+    });
+
+    const labels = getAllByTestId("custom-label");
+    expect(labels).toHaveLength(2);
+    expect(labels[0]).toHaveTextContent(`${VARIANT.ACTIVE}:tag1`);
+    expect(labels[1]).toHaveTextContent(`${VARIANT.ACTIVE}:tag2`);
+    expect(container.querySelectorAll(`.${preset}.${PARTS.LABEL}`)[0]).not.toHaveTextContent(/^tag1$/);
+    expect(label).toHaveBeenCalledTimes(2);
+  });
+
+  test("extra snippet renders custom remove-button content", async () => {
+    const user = userEvent.setup();
+    const extra = vi.fn().mockImplementation(
+      createRawSnippet((text: () => string) => {
+        return { render: () => `<span data-testid="custom-extra">custom ${text()}</span>` };
+      }),
+    );
+    const props = $state({
+      values: ["tag1"],
+      extra,
+      removeLabel: (text: string) => `remove custom ${text}`,
+    });
+    const { container, getByRole, getByTestId } = render(TagsInput, props);
+
+    const button = getByRole("button", { name: "remove custom tag1" });
+    expect(container.querySelector("svg")).toBeNull();
+    expect(getByTestId("custom-extra")).toHaveTextContent("custom tag1");
+
+    await user.click(button);
+
+    expect(props.values).toEqual([]);
+    expect(extra).toHaveBeenCalledTimes(1);
   });
 
   test("renders with attach", () => {
@@ -104,6 +173,34 @@ describe("Tag addition functionality", () => {
     expect(props.value).toBe("");
   });
 
+  test("confirm overrides default Enter key", async () => {
+    const props = $state({ values: [] as string[], value: "", confirm: ["Tab"] });
+    const user = userEvent.setup();
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
+
+    await user.type(input, "x");
+    await user.keyboard("{Enter}");
+
+    expect(props.values).toEqual([]);
+
+    await user.keyboard("{Tab}");
+
+    expect(props.values).toEqual(["x"]);
+  });
+
+  test("empty confirm falls back to Enter key", async () => {
+    const props = $state({ values: [] as string[], value: "", confirm: [] as string[] });
+    const user = userEvent.setup();
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
+
+    await user.type(input, "x");
+    await user.keyboard("{Enter}");
+
+    expect(props.values).toEqual(["x"]);
+  });
+
   test("trims whitespace by default", async () => {
     const props = $state({ values: [] as string[], value: "" });
     const user = userEvent.setup();
@@ -114,6 +211,42 @@ describe("Tag addition functionality", () => {
     await user.keyboard("{Enter}");
 
     expect(props.values).toEqual(["spaced tag"]);
+  });
+
+  test("onadd receives trimmed value", async () => {
+    const onadd = vi.fn();
+    const props = $state({
+      values: [] as string[],
+      value: "",
+      events: { onadd },
+    });
+    const user = userEvent.setup();
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
+
+    await user.type(input, "  spaced  ");
+    await user.keyboard("{Enter}");
+
+    expect(onadd).toHaveBeenCalledWith([], "spaced");
+    expect(props.values).toEqual(["spaced"]);
+  });
+
+  test("onadd is not fired for whitespace-only input", async () => {
+    const onadd = vi.fn();
+    const props = $state({
+      values: [] as string[],
+      value: "",
+      events: { onadd },
+    });
+    const user = userEvent.setup();
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
+
+    await user.type(input, "   ");
+    await user.keyboard("{Enter}");
+
+    expect(onadd).not.toHaveBeenCalled();
+    expect(props.values).toEqual([]);
   });
 
   test("does not trim when trim=false", async () => {
@@ -223,7 +356,7 @@ describe("Event handlers", () => {
       events: { onadd, onremove },
     });
     const user = userEvent.setup();
-    const { getByRole } = render(TagsInput, { props });
+    const { getByRole } = render(TagsInput, props);
     const input = getByRole("textbox") as HTMLInputElement;
 
     await user.type(input, "new tag");
@@ -241,7 +374,7 @@ describe("Event handlers", () => {
       events: { onadd },
     });
     const user = userEvent.setup();
-    const { getByRole } = render(TagsInput, { props });
+    const { getByRole } = render(TagsInput, props);
     const input = getByRole("textbox") as HTMLInputElement;
 
     await user.type(input, "new tag");
@@ -258,7 +391,7 @@ describe("Event handlers", () => {
       events: { onremove },
     });
     const user = userEvent.setup();
-    const { container } = render(TagsInput, { props });
+    const { container } = render(TagsInput, props);
 
     const badges = container.querySelectorAll(".svs-tags-input.extra");
     await user.click(badges[0]);
@@ -276,7 +409,7 @@ describe("Event handlers", () => {
       events: { onremove },
     });
     const user = userEvent.setup();
-    const { container } = render(TagsInput, { props });
+    const { container } = render(TagsInput, props);
 
     const badges = container.querySelectorAll(".svs-tags-input.extra");
     await user.click(badges[0]);
@@ -382,5 +515,22 @@ describe("Status and state management", () => {
     const input = getByRole("textbox");
     expect(input).toHaveAttribute("aria-errormessage", "eid");
     expect(input).toHaveAttribute("aria-invalid", "true");
+  });
+
+  test("explicit aria-invalid=false overrides ariaErrMsgId-derived default", () => {
+    const { getByRole } = render(TagsInput, {
+      "aria-invalid": false,
+      ariaErrMsgId: "eid",
+    });
+
+    const input = getByRole("textbox");
+    expect(input).toHaveAttribute("aria-errormessage", "eid");
+    expect(input).toHaveAttribute("aria-invalid", "false");
+  });
+
+  test("explicit aria-invalid=true is preserved without ariaErrMsgId", () => {
+    const { getByRole } = render(TagsInput, { "aria-invalid": true });
+
+    expect(getByRole("textbox")).toHaveAttribute("aria-invalid", "true");
   });
 });
