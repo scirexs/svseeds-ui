@@ -22,8 +22,8 @@
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
     deps?: TagsInputFieldDeps;
   }
-  interface TagsInputFieldDeps extends TagsInputDeps {
-    svsTagsInput?: Omit<TagsInputProps, TagsInputReqdProps | TagsInputBindProps | "deps">;
+  interface TagsInputFieldDeps {
+    svsTagsInput?: Omit<TagsInputProps, TagsInputReqdProps | TagsInputBindProps | "variant" | "ariaErrMsgId" | "aria-describedby">;
   }
   type TagsInputFieldConstraint = (value: string, validity: ValidityState) => string | undefined;
   type TagsInputFieldValidation = (values: string[], validity: ValidityState) => string | undefined;
@@ -35,7 +35,7 @@
   ### Anatomy
   ```svelte
   <div class="whole">
-    <div class="top" conditional>
+    <div class="top" conditional: label or aux>
       <label class="label" conditional>
         {label}
         <span class="extra" conditional>{extra}</span>
@@ -44,10 +44,10 @@
     </div>
     <div class="middle">
       <span class="left" conditional>{left}</span>
-      <TagsInput bind:values bind:element {...deps.svsTagsInput} />
+      <TagsInput {...deps.svsTagsInput} bind:values bind:element />
       <span class="right" conditional>{right}</span>
     </div>
-    <div class="bottom" conditional>{bottom}</div>
+    <div class="bottom" conditional role="alert only on error">{bottom}</div>
   </div>
   ```
 -->
@@ -72,7 +72,7 @@
     deps?: TagsInputFieldDeps;
   }
   export interface TagsInputFieldDeps {
-    svsTagsInput?: Omit<TagsInputProps, TagsInputReqdProps | TagsInputBindProps>;
+    svsTagsInput?: Omit<TagsInputProps, TagsInputReqdProps | TagsInputBindProps | "variant" | "ariaErrMsgId" | "aria-describedby">;
   }
   export type TagsInputFieldReqdProps = never;
   export type TagsInputFieldBindProps = "values" | "variant" | "element";
@@ -94,46 +94,38 @@
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
   const uid = $props.id();
-  // svelte-ignore state_referenced_locally
-  const id = deps?.svsTagsInput?.id ? deps.svsTagsInput.id : label?.trim() ? `${uid}-ctrl` : undefined;
-  // svelte-ignore state_referenced_locally
-  const idLabel = label?.trim() ? `${uid}-label` : undefined;
-  // svelte-ignore state_referenced_locally
-  const idDesc = bottom?.trim() ? `${uid}-desc` : undefined;
-  const idErr = idDesc ?? `${uid}-err`;
-  // svelte-ignore state_referenced_locally
-  let message = $state(bottom);
-  let value = $state("");
-  // svelte-ignore state_referenced_locally
-  if (!name) name = deps?.svsTagsInput?.name as string | undefined;
-  // svelte-ignore state_referenced_locally
-  if (max) constraints.unshift(() => (values.length >= max.value ? max.message : ""));
-  // svelte-ignore state_referenced_locally
-  if (min) validations.unshift(() => (values.length < min.value ? min.message : ""));
+  const id = $derived(deps?.svsTagsInput?.id ? deps.svsTagsInput.id : label?.trim() ? `${uid}-ctrl` : undefined);
+  const idLabel = $derived(label?.trim() ? `${uid}-label` : undefined);
+  const idDesc = $derived(bottom?.trim() ? `${uid}-desc` : undefined);
+  const idErr = $derived(idDesc ?? `${uid}-err`);
+  let errmsg = $state("");
+  const message = $derived(variant === VARIANT.INACTIVE ? errmsg || bottom : bottom);
+  const resolvedName = $derived(name ?? (deps?.svsTagsInput?.name as string | undefined));
+  const constraintList = $derived(max ? [(): string => (values.length >= max.value ? max.message : ""), ...constraints] : constraints);
+  const validationList = $derived(min ? [(): string => (values.length < min.value ? min.message : ""), ...validations] : validations);
 
   // *** Initialize Deps *** //
-  // svelte-ignore state_referenced_locally
-  const svsTagsInput = {
-    ...omit(deps?.svsTagsInput, "styling", "id", "name", "onchange", "oninvalid", "aria-describedby"),
+  const svsTagsInput = $derived({
+    ...omit(deps?.svsTagsInput, "styling", "id", "name", "onchange", "oninvalid"),
     events: { onadd, onremove: deps?.svsTagsInput?.events?.onremove },
     styling: deps?.svsTagsInput?.styling ?? `${preset} svs-tags-input`,
     id,
     onchange,
     oninvalid,
     "aria-describedby": idDesc,
-  };
+  });
 
   // *** States *** //
   let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
   $effect(() => {
     neutral = isNeutral(variant) ? variant : neutral;
   });
-  let live = $derived(variant === VARIANT.INACTIVE ? "alert" : "status");
-  let idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
+  const live = $derived(variant === VARIANT.INACTIVE ? "alert" : undefined);
+  const idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
   function shift(oninvalid: boolean = false, msg?: string) {
     const vmsg = element?.validationMessage ?? "";
     variant = getStatus(oninvalid, vmsg, msg);
-    message = variant === VARIANT.INACTIVE ? (msg ? msg : vmsg ? vmsg : bottom) : bottom;
+    errmsg = msg ? msg : vmsg;
   }
   function getStatus(oninvalid: boolean, vmsg: string, msg?: string): string {
     if (msg || (oninvalid && vmsg)) return VARIANT.INACTIVE;
@@ -142,7 +134,7 @@
   }
   function verify() {
     if (!element) return;
-    for (const v of validations) {
+    for (const v of validationList) {
       const msg = v(values, element.validity);
       if (msg) return element.setCustomValidity(msg);
     }
@@ -160,15 +152,15 @@
   }
 
   // *** Event Handlers *** //
-  function onadd(values: string[], value: string): void | boolean {
+  function onadd(values: string[], value: string): undefined | boolean {
     if (deps?.svsTagsInput?.events?.onadd?.(values, value)) return true;
     variant = neutral;
-    shift(false, check());
+    shift(false, check(value));
     return variant === VARIANT.INACTIVE;
   }
-  function check(): string | undefined {
+  function check(value: string): string | undefined {
     if (!element) return;
-    for (const c of constraints) {
+    for (const c of constraintList) {
       const msg = c(value, element.validity);
       if (msg) return msg;
     }
@@ -188,19 +180,19 @@
 <!---------------------------------------->
 
 <div class={cls(PARTS.WHOLE, variant)} role="group" aria-labelledby={idLabel}>
-  {#if aux}
+  {#if label?.trim() || aux}
     <div class={cls(PARTS.TOP, variant)}>
       {@render lbl()}
-      <span class={cls(PARTS.AUX, variant)}>{@render aux(values, variant, element)}</span>
+      {#if aux}
+        <span class={cls(PARTS.AUX, variant)}>{@render aux(values, variant, element)}</span>
+      {/if}
     </div>
-  {:else}
-    {@render lbl()}
   {/if}
   {@render desc(descFirst)}
   <div class={cls(PARTS.MIDDLE, variant)}>
     {@render side(PARTS.LEFT, left)}
     {@render fnForm()}
-    <TagsInput bind:values bind:value {variant} bind:element ariaErrMsgId={idMsg} {...svsTagsInput} />
+    <TagsInput {...svsTagsInput} bind:values {variant} bind:element ariaErrMsgId={idMsg} />
     {@render side(PARTS.RIGHT, right)}
   </div>
   {@render desc(!descFirst)}
@@ -227,9 +219,9 @@
   {/if}
 {/snippet}
 {#snippet fnForm()}
-  {#if name}
+  {#if resolvedName}
     {#each values as value}
-      <input type="hidden" {name} {value} />
+      <input type="hidden" name={resolvedName} {value} />
     {/each}
   {/if}
 {/snippet}
