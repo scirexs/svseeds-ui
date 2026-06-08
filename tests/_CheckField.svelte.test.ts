@@ -61,7 +61,7 @@ describe("Switching existence of elements", () => {
     const lbl = getByText(label);
     expect(whole).toHaveAttribute("aria-labelledby");
     expect(whole.children).toHaveLength(2);
-    expect(whole.firstElementChild).toBe(lbl);
+    expect(whole.firstElementChild).toBe(lbl.parentElement);
     expect(whole.lastElementChild?.tagName).toBe("DIV");
   });
 
@@ -72,7 +72,7 @@ describe("Switching existence of elements", () => {
     const lbl = getByText(label);
     within(lbl).getByText(extra);
     expect(whole.children).toHaveLength(2);
-    expect(whole.firstElementChild).toBe(lbl);
+    expect(whole.firstElementChild).toBe(lbl.parentElement);
     expect(whole.lastElementChild?.tagName).toBe("DIV");
   });
 
@@ -92,9 +92,9 @@ describe("Switching existence of elements", () => {
 
   test("w/ bottom", () => {
     const props = { options, bottom };
-    const { getByRole, getAllByRole } = render(CheckField, props);
+    const { getAllByRole } = render(CheckField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
     const middle = whole.querySelector(`[role="group"]`) as HTMLDivElement;
     expect(whole.children).toHaveLength(2);
     expect(whole.firstElementChild).toBe(middle);
@@ -104,9 +104,9 @@ describe("Switching existence of elements", () => {
 
   test("w/ bottom and multiple=false", () => {
     const props = { options, bottom, multiple: false };
-    const { getByRole, getAllByRole } = render(CheckField, props);
+    const { getAllByRole } = render(CheckField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
     const middle = whole.querySelector(`[role="radiogroup"]`) as HTMLDivElement;
     expect(whole.children).toHaveLength(2);
     expect(whole.firstElementChild).toBe(middle);
@@ -116,9 +116,9 @@ describe("Switching existence of elements", () => {
 
   test("w/ bottom of attach input", () => {
     const props = { options, bottom, attach: attachfn };
-    const { getByRole, getAllByRole } = render(CheckField, props);
+    const { getAllByRole } = render(CheckField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
     const middle = whole.querySelector(`[role="group"]`) as HTMLDivElement;
     expect(whole.children).toHaveLength(2);
     expect(whole.firstElementChild).toBe(middle);
@@ -136,9 +136,9 @@ describe("Switching existence of elements", () => {
 
   test("w/ descFirst=true", () => {
     const props = { options, bottom, descFirst: true };
-    const { getByRole, getAllByRole } = render(CheckField, props);
+    const { getAllByRole } = render(CheckField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.firstElementChild as HTMLDivElement;
     const middle = whole.querySelector(`[role="group"]`) as HTMLDivElement;
     expect(whole.children).toHaveLength(2);
     expect(whole.firstElementChild).toBe(btm);
@@ -580,7 +580,7 @@ describe("Specify attrs & state transition & event handlers", () => {
       values: [],
     });
     const user = userEvent.setup();
-    const { getByRole, getByTestId, getByText, getAllByRole } = render(CheckField, props);
+    const { getByTestId, getByText, getAllByRole } = render(CheckField, props);
     const groups = getAllByRole("group");
     const whole = groups[0] as HTMLDivElement;
     const lbl = getByText(label);
@@ -589,7 +589,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const top = lbl.parentElement;
     const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
     const middle = checkboxes[0].parentElement?.parentElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
 
     expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(whole).toHaveClass(seed, PARTS.WHOLE);
@@ -638,7 +638,7 @@ describe("Specify attrs & state transition & event handlers", () => {
       values: [],
     });
     const user = userEvent.setup();
-    const { getByRole, getByTestId, getByText, getAllByRole } = render(CheckField, props);
+    const { getByTestId, getByText, getAllByRole } = render(CheckField, props);
     const groups = getAllByRole("group");
     const whole = groups[0] as HTMLDivElement;
     const lbl = getByText(label);
@@ -647,7 +647,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const top = lbl.parentElement;
     const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
     const middle = groups[1] as HTMLDivElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
 
     expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(whole).toHaveClass(clsid, PARTS.WHOLE);
@@ -700,7 +700,7 @@ describe("Specify attrs & state transition & event handlers", () => {
       values: [],
     });
     const user = userEvent.setup();
-    const { getByRole, getByTestId, getByText, getAllByRole } = render(CheckField, props);
+    const { getByTestId, getByText, getAllByRole } = render(CheckField, props);
     const groups = getAllByRole("group");
     const whole = groups[0] as HTMLDivElement;
     const lbl = getByText(label);
@@ -709,7 +709,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const top = lbl.parentElement;
     const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
     const middle = groups[1] as HTMLDivElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
 
     expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(whole).toHaveClass(dynObj.base, dynObj.neutral);

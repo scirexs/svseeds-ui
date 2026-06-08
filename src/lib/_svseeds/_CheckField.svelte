@@ -24,7 +24,7 @@
   ### Anatomy
   ```svelte
   <div class="whole">
-    <div class="top" conditional>
+    <div class="top" conditional: label or aux>
       <span class="label" conditional>
         {label}
         <span class="extra" conditional>{extra}</span>
@@ -85,22 +85,22 @@
   const idDesc = $derived(bottom?.trim() ? `${uid}-desc` : undefined);
   const idErr = $derived(idDesc ?? `${uid}-err`);
   const roleGroup = $derived(multiple ? "group" : "radiogroup");
-  // svelte-ignore state_referenced_locally
-  let message = $state(bottom);
+  let errmsg = $state("");
+  const message = $derived(variant === VARIANT.INACTIVE ? errmsg || bottom : bottom);
 
   // *** States *** //
   let neutral = $state(isNeutral(variant) ? variant : VARIANT.NEUTRAL);
   $effect(() => {
     neutral = isNeutral(variant) ? variant : neutral;
   });
-  const live = $derived(variant === VARIANT.INACTIVE ? "alert" : "status");
+  const live = $derived(variant === VARIANT.INACTIVE ? "alert" : undefined);
   const invalid = $derived(variant === VARIANT.INACTIVE ? true : undefined);
   const idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
   const reqd = $derived(required && (!multiple || !values.length) ? true : undefined);
   function shift(oninvalid?: boolean) {
     const vmsg = elements[0]?.validationMessage ?? "";
     variant = !values.length && !oninvalid ? neutral : vmsg ? VARIANT.INACTIVE : VARIANT.ACTIVE;
-    message = variant === VARIANT.INACTIVE ? (vmsg ? vmsg : bottom) : bottom;
+    errmsg = vmsg;
   }
   function verify() {
     if (!elements[0]) return;
@@ -112,7 +112,7 @@
   }
 
   // *** Bind Handlers *** //
-  let opts = $derived(Array.from(options, ([value, text]) => ({ value, text, checked: values.includes(value) })));
+  const opts = $derived(Array.from(options, ([value, text]) => ({ value, text, checked: values.includes(value) })));
   $effect.pre(() => {
     values;
     untrack(() => validate(true));
@@ -141,13 +141,13 @@
 
 {#if opts.length}
   <div class={cls(PARTS.WHOLE, variant)} role="group" aria-labelledby={idLabel}>
-    {#if aux}
+    {#if label?.trim() || aux}
       <div class={cls(PARTS.TOP, variant)}>
         {@render lbl()}
-        <span class={cls(PARTS.AUX, variant)}>{@render aux(values, variant, elements)}</span>
+        {#if aux}
+          <span class={cls(PARTS.AUX, variant)}>{@render aux(values, variant, elements)}</span>
+        {/if}
       </div>
-    {:else}
-      {@render lbl()}
     {/if}
     {@render desc(descFirst)}
     {@render main()}

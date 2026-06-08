@@ -29,7 +29,7 @@
   and (`placeholder` is set OR `value === ""`).
   ```svelte
   <div class="whole">
-    <div class="top" conditional>
+    <div class="top" conditional: label or aux>
       <label class="label" conditional>
         {label}
         <span class="extra" conditional>{extra}</span>
@@ -92,21 +92,21 @@
   const idLabel = $derived(label?.trim() ? `${uid}-label` : undefined);
   const idDesc = $derived(bottom?.trim() ? `${uid}-desc` : undefined);
   const idErr = $derived(idDesc ?? `${uid}-err`);
-  // svelte-ignore state_referenced_locally
-  let message = $state(bottom);
+  let errmsg = $state("");
+  const message = $derived(variant === VARIANT.INACTIVE ? errmsg || bottom : bottom);
 
   // *** States *** //
   let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
   $effect(() => {
     neutral = isNeutral(variant) ? variant : neutral;
   });
-  let live = $derived(variant === VARIANT.INACTIVE ? "alert" : "status");
-  let invalid = $derived(variant === VARIANT.INACTIVE ? true : undefined);
-  let idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
+  const live = $derived(variant === VARIANT.INACTIVE ? "alert" : undefined);
+  const invalid = $derived(variant === VARIANT.INACTIVE ? true : undefined);
+  const idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
   function shift(oninvalid?: boolean) {
     const vmsg = element?.validationMessage ?? "";
     variant = !value && !oninvalid ? neutral : vmsg ? VARIANT.INACTIVE : VARIANT.ACTIVE;
-    message = variant === VARIANT.INACTIVE ? (vmsg ? vmsg : bottom) : bottom;
+    errmsg = vmsg;
   }
   function verify() {
     if (!element) return;
@@ -118,8 +118,8 @@
   }
 
   // *** Bind Handlers *** //
-  let showPlaceholder = $derived(!options.has("") && (placeholder !== undefined || value === ""));
-  let opts = $derived([
+  const showPlaceholder = $derived(!options.has("") && (placeholder !== undefined || value === ""));
+  const opts = $derived([
     ...(showPlaceholder ? [{ val: "", text: placeholder ?? "", selected: value === "" }] : []),
     ...Array.from(options, ([val, text]) => ({ val, text, selected: val === value })),
   ]);
@@ -149,13 +149,13 @@
 <!---------------------------------------->
 
 <div class={cls(PARTS.WHOLE, variant)} role="group" aria-labelledby={idLabel}>
-  {#if aux}
+  {#if label?.trim() || aux}
     <div class={cls(PARTS.TOP, variant)}>
       {@render lbl()}
-      <span class={cls(PARTS.AUX, variant)}>{@render aux(value, variant, element)}</span>
+      {#if aux}
+        <span class={cls(PARTS.AUX, variant)}>{@render aux(value, variant, element)}</span>
+      {/if}
     </div>
-  {:else}
-    {@render lbl()}
   {/if}
   {@render desc(descFirst)}
   <div class={cls(PARTS.MIDDLE, variant)}>

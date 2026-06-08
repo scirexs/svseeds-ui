@@ -81,7 +81,7 @@ describe("Switching existence of elements", () => {
     const lbl = getByText(label);
     expect(whole).toHaveAttribute("aria-labelledby");
     expect(whole.children).toHaveLength(2);
-    expect(whole.firstElementChild).toBe(lbl);
+    expect(whole.firstElementChild).toBe(lbl.parentElement);
     expect(whole.lastElementChild?.tagName).toBe("DIV");
     expect(whole.lastElementChild).toBe(main.parentElement);
   });
@@ -94,7 +94,7 @@ describe("Switching existence of elements", () => {
     const lbl = getByText(label);
     expect(whole).toHaveAttribute("aria-labelledby");
     expect(whole.children).toHaveLength(2);
-    expect(whole.firstElementChild).toBe(lbl);
+    expect(whole.firstElementChild).toBe(lbl.parentElement);
     expect(whole.lastElementChild?.tagName).toBe("DIV");
     expect(whole.lastElementChild).toBe(main.parentElement);
     expect(attach).toHaveBeenCalled();
@@ -116,7 +116,7 @@ describe("Switching existence of elements", () => {
     const lbl = getByText(label);
     within(lbl).getByText(extra);
     expect(whole.children).toHaveLength(2);
-    expect(whole.firstElementChild).toBe(lbl);
+    expect(whole.firstElementChild).toBe(lbl.parentElement);
     expect(whole.lastElementChild?.tagName).toBe("DIV");
     expect(whole.lastElementChild).toBe(main.parentElement);
   });
@@ -164,7 +164,7 @@ describe("Switching existence of elements", () => {
     const { getByRole } = render(SelectField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("combobox") as HTMLSelectElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
     expect(whole.children).toHaveLength(2);
     expect(whole.firstElementChild).toBe(main.parentElement);
     expect(whole.lastElementChild).toBe(btm);
@@ -175,7 +175,7 @@ describe("Switching existence of elements", () => {
     const { getByRole } = render(SelectField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("combobox") as HTMLSelectElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
     expect(whole.children).toHaveLength(2);
     expect(whole.firstElementChild).toBe(main.parentElement);
     expect(whole.lastElementChild).toBe(btm);
@@ -194,7 +194,7 @@ describe("Switching existence of elements", () => {
     const { getByRole } = render(SelectField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("combobox") as HTMLSelectElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.firstElementChild as HTMLDivElement;
     expect(whole.children).toHaveLength(2);
     expect(whole.firstElementChild).toBe(btm);
     expect(whole.lastElementChild).toBe(main.parentElement);
@@ -457,7 +457,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const main = getByRole("combobox") as HTMLSelectElement;
     const rightdv = getByTestId(rightid).parentElement;
     const middle = main.parentElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
 
     expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(whole).toHaveClass(seed, PARTS.WHOLE);
@@ -522,7 +522,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const main = getByRole("combobox") as HTMLSelectElement;
     const rightdv = getByTestId(rightid).parentElement;
     const middle = main.parentElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
 
     expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(whole).toHaveClass(clsid, PARTS.WHOLE);
@@ -604,7 +604,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const main = getByRole("combobox") as HTMLSelectElement;
     const rightdv = getByTestId(rightid).parentElement;
     const middle = main.parentElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
 
     expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(whole).toHaveClass(dynObj.base, dynObj.neutral);
