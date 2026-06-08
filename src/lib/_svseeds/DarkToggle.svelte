@@ -24,6 +24,13 @@
     {/if}
   </Toggle>
   ```
+  SSR default theme: light.
+
+  DarkToggle emits an SSR-only `<svelte:head>` guard that sets the `light` or
+  `dark` class on `<html>` before first paint, based on `prefers-color-scheme`.
+  This is effective only when DarkToggle is in the initial server-rendered tree.
+  Under a strict Content-Security-Policy, the inline script may be blocked; use
+  an app-level blocking script with an appropriate nonce in that case.
 -->
 <script module lang="ts">
   export interface DarkToggleProps {
@@ -43,7 +50,9 @@
   export function setThemeToRoot(theme?: string) {
     if (typeof window === "undefined") return;
     if (!theme) theme = Theme.getPreferTheme();
-    window.document.documentElement.classList.add(theme);
+    const html = window.document.documentElement;
+    html.classList.remove(THEME.LIGHT, THEME.DARK);
+    html.classList.add(theme);
   }
 
   const THEME_SELECTOR = ":root";
@@ -54,6 +63,14 @@
   const THEME_TARGET_PREFIX = "--svs-";
   const ariaLabel = "Toggle theme color";
   const preset = "svs-dark-toggle";
+  // Keep the string literals in sync with THEME; the inline script must be self-contained.
+  const FOUC_SCRIPT =
+    `<script>(function(){try{` +
+    `var d=window.matchMedia("(prefers-color-scheme: dark)").matches;` +
+    `var e=document.documentElement;` +
+    `e.classList.remove("light","dark");` +
+    `e.classList.add(d?"dark":"light");` +
+    `}catch(_){}})()<\/script>`;
 
   type CustomProps = Record<string, string>;
   type ThemeProps = Map<string, CustomProps>;
@@ -93,12 +110,14 @@
   function filterRule(rule: CSSRule, theme?: string): CustomProps[] | undefined {
     if (rule instanceof CSSLayerBlockRule && rule.name === THEME_LAYER_NAME) theme = "light";
     if (rule instanceof CSSMediaRule) theme = getThemeName(rule.conditionText);
-    if (rule instanceof CSSGroupingRule) return scanGroup(rule, theme);
-    if (!(rule instanceof CSSStyleRule) && !(rule instanceof CSSPageRule)) return;
-    if (rule.selectorText.includes(THEME_SELECTOR)) {
+    // Style/page rules must be handled before grouping rules; modern CSSOM makes
+    // CSSStyleRule/CSSPageRule inherit from CSSGroupingRule for CSS Nesting.
+    if (rule instanceof CSSStyleRule || rule instanceof CSSPageRule) {
+      if (!rule.selectorText.includes(THEME_SELECTOR)) return;
       const fallback = rule.selectorText === THEME_SELECTOR ? "light" : undefined;
       return getCustomProps(rule.style, theme ?? fallback);
     }
+    if (rule instanceof CSSGroupingRule) return scanGroup(rule, theme);
   }
   function getThemeName(condition: string): string | undefined {
     const match = condition.match(THEME_MEDIA_REGEX);
@@ -188,12 +207,12 @@
     }
     #setColorScheme() {
       if (typeof window === "undefined") return;
-      const themes = Object.keys(this.#props).filter((x) => x === THEME.LIGHT || x === THEME.DARK);
+      const themes = [...this.#props.keys()].filter((x) => x === THEME.LIGHT || x === THEME.DARK);
       window.document.documentElement.style.colorScheme = themes.join(" ");
     }
 
     static #isPreferDark(): boolean {
-      if (typeof window === "undefined") return true;
+      if (typeof window === "undefined") return false;
       return window.matchMedia("(prefers-color-scheme: dark)").matches;
     }
     static #getThemeString(dark: boolean): string {
@@ -229,7 +248,6 @@
 
   // *** Initialize *** //
   if (dark === undefined) dark = theme.dark;
-  theme.dark = dark;
 
   // *** Initialize Deps *** //
   // svelte-ignore state_referenced_locally
@@ -237,7 +255,7 @@
     ...omit(deps?.svsToggle, "styling"),
     children: main,
     styling: deps?.svsToggle?.styling ?? `${preset} svs-toggle`,
-    ariaLabel,
+    ariaLabel: deps?.svsToggle?.ariaLabel ?? ariaLabel,
   };
 
   // *** Bind Handlers *** //
@@ -247,6 +265,10 @@
 </script>
 
 <!---------------------------------------->
+
+<svelte:head>
+  {@html FOUC_SCRIPT}
+</svelte:head>
 
 <Toggle bind:value={dark} bind:variant bind:element {...svsToggle} />
 

@@ -1,8 +1,10 @@
+import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, waitFor } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
-import DarkToggle, { setTheme, setThemeToRoot, THEME } from "#svs/DarkToggle.svelte";
+import { compile } from "svelte/compiler";
+import DarkToggle, { isDark, setTheme, setThemeToRoot, THEME, toggleTheme } from "#svs/DarkToggle.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 
 // The theme state is a module-level singleton (one theme per page). matchMedia is only
@@ -27,6 +29,25 @@ Object.defineProperty(document, "styleSheets", {
   writable: true,
   value: [],
 });
+
+function mockStyleSheets(sheets: CSSStyleSheet[] = []) {
+  Object.defineProperty(document, "styleSheets", {
+    writable: true,
+    value: sheets as unknown as StyleSheetList,
+  });
+}
+
+function createThemeStyleSheet() {
+  const style = document.createElement("style");
+  style.textContent = `
+    :root { --svs-bg: white; }
+    @media (prefers-color-scheme: dark) {
+      :root { --svs-bg: black; }
+    }
+  `;
+  document.head.append(style);
+  return style.sheet!;
+}
 
 // Custom snippet for testing deps.svsToggle.main
 const customMainSnippet = createRawSnippet(
@@ -225,6 +246,18 @@ describe("DarkToggle - Dependencies and customization", () => {
     expect(button).toHaveAttribute("aria-label", "Toggle theme color"); // Still has default aria-label
   });
 
+  test("allows aria-label override from deps", () => {
+    const deps = {
+      svsToggle: {
+        ariaLabel: "Switch color mode",
+      },
+    };
+    const { getByRole } = render(DarkToggle, { deps });
+    const button = getByRole("button") as HTMLButtonElement;
+
+    expect(button).toHaveAttribute("aria-label", "Switch color mode");
+  });
+
   test("renders custom main snippet", async () => {
     const props = $state({ children: customMainSnippet, dark: false, variant: VARIANT.NEUTRAL });
     const { getByTestId } = render(DarkToggle, { ...props });
@@ -316,6 +349,13 @@ describe("DarkToggle - Theme class management", () => {
     setThemeToRoot(THEME.LIGHT);
     await waitFor(() => {
       expect(document.documentElement).toHaveClass(THEME.LIGHT);
+      expect(document.documentElement).not.toHaveClass(THEME.DARK);
+    });
+
+    setThemeToRoot(THEME.DARK);
+    await waitFor(() => {
+      expect(document.documentElement).toHaveClass(THEME.DARK);
+      expect(document.documentElement).not.toHaveClass(THEME.LIGHT);
     });
   });
 
@@ -328,6 +368,101 @@ describe("DarkToggle - Theme class management", () => {
 
     setThemeToRoot();
     expect(document.documentElement).toHaveClass(THEME.DARK);
+  });
+
+  test("programmatic API toggles the shared theme", async () => {
+    forceTheme(false);
+
+    toggleTheme();
+    await waitFor(() => {
+      expect(isDark()).toBe(true);
+      expect(document.documentElement).toHaveClass(THEME.DARK);
+    });
+
+    toggleTheme();
+    await waitFor(() => {
+      expect(isDark()).toBe(false);
+      expect(document.documentElement).toHaveClass(THEME.LIGHT);
+    });
+  });
+});
+
+describe("DarkToggle - SSR and CSS scanning", () => {
+  beforeEach(() => {
+    document.documentElement.className = "";
+    document.documentElement.style.cssText = "";
+    document.head.innerHTML = "";
+    mockStyleSheets();
+    mockMatchMedia.mockReturnValue({
+      matches: false,
+      media: "(prefers-color-scheme: dark)",
+    });
+  });
+
+  afterEach(() => {
+    mockStyleSheets();
+    vi.resetModules();
+  });
+
+  test("defaults to light in an SSR-style environment", async () => {
+    const originalWindow = globalThis.window;
+    // @ts-ignore:
+    delete globalThis.window;
+
+    try {
+      vi.resetModules();
+      const mod = await import("#svs/DarkToggle.svelte");
+
+      expect(mod.isDark()).toBe(false);
+    } finally {
+      globalThis.window = originalWindow;
+    }
+  });
+
+  test("sets color-scheme from scanned light and dark theme props", async () => {
+    const sheet = createThemeStyleSheet();
+    mockStyleSheets([sheet]);
+    vi.resetModules();
+
+    await import("#svs/DarkToggle.svelte");
+    const themes = document.documentElement.style.colorScheme.split(/\s+/);
+
+    expect(themes).toContain(THEME.LIGHT);
+    expect(themes).toContain(THEME.DARK);
+  });
+
+  test("keeps color-scheme empty when no theme props are found", async () => {
+    document.documentElement.style.colorScheme = "dark";
+    mockStyleSheets();
+    vi.resetModules();
+
+    await import("#svs/DarkToggle.svelte");
+
+    expect(document.documentElement.style.colorScheme).toBe("");
+  });
+
+  test("compiles the FOUC guard into SSR head output", () => {
+    const source = readFileSync("src/lib/_svseeds/DarkToggle.svelte", "utf8");
+    const code = compile(source, {
+      filename: "DarkToggle.svelte",
+      generate: "server",
+    }).js.code;
+
+    expect(code).toContain("$.head(");
+    expect(code).toContain("$.html(FOUC_SCRIPT)");
+    expect(code).toContain("<script>");
+    expect(code).toContain('matchMedia("(prefers-color-scheme: dark)")');
+    expect(code).toContain('classList.remove("light","dark")');
+    expect(code).toContain('classList.add(d?"dark":"light")');
+  });
+
+  test("keeps the FOUC guard inert during client render", () => {
+    mockMatchMedia.mockClear();
+
+    render(DarkToggle, { dark: false });
+
+    expect(document.head.innerHTML).toContain('matchMedia("(prefers-color-scheme: dark)")');
+    expect(mockMatchMedia).not.toHaveBeenCalled();
   });
 });
 
