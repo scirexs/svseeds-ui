@@ -1,494 +1,387 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { fireEvent, render, waitFor, within } from "@testing-library/svelte";
+import { render, waitFor, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
-import { createRawSnippet } from "svelte";
-import Accordion from "#svs/Accordion.svelte";
+import { createRawSnippet, tick } from "svelte";
+import Accordion, { type AccordionItem } from "#svs/Accordion.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import TabDummy from "./fixtures/TabDummy.svelte";
 
-const label1 = "First Section";
-const label2 = "Second Section";
-const label3 = "Third Section";
-const panel1id = "test-panel1";
-const panel2id = "test-panel2";
-const panel3id = "test-panel3";
+const seed = "svs-accordion";
+const deps = { svsDisclosure: { duration: 0 } };
 
-const label1fn = createRawSnippet(() => {
-  return { render: () => `<span>${label1}</span>` };
-});
-const label2fn = createRawSnippet(() => {
-  return { render: () => `<span>${label2}</span>` };
-});
-const label3fn = createRawSnippet(() => {
-  return { render: () => `<span>${label3}</span>` };
-});
+const panelFn = (id: string, text: string) =>
+  createRawSnippet<[string]>((variant) => ({ render: () => `<div data-testid="${id}" data-variant="${variant()}">${text}</div>` }));
+const labelFn = (id: string, text: string) =>
+  createRawSnippet<[boolean, string]>((open, variant) => ({
+    render: () => `<span data-testid="${id}" data-open="${open()}" data-variant="${variant()}">${text}</span>`,
+  }));
+const baseItems = (): AccordionItem[] => [
+  { value: "a", label: "Section A", panel: panelFn("panel-a", "Panel A") },
+  { value: "b", label: "Section B", panel: panelFn("panel-b", "Panel B") },
+  { value: "c", label: "Section C", panel: panelFn("panel-c", "Panel C") },
+];
+const groupIn = (container: HTMLElement) => container.querySelector('div[role="group"]') as HTMLDivElement;
+const detailsIn = (container: HTMLElement) => Array.from(container.querySelectorAll("details")) as HTMLDetailsElement[];
+const summariesIn = (container: HTMLElement) => Array.from(container.querySelectorAll("summary")) as HTMLElement[];
+const bySummaryText = (container: HTMLElement, text: string) =>
+  summariesIn(container).find((summary) => summary.textContent?.includes(text)) as HTMLElement;
+const detailsBySummaryText = (container: HTMLElement, text: string) => bySummaryText(container, text).closest("details") as HTMLDetailsElement;
 
-const panel1fn = createRawSnippet(() => {
-  return { render: () => `<div data-testid="${panel1id}">Content 1</div>` };
-});
-const panel2fn = createRawSnippet(() => {
-  return { render: () => `<div data-testid="${panel2id}">Content 2</div>` };
-});
-const panel3fn = createRawSnippet(() => {
-  return { render: () => `<div data-testid="${panel3id}">Content 3</div>` };
+afterEach(() => {
+  vi.useRealTimers();
 });
 
-describe("Accordion basic rendering", () => {
-  test("empty accordion - no labels or panels", () => {
-    try {
-      const { container } = render(Accordion);
-      expect(container.firstChild).toBeNull();
-    } catch (e) {
-      // ok
-    }
+describe("Rendering and API", () => {
+  test("empty items render nothing", () => {
+    const { container, queryByRole } = render(Accordion, { items: [] });
+
+    expect(container.childElementCount).toBe(0);
+    expect(queryByRole("group")).toBeNull();
+    expect(container.querySelector("details")).toBeNull();
   });
 
-  test("invalid accordion - mismatched labels and panels", () => {
-    const props = {
-      labels: [label1, label2],
-      panel1: panel1fn,
-    };
-    try {
-      const { container } = render(Accordion, props);
-      expect(container.firstChild).toBeNull();
-    } catch (e) {
-      // ok
-    }
+  test("string labels and snippet panels render closed", () => {
+    const { container, getByText, getByTestId } = render(Accordion, { items: baseItems(), deps });
+
+    expect(groupIn(container)).toBeInTheDocument();
+    expect(detailsIn(container)).toHaveLength(3);
+    expect(getByText("Section A")).toBeInTheDocument();
+    expect(getByText("Section B")).toBeInTheDocument();
+    expect(getByTestId("panel-a")).toHaveTextContent("Panel A");
+    expect(detailsIn(container).every((details) => !details.open)).toBe(true);
   });
 
-  test("string labels with matching panels", () => {
-    const props = {
-      labels: [label1, label2],
-      panel1: panel1fn,
-      panel2: panel2fn,
-    };
-    const { getAllByRole, getByText, getByTestId } = render(Accordion, props);
-    const group = getAllByRole("group")[0];
-    expect(group.children).toHaveLength(2);
+  test("snippet label renders into summary", () => {
+    const items = [{ value: "snippet", label: labelFn("label-snippet", "Snippet Label"), panel: panelFn("panel", "Panel") }];
+    const { container, getByTestId } = render(Accordion, { items, deps });
 
-    // Check labels exist
-    getByText(label1);
-    getByText(label2);
-
-    // Check panels exist but are initially hidden
-    const details1 = getByText(label1).closest("details");
-    const details2 = getByText(label2).closest("details");
-    expect(details1).not.toHaveAttribute("open");
-    expect(details2).not.toHaveAttribute("open");
+    expect(within(bySummaryText(container, "Snippet Label")).getByTestId("label-snippet")).toHaveTextContent("Snippet Label");
+    expect(getByTestId("label-snippet")).toHaveAttribute("data-open", "false");
   });
 
-  test("snippet labels with matching panels", () => {
-    const props = {
-      label1: label1fn,
-      label2: label2fn,
-      panel1: panel1fn,
-      panel2: panel2fn,
-    };
-    const { getAllByRole, getByText } = render(Accordion, props);
-    const group = getAllByRole("group")[0];
-    expect(group.children).toHaveLength(2);
+  test("component label forwards props into summary", () => {
+    const items: AccordionItem[] = [{ value: "component", label: { component: TabDummy, props: { text: "Component Label" } }, panel: panelFn("panel", "Panel") }];
+    const { container, getByTestId } = render(Accordion, { items, deps });
 
-    // Check snippet labels are rendered
-    getByText(label1);
-    getByText(label2);
+    expect(within(summariesIn(container)[0]).getByTestId("dummy")).toHaveTextContent("Component Label");
+    expect(getByTestId("dummy")).toHaveTextContent("Component Label");
   });
 
-  test("mixed labels and panels with proper ordering", () => {
-    const props = {
-      label1: label1fn,
-      label3: label3fn,
-      panel1: panel1fn,
-      panel3: panel3fn,
-    };
-    const { getAllByRole, getByText } = render(Accordion, props);
-    const group = getAllByRole("group")[0];
-    expect(group.children).toHaveLength(2);
+  test("component panel forwards props into panel", () => {
+    const items: AccordionItem[] = [{ value: "component", label: "Component", panel: { component: TabDummy, props: { text: "Component Panel" } } }];
+    const { getByTestId } = render(Accordion, { items, deps });
 
-    // Labels should be sorted alphabetically
-    const labels = Array.from(group.querySelectorAll("summary"));
-    expect(labels).toHaveLength(2);
+    expect(getByTestId("dummy")).toHaveTextContent("Component Panel");
+  });
+
+  test("panel content remains present while closed", () => {
+    const { getByTestId } = render(Accordion, { items: baseItems(), deps });
+
+    expect(getByTestId("panel-b")).toBeInTheDocument();
   });
 });
 
-describe("Accordion state management and interactions", () => {
-  // test("initial current state", () => {
-  //   const props = $state({
-  //     labels: [label1, label2, label3],
-  //     current: 1, // error on test if current is greater than -1
-  //     panel1: panel1fn,
-  //     panel2: panel2fn,
-  //     panel3: panel3fn,
-  //     deps: { duration: 0 },
-  //   });
-  //   const { getByText } = render(Accordion, props);
+describe("Key-string addressing and correction", () => {
+  test("initial current opens the matching item", () => {
+    const { container } = render(Accordion, { items: baseItems(), current: "b", deps });
 
-  //   const details1 = getByText(label1).closest("details") as HTMLDetailsElement;
-  //   const details2 = getByText(label2).closest("details") as HTMLDetailsElement;
-  //   const details3 = getByText(label3).closest("details") as HTMLDetailsElement;
+    expect(detailsBySummaryText(container, "Section A").open).toBe(false);
+    expect(detailsBySummaryText(container, "Section B").open).toBe(true);
+    expect(detailsBySummaryText(container, "Section C").open).toBe(false);
+  });
 
-  //   expect(details1.open).toBe(false);
-  //   expect(details2.open).toBe(true);
-  //   expect(details3.open).toBe(false);
-  //   expect(props.current).toBe(1);
-  // });
+  test("unknown current normalizes to all closed", async () => {
+    const props = $state({ items: baseItems(), current: "nope" as string | undefined, deps });
+    const { container } = render(Accordion, props);
 
-  test("exclusive accordion behavior", async () => {
-    const props = $state({
-      labels: [label1, label2, label3],
-      current: -1,
-      panel1: panel1fn,
-      panel2: panel2fn,
-      panel3: panel3fn,
-      deps: { svsDisclosure: { duration: 0 } },
+    await waitFor(() => expect(props.current).toBeUndefined());
+    expect(detailsIn(container).every((details) => !details.open)).toBe(true);
+  });
+
+  test("disabled current normalizes to all closed", async () => {
+    const items = baseItems().map((item) => (item.value === "b" ? { ...item, disabled: true } : item));
+    const props = $state({ items, current: "b" as string | undefined, deps });
+    const { container } = render(Accordion, props);
+
+    await waitFor(() => expect(props.current).toBeUndefined());
+    expect(detailsIn(container).every((details) => !details.open)).toBe(true);
+  });
+
+  test("programmatic current change opens by value", async () => {
+    const props = $state({ items: baseItems(), current: "a" as string | undefined, deps });
+    const { container, rerender } = render(Accordion, props);
+
+    props.current = "c";
+    await rerender(props);
+
+    await waitFor(() => {
+      expect(detailsBySummaryText(container, "Section A").open).toBe(false);
+      expect(detailsBySummaryText(container, "Section C").open).toBe(true);
     });
+  });
+
+  test("programmatic clear closes the open item", async () => {
+    const props = $state({ items: baseItems(), current: "a" as string | undefined, deps });
+    const { container, rerender } = render(Accordion, props);
+
+    props.current = undefined;
+    await rerender(props);
+
+    await waitFor(() => expect(detailsIn(container).every((details) => !details.open)).toBe(true));
+  });
+
+  test("10+ items keep input order and panel pairing", async () => {
+    const items: AccordionItem[] = Array.from({ length: 10 }, (_, i) => ({
+      value: `v${i + 1}`,
+      label: `L${i + 1}`,
+      panel: panelFn(`panel-${i + 1}`, `PANEL-${i + 1}`),
+    }));
+    const props = $state({ items, current: undefined as string | undefined, deps });
+    const { container, getByTestId, rerender } = render(Accordion, props);
+
+    expect(summariesIn(container).map((summary) => summary.textContent)).toEqual(items.map((item) => item.label));
+    props.current = "v10";
+    await rerender(props);
+    expect(detailsBySummaryText(container, "L10").open).toBe(true);
+    expect(getByTestId("panel-10")).toHaveTextContent("PANEL-10");
+  });
+
+  test("reordering items keeps the same value open", async () => {
+    const initial = baseItems();
+    const props = $state({ items: initial, current: "b" as string | undefined, deps });
+    const { container, rerender } = render(Accordion, props);
+
+    props.items = [initial[2], initial[1], initial[0]];
+    await rerender(props);
+
+    expect(summariesIn(container).map((summary) => summary.textContent)).toEqual(["Section C", "Section B", "Section A"]);
+    expect(detailsBySummaryText(container, "Section B").open).toBe(true);
+  });
+
+  test("items can be reactively added and removed", async () => {
+    const all = baseItems();
+    const props = $state({ items: all.slice(0, 1), deps });
+    const { container, rerender } = render(Accordion, props);
+
+    expect(detailsIn(container)).toHaveLength(1);
+    props.items = all.slice(0, 2);
+    await rerender(props);
+    expect(detailsIn(container)).toHaveLength(2);
+    props.items = all.slice(1, 2);
+    await rerender(props);
+    expect(detailsIn(container)).toHaveLength(1);
+    expect(bySummaryText(container, "Section B")).toBeInTheDocument();
+  });
+});
+
+describe("Exclusive behavior", () => {
+  test("click opens one item exclusively", async () => {
+    const props = $state({ items: baseItems(), current: undefined as string | undefined, deps });
     const user = userEvent.setup();
-    const { getByText } = render(Accordion, props);
+    const { container } = render(Accordion, props);
 
-    const summary1 = getByText(label1);
-    const summary2 = getByText(label2);
-    const details1 = summary1.closest("details") as HTMLDetailsElement;
-    const details2 = summary2.closest("details") as HTMLDetailsElement;
+    await user.click(bySummaryText(container, "Section A"));
+    await waitFor(() => expect(detailsBySummaryText(container, "Section A").open).toBe(true));
+    expect(props.current).toBe("a");
 
-    // Initially all closed
-    expect(details1.open).toBe(false);
-    expect(details2.open).toBe(false);
-    expect(props.current).toBe(-1);
-
-    // Click first accordion
-    await user.click(summary1);
+    await user.click(bySummaryText(container, "Section B"));
     await waitFor(() => {
-      expect(details1.open).toBe(true);
-      expect(details2.open).toBe(false);
-      expect(props.current).toBe(0);
+      expect(detailsBySummaryText(container, "Section A").open).toBe(false);
+      expect(detailsBySummaryText(container, "Section B").open).toBe(true);
     });
-
-    // Click second accordion - first should close
-    await user.click(summary2);
-    await waitFor(() => {
-      expect(details1.open).toBe(false);
-      expect(details2.open).toBe(true);
-      expect(props.current).toBe(1);
-    });
-
-    // Click second accordion again to close
-    await user.click(summary2);
-    await waitFor(() => {
-      expect(details1.open).toBe(false);
-      expect(details2.open).toBe(false);
-      expect(props.current).toBe(-1);
-    });
+    expect(props.current).toBe("b");
   });
 
-  test("programmatic current change", async () => {
-    const props = $state({
-      labels: [label1, label2, label3],
-      current: -1,
-      panel1: panel1fn,
-      panel2: panel2fn,
-      panel3: panel3fn,
-      deps: { svsDisclosure: { duration: 0 } },
-    });
-    const { getByText, rerender } = render(Accordion, props);
+  test("clicking the open item closes it", async () => {
+    const props = $state({ items: baseItems(), current: "a" as string | undefined, deps });
+    const user = userEvent.setup();
+    const { container } = render(Accordion, props);
 
-    const details1 = getByText(label1).closest("details") as HTMLDetailsElement;
-    const details2 = getByText(label2).closest("details") as HTMLDetailsElement;
-    const details3 = getByText(label3).closest("details") as HTMLDetailsElement;
+    await user.click(bySummaryText(container, "Section A"));
 
-    // // Change current programmatically
-    // props.current = 2;  // error on test if assign value to current
-    // await rerender(props);
-
-    // expect(details1.open).toBe(false);
-    // expect(details2.open).toBe(false);
-    // expect(details3.open).toBe(true);
-
-    // // Change to invalid index
-    // props.current = 5;
-    // await rerender(props);
-
-    // expect(details1.open).toBe(false);
-    // expect(details2.open).toBe(false);
-    // expect(details3.open).toBe(false);
+    await waitFor(() => expect(detailsBySummaryText(container, "Section A").open).toBe(false));
+    expect(props.current).toBeUndefined();
   });
 
-  test("variant binding", async () => {
-    const props = $state({
-      labels: [label1, label2],
-      current: -1,
-      variant: VARIANT.NEUTRAL as string,
-      panel1: panel1fn,
-      panel2: panel2fn,
-    });
-    const { getAllByRole, rerender } = render(Accordion, props);
+  test("opening another item does not overwrite current with undefined", async () => {
+    const props = $state({ items: baseItems(), current: "a" as string | undefined, deps });
+    const user = userEvent.setup();
+    const { container } = render(Accordion, props);
 
-    const group = getAllByRole("group")[0];
-    expect(group).toHaveClass("svs-accordion", PARTS.WHOLE, VARIANT.NEUTRAL);
+    await user.click(bySummaryText(container, "Section B"));
 
-    props.variant = VARIANT.ACTIVE;
-    await rerender(props);
-    expect(group).toHaveClass("svs-accordion", PARTS.WHOLE, VARIANT.ACTIVE);
-
-    props.variant = VARIANT.INACTIVE;
-    await rerender(props);
-    expect(group).toHaveClass("svs-accordion", PARTS.WHOLE, VARIANT.INACTIVE);
+    await waitFor(() => expect(detailsBySummaryText(container, "Section B").open).toBe(true));
+    expect(props.current).toBe("b");
   });
 });
 
-describe("Accordion styling and dependencies", () => {
+describe("Disabled", () => {
+  test("disabled item cannot open via click", async () => {
+    const items = baseItems().map((item) => (item.value === "b" ? { ...item, disabled: true } : item));
+    const props = $state({ items, current: "a" as string | undefined, deps });
+    const user = userEvent.setup();
+    const { container } = render(Accordion, props);
+
+    await user.click(bySummaryText(container, "Section B"));
+
+    expect(detailsBySummaryText(container, "Section B").open).toBe(false);
+    expect(props.current).toBe("a");
+  });
+
+  test("disabled item exposes aria-disabled and inactive styling", () => {
+    const items = baseItems().map((item) => (item.value === "b" ? { ...item, disabled: true } : item));
+    const { container } = render(Accordion, { items, deps });
+    const details = detailsBySummaryText(container, "Section B");
+
+    expect(details).toHaveAttribute("aria-disabled", "true");
+    expect(details).toHaveClass(VARIANT.INACTIVE);
+  });
+
+  test("enabled items still open and close in a mixed list", async () => {
+    const items = baseItems().map((item) => (item.value === "b" ? { ...item, disabled: true } : item));
+    const props = $state({ items, current: undefined as string | undefined, deps });
+    const user = userEvent.setup();
+    const { container } = render(Accordion, props);
+
+    await user.click(bySummaryText(container, "Section C"));
+
+    await waitFor(() => expect(detailsBySummaryText(container, "Section C").open).toBe(true));
+    expect(props.current).toBe("c");
+  });
+});
+
+describe("Variant propagation", () => {
+  test("closed items reflect Accordion variant and update", async () => {
+    const props = $state({ items: baseItems(), variant: VARIANT.NEUTRAL as string, deps });
+    const { container, rerender } = render(Accordion, props);
+
+    detailsIn(container).forEach((details) => expect(details).toHaveClass(seed, "svs-disclosure", PARTS.WHOLE, VARIANT.NEUTRAL));
+
+    props.variant = "custom-variant";
+    await rerender(props);
+
+    detailsIn(container).forEach((details) => expect(details).toHaveClass("custom-variant"));
+  });
+
+  test("open item shows active while the rest keep Accordion variant", async () => {
+    const props = $state({ items: baseItems(), current: undefined as string | undefined, variant: "custom-variant", deps });
+    const user = userEvent.setup();
+    const { container } = render(Accordion, props);
+
+    await user.click(bySummaryText(container, "Section A"));
+
+    await waitFor(() => expect(detailsBySummaryText(container, "Section A")).toHaveClass(VARIANT.ACTIVE));
+    expect(detailsBySummaryText(container, "Section B")).toHaveClass("custom-variant");
+  });
+
+  test("deps.svsDisclosure.variant overrides Accordion variant", () => {
+    const localDeps = { svsDisclosure: { duration: 0, variant: "dep-variant" } } as any;
+    const { container } = render(Accordion, { items: baseItems(), variant: "accordion-variant", deps: localDeps });
+
+    detailsIn(container).forEach((details) => {
+      expect(details).toHaveClass("dep-variant");
+      expect(details).not.toHaveClass("accordion-variant");
+    });
+  });
+});
+
+describe("Styling", () => {
   test("default styling", () => {
-    const props = {
-      labels: [label1, label2],
-      panel1: panel1fn,
-      panel2: panel2fn,
-    };
-    const { getAllByRole } = render(Accordion, props);
-    const group = getAllByRole("group")[0];
-    expect(group).toHaveClass("svs-accordion", PARTS.WHOLE, VARIANT.NEUTRAL);
+    const { container } = render(Accordion, { items: baseItems(), deps });
+
+    expect(groupIn(container)).toHaveClass(seed, PARTS.WHOLE, VARIANT.NEUTRAL);
+    expect(detailsIn(container)[0]).toHaveClass(seed, "svs-disclosure", PARTS.WHOLE, VARIANT.NEUTRAL);
   });
 
-  test("custom string styling", () => {
-    const customStyle = "custom-accordion";
-    const props = {
-      labels: [label1, label2],
-      styling: customStyle,
-      panel1: panel1fn,
-      panel2: panel2fn,
-    };
-    const { getAllByRole } = render(Accordion, props);
-    const group = getAllByRole("group")[0];
-    expect(group).toHaveClass(customStyle, PARTS.WHOLE, VARIANT.NEUTRAL);
+  test("string styling", () => {
+    const { container } = render(Accordion, { items: baseItems(), styling: "custom-accordion", deps });
+
+    expect(groupIn(container)).toHaveClass("custom-accordion", PARTS.WHOLE, VARIANT.NEUTRAL);
   });
 
-  test("custom object styling", async () => {
-    const styling = {
-      whole: {
-        base: "custom-base",
-        neutral: "custom-neutral",
-        active: "custom-active",
-      },
-    };
-    const props = $state({
-      labels: [label1, label2],
-      styling,
-      variant: VARIANT.NEUTRAL as string,
-      panel1: panel1fn,
-      panel2: panel2fn,
-    });
-    const { getAllByRole, rerender } = render(Accordion, props);
-    const group = getAllByRole("group")[0];
+  test("object styling", async () => {
+    const styling = { whole: { base: "custom-base", neutral: "custom-neutral", active: "custom-active" } };
+    const props = $state({ items: baseItems(), styling, variant: VARIANT.NEUTRAL as string, deps });
+    const { container, rerender } = render(Accordion, props);
 
-    expect(group).toHaveClass("custom-base", "custom-neutral");
-
+    expect(groupIn(container)).toHaveClass("custom-base", "custom-neutral");
     props.variant = VARIANT.ACTIVE;
     await rerender(props);
-    expect(group).toHaveClass("custom-base", "custom-active");
+    expect(groupIn(container)).toHaveClass("custom-base", "custom-active");
   });
 
-  test("with dependencies - svsDisclosure props", () => {
-    const ontoggle = vi.fn();
-    const props = {
-      labels: [label1, label2],
-      deps: {
-        svsDisclosure: {
-          ontoggle,
-        },
-      },
-      panel1: panel1fn,
-      panel2: panel2fn,
-    };
-    const { getByText } = render(Accordion, props);
+  test("deps.svsDisclosure.styling overrides the default Disclosure styling", () => {
+    const localDeps = { svsDisclosure: { duration: 0, styling: "custom-disclosure" } };
+    const { container } = render(Accordion, { items: baseItems(), deps: localDeps });
 
-    const details1 = getByText(label1).closest("details") as HTMLDetailsElement;
-    expect(details1).toHaveClass("svs-accordion", "svs-disclosure");
-  });
-
-  test("with custom svsDisclosure styling", () => {
-    const props = {
-      labels: [label1, label2],
-      deps: {
-        svsDisclosure: {
-          styling: "custom-disclosure-styling",
-        },
-      },
-      panel1: panel1fn,
-      panel2: panel2fn,
-    };
-    const { getByText } = render(Accordion, props);
-
-    const details1 = getByText(label1).closest("details") as HTMLDetailsElement;
-    expect(details1).toHaveClass("custom-disclosure-styling");
+    expect(detailsIn(container)[0]).toHaveClass("custom-disclosure");
+    expect(detailsIn(container)[0]).not.toHaveClass(seed);
   });
 });
 
-describe("Accordion event handling", () => {
-  test("custom ontoggle handler is called", async () => {
-    const ontoggle = vi.fn();
-    const props = {
-      labels: [label1, label2],
-      deps: {
-        svsDisclosure: {
-          duration: 0,
-          ontoggle,
-        },
-      },
-      panel1: panel1fn,
-      panel2: panel2fn,
-    };
-    const user = userEvent.setup();
-    const { getByText } = render(Accordion, props);
+describe("Accessibility", () => {
+  test("roles and structure use native details and summary", () => {
+    const { container, getAllByRole } = render(Accordion, { items: baseItems(), deps });
 
-    const summary1 = getByText(label1);
-    await user.click(summary1);
-
-    expect(ontoggle).toHaveBeenCalled();
+    expect(getAllByRole("group")[0]).toBe(groupIn(container));
+    detailsIn(container).forEach((details) => expect(details.tagName).toBe("DETAILS"));
+    summariesIn(container).forEach((summary) => expect(summary.tagName).toBe("SUMMARY"));
   });
 
-  // jsdom/userEvent limitation: pressing Enter/Space on a native <summary> is not
-  // translated into a click/toggle (only <button> is). The component relies on the
-  // browser's native summary activation, so keyboard activation cannot be exercised here.
-  test.skip("keyboard navigation", async () => {
-    const props = $state({
-      labels: [label1, label2],
-      current: -1,
-      panel1: panel1fn,
-      panel2: panel2fn,
-    });
+  test("disabled item remains discoverable in the DOM", () => {
+    const items = baseItems().map((item) => (item.value === "b" ? { ...item, disabled: true } : item));
+    const { container } = render(Accordion, { items, deps });
+
+    expect(bySummaryText(container, "Section B")).toBeInTheDocument();
+    expect(detailsBySummaryText(container, "Section B")).toHaveAttribute("aria-disabled", "true");
+  });
+
+  test.skip("keyboard activation relies on native summary behavior not simulated in jsdom", async () => {
+    const props = $state({ items: baseItems(), current: undefined as string | undefined, deps });
     const user = userEvent.setup();
-    const { getByText } = render(Accordion, props);
+    const { container } = render(Accordion, props);
 
-    const summary1 = getByText(label1);
-    const details1 = summary1.closest("details") as HTMLDetailsElement;
-
-    // Focus and press Enter/Space
-    summary1.focus();
+    bySummaryText(container, "Section A").focus();
     await user.keyboard("{Enter}");
 
-    await waitFor(() => {
-      expect(details1.open).toBe(true);
-      expect(props.current).toBe(0);
-    });
+    await waitFor(() => expect(detailsBySummaryText(container, "Section A").open).toBe(true));
   });
 });
 
-describe("Accordion accessibility", () => {
-  test("proper ARIA roles and attributes", () => {
-    const props = {
-      labels: [label1, label2],
-      panel1: panel1fn,
-      panel2: panel2fn,
-    };
-    const { getAllByRole, getByText } = render(Accordion, props);
+describe("Edge cases", () => {
+  test("duplicate values are caller responsibility", () => {
+    const items: AccordionItem[] = [
+      { value: "same", label: "First", panel: panelFn("panel-first", "First Panel") },
+      { value: "same", label: "Second", panel: panelFn("panel-second", "Second Panel") },
+    ];
 
-    const group = getAllByRole("group")[0];
-    expect(group).toBeInTheDocument();
-
-    // Check that summaries are properly associated with content
-    const summary1 = getByText(label1);
-    const details1 = summary1.closest("details") as HTMLDetailsElement;
-    expect(details1).toBeInTheDocument();
-    expect(summary1.tagName).toBe("SUMMARY");
+    // Accordion does not add deduplication logic; Svelte keyed each requires unique keys.
+    expect(new Set(items.map((item) => item.value)).size).not.toBe(items.length);
   });
 
-  test("keyboard accessibility", async () => {
-    const props = $state({
-      labels: [label1, label2],
-      current: -1,
-      panel1: panel1fn,
-      panel2: panel2fn,
-    });
+  test("all disabled items cannot open and current normalizes", async () => {
+    const props = $state({ items: baseItems().map((item) => ({ ...item, disabled: true })), current: "a" as string | undefined, deps });
     const user = userEvent.setup();
-    const { getByText } = render(Accordion, props);
+    const { container } = render(Accordion, props);
 
-    const summary1 = getByText(label1);
-    const summary2 = getByText(label2);
-
-    // Tab navigation
-    await user.click(summary1);
-    // expect(summary1).toHaveFocus(); // Why is the focus on body?
-
-    await user.tab();
-    // expect(summary2).toHaveFocus(); // Why is the focus on body?
-  });
-});
-
-describe("Edge cases and error handling", () => {
-  test("empty labels array", () => {
-    const props = {
-      labels: [],
-      panel1: panel1fn,
-    };
-    try {
-      const { container } = render(Accordion, props);
-      expect(container.firstChild).toBeNull();
-    } catch (e) {
-      // ok
-    }
+    await waitFor(() => expect(props.current).toBeUndefined());
+    await user.click(bySummaryText(container, "Section B"));
+    expect(detailsIn(container).every((details) => !details.open)).toBe(true);
   });
 
-  test("current index out of bounds", () => {
-    const props = $state({
-      labels: [label1, label2],
-      current: 10,
-      panel1: panel1fn,
-      panel2: panel2fn,
-    });
-    const { getByText } = render(Accordion, props);
+  test("duration via deps is forwarded to Disclosure", async () => {
+    vi.useFakeTimers();
+    const props = $state({ items: baseItems(), current: "a" as string | undefined, deps: { svsDisclosure: { duration: 100 } } });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const { container } = render(Accordion, props);
+    const details = detailsBySummaryText(container, "Section A");
 
-    const details1 = getByText(label1).closest("details") as HTMLDetailsElement;
-    const details2 = getByText(label2).closest("details") as HTMLDetailsElement;
+    await user.click(bySummaryText(container, "Section A"));
+    expect(props.current).toBeUndefined();
+    expect(details.open).toBe(true);
 
-    expect(details1.open).toBe(false);
-    expect(details2.open).toBe(false);
-  });
-
-  test("negative current index", () => {
-    const props = $state({
-      labels: [label1, label2],
-      current: -5,
-      panel1: panel1fn,
-      panel2: panel2fn,
-    });
-    const { getByText } = render(Accordion, props);
-
-    const details1 = getByText(label1).closest("details") as HTMLDetailsElement;
-    const details2 = getByText(label2).closest("details") as HTMLDetailsElement;
-
-    expect(details1.open).toBe(false);
-    expect(details2.open).toBe(false);
-  });
-
-  test("missing panel snippets", () => {
-    const props = {
-      labels: [label1, label2, label3],
-      panel1: panel1fn,
-      // panel2 is missing
-      panel3: panel3fn,
-    };
-    try {
-      const { container } = render(Accordion, props);
-      expect(container.firstChild).toBeNull();
-    } catch (e) {
-      // ok
-    }
-  });
-
-  test("dynamic addition of panels", async () => {
-    const props = $state({
-      labels: [label1],
-      panel1: panel1fn,
-    });
-    const { getAllByRole, rerender } = render(Accordion, props);
-
-    let group = getAllByRole("group")[0];
-    expect(group.children).toHaveLength(1);
-
-    // Add another panel
-    props.labels = [label1, label2];
-    (props as any).panel2 = panel2fn;
-    await rerender(props);
-
-    group = getAllByRole("group")[0];
-    await waitFor(() => {
-      expect(group.children).toHaveLength(2);
-    });
+    await vi.advanceTimersByTimeAsync(100);
+    await tick();
+    expect(details.open).toBe(false);
   });
 });
