@@ -154,7 +154,7 @@ describe("Switching existence of elements", () => {
 describe("Specify attrs & state transition & event handlers", () => {
   const seed = "svs-check-field";
   const errmsg = "invalid";
-  const validationFn = (values: string[]) => (values.length === 0 ? errmsg : "");
+  const validationFn = ({ value }: { value: string[] }) => (value.length === 0 ? errmsg : "");
   const validations = [validationFn];
 
   test("w/ default values", () => {
@@ -230,6 +230,9 @@ describe("Specify attrs & state transition & event handlers", () => {
     await user.click(checkboxes[0]);
     expect(props.values).toContain("option1");
     expect(mockValidation).toHaveBeenCalled();
+    expect(mockValidation).toHaveBeenLastCalledWith(
+      expect.objectContaining({ value: ["option1"], validity: expect.anything(), element: checkboxes[0] }),
+    );
     expect(props.variant).toBe(VARIANT.ACTIVE);
 
     // Uncheck to trigger validation error
@@ -246,7 +249,7 @@ describe("Specify attrs & state transition & event handlers", () => {
   });
 
   test("checkboxes become inactive immediately with non-empty invalid values", async () => {
-    const max1 = (values: string[]) => (values.length > 1 ? "too many" : "");
+    const max1 = ({ value }: { value: string[] }) => (value.length > 1 ? "too many" : "");
     const props = $state({
       options,
       variant: VARIANT.NEUTRAL,
@@ -280,7 +283,7 @@ describe("Specify attrs & state transition & event handlers", () => {
   });
 
   test("radios become inactive immediately with non-empty invalid values", async () => {
-    const noOption2 = (values: string[]) => (values[0] === "option2" ? "bad option" : "");
+    const noOption2 = ({ value }: { value: string[] }) => (value[0] === "option2" ? "bad option" : "");
     const props = $state({
       options,
       multiple: false,
@@ -310,7 +313,7 @@ describe("Specify attrs & state transition & event handlers", () => {
   });
 
   test("neutral guard keeps prefilled invalid values neutral until interaction", async () => {
-    const max1 = (values: string[]) => (values.length > 1 ? "too many" : "");
+    const max1 = ({ value }: { value: string[] }) => (value.length > 1 ? "too many" : "");
     const props = $state({
       options,
       variant: VARIANT.NEUTRAL,
@@ -355,7 +358,74 @@ describe("Specify attrs & state transition & event handlers", () => {
     await user.click(radios[0]);
     expect(props.values).toEqual(["option1"]);
     expect(mockValidation).toHaveBeenCalled();
+    expect(mockValidation).toHaveBeenLastCalledWith(
+      expect.objectContaining({ value: ["option1"], validity: expect.anything(), element: radios[0] }),
+    );
     expect(props.variant).toBe(VARIANT.ACTIVE);
+  });
+
+  test("checkbox constraints block adding a second value but allow removing", async () => {
+    const props = $state({
+      options,
+      variant: VARIANT.NEUTRAL,
+      constraints: [({ values }: { values: string[] }) => (values.length >= 1 ? "max" : null)],
+      values: [] as string[],
+    });
+    const user = userEvent.setup();
+    const { getAllByRole, getByRole } = render(CheckField, props);
+    const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
+
+    await user.click(checkboxes[0]);
+    expect(props.values).toEqual(["option1"]);
+    expect(checkboxes[0]).toBeChecked();
+
+    await user.click(checkboxes[1]);
+    expect(props.values).toEqual(["option1"]);
+    expect(checkboxes[1]).not.toBeChecked();
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+    expect(getByRole("alert")).toHaveTextContent("max");
+
+    await user.click(checkboxes[0]);
+    expect(props.values).toEqual([]);
+    expect(checkboxes[0]).not.toBeChecked();
+  });
+
+  test("checkbox constraints can block a specific candidate", async () => {
+    const props = $state({
+      options,
+      variant: VARIANT.NEUTRAL,
+      constraints: [({ value }: { value: string }) => (value === "option2" ? "no opt2" : null)],
+      values: [] as string[],
+    });
+    const user = userEvent.setup();
+    const { getAllByRole, getByRole } = render(CheckField, props);
+    const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
+
+    await user.click(checkboxes[1]);
+    expect(props.values).toEqual([]);
+    expect(checkboxes[1]).not.toBeChecked();
+    expect(getByRole("alert")).toHaveTextContent("no opt2");
+
+    await user.click(checkboxes[0]);
+    expect(props.values).toEqual(["option1"]);
+    expect(checkboxes[0]).toBeChecked();
+  });
+
+  test("null validation result is valid", async () => {
+    const props = $state({
+      options,
+      variant: VARIANT.NEUTRAL,
+      validations: [() => null],
+      values: [] as string[],
+    });
+    const user = userEvent.setup();
+    const { getAllByRole, queryByRole } = render(CheckField, props);
+    const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
+
+    await user.click(checkboxes[0]);
+
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(queryByRole("alert")).toBeNull();
   });
 
   test("w/ required and no validations", async () => {

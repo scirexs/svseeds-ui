@@ -25,7 +25,7 @@
     rows?: number | undefined | null;
     wrap?: "hard" | "soft" | "off" | undefined | null;
   }
-  type TextFieldValidation = (value: string, validity: ValidityState) => string | undefined;
+  type TextFieldValidation = SVSFieldValidation<string, HTMLInputElement | HTMLTextAreaElement>;
   ```
   ### Anatomy
   ```svelte
@@ -79,7 +79,7 @@
   }
   export type TextFieldReqdProps = never;
   export type TextFieldBindProps = "value" | "variant" | "element";
-  export type TextFieldValidation = (value: string, validity: ValidityState) => string | undefined;
+  export type TextFieldValidation = SVSFieldValidation<string, HTMLInputElement | HTMLTextAreaElement>;
 
   const preset = "svs-text-field";
 
@@ -87,7 +87,7 @@
   import { type Attachment } from "svelte/attachments";
   import { type SvelteSet } from "svelte/reactivity";
   import { type HTMLInputAttributes } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import { type SVSClass, type SVSVariant, type SVSFieldValidation, VARIANT, PARTS, fnClass, isNeutral } from "./core";
 </script>
 
 <script lang="ts">
@@ -121,7 +121,7 @@
   function verify() {
     if (!element) return;
     for (const v of validations) {
-      const msg = v(value, element.validity);
+      const msg = v({ value, validity: element.validity, element });
       if (msg) return element.setCustomValidity(msg);
     }
     element.setCustomValidity("");

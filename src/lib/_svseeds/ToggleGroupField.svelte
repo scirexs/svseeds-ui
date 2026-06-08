@@ -20,6 +20,7 @@
     values?: string[]; // bindable
     multiple?: boolean; // (true)
     validations?: ToggleGroupFieldValidation[];
+    constraints?: ToggleGroupFieldConstraint[];
     name?: string;
     elements?: HTMLButtonElement[]; // bindable
     styling?: SVSClass;
@@ -29,10 +30,11 @@
   interface ToggleGroupFieldDeps {
     svsToggleGroup?: Omit<
       ToggleGroupProps,
-      ToggleGroupReqdProps | ToggleGroupBindProps | "ariaDescId" | "ariaErrMsgId" | "multiple" | "variant"
+      ToggleGroupReqdProps | ToggleGroupBindProps | "ariaDescId" | "ariaErrMsgId" | "multiple" | "variant" | "events"
     >;
   }
-  type ToggleGroupFieldValidation = (values: string[]) => string | undefined;
+  type ToggleGroupFieldValidation = SVSFieldValidation<string[]>;
+  type ToggleGroupFieldConstraint = SVSFieldConstraint;
   ```
   ### Anatomy
   ```svelte
@@ -68,6 +70,7 @@
     values?: string[]; // bindable
     multiple?: boolean; // (true)
     validations?: ToggleGroupFieldValidation[];
+    constraints?: ToggleGroupFieldConstraint[];
     name?: string;
     elements?: HTMLButtonElement[]; // bindable
     styling?: SVSClass;
@@ -77,19 +80,20 @@
   export interface ToggleGroupFieldDeps {
     svsToggleGroup?: Omit<
       ToggleGroupProps,
-      ToggleGroupReqdProps | ToggleGroupBindProps | "ariaDescId" | "ariaErrMsgId" | "multiple" | "variant"
+      ToggleGroupReqdProps | ToggleGroupBindProps | "ariaDescId" | "ariaErrMsgId" | "multiple" | "variant" | "events"
     >;
   }
   export type ToggleGroupFieldReqdProps = "options";
   export type ToggleGroupFieldBindProps = "values" | "variant" | "elements";
-  export type ToggleGroupFieldValidation = (values: string[]) => string | undefined;
+  export type ToggleGroupFieldValidation = SVSFieldValidation<string[]>;
+  export type ToggleGroupFieldConstraint = SVSFieldConstraint;
   export type { ToggleOption };
 
   const preset = "svs-toggle-group-field";
 
   import { type Snippet, untrack } from "svelte";
   import { type SvelteMap } from "svelte/reactivity";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import { type SVSClass, type SVSVariant, type SVSFieldValidation, type SVSFieldConstraint, VARIANT, PARTS, fnClass, isNeutral } from "./core";
   import ToggleGroup, {
     type ToggleOption,
     type ToggleGroupProps,
@@ -100,7 +104,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { options, label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), multiple = true, validations = [], name, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), deps }: ToggleGroupFieldProps = $props();
+  let { options, label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), multiple = true, validations = [], constraints = [], name, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), deps }: ToggleGroupFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
@@ -126,18 +130,34 @@
   });
   const live = $derived(variant === VARIANT.INACTIVE ? "alert" : undefined);
   const idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
-  function shift(oninvalid?: boolean) {
+  function shift(oninvalid: boolean = false, msg?: string) {
     const vmsg = element?.validationMessage ?? "";
-    variant = oninvalid && vmsg ? VARIANT.INACTIVE : !values.length || vmsg ? neutral : VARIANT.ACTIVE;
-    errmsg = vmsg;
+    variant = msg ? VARIANT.INACTIVE : oninvalid && vmsg ? VARIANT.INACTIVE : !values.length || vmsg ? neutral : VARIANT.ACTIVE;
+    errmsg = msg ? msg : vmsg;
   }
   function verify() {
     if (!element) return;
     for (const v of validations) {
-      const msg = v(values);
+      const msg = v({ value: values, validity: element.validity, element });
       if (msg) return element.setCustomValidity(msg);
     }
     element.setCustomValidity("");
+  }
+  function check(value: string): string {
+    if (!element) return "";
+    for (const c of constraints) {
+      const msg = c({ value, values, validity: element.validity, element });
+      if (msg) return msg;
+    }
+    return "";
+  }
+  function hadd(_values: string[], value: string): boolean {
+    const msg = check(value);
+    if (msg) {
+      shift(false, msg);
+      return true;
+    }
+    return false;
   }
 
   // *** Bind Handlers *** //
@@ -174,7 +194,7 @@
     <div class={cls(PARTS.MIDDLE, variant)}>
       {@render side(PARTS.LEFT, left)}
       {@render fnForm()}
-      <ToggleGroup {...svsToggleGroup} bind:values bind:elements ariaErrMsgId={idMsg} variant={neutral} {options} {multiple} />
+      <ToggleGroup {...svsToggleGroup} bind:values bind:elements ariaErrMsgId={idMsg} variant={neutral} {options} {multiple} events={{ onadd: hadd }} />
       {@render side(PARTS.RIGHT, right)}
     </div>
     {@render desc(!descFirst)}

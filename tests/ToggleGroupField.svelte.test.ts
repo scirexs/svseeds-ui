@@ -175,7 +175,7 @@ describe("Specify state transition & event handlers", () => {
     ["opt3", "Option 3"],
   ]);
   const errmsg = "At least one option must be selected";
-  const validationFn = (values: string[]) => (values.length === 0 ? errmsg : "");
+  const validationFn = ({ value }: { value: string[] }) => (value.length === 0 ? errmsg : "");
   const validations = [validationFn];
   const proxyInput = (whole: HTMLElement) => whole.querySelector('input[style*="display: none"]') as HTMLInputElement;
   const middleOf = (whole: HTMLElement) => whole.querySelector(`.${PARTS.MIDDLE}`) as HTMLDivElement;
@@ -208,6 +208,9 @@ describe("Specify state transition & event handlers", () => {
     // Trigger validation by simulating invalid event
     await fireEvent.invalid(hiddenInput);
     expect(mockValidation).toHaveBeenCalled();
+    expect(mockValidation).toHaveBeenLastCalledWith(
+      expect.objectContaining({ value: [], validity: expect.anything(), element: hiddenInput }),
+    );
     expect(props.variant).toBe(VARIANT.INACTIVE);
 
     // Check error state
@@ -231,7 +234,7 @@ describe("Specify state transition & event handlers", () => {
       options,
       variant: VARIANT.NEUTRAL,
       values: [] as string[],
-      validations: [(v: string[]) => (v.length ? "" : "This field is required")],
+      validations: [({ value }: { value: string[] }) => (value.length ? "" : "This field is required")],
     });
     const { getAllByRole, getByRole } = render(ToggleGroupField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
@@ -247,7 +250,7 @@ describe("Specify state transition & event handlers", () => {
 
   test("multiple validation functions", async () => {
     const validation1 = vi.fn().mockReturnValue("");
-    const validation2 = vi.fn().mockImplementation((values: string[]) => (values.length > 2 ? "Too many selections" : ""));
+    const validation2 = vi.fn().mockImplementation(({ value }: { value: string[] }) => (value.length > 2 ? "Too many selections" : ""));
     const props = $state({
       options,
       variant: VARIANT.NEUTRAL,
@@ -267,6 +270,73 @@ describe("Specify state transition & event handlers", () => {
       const alert = getByRole("alert") as HTMLDivElement;
       expect(alert).toHaveTextContent("Too many selections");
     });
+  });
+
+  test("constraints block adding a second multiple value but allow removing", async () => {
+    const user = userEvent.setup();
+    const props = $state({
+      options,
+      constraints: [({ values }: { values: string[] }) => (values.length >= 1 ? "max" : null)],
+      values: [] as string[],
+      variant: VARIANT.NEUTRAL,
+    });
+    const { getAllByRole, getByRole } = render(ToggleGroupField, props);
+    const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
+
+    await user.click(buttons[0]);
+    await waitFor(() => expect(props.values).toEqual(["opt1"]));
+
+    await user.click(buttons[1]);
+    expect(props.values).toEqual(["opt1"]);
+    expect(buttons[1]).toHaveAttribute("aria-checked", "false");
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+    expect(getByRole("alert")).toHaveTextContent("max");
+
+    await user.click(buttons[0]);
+    await waitFor(() => expect(props.values).toEqual([]));
+  });
+
+  test("constraints gate single-select clicks", async () => {
+    const user = userEvent.setup();
+    const props = $state({
+      options,
+      multiple: false,
+      constraints: [({ value }: { value: string }) => (value === "opt2" ? "no opt2" : null)],
+      values: [] as string[],
+      variant: VARIANT.NEUTRAL,
+    });
+    const { getAllByRole, getByRole } = render(ToggleGroupField, props);
+    const buttons = getAllByRole("radio") as HTMLButtonElement[];
+
+    await user.click(buttons[1]);
+    expect(props.values).toEqual([]);
+    expect(buttons[1]).toHaveAttribute("aria-checked", "false");
+    expect(getByRole("alert")).toHaveTextContent("no opt2");
+
+    await user.click(buttons[0]);
+    await waitFor(() => expect(props.values).toEqual(["opt1"]));
+
+    buttons[0].focus();
+    await user.keyboard("[ArrowRight]");
+    expect(props.values).toEqual(["opt2"]);
+  });
+
+  test("null validation result is valid", async () => {
+    const user = userEvent.setup();
+    const props = $state({
+      options,
+      validations: [() => null],
+      values: [] as string[],
+      variant: VARIANT.NEUTRAL,
+    });
+    const { getAllByRole, queryByRole } = render(ToggleGroupField, props);
+    const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
+
+    await user.click(buttons[0]);
+    await waitFor(() => expect(props.values).toEqual(["opt1"]));
+
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(queryByRole("alert")).toBeNull();
   });
 
   test("default class of each variant", async () => {
@@ -586,7 +656,7 @@ describe("Specify state transition & event handlers", () => {
     const props = $state({
       options,
       label,
-      validations: [(v: string[]) => (v.length ? "" : "required")],
+      validations: [({ value }: { value: string[] }) => (value.length ? "" : "required")],
       values: [] as string[],
       variant: VARIANT.NEUTRAL,
     });
@@ -612,7 +682,7 @@ describe("Specify state transition & event handlers", () => {
     const props = $state({
       options,
       multiple: false,
-      validations: [(v: string[]) => (v.length ? "" : "required")],
+      validations: [({ value }: { value: string[] }) => (value.length ? "" : "required")],
       values: [] as string[],
       variant: VARIANT.NEUTRAL,
     });
@@ -674,7 +744,7 @@ describe("Specify state transition & event handlers", () => {
     const props = $state({
       options,
       bottom,
-      validations: [(v: string[]) => (v.length ? "" : "required")],
+      validations: [({ value }: { value: string[] }) => (value.length ? "" : "required")],
       values: [] as string[],
       variant: VARIANT.NEUTRAL,
     });
@@ -741,7 +811,7 @@ describe("Specify state transition & event handlers", () => {
       options,
       bottom,
       descFirst: true,
-      validations: [(v: string[]) => (v.length ? "" : "required")],
+      validations: [({ value }: { value: string[] }) => (value.length ? "" : "required")],
       values: [] as string[],
       variant: VARIANT.NEUTRAL,
     });

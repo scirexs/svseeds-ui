@@ -11,12 +11,16 @@
     children?: Snippet<[string, string, string]>; // Snippet<[value,text,variant]>
     values?: string[]; // bindable
     multiple?: boolean; // (true)
+    events?: ToggleGroupEvents;
     ariaDescId?: string;
     ariaErrMsgId?: string; // bindable
     attach?: Attachment;
     elements?: HTMLButtonElement[]; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
+  }
+  interface ToggleGroupEvents {
+    onadd?: (values: string[], value: string) => void | boolean;
   }
   ```
   ### Anatomy
@@ -42,12 +46,16 @@
     children?: Snippet<[string, string, string]>; // Snippet<[value,text,variant]>
     values?: string[]; // bindable
     multiple?: boolean; // (true)
+    events?: ToggleGroupEvents;
     ariaDescId?: string;
     ariaErrMsgId?: string; // bindable
     attach?: Attachment;
     elements?: HTMLButtonElement[]; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
+  }
+  export interface ToggleGroupEvents {
+    onadd?: (values: string[], value: string) => void | boolean;
   }
   export type ToggleGroupReqdProps = "options";
   export type ToggleGroupBindProps = "values" | "elements";
@@ -63,7 +71,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { options, children, values = $bindable([]), multiple = true, ariaDescId, ariaErrMsgId, attach, elements = $bindable([]), styling, variant = VARIANT.NEUTRAL }: ToggleGroupProps = $props();
+  let { options, children, values = $bindable([]), multiple = true, events, ariaDescId, ariaErrMsgId, attach, elements = $bindable([]), styling, variant = VARIANT.NEUTRAL }: ToggleGroupProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
@@ -101,6 +109,8 @@
   function updateValues(value: string): () => void {
     return () => {
       if (opts.find((o) => o.value === value)?.disabled) return;
+      const adding = !values.includes(value);
+      if (adding && events?.onadd?.(values, value)) return;
       values = update(value);
     };
   }

@@ -12,8 +12,6 @@
     bottom?: string;
     descFirst?: boolean; // (false)
     values?: string[]; // bindable
-    min?: TagsInputFieldCountValidation;
-    max?: TagsInputFieldCountValidation;
     constraints?: TagsInputFieldConstraint[];
     validations?: TagsInputFieldValidation[];
     name?: string;
@@ -25,12 +23,9 @@
   interface TagsInputFieldDeps {
     svsTagsInput?: Omit<TagsInputProps, TagsInputReqdProps | TagsInputBindProps | "variant" | "ariaErrMsgId" | "aria-describedby">;
   }
-  type TagsInputFieldConstraint = (value: string, validity: ValidityState) => string | undefined;
-  type TagsInputFieldValidation = (values: string[], validity: ValidityState) => string | undefined;
-  type TagsInputFieldCountValidation = {
-    value: number;
-    message: string;
-  };
+  type TagsInputFieldConstraint = SVSFieldConstraint;
+  type TagsInputFieldValidation = SVSFieldValidation<string[]>;
+  // Migration: min -> validations fn `({ value }) => value.length < N ? msg : null`; max -> constraints fn `({ values }) => values.length >= N ? msg : null`.
   ```
   ### Anatomy
   ```svelte
@@ -61,8 +56,6 @@
     bottom?: string;
     descFirst?: boolean; // (false)
     values?: string[]; // bindable
-    min?: TagsInputFieldCountValidation;
-    max?: TagsInputFieldCountValidation;
     constraints?: TagsInputFieldConstraint[];
     validations?: TagsInputFieldValidation[];
     name?: string;
@@ -76,20 +69,19 @@
   }
   export type TagsInputFieldReqdProps = never;
   export type TagsInputFieldBindProps = "values" | "variant" | "element";
-  export type TagsInputFieldConstraint = (value: string, validity: ValidityState) => string | undefined;
-  export type TagsInputFieldValidation = (values: string[], validity: ValidityState) => string | undefined;
-  export type TagsInputFieldCountValidation = { value: number; message: string };
+  export type TagsInputFieldConstraint = SVSFieldConstraint;
+  export type TagsInputFieldValidation = SVSFieldValidation<string[]>;
 
   const preset = "svs-tags-input-field";
 
   import { type Snippet, untrack } from "svelte";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isNeutral, omit } from "./core";
+  import { type SVSClass, type SVSVariant, type SVSFieldValidation, type SVSFieldConstraint, VARIANT, PARTS, fnClass, isNeutral, omit } from "./core";
   import TagsInput, { type TagsInputProps, type TagsInputReqdProps, type TagsInputBindProps } from "./_TagsInput.svelte";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), min, max, constraints = [], validations = [], name, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), deps }: TagsInputFieldProps = $props();
+  let { label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), constraints = [], validations = [], name, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), deps }: TagsInputFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
@@ -101,8 +93,6 @@
   let errmsg = $state("");
   const message = $derived(variant === VARIANT.INACTIVE ? errmsg || bottom : bottom);
   const resolvedName = $derived(name ?? (deps?.svsTagsInput?.name as string | undefined));
-  const constraintList = $derived(max ? [(): string => (values.length >= max.value ? max.message : ""), ...constraints] : constraints);
-  const validationList = $derived(min ? [(): string => (values.length < min.value ? min.message : ""), ...validations] : validations);
 
   // *** Initialize Deps *** //
   const svsTagsInput = $derived({
@@ -134,8 +124,8 @@
   }
   function verify() {
     if (!element) return;
-    for (const v of validationList) {
-      const msg = v(values, element.validity);
+    for (const v of validations) {
+      const msg = v({ value: values, validity: element.validity, element });
       if (msg) return element.setCustomValidity(msg);
     }
     element.setCustomValidity("");
@@ -160,8 +150,8 @@
   }
   function check(value: string): string | undefined {
     if (!element) return;
-    for (const c of constraintList) {
-      const msg = c(value, element.validity);
+    for (const c of constraints) {
+      const msg = c({ value, values, validity: element.validity, element });
       if (msg) return msg;
     }
   }

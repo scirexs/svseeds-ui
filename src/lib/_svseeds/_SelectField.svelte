@@ -22,7 +22,7 @@
     // class & other HTMLSelectAttributes are passed to <select> via ...rest (class is merged onto the control)
     // single-select only; multiple is intentionally unsupported
   }
-  type SelectFieldValidation = (value: string, validity: ValidityState) => string | undefined;
+  type SelectFieldValidation = SVSFieldValidation<string, HTMLSelectElement>;
   ```
   ### Anatomy
   An empty `<option value="">` is auto-injected at the top when `options` has no `""` key
@@ -70,7 +70,7 @@
   }
   export type SelectFieldReqdProps = "options";
   export type SelectFieldBindProps = "value" | "variant" | "element";
-  export type SelectFieldValidation = (value: string, validity: ValidityState) => string | undefined;
+  export type SelectFieldValidation = SVSFieldValidation<string, HTMLSelectElement>;
 
   const preset = "svs-select-field";
 
@@ -78,7 +78,7 @@
   import { type Attachment } from "svelte/attachments";
   import { type SvelteMap } from "svelte/reactivity";
   import { type HTMLSelectAttributes, type ChangeEventHandler, type EventHandler } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import { type SVSClass, type SVSVariant, type SVSFieldValidation, VARIANT, PARTS, fnClass, isNeutral } from "./core";
 </script>
 
 <script lang="ts">
@@ -111,7 +111,7 @@
   function verify() {
     if (!element) return;
     for (const v of validations) {
-      const msg = v(value, element.validity);
+      const msg = v({ value, validity: element.validity, element });
       if (msg) return element.setCustomValidity(msg);
     }
     element.setCustomValidity("");

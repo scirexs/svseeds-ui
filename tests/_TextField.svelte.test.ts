@@ -293,7 +293,7 @@ describe("Switching existence of elements", () => {
 describe("Specify attrs & state transition & event handlers", () => {
   const seed = "svs-text-field";
   const errmsg = "invalid";
-  const validationFn = (value: string) => (value.length < 2 ? errmsg : "");
+  const validationFn = ({ value }: { value: string }) => (value.length < 2 ? errmsg : "");
   const validations = [validationFn];
 
   test("w/ other types", async () => {
@@ -375,6 +375,9 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(props.variant).toBe(VARIANT.NEUTRAL);
     await user.tab();
     expect(mockValidation).toHaveBeenCalled();
+    expect(mockValidation).toHaveBeenLastCalledWith(
+      expect.objectContaining({ value: "a", validity: expect.anything(), element: main }),
+    );
     expect(props.variant).toBe(VARIANT.INACTIVE);
     getByRole("alert") as HTMLDivElement;
     expect(main).toHaveAttribute("aria-invalid", "true");
@@ -654,7 +657,7 @@ describe("Specify attrs & state transition & event handlers", () => {
 describe("a11y, structure & textarea attrs", () => {
   const seed = "svs-text-field";
   const errmsg = "invalid";
-  const validationFn = (value: string) => (value.length < 2 ? errmsg : "");
+  const validationFn = ({ value }: { value: string }) => (value.length < 2 ? errmsg : "");
   const validations = [validationFn];
 
   test("bottom role transitions: none, alert, none", async () => {
@@ -819,7 +822,9 @@ describe("a11y, structure & textarea attrs", () => {
   });
 
   test("validations receive ValidityState", async () => {
-    const validation = vi.fn((value: string, validity: ValidityState) => (!value && validity.valueMissing ? errmsg : ""));
+    const validation = vi.fn(({ value, validity }: { value: string; validity: ValidityState }) =>
+      !value && validity.valueMissing ? errmsg : "",
+    );
     const props = $state({
       required: true,
       variant: VARIANT.NEUTRAL,
@@ -831,13 +836,13 @@ describe("a11y, structure & textarea attrs", () => {
     await fireEvent.invalid(main);
     expect(props.variant).toBe(VARIANT.INACTIVE);
     expect(getByRole("alert")).toHaveTextContent(errmsg);
-    const actualValidity = validation.mock.calls.at(-1)?.[1] as ValidityState;
+    const actualValidity = validation.mock.calls.at(-1)?.[0].validity as ValidityState;
     expect(actualValidity.valueMissing).toBe(true);
   });
 
   test("multiple validations short-circuit on first message", async () => {
-    const first = vi.fn((value: string) => (value.length < 2 ? "first" : ""));
-    const second = vi.fn((value: string) => (value.includes("x") ? "second" : ""));
+    const first = vi.fn(({ value }: { value: string }) => (value.length < 2 ? "first" : ""));
+    const second = vi.fn(({ value }: { value: string }) => (value.includes("x") ? "second" : ""));
     const props = $state({ variant: VARIANT.NEUTRAL, validations: [first, second] });
     const user = userEvent.setup();
     const { getByRole } = render(TextField, props);
@@ -849,6 +854,19 @@ describe("a11y, structure & textarea attrs", () => {
     await user.tab();
     expect(getByRole("alert")).toHaveTextContent("first");
     expect(second).not.toHaveBeenCalled();
+  });
+
+  test("null validation result is valid", async () => {
+    const props = $state({ variant: VARIANT.NEUTRAL, validations: [() => null] });
+    const user = userEvent.setup();
+    const { getByRole, queryByRole } = render(TextField, props);
+    const main = getByRole("textbox") as HTMLInputElement;
+
+    await user.type(main, "a");
+    await user.tab();
+
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(queryByRole("alert")).toBeNull();
   });
 
   test("custom neutral variant is preserved and restored", async () => {

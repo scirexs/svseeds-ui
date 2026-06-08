@@ -153,8 +153,8 @@ describe("Switching existence of elements", () => {
 describe("Specify props & state transition & event handlers", () => {
   const seed = "svs-tags-input-field";
   const errmsg = "invalid";
-  const constraintFn = (value: string) => (value.length < 2 ? errmsg : "");
-  const validationFn = (values: string[]) => (values.length === 0 ? errmsg : "");
+  const constraintFn = ({ value }: { value: string }) => (value.length < 2 ? errmsg : "");
+  const validationFn = ({ value }: { value: string[] }) => (value.length === 0 ? errmsg : "");
   const constraints = [constraintFn];
   const validations = [validationFn];
 
@@ -167,11 +167,10 @@ describe("Specify props & state transition & event handlers", () => {
     getByText("initial");
   });
 
-  test("w/ min validation", async () => {
-    const min = { value: 2, message: "At least 2 tags required" };
+  test("w/ min-equivalent validation", async () => {
     const props = $state({
       variant: VARIANT.NEUTRAL,
-      min,
+      validations: [({ value }: { value: string[] }) => (value.length < 2 ? "At least 2 tags required" : null)],
     });
     const { getByRole } = render(TagsInputField, props);
     const main = getByRole("textbox") as HTMLInputElement;
@@ -180,13 +179,12 @@ describe("Specify props & state transition & event handlers", () => {
     expect(main).toHaveAccessibleErrorMessage("At least 2 tags required");
   });
 
-  test("w/ max constraint", async () => {
-    const max = { value: 2, message: "Maximum 2 tags allowed" };
+  test("w/ max-equivalent constraint", async () => {
     const values = ["tag1", "tag2"];
     const props = $state({
       values,
       variant: VARIANT.NEUTRAL,
-      max,
+      constraints: [({ values }: { values: string[] }) => (values.length >= 2 ? "Maximum 2 tags allowed" : null)],
     });
     const user = userEvent.setup();
     const { getByRole } = render(TagsInputField, props);
@@ -213,6 +211,9 @@ describe("Specify props & state transition & event handlers", () => {
     await user.keyboard("{Enter}");
 
     expect(mockConstraint).toHaveBeenCalled();
+    expect(mockConstraint).toHaveBeenLastCalledWith(
+      expect.objectContaining({ value: "a", values: [], validity: expect.anything(), element: main }),
+    );
     expect(props.variant).toBe(VARIANT.INACTIVE);
     getByRole("alert") as HTMLDivElement;
     expect(main).toHaveAttribute("aria-invalid", "true");
@@ -236,6 +237,9 @@ describe("Specify props & state transition & event handlers", () => {
     await fireEvent.invalid(main);
 
     expect(mockValidation).toHaveBeenCalled();
+    expect(mockValidation).toHaveBeenLastCalledWith(
+      expect.objectContaining({ value: [], validity: expect.anything(), element: main }),
+    );
     expect(props.variant).toBe(VARIANT.INACTIVE);
     getByRole("alert") as HTMLDivElement;
     expect(main).toHaveAttribute("aria-invalid", "true");
@@ -494,15 +498,13 @@ describe("Specify props & state transition & event handlers", () => {
 describe("a11y, structure, form & review fixes", () => {
   const seed = "svs-tags-input-field";
   const errmsg = "invalid";
-  const constraintFn = (value: string) => (value.length < 2 ? errmsg : "");
-  const validationFn = (values: string[]) => (values.length === 0 ? errmsg : "");
+  const constraintFn = ({ value }: { value: string }) => (value.length < 2 ? errmsg : "");
+  const validationFn = ({ value }: { value: string[] }) => (value.length === 0 ? errmsg : "");
 
   test("constraints and validations props are not mutated", () => {
     const userConstraints = [constraintFn];
     const userValidations = [validationFn];
     const props = $state({
-      min: { value: 2, message: "m" },
-      max: { value: 3, message: "x" },
       constraints: userConstraints,
       validations: userValidations,
     });
@@ -613,7 +615,7 @@ describe("a11y, structure, form & review fixes", () => {
   test("tag removal re-validates and transitions variant", async () => {
     const props = $state({
       values: ["only"],
-      min: { value: 2, message: "need 2" },
+      validations: [({ value }: { value: string[] }) => (value.length < 2 ? "need 2" : null)],
       variant: VARIANT.NEUTRAL,
     });
     const user = userEvent.setup();
@@ -633,8 +635,8 @@ describe("a11y, structure, form & review fixes", () => {
   test("min and max together keep max immediate and min deferred to invalid", async () => {
     const props = $state({
       values: ["t1", "t2"],
-      min: { value: 1, message: "min" },
-      max: { value: 2, message: "max" },
+      validations: [({ value }: { value: string[] }) => (value.length < 1 ? "min" : null)],
+      constraints: [({ values }: { values: string[] }) => (values.length >= 2 ? "max" : null)],
       variant: VARIANT.NEUTRAL,
     });
     const user = userEvent.setup();
@@ -659,7 +661,7 @@ describe("a11y, structure, form & review fixes", () => {
 
   test("min validation does not surface while typing", async () => {
     const props = $state({
-      min: { value: 2, message: "need 2" },
+      validations: [({ value }: { value: string[] }) => (value.length < 2 ? "need 2" : null)],
       variant: VARIANT.NEUTRAL,
     });
     const user = userEvent.setup();
@@ -675,6 +677,22 @@ describe("a11y, structure, form & review fixes", () => {
     await fireEvent.invalid(main);
     expect(props.variant).toBe(VARIANT.INACTIVE);
     expect(main).toHaveAccessibleErrorMessage("need 2");
+  });
+
+  test("null validation result is valid", async () => {
+    const props = $state({
+      validations: [() => null],
+      variant: VARIANT.NEUTRAL,
+    });
+    const user = userEvent.setup();
+    const { getByRole, queryByRole } = render(TagsInputField, props);
+    const main = getByRole("textbox") as HTMLInputElement;
+
+    await user.type(main, "one");
+    await user.keyboard("{Enter}");
+
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(queryByRole("alert")).toBeNull();
   });
 
   test("events.onadd cancellation via deps", async () => {
@@ -762,10 +780,10 @@ describe("a11y, structure, form & review fixes", () => {
     expect(main).toHaveAccessibleDescription("help-2");
   });
 
-  test("reactive max updates constraints", async () => {
+  test("reactive constraints update", async () => {
     const props = $state({
       values: ["t1", "t2"],
-      max: { value: 2, message: "max" },
+      constraints: [({ values }: { values: string[] }) => (values.length >= 2 ? "max" : null)],
       variant: VARIANT.NEUTRAL,
     });
     const user = userEvent.setup();
@@ -777,7 +795,7 @@ describe("a11y, structure, form & review fixes", () => {
     expect(props.values).toHaveLength(2);
     expect(props.variant).toBe(VARIANT.INACTIVE);
 
-    props.max = { value: 5, message: "max" };
+    props.constraints = [({ values }: { values: string[] }) => (values.length >= 5 ? "max" : null)];
     await tick();
     await user.keyboard("{Enter}");
 

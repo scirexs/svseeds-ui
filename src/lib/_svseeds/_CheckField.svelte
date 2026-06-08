@@ -13,13 +13,15 @@
     values?: string[]; // bindable
     multiple?: boolean; // (true)
     validations?: CheckFieldValidation[];
+    constraints?: CheckFieldConstraint[];
     attach?: Attachment;
     elements?: HTMLInputElement[]; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
     // class & other HTMLInputAttributes are passed to each <input> via ...rest (class is merged onto each input; required is applied dynamically)
   }
-  type CheckFieldValidation = (values: string[], validity: ValidityState) => string | undefined;
+  type CheckFieldValidation = SVSFieldValidation<string[]>;
+  type CheckFieldConstraint = SVSFieldConstraint;
   ```
   ### Anatomy
   ```svelte
@@ -54,6 +56,7 @@
     values?: string[]; // bindable
     multiple?: boolean; // (true)
     validations?: CheckFieldValidation[];
+    constraints?: CheckFieldConstraint[];
     attach?: Attachment<HTMLInputElement>;
     elements?: HTMLInputElement[]; // bindable
     styling?: SVSClass;
@@ -61,7 +64,8 @@
   }
   export type CheckFieldReqdProps = "options";
   export type CheckFieldBindProps = "values" | "variant" | "elements";
-  export type CheckFieldValidation = (values: string[], validity: ValidityState) => string | undefined;
+  export type CheckFieldValidation = SVSFieldValidation<string[]>;
+  export type CheckFieldConstraint = SVSFieldConstraint;
 
   const preset = "svs-check-field";
 
@@ -69,12 +73,12 @@
   import { type Attachment } from "svelte/attachments";
   import { type SvelteMap } from "svelte/reactivity";
   import { type HTMLInputAttributes, type ChangeEventHandler, type EventHandler } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import { type SVSClass, type SVSVariant, type SVSFieldValidation, type SVSFieldConstraint, VARIANT, PARTS, fnClass, isNeutral } from "./core";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { options, label, extra, aux, bottom, values = $bindable([]), multiple = true, descFirst = false, validations = [], name, onchange, oninvalid, attach, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, required = false, ...rest }: CheckFieldProps = $props();
+  let { options, label, extra, aux, bottom, values = $bindable([]), multiple = true, descFirst = false, validations = [], constraints = [], name, onchange, oninvalid, attach, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, required = false, ...rest }: CheckFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
@@ -97,18 +101,26 @@
   const invalid = $derived(variant === VARIANT.INACTIVE ? true : undefined);
   const idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
   const reqd = $derived(required && (!multiple || !values.length) ? true : undefined);
-  function shift(oninvalid?: boolean) {
+  function shift(oninvalid: boolean = false, msg?: string) {
     const vmsg = elements[0]?.validationMessage ?? "";
-    variant = !values.length && !oninvalid ? neutral : vmsg ? VARIANT.INACTIVE : VARIANT.ACTIVE;
-    errmsg = vmsg;
+    variant = msg ? VARIANT.INACTIVE : !values.length && !oninvalid ? neutral : vmsg ? VARIANT.INACTIVE : VARIANT.ACTIVE;
+    errmsg = msg ? msg : vmsg;
   }
   function verify() {
     if (!elements[0]) return;
     for (const v of validations) {
-      const msg = v(values, elements[0].validity);
+      const msg = v({ value: values, validity: elements[0].validity, element: elements[0] });
       if (msg) return elements[0].setCustomValidity(msg);
     }
     elements[0].setCustomValidity("");
+  }
+  function check(value: string): string {
+    if (!elements[0]) return "";
+    for (const c of constraints) {
+      const msg = c({ value, values, validity: elements[0].validity, element: elements[0] });
+      if (msg) return msg;
+    }
+    return "";
   }
 
   // *** Bind Handlers *** //
@@ -126,6 +138,15 @@
   // *** Event Handlers *** //
   const hchange: ChangeEventHandler<HTMLInputElement> = (ev) => {
     onchange?.(ev);
+    const input = ev.currentTarget;
+    if (input.checked) {
+      const msg = check(input.value);
+      if (msg) {
+        input.checked = false;
+        shift(false, msg);
+        return;
+      }
+    }
     values = elements.filter((el) => el.checked).map((el) => el.value);
     validate();
   };

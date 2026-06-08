@@ -206,7 +206,7 @@ describe("Specify attrs & state transition & event handlers", () => {
   const seed = "svs-select-field";
   const options = new SvelteMap([["val1", "Option 1"], ["val2", "Option 2"]]);
   const errmsg = "invalid selection";
-  const validationFn = (value: string) => (value === "val1" ? errmsg : "");
+  const validationFn = ({ value }: { value: string }) => (value === "val1" ? errmsg : "");
   const validations = [validationFn];
 
   test("w/ default value", () => {
@@ -372,6 +372,9 @@ describe("Specify attrs & state transition & event handlers", () => {
 
     await user.selectOptions(main, "val1");
     expect(mockValidation).toHaveBeenCalled();
+    expect(mockValidation).toHaveBeenLastCalledWith(
+      expect.objectContaining({ value: "val1", validity: expect.anything(), element: main }),
+    );
     expect(props.variant).toBe(VARIANT.INACTIVE);
     getByRole("alert") as HTMLDivElement;
     expect(main).toHaveAttribute("aria-invalid", "true");
@@ -403,7 +406,7 @@ describe("Specify attrs & state transition & event handlers", () => {
       options,
       bottom,
       variant: VARIANT.NEUTRAL,
-      validations: [(value: string) => value === "" ? "required" : ""],
+      validations: [({ value }: { value: string }) => (value === "" ? "required" : "")],
       required: true,
     });
     const { getByRole } = render(SelectField, props);
@@ -413,6 +416,21 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(main).toHaveAttribute("aria-invalid", "true");
     expect(main).toHaveAccessibleErrorMessage("required");
     expect(props.variant).toBe(VARIANT.INACTIVE);
+  });
+  test("null validation result is valid", async () => {
+    const props = $state({
+      options,
+      variant: VARIANT.NEUTRAL,
+      validations: [() => null],
+    });
+    const user = userEvent.setup();
+    const { getByRole, queryByRole } = render(SelectField, props);
+    const main = getByRole("combobox") as HTMLSelectElement;
+
+    await user.selectOptions(main, "val2");
+
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(queryByRole("alert")).toBeNull();
   });
   test("w/ custom events used internally", async () => {
     const oninvalid = vi.fn();

@@ -291,6 +291,29 @@ describe("User interactions", () => {
     expect(buttons[1]).toHaveAttribute("aria-checked", "true");
   });
 
+  test("events.onadd can veto adding but does not gate removing", async () => {
+    const onadd = vi.fn((_values: string[], value: string) => value === "option2");
+    const props = $state({ options, values: [] as string[], events: { onadd } });
+    const user = userEvent.setup();
+    const { getAllByRole } = render(ToggleGroup, { props });
+    const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
+
+    await user.click(buttons[1]);
+    expect(onadd).toHaveBeenCalledWith([], "option2");
+    expect(props.values).toEqual([]);
+    expect(buttons[1]).toHaveAttribute("aria-checked", "false");
+
+    await user.click(buttons[0]);
+    expect(props.values).toEqual(["option1"]);
+    expect(buttons[0]).toHaveAttribute("aria-checked", "true");
+
+    onadd.mockClear();
+    await user.click(buttons[0]);
+    expect(onadd).not.toHaveBeenCalled();
+    expect(props.values).toEqual([]);
+    expect(buttons[0]).toHaveAttribute("aria-checked", "false");
+  });
+
   test("single selection radio behavior", async () => {
     const props = $state({ options, values: [], multiple: false });
     const user = userEvent.setup();

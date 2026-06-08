@@ -3,6 +3,8 @@ export {
   type SVSClass,
   type SVSVariant,
   type SVSPart,
+  type SVSFieldValidation,
+  type SVSFieldConstraint,
   BASE,
   VARIANT,
   PARTS,
@@ -26,6 +28,17 @@ type ClassRule = ClassPartialValue | ClassDictionary | Record<string, ClassValue
 type ClassRuleSet = Record<string, Record<string, ClassValue>>;
 type SVSClass = Record<string, ClassRule> | string;
 type ClassFn = (part: string, variant: string) => ClassValue | undefined;
+type SVSFieldValidation<V, E extends HTMLElement = HTMLInputElement> = (ctx: {
+  value: V;
+  validity: ValidityState;
+  element: E;
+}) => string | undefined | null;
+type SVSFieldConstraint<E extends HTMLElement = HTMLInputElement> = (ctx: {
+  value: string;
+  values: string[];
+  validity: ValidityState;
+  element: E;
+}) => string | undefined | null;
 
 const BASE = "base";
 const VARIANT = Object.freeze({ NEUTRAL: "neutral", ACTIVE: "active", INACTIVE: "inactive" } as const);
