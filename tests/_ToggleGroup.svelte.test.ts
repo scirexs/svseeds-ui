@@ -314,6 +314,52 @@ describe("User interactions", () => {
     expect(buttons[0]).toHaveAttribute("aria-checked", "false");
   });
 
+  test("events.onremove can veto removing", async () => {
+    const onremove = vi.fn(() => true);
+    const props = $state({ options, values: ["option1"], events: { onremove } });
+    const user = userEvent.setup();
+    const { getAllByRole } = render(ToggleGroup, { props });
+    const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
+
+    await user.click(buttons[0]);
+
+    expect(onremove).toHaveBeenCalledWith(["option1"], "option1", 0);
+    expect(props.values).toEqual(["option1"]);
+    expect(buttons[0]).toHaveAttribute("aria-checked", "true");
+  });
+
+  test("events.onremove does not fire on add or disabled", async () => {
+    const disabledOptions = new Map<string, string | ToggleOption>([
+      ["option1", "Option 1"],
+      ["option2", { text: "Option 2", disabled: true }],
+      ["option3", "Option 3"],
+    ]);
+    const onadd = vi.fn();
+    const onremove = vi.fn(() => false);
+    const props = $state({
+      options: disabledOptions,
+      values: ["option2"] as string[],
+      events: { onadd, onremove },
+    });
+    const user = userEvent.setup();
+    const { getAllByRole } = render(ToggleGroup, { props });
+    const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
+
+    await user.click(buttons[0]);
+    expect(onadd).toHaveBeenCalledWith(["option2"], "option1");
+    expect(onremove).not.toHaveBeenCalled();
+    expect(props.values).toEqual(["option1", "option2"]);
+
+    await user.click(buttons[0]);
+    expect(onremove).toHaveBeenCalledWith(["option1", "option2"], "option1", 0);
+    expect(props.values).toEqual(["option2"]);
+
+    onremove.mockClear();
+    await user.click(buttons[1]);
+    expect(onremove).not.toHaveBeenCalled();
+    expect(props.values).toEqual(["option2"]);
+  });
+
   test("single selection radio behavior", async () => {
     const props = $state({ options, values: [], multiple: false });
     const user = userEvent.setup();

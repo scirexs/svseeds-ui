@@ -21,6 +21,7 @@
   }
   interface ToggleGroupEvents {
     onadd?: (values: string[], value: string) => void | boolean;
+    onremove?: (values: string[], value: string, index: number) => void | boolean;
   }
   ```
   ### Anatomy
@@ -56,6 +57,7 @@
   }
   export interface ToggleGroupEvents {
     onadd?: (values: string[], value: string) => void | boolean;
+    onremove?: (values: string[], value: string, index: number) => void | boolean;
   }
   export type ToggleGroupReqdProps = "options";
   export type ToggleGroupBindProps = "values" | "elements";
@@ -111,6 +113,7 @@
       if (opts.find((o) => o.value === value)?.disabled) return;
       const adding = !values.includes(value);
       if (adding && events?.onadd?.(values, value)) return;
+      if (!adding && events?.onremove?.(values, value, values.indexOf(value))) return;
       values = update(value);
     };
   }

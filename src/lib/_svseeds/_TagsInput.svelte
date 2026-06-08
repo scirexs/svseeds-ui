@@ -73,8 +73,8 @@
   export type TagsInputBindProps = "values" | "value" | "element";
   export interface TagsInputEvents {
     // cancel if true
-    onadd?: (values: string[], value: string) => undefined | boolean;
-    onremove?: (values: string[], value: string, index: number) => undefined | boolean;
+    onadd?: (values: string[], value: string) => void | boolean;
+    onremove?: (values: string[], value: string, index: number) => void | boolean;
   }
 
   const preset = "svs-tags-input";
