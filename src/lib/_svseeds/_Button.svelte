@@ -10,16 +10,17 @@
     type?: "submit" | "reset" | "button"; // ("button")
     onclick?: MouseEventHandler<HTMLButtonElement> | null;
     form?: HTMLFormElement;
+    inactive?: string; // reason; when set: aria-disabled + aria-description, variant->INACTIVE, onclick suppressed
     attach?: Attachment;
     element?: HTMLButtonElement; // bindable
     styling?: SVSClass;
-    variant?: SVSVariant; // (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
     // other HTMLButtonAttributes are passed to <button> via ...rest; `class` is merged onto root <button>
   }
   ```
   ### Anatomy
   ```svelte
-  <button class={["whole", class]} {type} {onclick} {...rest} bind:this={element} {@attach attach}>
+  <button class={["whole", class]} {type} {onclick} {...rest} aria-disabled aria-description bind:this={element} {@attach attach}>
     <span class="left" conditional>{left}</span>
     <span class="main">{children}</span>
     <span class="right" conditional>{right}</span>
@@ -33,13 +34,14 @@
     right?: Snippet<[string, HTMLButtonElement | undefined]>; // Snippet<[variant,element]>
     type?: "submit" | "reset" | "button"; // ("button")
     form?: HTMLFormElement;
+    inactive?: string; // reason; when set: aria-disabled + aria-description, variant->INACTIVE, onclick suppressed
     attach?: Attachment<HTMLButtonElement>;
     element?: HTMLButtonElement; // bindable
     styling?: SVSClass;
-    variant?: SVSVariant; // (VARIANT.NEUTRAL)
+    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
   }
   export type ButtonReqdProps = "children";
-  export type ButtonBindProps = "element";
+  export type ButtonBindProps = "element" | "variant";
 
   const preset = "svs-button";
 
@@ -51,21 +53,46 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { children, left, right, type = "button", onclick, form, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: ButtonProps = $props();
+  let { children, left, right, type = "button", onclick, form, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), inactive, class: c, ...rest }: ButtonProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
   const idForm = $derived(form?.id || undefined);
+  const reason = $derived(inactive?.trim() ? inactive : undefined);
+  const inactiveAttrs = $derived(reason ? { "aria-disabled": true, "aria-description": reason } : {});
+
+  let prevVariant: SVSVariant | undefined;
+  $effect(() => {
+    if (reason) {
+      if (variant !== VARIANT.INACTIVE) {
+        prevVariant = variant;
+        variant = VARIANT.INACTIVE;
+      }
+    } else if (prevVariant !== undefined) {
+      variant = prevVariant;
+      prevVariant = undefined;
+    }
+  });
 
   // *** Event Handlers *** //
   const hclick: MouseEventHandler<HTMLButtonElement> = (ev) => {
+    if (reason) return;
     if (form?.checkValidity() ?? true) onclick?.(ev);
   };
 </script>
 
 <!---------------------------------------->
 
-<button bind:this={element} class={[cls(PARTS.WHOLE, variant), c]} {type} onclick={hclick} form={idForm} {...rest} {@attach attach}>
+<button
+  bind:this={element}
+  class={[cls(PARTS.WHOLE, variant), c]}
+  {type}
+  onclick={hclick}
+  form={idForm}
+  {...rest}
+  {...inactiveAttrs}
+  {@attach attach}
+>
   {@render whole()}
 </button>
 

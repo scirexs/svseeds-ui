@@ -324,6 +324,137 @@ describe("Specify attrs & form validation & event handlers", () => {
     expect(mockClick).not.toHaveBeenCalled();
   });
 
+  describe("Inactive (aria-disabled) state", () => {
+    test("sets aria-disabled and aria-description to the reason", () => {
+      const reason = "編集中は保存できません";
+      const { getByRole } = render(Button, { children, inactive: reason });
+      const btn = getByRole("button") as HTMLButtonElement;
+
+      expect(btn).toHaveAttribute("aria-disabled", "true");
+      expect(btn.getAttribute("aria-description")).toBe(reason);
+      expect(btn).not.toHaveAttribute("aria-describedby");
+    });
+
+    test("renders no extra reason node", () => {
+      const { container, getByRole } = render(Button, { children, inactive: "reason" });
+      const btn = getByRole("button") as HTMLButtonElement;
+
+      expect(container.children).toHaveLength(1);
+      expect(container.firstElementChild).toBe(btn);
+      expect(container.querySelector(`.${PARTS.BOTTOM}`)).toBeNull();
+    });
+
+    test("inactive drives variant to INACTIVE", () => {
+      const { getByRole } = render(Button, {
+        children,
+        inactive: "reason",
+        variant: VARIANT.NEUTRAL,
+      });
+      const btn = getByRole("button") as HTMLButtonElement;
+
+      expect(btn).toHaveClass(seed, PARTS.WHOLE, VARIANT.INACTIVE);
+      expect(btn).not.toHaveClass(VARIANT.NEUTRAL);
+    });
+
+    test("bound variant reflects the transition", () => {
+      const props = $state({ children, inactive: "reason", variant: VARIANT.NEUTRAL });
+
+      render(Button, props);
+
+      expect(props.variant).toBe(VARIANT.INACTIVE);
+    });
+
+    test("suppresses onclick on click", async () => {
+      const mockClick = vi.fn();
+      const user = userEvent.setup();
+      const { getByRole } = render(Button, { children, onclick: mockClick, inactive: "reason" });
+      const btn = getByRole("button") as HTMLButtonElement;
+
+      await user.click(btn);
+      expect(mockClick).not.toHaveBeenCalled();
+    });
+
+    test("suppresses keyboard activation", async () => {
+      const mockClick = vi.fn();
+      const user = userEvent.setup();
+      const { getByRole } = render(Button, { children, onclick: mockClick, inactive: "reason" });
+      const btn = getByRole("button") as HTMLButtonElement;
+
+      btn.focus();
+      await user.keyboard("{Enter}");
+      await user.keyboard("[Space]");
+      expect(mockClick).not.toHaveBeenCalled();
+    });
+
+    test("does not call form.checkValidity while inactive", async () => {
+      const mockClick = vi.fn();
+      const user = userEvent.setup();
+      const mockForm = { checkValidity: vi.fn().mockReturnValue(true) } as any;
+      const { getByRole } = render(Button, {
+        children,
+        onclick: mockClick,
+        form: mockForm,
+        inactive: "reason",
+      });
+      const btn = getByRole("button") as HTMLButtonElement;
+
+      await user.click(btn);
+      expect(mockForm.checkValidity).not.toHaveBeenCalled();
+      expect(mockClick).not.toHaveBeenCalled();
+    });
+
+    test("absent inactive -> no aria-disabled, no aria-description, onclick fires", async () => {
+      const mockClick = vi.fn();
+      const user = userEvent.setup();
+      const { getByRole } = render(Button, { children, onclick: mockClick });
+      const btn = getByRole("button") as HTMLButtonElement;
+
+      expect(btn).not.toHaveAttribute("aria-disabled");
+      expect(btn).not.toHaveAttribute("aria-description");
+      await user.click(btn);
+      expect(mockClick).toHaveBeenCalledTimes(1);
+    });
+
+    test("whitespace-only inactive is treated as absent", async () => {
+      const mockClick = vi.fn();
+      const user = userEvent.setup();
+      const { getByRole } = render(Button, { children, onclick: mockClick, inactive: "   " });
+      const btn = getByRole("button") as HTMLButtonElement;
+
+      expect(btn).not.toHaveAttribute("aria-disabled");
+      expect(btn).not.toHaveAttribute("aria-description");
+      await user.click(btn);
+      expect(mockClick).toHaveBeenCalledTimes(1);
+    });
+
+    test("toggling inactive off restores clickability and variant", async () => {
+      const mockClick = vi.fn();
+      const user = userEvent.setup();
+      const props = $state({
+        children,
+        onclick: mockClick,
+        inactive: "reason" as string | undefined,
+        variant: VARIANT.NEUTRAL,
+      });
+      const { getByRole, rerender } = render(Button, props);
+      const btn = getByRole("button") as HTMLButtonElement;
+
+      await user.click(btn);
+      expect(mockClick).not.toHaveBeenCalled();
+      expect(props.variant).toBe(VARIANT.INACTIVE);
+
+      props.inactive = undefined;
+      await rerender(props);
+
+      expect(btn).not.toHaveAttribute("aria-disabled");
+      expect(btn).not.toHaveAttribute("aria-description");
+      expect(props.variant).toBe(VARIANT.NEUTRAL);
+      expect(btn).toHaveClass(seed, PARTS.WHOLE, VARIANT.NEUTRAL);
+      await user.click(btn);
+      expect(mockClick).toHaveBeenCalledTimes(1);
+    });
+  });
+
   test("real form validation - invalid required field suppresses onclick", async () => {
     const mockClick = vi.fn();
     const user = userEvent.setup();
