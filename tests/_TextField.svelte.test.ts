@@ -195,6 +195,18 @@ describe("Switching existence of elements", () => {
     expect(whole.lastElementChild).toBe(btm);
     expect(main).toHaveAccessibleDescription(bottom);
   });
+  test("w/ reserved bottom", () => {
+    const props = { reserve: true };
+    const { getByRole } = render(TextField, props);
+    const whole = getByRole("group") as HTMLDivElement;
+    const main = getByRole("textbox") as HTMLInputElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
+    expect(btm).toHaveClass("svs-text-field", PARTS.BOTTOM);
+    expect(btm).toHaveTextContent("");
+    expect(whole.children).toHaveLength(2);
+    expect(whole.firstElementChild).toBe(main.parentElement);
+    expect(main).not.toHaveAttribute("aria-describedby");
+  });
   test("w/ bottom of attach input", () => {
     const props = { bottom, attach: attachfn };
     const { getByRole } = render(TextField, props);
@@ -680,6 +692,28 @@ describe("a11y, structure & textarea attrs", () => {
     expect(btm).toHaveTextContent(bottom);
   });
 
+  test("reserved bottom stays mounted across error transition", async () => {
+    const props = $state({ reserve: true, variant: VARIANT.NEUTRAL, validations });
+    const user = userEvent.setup();
+    const { getByRole } = render(TextField, props);
+    const whole = getByRole("group") as HTMLDivElement;
+    const main = getByRole("textbox") as HTMLInputElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
+    expect(btm).toHaveClass(seed, PARTS.BOTTOM);
+    expect(btm).toHaveTextContent("");
+    expect(main).not.toHaveAttribute("aria-describedby");
+
+    await user.type(main, "a");
+    await user.tab();
+    expect(getByRole("alert")).toBe(btm);
+    expect(btm).toHaveTextContent(errmsg);
+
+    await user.type(main, "a");
+    expect(whole.lastElementChild).toBe(btm);
+    expect(btm).not.toHaveAttribute("role");
+    expect(btm).toHaveTextContent("");
+  });
+
   test("help text is not a live region in neutral", () => {
     const props = { bottom };
     const { getByRole } = render(TextField, props);
@@ -770,15 +804,15 @@ describe("a11y, structure & textarea attrs", () => {
     expect(input).not.toHaveAttribute("wrap");
   });
 
-  test("descFirst controls bottom order", () => {
-    const firstRender = render(TextField, { bottom, descFirst: true });
+  test("flip controls bottom order", () => {
+    const firstRender = render(TextField, { bottom, flip: true });
     const firstWhole = firstRender.getByRole("group") as HTMLDivElement;
     const firstMain = firstRender.getByRole("textbox") as HTMLInputElement;
     expect(firstWhole.firstElementChild).toHaveTextContent(bottom);
     expect(firstWhole.children[1]).toBe(firstMain.parentElement);
     firstRender.unmount();
 
-    const lastRender = render(TextField, { bottom, descFirst: false });
+    const lastRender = render(TextField, { bottom, flip: false });
     const lastWhole = lastRender.getByRole("group") as HTMLDivElement;
     const lastMain = lastRender.getByRole("textbox") as HTMLInputElement;
     expect(lastWhole.firstElementChild).toBe(lastMain.parentElement);

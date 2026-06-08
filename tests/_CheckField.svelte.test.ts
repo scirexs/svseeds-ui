@@ -101,6 +101,18 @@ describe("Switching existence of elements", () => {
     expect(whole.lastElementChild).toBe(btm);
     expect(middle).toHaveAccessibleDescription(bottom);
   });
+  test("w/ reserved bottom", () => {
+    const props = { options, reserve: true };
+    const { getAllByRole } = render(CheckField, props);
+    const whole = getAllByRole("group")[0] as HTMLDivElement;
+    const middle = getAllByRole("group")[1] as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
+    expect(btm).toHaveClass("svs-check-field", PARTS.BOTTOM);
+    expect(btm).toHaveTextContent("");
+    expect(whole.children).toHaveLength(2);
+    expect(whole.firstElementChild).toBe(middle);
+    expect(middle).not.toHaveAttribute("aria-describedby");
+  });
 
   test("w/ bottom and multiple=false", () => {
     const props = { options, bottom, multiple: false };
@@ -134,8 +146,8 @@ describe("Switching existence of elements", () => {
     expect(whole.firstElementChild?.tagName).toBe("DIV");
   });
 
-  test("w/ descFirst=true", () => {
-    const props = { options, bottom, descFirst: true };
+  test("w/ flip=true", () => {
+    const props = { options, bottom, flip: true };
     const { getAllByRole } = render(CheckField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
     const btm = whole.firstElementChild as HTMLDivElement;
@@ -156,6 +168,28 @@ describe("Specify attrs & state transition & event handlers", () => {
   const errmsg = "invalid";
   const validationFn = ({ value }: { value: string[] }) => (value.length === 0 ? errmsg : "");
   const validations = [validationFn];
+
+  test("reserved bottom stays mounted across error transition", async () => {
+    const props = $state({ options, reserve: true, variant: VARIANT.NEUTRAL, validations, values: [] });
+    const user = userEvent.setup();
+    const { getAllByRole, getByRole } = render(CheckField, props);
+    const whole = getAllByRole("group")[0] as HTMLDivElement;
+    const middle = getAllByRole("group")[1] as HTMLDivElement;
+    const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
+    const btm = whole.lastElementChild as HTMLDivElement;
+    expect(btm).toHaveClass(seed, PARTS.BOTTOM);
+    expect(btm).toHaveTextContent("");
+    expect(middle).not.toHaveAttribute("aria-describedby");
+
+    await fireEvent.invalid(checkboxes[0]);
+    expect(getByRole("alert")).toBe(btm);
+    expect(btm).toHaveTextContent(errmsg);
+
+    await user.click(checkboxes[0]);
+    expect(whole.lastElementChild).toBe(btm);
+    expect(btm).not.toHaveAttribute("role");
+    expect(btm).toHaveTextContent("");
+  });
 
   test("w/ default values", () => {
     const values = ["option1", "option3"];

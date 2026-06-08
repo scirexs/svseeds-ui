@@ -10,7 +10,8 @@
     left?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[value,variant,element]>
     right?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[value,variant,element]>
     bottom?: string;
-    descFirst?: boolean; // (false)
+    reserve?: boolean; // (false)
+    flip?: boolean; // (false)
     value?: string; // bindable
     type?: "text" | "textarea" | "email" | "password" | "search" | "tel" | "url";  // ("text")
     options?: SvelteSet<string> | Set<string>;
@@ -51,7 +52,7 @@
       {/if}
       <span class="right" conditional>{right}</span>
     </div>
-    <div class="bottom" conditional>{bottom}</div>
+    <div class="bottom" conditional: has text, or always when reserve>{bottom}</div>
   </div>
   ```
 -->
@@ -63,7 +64,8 @@
     left?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[value,variant,element]>
     right?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[value,variant,element]>
     bottom?: string;
-    descFirst?: boolean; // (false)
+    reserve?: boolean; // (false)
+    flip?: boolean; // (false)
     value?: string; // bindable
     type?: "text" | "textarea" | "email" | "password" | "search" | "tel" | "url"; // ("text")
     options?: SvelteSet<string> | Set<string>;
@@ -92,7 +94,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { label, extra, aux, left, right, bottom, descFirst = false, value = $bindable(""), type = "text", cols, rows, wrap, options, validations = [], id, onchange, oninvalid, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, ...rest }: TextFieldProps = $props();
+  let { label, extra, aux, left, right, bottom, reserve = false, flip = false, value = $bindable(""), type = "text", cols, rows, wrap, options, validations = [], id, onchange, oninvalid, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, ...rest }: TextFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
@@ -162,13 +164,13 @@
       {/if}
     </div>
   {/if}
-  {@render desc(descFirst)}
+  {@render desc(flip)}
   <div class={cls(PARTS.MIDDLE, variant)}>
     {@render side(PARTS.LEFT, left)}
     {@render main()}
     {@render side(PARTS.RIGHT, right)}
   </div>
-  {@render desc(!descFirst)}
+  {@render desc(!flip)}
 </div>
 
 {#snippet lbl()}
@@ -230,7 +232,7 @@
   {/if}
 {/snippet}
 {#snippet desc(show: boolean)}
-  {#if show && message?.trim()}
+  {#if show && (reserve || message?.trim())}
     <div class={cls(PARTS.BOTTOM, variant)} id={idErr} role={live}>{message}</div>
   {/if}
 {/snippet}

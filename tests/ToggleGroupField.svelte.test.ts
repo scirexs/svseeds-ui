@@ -128,9 +128,21 @@ describe("Switching existence of elements", () => {
     expect(whole.firstElementChild?.tagName).toBe("DIV"); // middle
     expect(whole.lastElementChild).toBe(btm);
   });
+  test("w/ reserved bottom", () => {
+    const props = { options, reserve: true };
+    const { getAllByRole } = render(ToggleGroupField, props);
+    const whole = getAllByRole("group")[0] as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
+    const inner = whole.querySelector('[role="group"], [role="radiogroup"]') as HTMLElement;
+    expect(btm).toHaveClass(seed, PARTS.BOTTOM);
+    expect(btm).toHaveTextContent("");
+    expect(whole.children).toHaveLength(2);
+    expect(whole.lastElementChild).toBe(btm);
+    expect(inner).not.toHaveAttribute("aria-describedby");
+  });
 
-  test("w/ bottom descFirst", () => {
-    const props = { options, bottom, descFirst: true };
+  test("w/ bottom flip", () => {
+    const props = { options, bottom, flip: true };
     const { getAllByRole } = render(ToggleGroupField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
     const btm = whole.firstElementChild as HTMLDivElement;
@@ -180,6 +192,27 @@ describe("Specify state transition & event handlers", () => {
   const proxyInput = (whole: HTMLElement) => whole.querySelector('input[style*="display: none"]') as HTMLInputElement;
   const middleOf = (whole: HTMLElement) => whole.querySelector(`.${PARTS.MIDDLE}`) as HTMLDivElement;
   const innerToggleGroupOf = (whole: HTMLElement) => middleOf(whole).querySelector('[role="group"], [role="radiogroup"]') as HTMLElement;
+
+  test("reserved bottom stays mounted across error transition", async () => {
+    const props = $state({ options, reserve: true, variant: VARIANT.NEUTRAL, validations, values: [] as string[] });
+    const { getAllByRole, getByRole } = render(ToggleGroupField, props);
+    const whole = getAllByRole("group")[0] as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
+    expect(btm).toHaveClass(seed, PARTS.BOTTOM);
+    expect(btm).toHaveTextContent("");
+    expect(innerToggleGroupOf(whole)).not.toHaveAttribute("aria-describedby");
+
+    await fireEvent.invalid(proxyInput(whole));
+    expect(getByRole("alert")).toBe(btm);
+    expect(btm).toHaveTextContent(errmsg);
+
+    props.values = ["opt1"];
+    await waitFor(() => {
+      expect(whole.lastElementChild).toBe(btm);
+      expect(btm).not.toHaveAttribute("role");
+      expect(btm).toHaveTextContent("");
+    });
+  });
 
   test("w/ default values", () => {
     const values = ["opt1", "opt2"];
@@ -806,11 +839,11 @@ describe("Specify state transition & event handlers", () => {
     });
   });
 
-  test("descFirst keeps bottom before middle in error state", async () => {
+  test("flip keeps bottom before middle in error state", async () => {
     const props = $state({
       options,
       bottom,
-      descFirst: true,
+      flip: true,
       validations: [({ value }: { value: string[] }) => (value.length ? "" : "required")],
       values: [] as string[],
       variant: VARIANT.NEUTRAL,

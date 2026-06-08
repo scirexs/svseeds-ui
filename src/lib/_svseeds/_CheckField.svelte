@@ -9,7 +9,8 @@
     extra?: string;
     aux?: Snippet<[string[], string, HTMLInputElement[]]>; // Snippet<[values,variant,elements]>
     bottom?: string;
-    descFirst?: boolean; // (false)
+    reserve?: boolean; // (false)
+    flip?: boolean; // (false)
     values?: string[]; // bindable
     multiple?: boolean; // (true)
     validations?: CheckFieldValidation[];
@@ -41,7 +42,7 @@
         </label>
       {/each}
     </div>
-    <div class="bottom" conditional>{bottom}</div>
+    <div class="bottom" conditional: has text, or always when reserve>{bottom}</div>
   </div>
   ```
 -->
@@ -52,7 +53,8 @@
     extra?: string;
     aux?: Snippet<[string[], string, HTMLInputElement[]]>; // Snippet<[values,variant,elements]>
     bottom?: string;
-    descFirst?: boolean; // (false)
+    reserve?: boolean; // (false)
+    flip?: boolean; // (false)
     values?: string[]; // bindable
     multiple?: boolean; // (true)
     validations?: CheckFieldValidation[];
@@ -78,7 +80,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { options, label, extra, aux, bottom, values = $bindable([]), multiple = true, descFirst = false, validations = [], constraints = [], name, onchange, oninvalid, attach, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, required = false, ...rest }: CheckFieldProps = $props();
+  let { options, label, extra, aux, bottom, reserve = false, flip = false, values = $bindable([]), multiple = true, validations = [], constraints = [], name, onchange, oninvalid, attach, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, required = false, ...rest }: CheckFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
@@ -170,9 +172,9 @@
         {/if}
       </div>
     {/if}
-    {@render desc(descFirst)}
+    {@render desc(flip)}
     {@render main()}
-    {@render desc(!descFirst)}
+    {@render desc(!flip)}
   </div>
 {/if}
 
@@ -219,7 +221,7 @@
   </div>
 {/snippet}
 {#snippet desc(show: boolean)}
-  {#if show && message?.trim()}
+  {#if show && (reserve || message?.trim())}
     <div class={cls(PARTS.BOTTOM, variant)} id={idDesc ?? idErr} role={live}>{message}</div>
   {/if}
 {/snippet}

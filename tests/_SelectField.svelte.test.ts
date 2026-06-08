@@ -170,6 +170,18 @@ describe("Switching existence of elements", () => {
     expect(whole.lastElementChild).toBe(btm);
     expect(main).toHaveAccessibleDescription(bottom);
   });
+  test("w/ reserved bottom", () => {
+    const props = { options, reserve: true };
+    const { getByRole } = render(SelectField, props);
+    const whole = getByRole("group") as HTMLDivElement;
+    const main = getByRole("combobox") as HTMLSelectElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
+    expect(btm).toHaveClass("svs-select-field", PARTS.BOTTOM);
+    expect(btm).toHaveTextContent("");
+    expect(whole.children).toHaveLength(2);
+    expect(whole.firstElementChild).toBe(main.parentElement);
+    expect(main).not.toHaveAttribute("aria-describedby");
+  });
   test("w/ bottom of attach select", () => {
     const props = { options, bottom, attach: attachfn };
     const { getByRole } = render(SelectField, props);
@@ -189,8 +201,8 @@ describe("Switching existence of elements", () => {
     expect(whole.children).toHaveLength(1);
     expect(whole.firstElementChild).toBe(main.parentElement);
   });
-  test("w/ descFirst", () => {
-    const props = { options, bottom, descFirst: true };
+  test("w/ flip", () => {
+    const props = { options, bottom, flip: true };
     const { getByRole } = render(SelectField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("combobox") as HTMLSelectElement;
@@ -208,6 +220,27 @@ describe("Specify attrs & state transition & event handlers", () => {
   const errmsg = "invalid selection";
   const validationFn = ({ value }: { value: string }) => (value === "val1" ? errmsg : "");
   const validations = [validationFn];
+
+  test("reserved bottom stays mounted across error transition", async () => {
+    const props = $state({ options, reserve: true, value: "val2", variant: VARIANT.NEUTRAL, validations });
+    const user = userEvent.setup();
+    const { getByRole } = render(SelectField, props);
+    const whole = getByRole("group") as HTMLDivElement;
+    const main = getByRole("combobox") as HTMLSelectElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
+    expect(btm).toHaveClass(seed, PARTS.BOTTOM);
+    expect(btm).toHaveTextContent("");
+    expect(main).not.toHaveAttribute("aria-describedby");
+
+    await user.selectOptions(main, "val1");
+    expect(getByRole("alert")).toBe(btm);
+    expect(btm).toHaveTextContent(errmsg);
+
+    await user.selectOptions(main, "val2");
+    expect(whole.lastElementChild).toBe(btm);
+    expect(btm).not.toHaveAttribute("role");
+    expect(btm).toHaveTextContent("");
+  });
 
   test("w/ default value", () => {
     const value = "val2";

@@ -10,7 +10,8 @@
     left?: Snippet<[string[], string, HTMLInputElement | undefined]>; // Snippet<[values,variant,element]>
     right?: Snippet<[string[], string, HTMLInputElement | undefined]>; // Snippet<[values,variant,element]>
     bottom?: string;
-    descFirst?: boolean; // (false)
+    reserve?: boolean; // (false)
+    flip?: boolean; // (false)
     values?: string[]; // bindable
     constraints?: TagsInputFieldConstraint[];
     validations?: TagsInputFieldValidation[];
@@ -42,7 +43,7 @@
       <TagsInput {...deps.svsTagsInput} bind:values bind:element />
       <span class="right" conditional>{right}</span>
     </div>
-    <div class="bottom" conditional role="alert only on error">{bottom}</div>
+    <div class="bottom" conditional: has text, or always when reserve; role="alert only on error">{bottom}</div>
   </div>
   ```
 -->
@@ -54,7 +55,8 @@
     left?: Snippet<[string[], string, HTMLInputElement | undefined]>; // Snippet<[values,variant,element]>
     right?: Snippet<[string[], string, HTMLInputElement | undefined]>; // Snippet<[values,variant,element]>
     bottom?: string;
-    descFirst?: boolean; // (false)
+    reserve?: boolean; // (false)
+    flip?: boolean; // (false)
     values?: string[]; // bindable
     constraints?: TagsInputFieldConstraint[];
     validations?: TagsInputFieldValidation[];
@@ -81,7 +83,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), constraints = [], validations = [], name, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), deps }: TagsInputFieldProps = $props();
+  let { label, extra, aux, left, right, bottom, reserve = false, flip = false, values = $bindable([]), constraints = [], validations = [], name, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), deps }: TagsInputFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
@@ -178,14 +180,14 @@
       {/if}
     </div>
   {/if}
-  {@render desc(descFirst)}
+  {@render desc(flip)}
   <div class={cls(PARTS.MIDDLE, variant)}>
     {@render side(PARTS.LEFT, left)}
     {@render fnForm()}
     <TagsInput {...svsTagsInput} bind:values {variant} bind:element ariaErrMsgId={idMsg} />
     {@render side(PARTS.RIGHT, right)}
   </div>
-  {@render desc(!descFirst)}
+  {@render desc(!flip)}
 </div>
 
 {#snippet lbl()}
@@ -204,7 +206,7 @@
   {/if}
 {/snippet}
 {#snippet desc(show: boolean)}
-  {#if show && message?.trim()}
+  {#if show && (reserve || message?.trim())}
     <div class={cls(PARTS.BOTTOM, variant)} id={idDesc ?? idErr} role={live}>{message}</div>
   {/if}
 {/snippet}

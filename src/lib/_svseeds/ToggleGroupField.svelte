@@ -16,7 +16,8 @@
     left?: Snippet<[string[], string]>; // Snippet<[values,variant]>
     right?: Snippet<[string[], string]>; // Snippet<[values,variant]>
     bottom?: string;
-    descFirst?: boolean; // (false)
+    reserve?: boolean; // (false)
+    flip?: boolean; // (false)
     values?: string[]; // bindable
     multiple?: boolean; // (true)
     validations?: ToggleGroupFieldValidation[];
@@ -53,7 +54,7 @@
       <ToggleGroup {options} {multiple} {...deps.svsToggleGroup} bind:values bind:elements />
       <span class="right" conditional>{right}</span>
     </div>
-    <div class="bottom" conditional>{bottom}</div>
+    <div class="bottom" conditional: has text, or always when reserve>{bottom}</div>
   </div>
   ```
 -->
@@ -66,7 +67,8 @@
     left?: Snippet<[string[], string]>; // Snippet<[values,variant]>
     right?: Snippet<[string[], string]>; // Snippet<[values,variant]>
     bottom?: string;
-    descFirst?: boolean; // (false)
+    reserve?: boolean; // (false)
+    flip?: boolean; // (false)
     values?: string[]; // bindable
     multiple?: boolean; // (true)
     validations?: ToggleGroupFieldValidation[];
@@ -104,7 +106,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { options, label, extra, aux, left, right, bottom, descFirst = false, values = $bindable([]), multiple = true, validations = [], constraints = [], name, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), deps }: ToggleGroupFieldProps = $props();
+  let { options, label, extra, aux, left, right, bottom, reserve = false, flip = false, values = $bindable([]), multiple = true, validations = [], constraints = [], name, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), deps }: ToggleGroupFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
@@ -190,14 +192,14 @@
         {/if}
       </div>
     {/if}
-    {@render desc(descFirst)}
+    {@render desc(flip)}
     <div class={cls(PARTS.MIDDLE, variant)}>
       {@render side(PARTS.LEFT, left)}
       {@render fnForm()}
       <ToggleGroup {...svsToggleGroup} bind:values bind:elements ariaErrMsgId={idMsg} variant={neutral} {options} {multiple} events={{ onadd: hadd }} />
       {@render side(PARTS.RIGHT, right)}
     </div>
-    {@render desc(!descFirst)}
+    {@render desc(!flip)}
   </div>
 {/if}
 
@@ -217,7 +219,7 @@
   {/if}
 {/snippet}
 {#snippet desc(show: boolean)}
-  {#if show && message?.trim()}
+  {#if show && (reserve || message?.trim())}
     <div class={cls(PARTS.BOTTOM, variant)} id={idDesc ?? idErr} role={live}>{message}</div>
   {/if}
 {/snippet}

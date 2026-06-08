@@ -114,6 +114,18 @@ describe("Switching existence of elements", () => {
     expect(btm).not.toHaveAttribute("role");
     expect(main).toHaveAccessibleDescription(bottom);
   });
+  test("w/ reserved bottom", () => {
+    const props = { reserve: true };
+    const { getByRole } = render(TagsInputField, props);
+    const whole = getByRole("group") as HTMLDivElement;
+    const main = getByRole("textbox") as HTMLInputElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
+    expect(btm).toHaveClass("svs-tags-input-field", PARTS.BOTTOM);
+    expect(btm).toHaveTextContent("");
+    expect(whole.children).toHaveLength(2);
+    expect(whole.lastElementChild).toBe(btm);
+    expect(main).not.toHaveAttribute("aria-describedby");
+  });
 
   test("w/ blank string", () => {
     const props = { label: " ", bottom: " " };
@@ -136,8 +148,8 @@ describe("Switching existence of elements", () => {
     expect(tag1).toHaveLength(1);
   });
 
-  test("w/ descFirst true", () => {
-    const props = { bottom, descFirst: true };
+  test("w/ flip true", () => {
+    const props = { bottom, flip: true };
     const { getByRole } = render(TagsInputField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
@@ -157,6 +169,28 @@ describe("Specify props & state transition & event handlers", () => {
   const validationFn = ({ value }: { value: string[] }) => (value.length === 0 ? errmsg : "");
   const constraints = [constraintFn];
   const validations = [validationFn];
+
+  test("reserved bottom stays mounted across error transition", async () => {
+    const props = $state({ reserve: true, variant: VARIANT.NEUTRAL, validations });
+    const user = userEvent.setup();
+    const { getByRole } = render(TagsInputField, props);
+    const whole = getByRole("group") as HTMLDivElement;
+    const main = getByRole("textbox") as HTMLInputElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
+    expect(btm).toHaveClass(seed, PARTS.BOTTOM);
+    expect(btm).toHaveTextContent("");
+    expect(main).not.toHaveAttribute("aria-describedby");
+
+    await fireEvent.invalid(main);
+    expect(getByRole("alert")).toBe(btm);
+    expect(btm).toHaveTextContent(errmsg);
+
+    await user.type(main, "validtag");
+    await user.keyboard("{Enter}");
+    expect(whole.lastElementChild).toBe(btm);
+    expect(btm).not.toHaveAttribute("role");
+    expect(btm).toHaveTextContent("");
+  });
 
   test("w/ default values", () => {
     const values = ["initial"];
