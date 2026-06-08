@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, waitFor, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
-import { createRawSnippet } from "svelte";
+import { createRawSnippet, tick } from "svelte";
 import { SvelteMap } from "svelte/reactivity";
-import ToggleGroupField from "#svs/ToggleGroupField.svelte";
+import ToggleGroupField, { type ToggleOption } from "#svs/ToggleGroupField.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 
 const label = "label_text";
@@ -12,32 +12,18 @@ const bottom = "bottom_text";
 const auxid = "test-aux";
 const leftid = "test-left";
 const rightid = "test-right";
-const auxfn = createRawSnippet(
-  (
-    values: () => string[],
-    variant: () => string,
-  ) => {
-    return { render: () => `<span data-testid="${auxid}">${variant()},${values().length}</span>` };
-  },
-);
-const leftfn = createRawSnippet(
-  (
-    values: () => string[],
-    variant: () => string,
-  ) => {
-    return { render: () => `<span data-testid="${leftid}">${variant()},${values().length}</span>` };
-  },
-);
-const rightfn = createRawSnippet(
-  (
-    values: () => string[],
-    variant: () => string,
-  ) => {
-    return { render: () => `<span data-testid="${rightid}">${variant()},${values().length}</span>` };
-  },
-);
+const auxfn = createRawSnippet((values: () => string[], variant: () => string) => {
+  return { render: () => `<span data-testid="${auxid}">${variant()},${values().length}</span>` };
+});
+const leftfn = createRawSnippet((values: () => string[], variant: () => string) => {
+  return { render: () => `<span data-testid="${leftid}">${variant()},${values().length}</span>` };
+});
+const rightfn = createRawSnippet((values: () => string[], variant: () => string) => {
+  return { render: () => `<span data-testid="${rightid}">${variant()},${values().length}</span>` };
+});
 
 describe("Switching existence of elements", () => {
+  const seed = "svs-toggle-group-field";
   const options = new SvelteMap([
     ["opt1", "Option 1"],
     ["opt2", "Option 2"],
@@ -66,9 +52,11 @@ describe("Switching existence of elements", () => {
     const { getAllByRole, getByText } = render(ToggleGroupField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
     const lbl = getByText(label);
+    const top = lbl.parentElement as HTMLDivElement;
     expect(whole).toHaveAttribute("aria-labelledby");
     expect(whole.children).toHaveLength(2);
-    expect(whole.firstElementChild).toBe(lbl);
+    expect(top).toHaveClass(seed, PARTS.TOP);
+    expect(whole.firstElementChild).toBe(top);
     expect(whole.lastElementChild?.tagName).toBe("DIV"); // middle
   });
 
@@ -85,8 +73,10 @@ describe("Switching existence of elements", () => {
     const whole = getAllByRole("group")[0] as HTMLDivElement;
     const lbl = getByText(label);
     const ext = within(lbl).getByText(extra);
+    const top = lbl.parentElement as HTMLDivElement;
     expect(whole.children).toHaveLength(2);
-    expect(whole.firstElementChild).toBe(lbl);
+    expect(top).toHaveClass(seed, PARTS.TOP);
+    expect(whole.firstElementChild).toBe(top);
     expect(lbl.firstElementChild).toBe(ext);
     expect(whole.lastElementChild?.tagName).toBe("DIV"); // middle
   });
@@ -129,9 +119,11 @@ describe("Switching existence of elements", () => {
 
   test("w/ bottom", () => {
     const props = { options, bottom };
-    const { getAllByRole, getByRole } = render(ToggleGroupField, props);
+    const { getAllByRole } = render(ToggleGroupField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
+    expect(btm).toHaveTextContent(bottom);
+    expect(btm).not.toHaveAttribute("role");
     expect(whole.children).toHaveLength(2);
     expect(whole.firstElementChild?.tagName).toBe("DIV"); // middle
     expect(whole.lastElementChild).toBe(btm);
@@ -139,9 +131,11 @@ describe("Switching existence of elements", () => {
 
   test("w/ bottom descFirst", () => {
     const props = { options, bottom, descFirst: true };
-    const { getAllByRole, getByRole } = render(ToggleGroupField, props);
+    const { getAllByRole } = render(ToggleGroupField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.firstElementChild as HTMLDivElement;
+    expect(btm).toHaveTextContent(bottom);
+    expect(btm).not.toHaveAttribute("role");
     expect(whole.children).toHaveLength(2);
     expect(whole.firstElementChild).toBe(btm);
     expect(whole.lastElementChild?.tagName).toBe("DIV"); // middle
@@ -183,6 +177,9 @@ describe("Specify state transition & event handlers", () => {
   const errmsg = "At least one option must be selected";
   const validationFn = (values: string[]) => (values.length === 0 ? errmsg : "");
   const validations = [validationFn];
+  const proxyInput = (whole: HTMLElement) => whole.querySelector('input[style*="display: none"]') as HTMLInputElement;
+  const middleOf = (whole: HTMLElement) => whole.querySelector(`.${PARTS.MIDDLE}`) as HTMLDivElement;
+  const innerToggleGroupOf = (whole: HTMLElement) => middleOf(whole).querySelector('[role="group"], [role="radiogroup"]') as HTMLElement;
 
   test("w/ default values", () => {
     const values = ["opt1", "opt2"];
@@ -250,7 +247,7 @@ describe("Specify state transition & event handlers", () => {
 
   test("multiple validation functions", async () => {
     const validation1 = vi.fn().mockReturnValue("");
-    const validation2 = vi.fn().mockImplementation((values: string[]) => values.length > 2 ? "Too many selections" : "");
+    const validation2 = vi.fn().mockImplementation((values: string[]) => (values.length > 2 ? "Too many selections" : ""));
     const props = $state({
       options,
       variant: VARIANT.NEUTRAL,
@@ -285,7 +282,7 @@ describe("Specify state transition & event handlers", () => {
       validations,
       values: [] as string[],
     });
-    const { getAllByRole, getByRole, getByTestId, getByText } = render(ToggleGroupField, props);
+    const { getAllByRole, getByTestId, getByText } = render(ToggleGroupField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
     const lbl = getByText(label);
     const ext = within(lbl).getByText(extra);
@@ -294,9 +291,10 @@ describe("Specify state transition & event handlers", () => {
     const leftdv = getByTestId(leftid).parentElement;
     const rightdv = getByTestId(rightid).parentElement;
     const middle = leftdv?.parentElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
 
     expect(props.variant).toBe(VARIANT.NEUTRAL);
+    expect(btm).not.toHaveAttribute("role");
     expect(whole).toHaveClass(seed, PARTS.WHOLE);
     expect(top).toHaveClass(seed, PARTS.TOP);
     expect(lbl).toHaveClass(seed, PARTS.LABEL);
@@ -311,6 +309,7 @@ describe("Specify state transition & event handlers", () => {
     const hiddenInput = whole.querySelector('input[style*="display: none"]') as HTMLInputElement;
     await fireEvent.invalid(hiddenInput);
     expect(props.variant).toBe(VARIANT.INACTIVE);
+    expect(btm).toHaveAttribute("role", "alert");
     expect(whole).toHaveClass(seed, PARTS.WHOLE, VARIANT.INACTIVE);
     expect(top).toHaveClass(seed, PARTS.TOP, VARIANT.INACTIVE);
     expect(lbl).toHaveClass(seed, PARTS.LABEL, VARIANT.INACTIVE);
@@ -325,6 +324,7 @@ describe("Specify state transition & event handlers", () => {
     props.values = ["opt1"];
     await fireEvent.change(hiddenInput);
     expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(btm).not.toHaveAttribute("role");
     expect(whole).toHaveClass(seed, PARTS.WHOLE, VARIANT.ACTIVE);
     expect(top).toHaveClass(seed, PARTS.TOP, VARIANT.ACTIVE);
     expect(lbl).toHaveClass(seed, PARTS.LABEL, VARIANT.ACTIVE);
@@ -351,7 +351,7 @@ describe("Specify state transition & event handlers", () => {
       values: [] as string[],
       styling: clsid,
     });
-    const { getAllByRole, getByRole, getByTestId, getByText } = render(ToggleGroupField, props);
+    const { getAllByRole, getByTestId, getByText } = render(ToggleGroupField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
     const lbl = getByText(label);
     const ext = within(lbl).getByText(extra);
@@ -360,9 +360,10 @@ describe("Specify state transition & event handlers", () => {
     const leftdv = getByTestId(leftid).parentElement;
     const rightdv = getByTestId(rightid).parentElement;
     const middle = leftdv?.parentElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
 
     expect(props.variant).toBe(VARIANT.NEUTRAL);
+    expect(btm).not.toHaveAttribute("role");
     expect(whole).toHaveClass(clsid, PARTS.WHOLE);
     expect(top).toHaveClass(clsid, PARTS.TOP);
     expect(lbl).toHaveClass(clsid, PARTS.LABEL);
@@ -377,6 +378,7 @@ describe("Specify state transition & event handlers", () => {
     const hiddenInput = whole.querySelector('input[style*="display: none"]') as HTMLInputElement;
     await fireEvent.invalid(hiddenInput);
     expect(props.variant).toBe(VARIANT.INACTIVE);
+    expect(btm).toHaveAttribute("role", "alert");
     expect(whole).toHaveClass(clsid, PARTS.WHOLE, VARIANT.INACTIVE);
     expect(top).toHaveClass(clsid, PARTS.TOP, VARIANT.INACTIVE);
     expect(lbl).toHaveClass(clsid, PARTS.LABEL, VARIANT.INACTIVE);
@@ -391,6 +393,7 @@ describe("Specify state transition & event handlers", () => {
     props.values = ["opt1"];
     await fireEvent.change(hiddenInput);
     expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(btm).not.toHaveAttribute("role");
     expect(whole).toHaveClass(clsid, PARTS.WHOLE, VARIANT.ACTIVE);
     expect(top).toHaveClass(clsid, PARTS.TOP, VARIANT.ACTIVE);
     expect(lbl).toHaveClass(clsid, PARTS.LABEL, VARIANT.ACTIVE);
@@ -433,7 +436,7 @@ describe("Specify state transition & event handlers", () => {
       values: [] as string[],
       styling,
     });
-    const { getAllByRole, getByRole, getByTestId, getByText } = render(ToggleGroupField, props);
+    const { getAllByRole, getByTestId, getByText } = render(ToggleGroupField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
     const lbl = getByText(label);
     const ext = within(lbl).getByText(extra);
@@ -442,9 +445,10 @@ describe("Specify state transition & event handlers", () => {
     const leftdv = getByTestId(leftid).parentElement;
     const rightdv = getByTestId(rightid).parentElement;
     const middle = leftdv?.parentElement;
-    const btm = getByRole("status") as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
 
     expect(props.variant).toBe(VARIANT.NEUTRAL);
+    expect(btm).not.toHaveAttribute("role");
     expect(whole).toHaveClass(dynObj.base, dynObj.neutral);
     expect(top).toHaveClass(dynObj.base, dynObj.neutral);
     expect(lbl).toHaveClass(dynObj.base, dynObj.neutral);
@@ -459,6 +463,7 @@ describe("Specify state transition & event handlers", () => {
     const hiddenInput = whole.querySelector('input[style*="display: none"]') as HTMLInputElement;
     await fireEvent.invalid(hiddenInput);
     expect(props.variant).toBe(VARIANT.INACTIVE);
+    expect(btm).toHaveAttribute("role", "alert");
     expect(whole).toHaveClass(dynObj.base, dynObj.inactive);
     expect(top).toHaveClass(dynObj.base, dynObj.inactive);
     expect(lbl).toHaveClass(dynObj.base, dynObj.inactive);
@@ -473,6 +478,7 @@ describe("Specify state transition & event handlers", () => {
     props.values = ["opt1"];
     await fireEvent.change(hiddenInput);
     expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(btm).not.toHaveAttribute("role");
     expect(whole).toHaveClass(dynObj.base, dynObj.active);
     expect(top).toHaveClass(dynObj.base, dynObj.active);
     expect(lbl).toHaveClass(dynObj.base, dynObj.active);
@@ -494,8 +500,258 @@ describe("Specify state transition & event handlers", () => {
     const props = { options, deps };
     const { getAllByRole } = render(ToggleGroupField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
+    const innerGroup = innerToggleGroupOf(whole);
+
     expect(whole).toBeInTheDocument();
-    // ToggleGroupコンポーネントに渡されるpropsの検証は、
-    // ToggleGroupの実装やデータ属性によって確認する必要があります
+    expect(innerGroup).toHaveClass(svsToggleGroupStyle, PARTS.WHOLE);
+    expect(innerGroup).not.toHaveClass("svs-toggle-group");
+  });
+
+  test("clicking a toggle updates bound values and variant", async () => {
+    const user = userEvent.setup();
+    const props = $state({
+      options,
+      validations: [validationFn],
+      values: [] as string[],
+      variant: VARIANT.NEUTRAL,
+    });
+    const { getAllByRole } = render(ToggleGroupField, props);
+    const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
+
+    await user.click(buttons[0]);
+    await waitFor(() => {
+      expect(props.values).toEqual(["opt1"]);
+      expect(buttons[0]).toHaveAttribute("aria-checked", "true");
+      expect(props.variant).toBe(VARIANT.ACTIVE);
+    });
+
+    await user.click(buttons[0]);
+    await waitFor(() => {
+      expect(props.values).toEqual([]);
+      expect(buttons[0]).toHaveAttribute("aria-checked", "false");
+      expect(props.variant).toBe(VARIANT.NEUTRAL);
+    });
+  });
+
+  test("name creates hidden inputs without assigning name to toggle buttons", () => {
+    const props = { options, name: "grp", values: ["opt1", "opt2"] };
+    const { container, getAllByRole } = render(ToggleGroupField, props);
+    const hidden = [...container.querySelectorAll('input[type="hidden"]')] as HTMLInputElement[];
+
+    expect(hidden).toHaveLength(2);
+    expect(hidden.map((input) => input.value)).toEqual(["opt1", "opt2"]);
+    hidden.forEach((input) => expect(input).toHaveAttribute("name", "grp"));
+    getAllByRole("checkbox").forEach((button) => expect(button).not.toHaveAttribute("name"));
+  });
+
+  test("name creates no hidden inputs when values are empty", () => {
+    const { container } = render(ToggleGroupField, { options, name: "grp", values: [] });
+    expect(container.querySelectorAll('input[type="hidden"]')).toHaveLength(0);
+  });
+
+  test("deps children override toggle content", () => {
+    const childid = "custom-child";
+    const children = createRawSnippet((value: () => string, text: () => string, variant: () => string) => {
+      return { render: () => `<span data-testid="${childid}-${value()}">${text()}:${variant()}</span>` };
+    });
+    const deps = { svsToggleGroup: { children } };
+    const { getAllByRole, getByTestId } = render(ToggleGroupField, { options, deps, values: ["opt2"] });
+    const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
+
+    expect(buttons[0]).toContainElement(getByTestId(`${childid}-opt1`));
+    expect(buttons[1]).toContainElement(getByTestId(`${childid}-opt2`));
+    expect(getByTestId(`${childid}-opt2`)).toHaveTextContent(`Option 2:${VARIANT.ACTIVE}`);
+  });
+
+  test("deps cannot lose field-controlled error props", async () => {
+    const props = $state({
+      options,
+      deps: { svsToggleGroup: { styling: "custom-toggle-group" } },
+      validations: [validationFn],
+      values: [] as string[],
+      variant: VARIANT.NEUTRAL,
+    });
+    const { getAllByRole, getByRole } = render(ToggleGroupField, props);
+    const whole = getAllByRole("group")[0] as HTMLDivElement;
+    const innerGroup = innerToggleGroupOf(whole);
+
+    await fireEvent.invalid(proxyInput(whole));
+    const alert = getByRole("alert");
+    expect(innerGroup).toHaveClass("custom-toggle-group");
+    expect(innerGroup).toHaveAttribute("aria-invalid", "true");
+    expect(innerGroup).toHaveAttribute("aria-errormessage", alert.id);
+  });
+
+  test("multiple mode wires error aria through the inner group", async () => {
+    const props = $state({
+      options,
+      label,
+      validations: [(v: string[]) => (v.length ? "" : "required")],
+      values: [] as string[],
+      variant: VARIANT.NEUTRAL,
+    });
+    const { getAllByRole, getByRole, getByText } = render(ToggleGroupField, props);
+    const whole = getAllByRole("group")[0] as HTMLDivElement;
+    const innerGroup = innerToggleGroupOf(whole);
+
+    await fireEvent.invalid(proxyInput(whole));
+    const alert = getByRole("alert");
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+    expect(alert).toHaveTextContent("required");
+    expect(innerGroup).toHaveAttribute("aria-invalid", "true");
+    expect(innerGroup).toHaveAttribute("aria-errormessage", alert.id);
+    getAllByRole("checkbox").forEach((button) => {
+      expect(button).not.toHaveAttribute("aria-invalid");
+      expect(button).not.toHaveAttribute("aria-errormessage");
+    });
+    expect(whole).toHaveAttribute("aria-labelledby", getByText(label).id);
+  });
+
+  test("single-select mode replaces values and places error aria on the radiogroup", async () => {
+    const user = userEvent.setup();
+    const props = $state({
+      options,
+      multiple: false,
+      validations: [(v: string[]) => (v.length ? "" : "required")],
+      values: [] as string[],
+      variant: VARIANT.NEUTRAL,
+    });
+    const { getAllByRole, getByRole } = render(ToggleGroupField, props);
+    const whole = getAllByRole("group")[0] as HTMLDivElement;
+    const radios = getAllByRole("radio") as HTMLButtonElement[];
+
+    await user.click(radios[0]);
+    await waitFor(() => expect(props.values).toEqual(["opt1"]));
+    await user.click(radios[1]);
+    await waitFor(() => expect(props.values).toEqual(["opt2"]));
+
+    props.values = [];
+    await tick();
+    await fireEvent.invalid(proxyInput(whole));
+    const radiogroup = getByRole("radiogroup");
+    const alert = getByRole("alert");
+    expect(radiogroup).toHaveAttribute("aria-invalid", "true");
+    expect(radiogroup).toHaveAttribute("aria-errormessage", alert.id);
+    radios.forEach((radio) => {
+      expect(radio).not.toHaveAttribute("aria-invalid");
+      expect(radio).not.toHaveAttribute("aria-errormessage");
+    });
+  });
+
+  test("disabled ToggleOption passes through and is not selectable", async () => {
+    const user = userEvent.setup();
+    const toggleOptions = new SvelteMap<string, string | ToggleOption>([
+      ["opt1", "Option 1"],
+      ["opt2", { text: "Option 2", disabled: true }],
+    ]);
+    const props = $state({ options: toggleOptions, values: [] as string[] });
+    const { getAllByRole } = render(ToggleGroupField, props);
+    const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
+
+    expect(buttons[1]).toBeDisabled();
+    await user.click(buttons[1]);
+    expect(props.values).toEqual([]);
+    expect(buttons[1]).toHaveAttribute("aria-checked", "false");
+  });
+
+  test("top renders for a label-only field and is omitted without label or aux", () => {
+    const labeled = render(ToggleGroupField, { options, label });
+    const whole = labeled.getAllByRole("group")[0] as HTMLDivElement;
+    const top = labeled.container.querySelector(`.${PARTS.TOP}`) as HTMLDivElement;
+    const lbl = labeled.getByText(label);
+
+    expect(top).toContainElement(lbl);
+    expect(lbl).toHaveClass(PARTS.LABEL);
+    expect(whole).toHaveAttribute("aria-labelledby", lbl.id);
+    labeled.unmount();
+
+    const plain = render(ToggleGroupField, { options });
+    expect(plain.container.querySelector(`.${PARTS.TOP}`)).toBeNull();
+    expect(plain.getAllByRole("group")[0]).not.toHaveAttribute("aria-labelledby");
+  });
+
+  test("bottom role and message transition with variant", async () => {
+    const props = $state({
+      options,
+      bottom,
+      validations: [(v: string[]) => (v.length ? "" : "required")],
+      values: [] as string[],
+      variant: VARIANT.NEUTRAL,
+    });
+    const { getAllByRole } = render(ToggleGroupField, props);
+    const whole = getAllByRole("group")[0] as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
+
+    expect(btm).toHaveTextContent(bottom);
+    expect(btm).not.toHaveAttribute("role");
+
+    await fireEvent.invalid(proxyInput(whole));
+    expect(btm).toHaveAttribute("role", "alert");
+    expect(btm).toHaveTextContent("required");
+
+    props.values = ["opt1"];
+    await waitFor(() => {
+      expect(props.variant).toBe(VARIANT.ACTIVE);
+      expect(btm).toHaveTextContent(bottom);
+      expect(btm).not.toHaveAttribute("role");
+    });
+  });
+
+  test("label and bottom ids react to prop changes", async () => {
+    const props = $state({
+      options,
+      label: undefined as string | undefined,
+      bottom: undefined as string | undefined,
+    });
+    const { container, getAllByRole, getByText } = render(ToggleGroupField, props);
+    const whole = getAllByRole("group")[0] as HTMLDivElement;
+
+    expect(container.querySelector(`.${PARTS.TOP}`)).toBeNull();
+    expect(container.querySelector(`.${PARTS.BOTTOM}`)).toBeNull();
+    expect(whole).not.toHaveAttribute("aria-labelledby");
+
+    props.label = "Now labeled";
+    await waitFor(() => {
+      const lbl = getByText("Now labeled");
+      expect(container.querySelector(`.${PARTS.TOP}`)).toContainElement(lbl);
+      expect(whole).toHaveAttribute("aria-labelledby", lbl.id);
+    });
+
+    props.bottom = "help-2";
+    await waitFor(() => expect(container.querySelector(`.${PARTS.BOTTOM}`)).toHaveTextContent("help-2"));
+    props.bottom = "help-3";
+    await waitFor(() => expect(container.querySelector(`.${PARTS.BOTTOM}`)).toHaveTextContent("help-3"));
+  });
+
+  test("binds button elements", async () => {
+    const props = $state({ options, elements: [] as HTMLButtonElement[] });
+    const { getAllByRole } = render(ToggleGroupField, props);
+    const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
+
+    await waitFor(() => {
+      expect(props.elements).toHaveLength(options.size);
+      expect(props.elements[0]).toBe(buttons[0]);
+      expect(props.elements[1]).toBe(buttons[1]);
+      expect(props.elements[2]).toBe(buttons[2]);
+    });
+  });
+
+  test("descFirst keeps bottom before middle in error state", async () => {
+    const props = $state({
+      options,
+      bottom,
+      descFirst: true,
+      validations: [(v: string[]) => (v.length ? "" : "required")],
+      values: [] as string[],
+      variant: VARIANT.NEUTRAL,
+    });
+    const { getAllByRole } = render(ToggleGroupField, props);
+    const whole = getAllByRole("group")[0] as HTMLDivElement;
+
+    await fireEvent.invalid(proxyInput(whole));
+    const alert = whole.firstElementChild as HTMLDivElement;
+    expect(alert).toHaveAttribute("role", "alert");
+    expect(alert).toHaveTextContent("required");
+    expect(whole.lastElementChild).toHaveClass(PARTS.MIDDLE);
   });
 });

@@ -3,6 +3,11 @@
   ### Types
   default value: *`(value)`*
   ```ts
+  interface ToggleOption {
+    text: string;
+    disabled?: boolean;
+    // other button attributes
+  }
   interface ToggleGroupFieldProps {
     options: SvelteMap<string, string | ToggleOption> | Map<string, string | ToggleOption>;
     label?: string;
@@ -16,29 +21,34 @@
     multiple?: boolean; // (true)
     validations?: ToggleGroupFieldValidation[];
     name?: string;
-    elements?: HTMLButtonElement[];
+    elements?: HTMLButtonElement[]; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
     deps?: ToggleGroupFieldDeps;
   }
   interface ToggleGroupFieldDeps {
-    svsToggleGroup?: Omit<ToggleGroupProps, ToggleGroupReqdProps | ToggleGroupBindProps | "ariaDescId" | "multiple">;
+    svsToggleGroup?: Omit<
+      ToggleGroupProps,
+      ToggleGroupReqdProps | ToggleGroupBindProps | "ariaDescId" | "ariaErrMsgId" | "multiple" | "variant"
+    >;
   }
   type ToggleGroupFieldValidation = (values: string[]) => string | undefined;
   ```
   ### Anatomy
   ```svelte
   <div class="whole">
-    <div class="top" conditional>
-      <label class="label" conditional>
+    <div class="top" conditional: label or aux>
+      <span class="label" conditional>
         {label}
         <span class="extra" conditional>{extra}</span>
-      </label>
+      </span>
       <span class="aux" conditional>{aux}</span>
     </div>
     <div class="middle">
       <span class="left" conditional>{left}</span>
-      <ToggleGroup {options} {multiple} {...deps.svsToggleGroup} {...restProps} bind:values />
+      <input style="display:none" aria-hidden="true" oninvalid />
+      {#if name}{#each values as value}<input type="hidden" {name} {value} />{/each}{/if}
+      <ToggleGroup {options} {multiple} {...deps.svsToggleGroup} bind:values bind:elements />
       <span class="right" conditional>{right}</span>
     </div>
     <div class="bottom" conditional>{bottom}</div>
@@ -65,16 +75,19 @@
     deps?: ToggleGroupFieldDeps;
   }
   export interface ToggleGroupFieldDeps {
-    svsToggleGroup?: Omit<ToggleGroupProps, ToggleGroupReqdProps | ToggleGroupBindProps | "ariaDescId" | "multiple">;
+    svsToggleGroup?: Omit<
+      ToggleGroupProps,
+      ToggleGroupReqdProps | ToggleGroupBindProps | "ariaDescId" | "ariaErrMsgId" | "multiple" | "variant"
+    >;
   }
   export type ToggleGroupFieldReqdProps = "options";
-  export type ToggleGroupFieldBindProps = "values" | "variant";
+  export type ToggleGroupFieldBindProps = "values" | "variant" | "elements";
   export type ToggleGroupFieldValidation = (values: string[]) => string | undefined;
+  export type { ToggleOption };
 
   const preset = "svs-toggle-group-field";
 
   import { type Snippet, untrack } from "svelte";
-  import { type Attachment } from "svelte/attachments";
   import { type SvelteMap } from "svelte/reactivity";
   import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isNeutral } from "./core";
   import ToggleGroup, {
@@ -92,35 +105,31 @@
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
   const uid = $props.id();
-  // svelte-ignore state_referenced_locally
-  const idLabel = label?.trim() ? `${uid}-label` : undefined;
-  // svelte-ignore state_referenced_locally
-  const idDesc = bottom?.trim() ? `${uid}-desc` : undefined;
-  const idErr = idDesc ?? `${uid}-err`;
-  // svelte-ignore state_referenced_locally
-  let message = $state(bottom);
+  const idLabel = $derived(label?.trim() ? `${uid}-label` : undefined);
+  const idDesc = $derived(bottom?.trim() ? `${uid}-desc` : undefined);
+  const idErr = $derived(idDesc ?? `${uid}-err`);
+  let errmsg = $state("");
+  const message = $derived(variant === VARIANT.INACTIVE ? errmsg || bottom : bottom);
   let element: HTMLInputElement | undefined = $state();
 
   // *** Initialize Deps *** //
-  // svelte-ignore state_referenced_locally
-  const svsToggleGroup = {
-    children: deps?.svsToggleGroup?.children,
+  const svsToggleGroup = $derived({
+    ...deps?.svsToggleGroup,
     ariaDescId: idDesc,
-    styling: (deps?.svsToggleGroup?.styling as SVSClass) ?? `${preset} svs-toggle-group`,
-    attach: deps?.svsToggleGroup?.attach as Attachment,
-  };
+    styling: deps?.svsToggleGroup?.styling ?? `${preset} svs-toggle-group`,
+  });
 
   // *** States *** //
   let neutral = $state(isNeutral(variant) ? variant : VARIANT.NEUTRAL);
   $effect(() => {
     neutral = isNeutral(variant) ? variant : neutral;
   });
-  let live = $derived(variant === VARIANT.INACTIVE ? "alert" : "status");
-  let idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
+  const live = $derived(variant === VARIANT.INACTIVE ? "alert" : undefined);
+  const idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
   function shift(oninvalid?: boolean) {
     const vmsg = element?.validationMessage ?? "";
     variant = oninvalid && vmsg ? VARIANT.INACTIVE : !values.length || vmsg ? neutral : VARIANT.ACTIVE;
-    message = variant === VARIANT.INACTIVE ? (vmsg ? vmsg : bottom) : bottom;
+    errmsg = vmsg;
   }
   function verify() {
     if (!element) return;
@@ -153,19 +162,19 @@
 
 {#if options.size}
   <div class={cls(PARTS.WHOLE, variant)} role="group" aria-labelledby={idLabel}>
-    {#if aux}
+    {#if label?.trim() || aux}
       <div class={cls(PARTS.TOP, variant)}>
         {@render lbl()}
-        <span class={cls(PARTS.AUX, variant)}>{@render aux(values, variant)}</span>
+        {#if aux}
+          <span class={cls(PARTS.AUX, variant)}>{@render aux(values, variant)}</span>
+        {/if}
       </div>
-    {:else}
-      {@render lbl()}
     {/if}
     {@render desc(descFirst)}
     <div class={cls(PARTS.MIDDLE, variant)}>
       {@render side(PARTS.LEFT, left)}
       {@render fnForm()}
-      <ToggleGroup bind:values bind:elements ariaErrMsgId={idMsg} variant={neutral} {options} {multiple} {...svsToggleGroup} />
+      <ToggleGroup {...svsToggleGroup} bind:values bind:elements ariaErrMsgId={idMsg} variant={neutral} {options} {multiple} />
       {@render side(PARTS.RIGHT, right)}
     </div>
     {@render desc(!descFirst)}
