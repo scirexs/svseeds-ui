@@ -83,15 +83,13 @@
   const preset = "svs-tags-input";
   const CONFIRM_KEY = "Enter";
 
-  export interface TagsInputContext {
+  export interface TagsInputContext extends SVSContext {
     get values(): string[];
     set values(v: string[]);
     get value(): string;
     set value(v: string);
-    get variant(): SVSVariant;
     set element(v: HTMLInputElement | undefined);
     get ariaErrMsgId(): string | undefined;
-    get styling(): SVSClass | undefined;
     get id(): string | undefined;
     get describedby(): string | undefined;
     events?: TagsInputEvents;
@@ -99,18 +97,12 @@
     oninvalid?: (ev: Event) => void;
   }
 
-  const TAGS_INPUT_CTX = Symbol("svs-tags-input");
-  export function setTagsInputContext(ctx: TagsInputContext): void {
-    setContext(TAGS_INPUT_CTX, ctx);
-  }
-  export function getTagsInputContext(): TagsInputContext | undefined {
-    return getContext(TAGS_INPUT_CTX);
-  }
+  export const [getTagsInputContext, setTagsInputContext] = createContext<TagsInputContext>();
 
-  import { type Snippet, getContext, setContext } from "svelte";
+  import { type Snippet } from "svelte";
   import { type Attachment } from "svelte/attachments";
   import { type HTMLInputAttributes, type KeyboardEventHandler } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass } from "./core";
+  import { type SVSClass, type SVSVariant, type SVSContext, VARIANT, PARTS, fnClass, createContext } from "./core";
 </script>
 
 <script lang="ts">

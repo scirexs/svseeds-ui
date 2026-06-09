@@ -89,6 +89,7 @@
   let errmsg = $state("");
   let value = $state("");
   const message = $derived(variant === VARIANT.INACTIVE ? errmsg || bottom : bottom);
+  const idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
 
   // *** Initialize Context *** //
   const ctx: TagsInputContext = {
@@ -134,7 +135,6 @@
     neutral = isNeutral(variant) ? variant : neutral;
   });
   const live = $derived(variant === VARIANT.INACTIVE ? "alert" : undefined);
-  const idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
   function shift(oninvalid: boolean = false, msg?: string) {
     const vmsg = element?.validationMessage ?? "";
     variant = getStatus(oninvalid, vmsg, msg);

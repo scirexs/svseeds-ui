@@ -1,3 +1,5 @@
+import { getContext, setContext } from "svelte";
+
 // deno-fmt-ignore
 export {
   type SVSClass,
@@ -5,6 +7,7 @@ export {
   type SVSPart,
   type SVSFieldValidation,
   type SVSFieldConstraint,
+  type SVSContext,
   BASE,
   VARIANT,
   PARTS,
@@ -13,6 +16,7 @@ export {
   isUnsignedInteger,
   shouldReduceMotion,
   omit,
+  createContext,
   debounce,
   throttle,
 };
@@ -39,6 +43,10 @@ type SVSFieldConstraint<E extends HTMLElement = HTMLInputElement> = (ctx: {
   validity: ValidityState;
   element: E;
 }) => string | undefined | null;
+type SVSContext = {
+  get variant(): SVSVariant;
+  get styling(): SVSClass | undefined;
+};
 
 const BASE = "base";
 const VARIANT = Object.freeze({ NEUTRAL: "neutral", ACTIVE: "active", INACTIVE: "inactive" } as const);
@@ -200,6 +208,10 @@ function omit<T extends object, K extends keyof T>(obj?: T, ...keys: K[]): Omit<
   const ret = { ...obj };
   keys.forEach((key) => delete ret[key]);
   return ret;
+}
+function createContext<T>(): [() => T | undefined, (context: T) => T] {
+  const key = Symbol();
+  return [() => getContext<T | undefined>(key), (context: T) => setContext(key, context)];
 }
 /**
  * Creates a debounced function that delays invoking the provided function until after
