@@ -8,6 +8,7 @@
     children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false)
     duration?: number; // (200)
+    inactive?: string; // reason; when set: aria-disabled + aria-description, variant->INACTIVE, open/toggle suppressed
     attach?: Attachment;
     element?: HTMLDetailsElement; // bindable
     styling?: SVSClass;
@@ -19,7 +20,7 @@
   `main` renders through separate animated/static paths; slide uses sanitized `dur`.
   ```svelte
   <details class={["whole", class]} {...rest} bind:this={element} {@attach attach}>
-    <summary class="label">
+    <summary class="label" aria-disabled aria-description>
       {label}
     </summary>
     {#if open}
@@ -41,6 +42,7 @@
     children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false)
     duration?: number; // (200)
+    inactive?: string; // reason; when set: aria-disabled + aria-description, variant->INACTIVE, open/toggle suppressed
     attach?: Attachment;
     element?: HTMLDetailsElement; // bindable
     styling?: SVSClass;
@@ -73,24 +75,43 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { label, children, open = $bindable(false), duration = -1, ontoggle, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, onclick, ...rest }: DisclosureProps = $props();
+  let { label, children, open = $bindable(false), duration = -1, ontoggle, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), inactive, class: c, onclick, ...rest }: DisclosureProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
   const dur = $derived(noMotion ? 0 : !isUnsignedInteger(duration) ? DEFAULT_DURATION : duration);
+  const reason = $derived(inactive?.trim() ? inactive : undefined);
+  const inactiveAttrs = $derived(reason ? { "aria-disabled": true, "aria-description": reason } : {});
   const guard = new ToggleGuard();
   let hidden = $state(!open);
   let neutral = $state(isNeutral(variant) ? variant : VARIANT.NEUTRAL);
   let mounted = false;
+  let prevVariant: SVSVariant | undefined = $state();
 
   // *** Bind Handlers *** //
   // External variant writes are styling-only; preserve the neutral fallback without changing open state.
   $effect(() => {
     neutral = isNeutral(variant) ? variant : neutral;
   });
+  $effect(() => {
+    if (reason) {
+      if (variant !== VARIANT.INACTIVE) {
+        rememberVariantBeforeInactive();
+        variant = VARIANT.INACTIVE;
+      }
+    } else {
+      restoreVariant();
+    }
+  });
   $effect.pre(() => {
     const isOpen = open;
+    const isInactive = reason;
     if (!mounted) return;
+    if (isInactive) {
+      collapseInactive();
+      return;
+    }
+    restoreVariant();
     untrack(() => toggleOpen(isOpen));
   });
   function toggleOpen(isOpen: boolean) {
@@ -108,9 +129,32 @@
     hidden = !target.open;
     variant = bool ? VARIANT.ACTIVE : neutral;
   }
+  function rememberVariantBeforeInactive() {
+    if (variant === VARIANT.ACTIVE || (variant === VARIANT.INACTIVE && prevVariant === undefined)) {
+      prevVariant = neutral;
+    } else if (variant !== VARIANT.INACTIVE) {
+      prevVariant = variant;
+    }
+  }
+  function restoreVariant() {
+    if (prevVariant === undefined) return;
+    variant = prevVariant;
+    prevVariant = undefined;
+  }
+  function collapseInactive() {
+    rememberVariantBeforeInactive();
+    if (element?.open) element.open = false;
+    if (open) open = false;
+    if (!hidden) hidden = true;
+  }
 
   // *** Event Handlers *** //
   const hclick: MouseEventHandler<HTMLElement> = (ev) => {
+    if (reason) {
+      ev.preventDefault();
+      collapseInactive();
+      return;
+    }
     onclick?.(ev as Parameters<MouseEventHandler<HTMLDetailsElement>>[0]);
     ev.preventDefault();
     if (guard.active) return;
@@ -120,6 +164,10 @@
   const htoggle: ToggleEventHandler<HTMLDetailsElement> = (ev) => {
     ontoggle?.(ev);
     if (!element) return;
+    if (reason) {
+      collapseInactive();
+      return;
+    }
     if (element.open && !open) {
       hidden = false;
       open = true;
@@ -128,7 +176,7 @@
     }
   };
   onMount(() => {
-    toggle(open);
+    reason ? collapseInactive() : toggle(open);
     mounted = true;
   });
 </script>
@@ -140,7 +188,7 @@
 </details>
 
 {#snippet inner()}
-  <summary class={cls(PARTS.LABEL, variant)} onclick={hclick}>
+  <summary class={cls(PARTS.LABEL, variant)} onclick={hclick} {...inactiveAttrs}>
     {#if typeof label === "string"}
       {label}
     {:else if typeof label === "function"}

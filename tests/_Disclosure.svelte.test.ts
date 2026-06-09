@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { render, waitFor } from "@testing-library/svelte";
+import { fireEvent, render, waitFor } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import Disclosure from "#svs/_Disclosure.svelte";
@@ -398,6 +398,207 @@ describe("Interactions and state transitions", () => {
 
     await user.click(getByText(label));
     await waitFor(() => expect(container.querySelectorAll(".main").length).toBe(1));
+  });
+});
+
+describe("Soft-disable (inactive)", () => {
+  test("aria attrs while inactive", () => {
+    const { container, getByText } = render(Disclosure, {
+      label,
+      children: childrenSnippet,
+      inactive: "locked",
+    });
+    const summary = getByText(label);
+
+    expect(summary.tagName).toBe("SUMMARY");
+    expect(summary).toHaveAttribute("aria-disabled", "true");
+    expect(summary).toHaveAttribute("aria-description", "locked");
+    expect(container).not.toHaveTextContent("locked");
+    expect(container.querySelectorAll('[aria-description="locked"]')).toHaveLength(1);
+  });
+
+  test("variant is forced to inactive and restored when inactive is cleared", async () => {
+    const props = $state({
+      label,
+      children: childrenSnippet,
+      duration: 0,
+      inactive: "locked" as string | undefined,
+      variant: VARIANT.NEUTRAL as string,
+    });
+    const { getByRole, getByText, rerender } = render(Disclosure, props);
+    const details = getByRole("group") as HTMLDetailsElement;
+    const summary = getByText(label);
+
+    await waitFor(() => {
+      expect(props.variant).toBe(VARIANT.INACTIVE);
+      expect(details).toHaveClass(VARIANT.INACTIVE);
+      expect(summary).toHaveClass(VARIANT.INACTIVE);
+    });
+
+    props.inactive = undefined;
+    await rerender(props);
+
+    await waitFor(() => {
+      expect(props.variant).toBe(VARIANT.NEUTRAL);
+      expect(details).toHaveClass(VARIANT.NEUTRAL);
+      expect(summary).toHaveClass(VARIANT.NEUTRAL);
+    });
+  });
+
+  test("click cannot open while inactive", async () => {
+    const props = $state({ label, children: childrenSnippet, open: false, inactive: "locked", duration: 0 });
+    const user = userEvent.setup();
+    const { getByRole, getByText } = render(Disclosure, props);
+    const details = getByRole("group") as HTMLDetailsElement;
+
+    await user.click(getByText(label));
+
+    expect(details).not.toHaveAttribute("open");
+    expect(props.open).toBe(false);
+  });
+
+  test("click-dispatched activation cannot open while inactive", async () => {
+    const props = $state({ label, children: childrenSnippet, open: false, inactive: "locked", duration: 0 });
+    const { getByRole, getByText } = render(Disclosure, props);
+    const details = getByRole("group") as HTMLDetailsElement;
+    const summary = getByText(label);
+
+    summary.focus();
+    await fireEvent.click(summary);
+
+    expect(details).not.toHaveAttribute("open");
+    expect(props.open).toBe(false);
+  });
+
+  test("initial open=true is collapsed while inactive", async () => {
+    const props = $state({ label, children: childrenSnippet, open: true, inactive: "locked", variant: VARIANT.NEUTRAL as string, duration: 0 });
+    const { getByRole, getByText } = render(Disclosure, props);
+    const details = getByRole("group") as HTMLDetailsElement;
+    const summary = getByText(label);
+
+    await waitFor(() => {
+      expect(details).not.toHaveAttribute("open");
+      expect(props.open).toBe(false);
+      expect(props.variant).toBe(VARIANT.INACTIVE);
+      expect(summary).toHaveAttribute("aria-disabled", "true");
+    });
+  });
+
+  test("setting inactive while open collapses", async () => {
+    const props = $state({ label, children: childrenSnippet, open: true, inactive: undefined as string | undefined, variant: VARIANT.NEUTRAL as string, duration: 0 });
+    const { getByRole, getByText, rerender } = render(Disclosure, props);
+    const details = getByRole("group") as HTMLDetailsElement;
+    const summary = getByText(label);
+
+    await waitFor(() => {
+      expect(details).toHaveAttribute("open");
+      expect(props.open).toBe(true);
+    });
+
+    props.inactive = "locked";
+    await rerender(props);
+
+    await waitFor(() => {
+      expect(details).not.toHaveAttribute("open");
+      expect(props.open).toBe(false);
+      expect(props.variant).toBe(VARIANT.INACTIVE);
+      expect(summary).toHaveAttribute("aria-disabled", "true");
+    });
+  });
+
+  test("clearing inactive after collapsing from open restores neutral variant", async () => {
+    const props = $state({ label, children: childrenSnippet, open: true, inactive: undefined as string | undefined, variant: VARIANT.NEUTRAL as string, duration: 0 });
+    const { getByRole, getByText, rerender } = render(Disclosure, props);
+    const details = getByRole("group") as HTMLDetailsElement;
+    const summary = getByText(label);
+
+    await waitFor(() => {
+      expect(details).toHaveAttribute("open");
+      expect(props.variant).toBe(VARIANT.ACTIVE);
+    });
+
+    props.inactive = "locked";
+    await rerender(props);
+
+    await waitFor(() => {
+      expect(details).not.toHaveAttribute("open");
+      expect(props.open).toBe(false);
+      expect(props.variant).toBe(VARIANT.INACTIVE);
+    });
+
+    props.inactive = undefined;
+    await rerender(props);
+
+    await waitFor(() => {
+      expect(details).not.toHaveAttribute("open");
+      expect(props.open).toBe(false);
+      expect(details).toHaveClass(VARIANT.NEUTRAL);
+      expect(summary).toHaveClass(VARIANT.NEUTRAL);
+    });
+  });
+
+  test("onclick is suppressed while inactive", async () => {
+    const onclick = vi.fn();
+    const user = userEvent.setup();
+    const { getByText } = render(Disclosure, {
+      label,
+      children: childrenSnippet,
+      inactive: "locked",
+      onclick,
+      duration: 0,
+    });
+
+    await user.click(getByText(label));
+
+    expect(onclick).not.toHaveBeenCalled();
+  });
+
+  test("programmatic open is blocked while inactive", async () => {
+    const props = $state({ label, children: childrenSnippet, open: false, inactive: "locked", duration: 0 });
+    const { getByRole, rerender } = render(Disclosure, props);
+    const details = getByRole("group") as HTMLDetailsElement;
+
+    props.open = true;
+    await rerender(props);
+
+    await waitFor(() => {
+      expect(details).not.toHaveAttribute("open");
+      expect(props.open).toBe(false);
+    });
+  });
+
+  test.each(["", "   "])("inactive value %j is inert", async (inactive) => {
+    const props = $state({ label, children: childrenSnippet, open: false, inactive, variant: VARIANT.NEUTRAL as string, duration: 0 });
+    const user = userEvent.setup();
+    const { getByRole, getByText } = render(Disclosure, props);
+    const details = getByRole("group") as HTMLDetailsElement;
+    const summary = getByText(label);
+
+    expect(summary).not.toHaveAttribute("aria-disabled");
+    expect(summary).not.toHaveAttribute("aria-description");
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
+
+    await user.click(summary);
+
+    await waitFor(() => {
+      expect(details).toHaveAttribute("open");
+      expect(props.open).toBe(true);
+      expect(props.variant).toBe(VARIANT.ACTIVE);
+    });
+  });
+
+  test("native toggle stays collapsed while inactive", async () => {
+    const props = $state({ label, children: childrenSnippet, open: false, inactive: "locked", duration: 0 });
+    const { getByRole } = render(Disclosure, props);
+    const details = getByRole("group") as HTMLDetailsElement;
+
+    details.open = true;
+    await fireEvent(details, new Event("toggle"));
+
+    await waitFor(() => {
+      expect(details).not.toHaveAttribute("open");
+      expect(props.open).toBe(false);
+    });
   });
 });
 
