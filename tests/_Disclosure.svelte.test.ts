@@ -4,6 +4,7 @@ import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import Disclosure from "#svs/_Disclosure.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import DisclosureVariantBinding from "./fixtures/DisclosureVariantBinding.svelte";
 
 const label = "Disclosure Label";
 const childrenContent = "Disclosure Content";
@@ -442,6 +443,37 @@ describe("Soft-disable (inactive)", () => {
       expect(props.variant).toBe(VARIANT.NEUTRAL);
       expect(details).toHaveClass(VARIANT.NEUTRAL);
       expect(summary).toHaveClass(VARIANT.NEUTRAL);
+    });
+  });
+
+  test("variant writes while inactive are recaptured and restored when inactive is cleared", async () => {
+    const customVariant = "custom-while-inactive";
+    const user = userEvent.setup();
+    const { getByRole, getByText, getByTestId } = render(DisclosureVariantBinding);
+    const details = getByRole("group") as HTMLDetailsElement;
+    const summary = getByText(label);
+    const parentVariant = getByTestId("parent-variant");
+
+    await waitFor(() => {
+      expect(parentVariant).toHaveTextContent(VARIANT.INACTIVE);
+      expect(details).toHaveClass(VARIANT.INACTIVE);
+      expect(summary).toHaveClass(VARIANT.INACTIVE);
+    });
+
+    await user.click(getByTestId("set-custom"));
+
+    await waitFor(() => {
+      expect(parentVariant).toHaveTextContent(VARIANT.INACTIVE);
+      expect(details).toHaveClass(VARIANT.INACTIVE);
+      expect(summary).toHaveClass(VARIANT.INACTIVE);
+    });
+
+    await user.click(getByTestId("clear-inactive"));
+
+    await waitFor(() => {
+      expect(parentVariant).toHaveTextContent(customVariant);
+      expect(details).toHaveClass(customVariant);
+      expect(summary).toHaveClass(customVariant);
     });
   });
 

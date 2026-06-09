@@ -94,18 +94,19 @@
     neutral = isNeutral(variant) ? variant : neutral;
   });
   $effect(() => {
-    reason ? storeVariant() : restoreVariant();
+    variant;
+    untrack(() => (reason && isNeutral(variant) ? storeVariant() : undefined));
   });
   $effect.pre(() => {
     open;
     reason;
-    untrack(() => {
-      if (!mounted) return;
-      if (reason) return collapseInactive();
-      restoreVariant();
-      toggleOpen(open);
-    });
+    untrack(() => (mounted ? syncOpen() : undefined));
   });
+  function syncOpen() {
+    if (reason) return collapseInactive();
+    restoreVariant();
+    toggleOpen(open);
+  }
   function toggleOpen(isOpen: boolean) {
     guard.activate(dur);
     if (isOpen) {
@@ -121,9 +122,9 @@
     hidden = !target.open;
     variant = bool ? VARIANT.ACTIVE : neutral;
   }
-  function storeVariant() {
-    if (variant === VARIANT.INACTIVE && prevVariant !== undefined) return;
-    prevVariant = variant === VARIANT.ACTIVE || variant === VARIANT.INACTIVE ? neutral : variant;
+  function storeVariant(collapse?: boolean) {
+    if (collapse && variant === VARIANT.INACTIVE && prevVariant !== undefined) return;
+    prevVariant = isNeutral(variant) ? variant : neutral;
     variant = VARIANT.INACTIVE;
   }
   function restoreVariant() {
@@ -132,7 +133,7 @@
     prevVariant = undefined;
   }
   function collapseInactive() {
-    storeVariant();
+    storeVariant(true);
     if (element?.open) element.open = false;
     if (open) open = false;
     if (!hidden) hidden = true;
