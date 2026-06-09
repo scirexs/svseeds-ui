@@ -86,7 +86,7 @@
   let hidden = $state(!open);
   let neutral = $state(isNeutral(variant) ? variant : VARIANT.NEUTRAL);
   let mounted = false;
-  let prevVariant: SVSVariant | undefined = $state();
+  let prevVariant = $state<SVSVariant>();
 
   // *** Bind Handlers *** //
   // External variant writes are styling-only; preserve the neutral fallback without changing open state.
