@@ -94,25 +94,17 @@
     neutral = isNeutral(variant) ? variant : neutral;
   });
   $effect(() => {
-    if (reason) {
-      if (variant !== VARIANT.INACTIVE) {
-        rememberVariantBeforeInactive();
-        variant = VARIANT.INACTIVE;
-      }
-    } else {
-      restoreVariant();
-    }
+    reason ? storeVariant() : restoreVariant();
   });
   $effect.pre(() => {
-    const isOpen = open;
-    const isInactive = reason;
-    if (!mounted) return;
-    if (isInactive) {
-      collapseInactive();
-      return;
-    }
-    restoreVariant();
-    untrack(() => toggleOpen(isOpen));
+    open;
+    reason;
+    untrack(() => {
+      if (!mounted) return;
+      if (reason) return collapseInactive();
+      restoreVariant();
+      toggleOpen(open);
+    });
   });
   function toggleOpen(isOpen: boolean) {
     guard.activate(dur);
@@ -129,12 +121,10 @@
     hidden = !target.open;
     variant = bool ? VARIANT.ACTIVE : neutral;
   }
-  function rememberVariantBeforeInactive() {
-    if (variant === VARIANT.ACTIVE || (variant === VARIANT.INACTIVE && prevVariant === undefined)) {
-      prevVariant = neutral;
-    } else if (variant !== VARIANT.INACTIVE) {
-      prevVariant = variant;
-    }
+  function storeVariant() {
+    if (variant === VARIANT.INACTIVE && prevVariant !== undefined) return;
+    prevVariant = variant === VARIANT.ACTIVE || variant === VARIANT.INACTIVE ? neutral : variant;
+    variant = VARIANT.INACTIVE;
   }
   function restoreVariant() {
     if (prevVariant === undefined) return;
@@ -142,7 +132,7 @@
     prevVariant = undefined;
   }
   function collapseInactive() {
-    rememberVariantBeforeInactive();
+    storeVariant();
     if (element?.open) element.open = false;
     if (open) open = false;
     if (!hidden) hidden = true;
@@ -164,10 +154,7 @@
   const htoggle: ToggleEventHandler<HTMLDetailsElement> = (ev) => {
     ontoggle?.(ev);
     if (!element) return;
-    if (reason) {
-      collapseInactive();
-      return;
-    }
+    if (reason) return collapseInactive();
     if (element.open && !open) {
       hidden = false;
       open = true;
