@@ -49,7 +49,7 @@ function createThemeStyleSheet() {
   return style.sheet!;
 }
 
-// Custom snippet for testing deps.svsToggle.main
+// Custom snippet for testing the direct children prop
 const customMainSnippet = createRawSnippet(
   (
     value: () => boolean,
@@ -219,40 +219,27 @@ describe("DarkToggle - Dependencies and customization", () => {
     });
   });
 
-  test("applies custom styling from deps", () => {
+  test("applies custom styling prop", () => {
     const customStyle = "custom-toggle-styling";
-    const deps = {
-      svsToggle: {
-        styling: customStyle,
-      },
-    };
-    const { getByRole } = render(DarkToggle, { deps });
+    const { getByRole } = render(DarkToggle, { styling: customStyle });
     const button = getByRole("button") as HTMLButtonElement;
 
     expect(button).toHaveClass(customStyle);
   });
 
-  test("applies custom attributes from deps", () => {
-    const deps = {
-      svsToggle: {
-        "data-testid": "custom-toggle",
-        title: "Custom toggle title",
-      },
-    };
-    const { getByTestId } = render(DarkToggle, { deps });
+  test("applies custom attributes via passthrough", () => {
+    const { getByTestId } = render(DarkToggle, {
+      "data-testid": "custom-toggle",
+      title: "Custom toggle title",
+    });
     const button = getByTestId("custom-toggle") as HTMLButtonElement;
 
     expect(button).toHaveAttribute("title", "Custom toggle title");
     expect(button).toHaveAttribute("aria-label", "Toggle theme color"); // Still has default aria-label
   });
 
-  test("allows aria-label override from deps", () => {
-    const deps = {
-      svsToggle: {
-        ariaLabel: "Switch color mode",
-      },
-    };
-    const { getByRole } = render(DarkToggle, { deps });
+  test("allows aria-label override via prop", () => {
+    const { getByRole } = render(DarkToggle, { ariaLabel: "Switch color mode" });
     const button = getByRole("button") as HTMLButtonElement;
 
     expect(button).toHaveAttribute("aria-label", "Switch color mode");
@@ -511,22 +498,5 @@ describe("DarkToggle - Error handling and edge cases", () => {
     }).not.toThrow();
 
     globalThis.window = originalWindow;
-  });
-
-  test("handles empty deps object", () => {
-    const deps = {};
-    const { getByRole } = render(DarkToggle, { deps });
-    const button = getByRole("button") as HTMLButtonElement;
-
-    expect(button).toBeInTheDocument();
-    expect(button).toHaveClass("svs-dark-toggle", "svs-toggle");
-  });
-
-  test("handles undefined deps", () => {
-    const { getByRole } = render(DarkToggle, { deps: undefined });
-    const button = getByRole("button") as HTMLButtonElement;
-
-    expect(button).toBeInTheDocument();
-    expect(button).toHaveClass("svs-dark-toggle", "svs-toggle");
   });
 });

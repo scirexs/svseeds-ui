@@ -1,6 +1,3 @@
-import { getContext, setContext } from "svelte";
-
-// deno-fmt-ignore
 export {
   type SVSClass,
   type SVSVariant,
@@ -20,6 +17,8 @@ export {
   debounce,
   throttle,
 };
+
+import { getContext, setContext } from "svelte";
 
 type ClassDictionary = Record<string, unknown>;
 type ClassArray = (ClassArray | ClassDictionary | string | number | bigint | null | boolean | undefined)[];

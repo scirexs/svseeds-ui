@@ -3,20 +3,14 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface DarkToggleProps {
-    children?: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
+  interface DarkToggleProps extends Omit<ToggleProps, "value"> {
     dark?: boolean; // bindable (prefers-color-scheme)
-    element?: HTMLButtonElement; // bindable
-    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
-    deps?: DarkToggleDeps;
   }
-  interface DarkToggleDeps {
-    svsToggle?: Omit<ToggleProps, ToggleReqdProps | ToggleBindProps>;
-  }
+  // children, styling, and ariaLabel use DarkToggle defaults when omitted.
   ```
   ### Anatomy
   ```svelte
-  <Toggle {...deps.svsToggle} bind:value={dark} bind:element>
+  <Toggle {...rest} bind:value={dark} bind:variant bind:element>
     {#if children}
       {children}
     {:else}
@@ -33,15 +27,8 @@
   an app-level blocking script with an appropriate nonce in that case.
 -->
 <script module lang="ts">
-  export interface DarkToggleProps {
-    children?: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
+  export interface DarkToggleProps extends Omit<ToggleProps, "value"> {
     dark?: boolean; // bindable (prefers-color-scheme)
-    element?: HTMLButtonElement; // bindable
-    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
-    deps?: DarkToggleDeps;
-  }
-  export interface DarkToggleDeps {
-    svsToggle?: Omit<ToggleProps, ToggleReqdProps | ToggleBindProps>;
   }
   export type DarkToggleReqdProps = never;
   export type DarkToggleBindProps = "dark" | "variant" | "element";
@@ -237,25 +224,24 @@
     return theme.dark;
   }
 
-  import { type Snippet } from "svelte";
-  import { type SVSVariant, VARIANT, omit } from "./core";
-  import Toggle, { type ToggleProps, type ToggleReqdProps, type ToggleBindProps } from "./_Toggle.svelte";
+  import { VARIANT } from "./core";
+  import Toggle, { type ToggleProps } from "./_Toggle.svelte";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { children, dark = $bindable(), variant = $bindable(VARIANT.NEUTRAL), element = $bindable(), deps }: DarkToggleProps = $props();
+  let { children, dark = $bindable(), variant = $bindable(VARIANT.NEUTRAL), element = $bindable(), ...rest }: DarkToggleProps = $props();
 
   // *** Initialize *** //
   if (dark === undefined) dark = theme.dark;
 
-  // *** Initialize Deps *** //
+  // *** Initialize Toggle Props *** //
   // svelte-ignore state_referenced_locally
   const svsToggle = {
-    ...omit(deps?.svsToggle, "styling"),
+    ...rest,
     children: main,
-    styling: deps?.svsToggle?.styling ?? `${preset} svs-toggle`,
-    ariaLabel: deps?.svsToggle?.ariaLabel ?? ariaLabel,
+    styling: rest.styling ?? `${preset} svs-toggle`,
+    ariaLabel: rest.ariaLabel ?? ariaLabel,
   };
 
   // *** Bind Handlers *** //
