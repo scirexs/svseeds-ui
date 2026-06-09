@@ -19,10 +19,7 @@
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
-    deps?: TagsInputFieldDeps;
-  }
-  interface TagsInputFieldDeps {
-    svsTagsInput?: Omit<TagsInputProps, TagsInputReqdProps | TagsInputBindProps | "variant" | "ariaErrMsgId" | "aria-describedby">;
+    children?: Snippet;
   }
   type TagsInputFieldConstraint = SVSFieldConstraint;
   type TagsInputFieldValidation = SVSFieldValidation<string[]>;
@@ -40,7 +37,7 @@
     </div>
     <div class="middle">
       <span class="left" conditional>{left}</span>
-      <TagsInput {...deps.svsTagsInput} bind:values bind:element />
+      {#if children}{@render children()}{:else}<TagsInput />{/if}
       <span class="right" conditional>{right}</span>
     </div>
     <div class="bottom" conditional: has text, or always when reserve; role="alert only on error">{bottom}</div>
@@ -64,10 +61,7 @@
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
-    deps?: TagsInputFieldDeps;
-  }
-  export interface TagsInputFieldDeps {
-    svsTagsInput?: Omit<TagsInputProps, TagsInputReqdProps | TagsInputBindProps | "variant" | "ariaErrMsgId" | "aria-describedby">;
+    children?: Snippet;
   }
   export type TagsInputFieldReqdProps = never;
   export type TagsInputFieldBindProps = "values" | "variant" | "element";
@@ -77,35 +71,62 @@
   const preset = "svs-tags-input-field";
 
   import { type Snippet, untrack } from "svelte";
-  import { type SVSClass, type SVSVariant, type SVSFieldValidation, type SVSFieldConstraint, VARIANT, PARTS, fnClass, isNeutral, omit } from "./core";
-  import TagsInput, { type TagsInputProps, type TagsInputReqdProps, type TagsInputBindProps } from "./_TagsInput.svelte";
+  import { type SVSClass, type SVSVariant, type SVSFieldValidation, type SVSFieldConstraint, VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import TagsInput, { setTagsInputContext, type TagsInputContext } from "./_TagsInput.svelte";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { label, extra, aux, left, right, bottom, reserve = false, flip = false, values = $bindable([]), constraints = [], validations = [], name, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), deps }: TagsInputFieldProps = $props();
+  let { label, extra, aux, left, right, bottom, reserve = false, flip = false, values = $bindable([]), constraints = [], validations = [], name, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), children }: TagsInputFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
   const uid = $props.id();
-  const id = $derived(deps?.svsTagsInput?.id ? deps.svsTagsInput.id : label?.trim() ? `${uid}-ctrl` : undefined);
+  const id = $derived(label?.trim() ? `${uid}-ctrl` : undefined);
   const idLabel = $derived(label?.trim() ? `${uid}-label` : undefined);
   const idDesc = $derived(bottom?.trim() ? `${uid}-desc` : undefined);
   const idErr = $derived(idDesc ?? `${uid}-err`);
   let errmsg = $state("");
+  let value = $state("");
   const message = $derived(variant === VARIANT.INACTIVE ? errmsg || bottom : bottom);
-  const resolvedName = $derived(name ?? (deps?.svsTagsInput?.name as string | undefined));
 
-  // *** Initialize Deps *** //
-  const svsTagsInput = $derived({
-    ...omit(deps?.svsTagsInput, "styling", "id", "name", "onchange", "oninvalid"),
-    events: { onadd, onremove: deps?.svsTagsInput?.events?.onremove },
-    styling: deps?.svsTagsInput?.styling ?? `${preset} svs-tags-input`,
-    id,
+  // *** Initialize Context *** //
+  const ctx: TagsInputContext = {
+    get values() {
+      return values;
+    },
+    set values(v) {
+      values = v;
+    },
+    get value() {
+      return value;
+    },
+    set value(v) {
+      value = v;
+    },
+    get variant() {
+      return variant;
+    },
+    set element(v: HTMLInputElement | undefined) {
+      element = v;
+    },
+    get ariaErrMsgId() {
+      return idMsg;
+    },
+    get styling() {
+      return `${preset} svs-tags-input`;
+    },
+    get id() {
+      return id;
+    },
+    get describedby() {
+      return idDesc;
+    },
+    events: { onadd },
     onchange,
     oninvalid,
-    "aria-describedby": idDesc,
-  });
+  };
+  setTagsInputContext(ctx);
 
   // *** States *** //
   let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
@@ -145,7 +166,6 @@
 
   // *** Event Handlers *** //
   function onadd(values: string[], value: string): undefined | boolean {
-    if (deps?.svsTagsInput?.events?.onadd?.(values, value)) return true;
     variant = neutral;
     shift(false, check(value));
     return variant === VARIANT.INACTIVE;
@@ -158,11 +178,9 @@
     }
   }
   function onchange(ev: Event) {
-    deps?.svsTagsInput?.onchange?.(ev as any);
     if (!isNeutral(variant)) shift();
   }
   function oninvalid(ev: Event) {
-    deps?.svsTagsInput?.oninvalid?.(ev as any);
     ev.preventDefault();
     shift(true);
   }
@@ -184,7 +202,7 @@
   <div class={cls(PARTS.MIDDLE, variant)}>
     {@render side(PARTS.LEFT, left)}
     {@render fnForm()}
-    <TagsInput {...svsTagsInput} bind:values {variant} bind:element ariaErrMsgId={idMsg} />
+    {#if children}{@render children()}{:else}<TagsInput />{/if}
     {@render side(PARTS.RIGHT, right)}
   </div>
   {@render desc(!flip)}
@@ -211,9 +229,9 @@
   {/if}
 {/snippet}
 {#snippet fnForm()}
-  {#if resolvedName}
+  {#if name}
     {#each values as value}
-      <input type="hidden" name={resolvedName} {value} />
+      <input type="hidden" {name} {value} />
     {/each}
   {/if}
 {/snippet}

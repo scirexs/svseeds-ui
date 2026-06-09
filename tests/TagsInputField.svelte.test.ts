@@ -3,6 +3,7 @@ import { fireEvent, render, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet, tick } from "svelte";
 import TagsInputField from "#svs/TagsInputField.svelte";
+import TagsInputFieldEmbedded from "./fixtures/TagsInputFieldEmbedded.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 
 type TagsInputFieldElement = HTMLInputElement | undefined;
@@ -561,32 +562,36 @@ describe("a11y, structure, form & review fixes", () => {
     expect([...hidden].map((input) => input.value)).toEqual(["a", "b"]);
   });
 
-  test("name can be resolved from deps.svsTagsInput", () => {
-    const props = { values: ["a"], deps: { svsTagsInput: { name: "viaDeps" } } };
+  test("name set on field renders hidden inputs", () => {
+    const props = { values: ["a"], name: "tags" };
     const { container } = render(TagsInputField, props);
     const hidden = container.querySelectorAll<HTMLInputElement>('input[type="hidden"]');
 
     expect(hidden).toHaveLength(1);
-    expect(hidden[0]).toHaveAttribute("name", "viaDeps");
+    expect(hidden[0]).toHaveAttribute("name", "tags");
     expect(hidden[0]).toHaveValue("a");
   });
 
-  test("deps.svsTagsInput cannot override Field-controlled variant", async () => {
+  test("embedded TagsInput's own variant prop is ignored", async () => {
     const props = $state({
-      deps: { svsTagsInput: { variant: "somethingElse" } },
-      validations: [validationFn],
+      values: [] as string[],
       variant: VARIANT.NEUTRAL,
     });
-    const { getByRole } = render(TagsInputField, props);
+    const user = userEvent.setup();
+    const { getByRole } = render(TagsInputFieldEmbedded, {
+      field: props,
+      input: { variant: "somethingElse" },
+    });
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
 
-    await fireEvent.invalid(main);
+    await user.type(main, "validtag");
+    await user.keyboard("{Enter}");
 
-    expect(props.variant).toBe(VARIANT.INACTIVE);
-    expect(whole).toHaveClass(seed, PARTS.WHOLE, VARIANT.INACTIVE);
-    expect(main).toHaveClass("svs-tags-input", PARTS.MAIN, VARIANT.INACTIVE);
-    expect(main).toHaveAccessibleErrorMessage(errmsg);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(whole).toHaveClass(seed, PARTS.WHOLE, VARIANT.ACTIVE);
+    expect(main).toHaveClass("svs-tags-input", PARTS.MAIN, VARIANT.ACTIVE);
+    expect(main).not.toHaveClass("somethingElse");
   });
 
   test("empty or whitespace input is not added or validated", async () => {
@@ -729,14 +734,17 @@ describe("a11y, structure, form & review fixes", () => {
     expect(queryByRole("alert")).toBeNull();
   });
 
-  test("events.onadd cancellation via deps", async () => {
+  test("events.onadd on embedded child cancels add and composes with field", async () => {
     const onadd = vi.fn(() => true);
     const props = $state({
       values: [] as string[],
-      deps: { svsTagsInput: { events: { onadd } } },
+      variant: VARIANT.NEUTRAL,
     });
     const user = userEvent.setup();
-    const { getByRole, queryByText } = render(TagsInputField, props);
+    const { getByRole, queryByText } = render(TagsInputFieldEmbedded, {
+      field: props,
+      input: { events: { onadd } },
+    });
     const main = getByRole("textbox") as HTMLInputElement;
 
     await user.type(main, "blocked");
@@ -744,37 +752,63 @@ describe("a11y, structure, form & review fixes", () => {
 
     expect(onadd).toHaveBeenCalledWith([], "blocked");
     expect(props.values).toEqual([]);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(queryByText("blocked")).toBeNull();
+
+    const onadd2 = vi.fn(() => false);
+    const props2 = $state({
+      values: [] as string[],
+      variant: VARIANT.NEUTRAL,
+    });
+    const rendered = render(TagsInputFieldEmbedded, {
+      field: props2,
+      input: { events: { onadd: onadd2 } },
+    });
+    const main2 = within(rendered.container).getByRole("textbox") as HTMLInputElement;
+
+    await user.type(main2, "allowed");
+    await user.keyboard("{Enter}");
+
+    expect(onadd2).toHaveBeenCalledWith([], "allowed");
+    expect(props2.values).toEqual(["allowed"]);
+    expect(props2.variant).toBe(VARIANT.ACTIVE);
+    within(rendered.container).getByText("allowed");
   });
 
-  test("events.onremove cancellation via deps", async () => {
+  test("events.onremove on embedded child cancels removal", async () => {
     const onremove = vi.fn(() => true);
     const props = $state({
-      values: ["a"],
-      deps: { svsTagsInput: { events: { onremove } } },
+      values: ["a", "b"],
     });
     const user = userEvent.setup();
-    const { getByRole, getByText } = render(TagsInputField, props);
+    const { getByRole, getByText } = render(TagsInputFieldEmbedded, {
+      field: props,
+      input: { events: { onremove } },
+    });
 
     await user.click(getByRole("button", { name: /a/ }));
 
-    expect(onremove).toHaveBeenCalledWith(["a"], "a", 0);
-    expect(props.values).toEqual(["a"]);
+    expect(onremove).toHaveBeenCalledWith(["a", "b"], "a", 0);
+    expect(props.values).toEqual(["a", "b"]);
     getByText("a");
+    getByText("b");
   });
 
-  test("onchange passthrough is called", async () => {
+  test("onchange on embedded child composes with field validation", async () => {
     const onchange = vi.fn();
     const props = $state({
-      deps: { svsTagsInput: { onchange } },
-      variant: VARIANT.NEUTRAL,
+      variant: VARIANT.ACTIVE,
     });
-    const { getByRole } = render(TagsInputField, props);
+    const { getByRole } = render(TagsInputFieldEmbedded, {
+      field: props,
+      input: { onchange },
+    });
     const main = getByRole("textbox") as HTMLInputElement;
 
     await fireEvent.change(main, { target: { value: "changed" } });
 
     expect(onchange).toHaveBeenCalled();
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
   });
 
   test("reactive label toggles top and aria-labelledby", async () => {
@@ -855,5 +889,93 @@ describe("a11y, structure, form & review fixes", () => {
     await tick();
 
     expect(props.element).toBe(main);
+  });
+});
+
+describe("Compound / children", () => {
+  test("default child renders without children", () => {
+    const { container, getByRole } = render(TagsInputField);
+    const whole = getByRole("group") as HTMLDivElement;
+    const middle = container.querySelector(`.${PARTS.MIDDLE}`) as HTMLElement;
+
+    expect(middle).toBeInTheDocument();
+    expect(within(middle).getAllByRole("textbox")).toHaveLength(1);
+    expect(whole.firstElementChild).toBe(middle);
+  });
+
+  test("explicit child wires value add to field", async () => {
+    const props = $state({ values: [] as string[] });
+    const user = userEvent.setup();
+    const { getByRole, getByText } = render(TagsInputFieldEmbedded, { field: props });
+    const main = getByRole("textbox") as HTMLInputElement;
+
+    await user.type(main, "x");
+    await user.keyboard("{Enter}");
+
+    expect(props.values).toEqual(["x"]);
+    getByText("x");
+  });
+
+  test("explicit child receives validation message aria from field", async () => {
+    const props = $state({
+      validations: [() => "too few"],
+      bottom,
+      variant: VARIANT.NEUTRAL,
+    });
+    const { getByRole } = render(TagsInputFieldEmbedded, { field: props });
+    const main = getByRole("textbox") as HTMLInputElement;
+
+    await fireEvent.invalid(main);
+
+    const alert = getByRole("alert");
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+    expect(alert).toHaveTextContent("too few");
+    expect(main).toHaveAttribute("aria-invalid", "true");
+    expect(main).toHaveAttribute("aria-errormessage", alert.id);
+    expect(main).toHaveAccessibleErrorMessage("too few");
+  });
+
+  test("explicit child honours presentational props", () => {
+    const props = $state({ values: ["a"] });
+    const { container, getByRole } = render(TagsInputFieldEmbedded, {
+      field: props,
+      input: { side: "right" },
+    });
+    const main = getByRole("textbox") as HTMLInputElement;
+    const tags = container.querySelector(".svs-tags-input.aux");
+
+    expect(tags).toBeInTheDocument();
+    expect(main.nextElementSibling).toBe(tags);
+  });
+
+  test("element binding flows to field with explicit child", async () => {
+    const props = $state({
+      element: undefined as TagsInputFieldElement,
+    });
+    const { getByRole } = render(TagsInputFieldEmbedded, { field: props });
+    const main = getByRole("textbox") as HTMLInputElement;
+
+    await tick();
+
+    expect(props.element).toBe(main);
+  });
+
+  test("min and max still validate through the default child", async () => {
+    const props = $state({
+      values: ["a", "b"],
+      validations: [({ value }: { value: string[] }) => (value.length < 1 ? "min" : null)],
+      constraints: [({ values }: { values: string[] }) => (values.length >= 2 ? "max" : null)],
+      variant: VARIANT.NEUTRAL,
+    });
+    const user = userEvent.setup();
+    const { getByRole } = render(TagsInputField, props);
+    const main = getByRole("textbox") as HTMLInputElement;
+
+    await user.type(main, "c");
+    await user.keyboard("{Enter}");
+
+    expect(props.values).toEqual(["a", "b"]);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+    expect(main).toHaveAccessibleErrorMessage("max");
   });
 });

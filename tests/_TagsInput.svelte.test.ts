@@ -3,9 +3,21 @@ import { fireEvent, render, waitFor } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import TagsInput from "#svs/_TagsInput.svelte";
-import { PARTS, VARIANT } from "#svs/core";
+import TagsInputCtxProvider from "./fixtures/TagsInputCtxProvider.svelte";
+import { PARTS, VARIANT, fnClass } from "#svs/core";
 
 const preset = "svs-tags-input";
+const mainCls = (variant: string) => `${fnClass(preset)(PARTS.MAIN, variant)}`.split(" ");
+const stateDefaults = () => ({
+  values: [] as string[],
+  value: "",
+  variant: VARIANT.NEUTRAL,
+  element: undefined as HTMLInputElement | undefined,
+  ariaErrMsgId: undefined as string | undefined,
+  styling: undefined as string | undefined,
+  id: undefined as string | undefined,
+  describedby: undefined as string | undefined,
+});
 
 describe("Basic rendering and structure", () => {
   test("renders with no props", () => {
@@ -532,5 +544,195 @@ describe("Status and state management", () => {
     const { getByRole } = render(TagsInput, { "aria-invalid": true });
 
     expect(getByRole("textbox")).toHaveAttribute("aria-invalid", "true");
+  });
+});
+
+describe("Embedded in field context", () => {
+  test("variant comes from context", () => {
+    const state = $state({ ...stateDefaults(), variant: VARIANT.ACTIVE });
+    const { getByRole } = render(TagsInputCtxProvider, { state });
+
+    expect(getByRole("textbox")).toHaveClass(...mainCls(VARIANT.ACTIVE));
+  });
+
+  test("own variant prop is ignored when embedded", () => {
+    const state = $state({ ...stateDefaults(), variant: VARIANT.ACTIVE });
+    const { getByRole } = render(TagsInputCtxProvider, { state, input: { variant: VARIANT.INACTIVE } });
+
+    expect(getByRole("textbox")).toHaveClass(...mainCls(VARIANT.ACTIVE));
+    expect(getByRole("textbox")).not.toHaveClass(VARIANT.INACTIVE);
+  });
+
+  test("add writes to context values", async () => {
+    const state = $state(stateDefaults());
+    const user = userEvent.setup();
+    const { getByRole } = render(TagsInputCtxProvider, { state });
+    const input = getByRole("textbox") as HTMLInputElement;
+
+    await user.type(input, "tag1");
+    await user.keyboard("{Enter}");
+
+    expect(state.values).toEqual(["tag1"]);
+    expect(state.value).toBe("");
+    expect(input).toHaveValue("");
+  });
+
+  test("remove writes to context values", async () => {
+    const state = $state({ ...stateDefaults(), values: ["a", "b"] });
+    const user = userEvent.setup();
+    const { getByRole } = render(TagsInputCtxProvider, { state });
+
+    await user.click(getByRole("button", { name: "Remove a" }));
+
+    expect(state.values).toEqual(["b"]);
+  });
+
+  test("element is mirrored into context", async () => {
+    const state = $state(stateDefaults());
+    const { getByRole } = render(TagsInputCtxProvider, { state });
+    const input = getByRole("textbox") as HTMLInputElement;
+
+    await waitFor(() => expect(state.element).toBe(input));
+  });
+
+  test("ariaErrMsgId and aria-invalid come from context", () => {
+    const state = $state({ ...stateDefaults(), ariaErrMsgId: "err-1" });
+    const { getByRole } = render(TagsInputCtxProvider, { state });
+    const input = getByRole("textbox");
+
+    expect(input).toHaveAttribute("aria-errormessage", "err-1");
+    expect(input).toHaveAttribute("aria-invalid", "true");
+  });
+
+  test("id and aria-describedby come from context", () => {
+    const state = $state({ ...stateDefaults(), id: "ctrl-1", describedby: "desc-1" });
+    const { getByRole } = render(TagsInputCtxProvider, {
+      state,
+      input: { id: "own-id", "aria-describedby": "own-desc" },
+    });
+    const input = getByRole("textbox");
+
+    expect(input).toHaveAttribute("id", "ctrl-1");
+    expect(input).toHaveAttribute("aria-describedby", "desc-1");
+  });
+
+  test("onadd composition runs user hook before field hook", async () => {
+    const state = $state(stateDefaults());
+    const userOnadd = vi.fn(() => false);
+    const fieldOnadd = vi.fn(() => false);
+    const user = userEvent.setup();
+    const { getByRole } = render(TagsInputCtxProvider, {
+      state,
+      hooks: { events: { onadd: fieldOnadd } },
+      input: { events: { onadd: userOnadd } },
+    });
+
+    await user.type(getByRole("textbox"), "tag1");
+    await user.keyboard("{Enter}");
+
+    expect(userOnadd).toHaveBeenCalledWith([], "tag1");
+    expect(fieldOnadd).toHaveBeenCalledWith([], "tag1");
+    expect(userOnadd.mock.invocationCallOrder[0]).toBeLessThan(fieldOnadd.mock.invocationCallOrder[0]);
+    expect(state.values).toEqual(["tag1"]);
+  });
+
+  test("onadd cancellation by user hook short-circuits field hook", async () => {
+    const state = $state(stateDefaults());
+    const userOnadd = vi.fn(() => true);
+    const fieldOnadd = vi.fn(() => false);
+    const user = userEvent.setup();
+    const { getByRole } = render(TagsInputCtxProvider, {
+      state,
+      hooks: { events: { onadd: fieldOnadd } },
+      input: { events: { onadd: userOnadd } },
+    });
+
+    await user.type(getByRole("textbox"), "blocked");
+    await user.keyboard("{Enter}");
+
+    expect(userOnadd).toHaveBeenCalledWith([], "blocked");
+    expect(fieldOnadd).not.toHaveBeenCalled();
+    expect(state.values).toEqual([]);
+  });
+
+  test("onadd cancellation by field hook", async () => {
+    const state = $state(stateDefaults());
+    const userOnadd = vi.fn(() => false);
+    const fieldOnadd = vi.fn(() => true);
+    const user = userEvent.setup();
+    const { getByRole } = render(TagsInputCtxProvider, {
+      state,
+      hooks: { events: { onadd: fieldOnadd } },
+      input: { events: { onadd: userOnadd } },
+    });
+
+    await user.type(getByRole("textbox"), "blocked");
+    await user.keyboard("{Enter}");
+
+    expect(userOnadd).toHaveBeenCalledWith([], "blocked");
+    expect(fieldOnadd).toHaveBeenCalledWith([], "blocked");
+    expect(state.values).toEqual([]);
+  });
+
+  test("onchange composition", async () => {
+    const state = $state(stateDefaults());
+    const userOnchange = vi.fn();
+    const fieldOnchange = vi.fn();
+    const { getByRole } = render(TagsInputCtxProvider, {
+      state,
+      hooks: { onchange: fieldOnchange },
+      input: { onchange: userOnchange },
+    });
+
+    await fireEvent.change(getByRole("textbox"));
+
+    expect(userOnchange).toHaveBeenCalledTimes(1);
+    expect(fieldOnchange).toHaveBeenCalledTimes(1);
+    expect(userOnchange.mock.invocationCallOrder[0]).toBeLessThan(fieldOnchange.mock.invocationCallOrder[0]);
+  });
+
+  test("oninvalid composition", async () => {
+    const state = $state(stateDefaults());
+    const userOninvalid = vi.fn();
+    const fieldOninvalid = vi.fn();
+    const { getByRole } = render(TagsInputCtxProvider, {
+      state,
+      hooks: { oninvalid: fieldOninvalid },
+      input: { oninvalid: userOninvalid },
+    });
+
+    await fireEvent.invalid(getByRole("textbox"));
+
+    expect(userOninvalid).toHaveBeenCalledTimes(1);
+    expect(fieldOninvalid).toHaveBeenCalledTimes(1);
+    expect(userOninvalid.mock.invocationCallOrder[0]).toBeLessThan(fieldOninvalid.mock.invocationCallOrder[0]);
+  });
+
+  test("styling falls back to ctx default unless caller provides styling", async () => {
+    const state = $state({ ...stateDefaults(), styling: "ctx-style" });
+    const { container, rerender } = render(TagsInputCtxProvider, { state });
+
+    expect(container.querySelector(".ctx-style")).toHaveClass("ctx-style", PARTS.WHOLE);
+    expect(container.querySelector("input")).toHaveClass("ctx-style", PARTS.MAIN);
+
+    await rerender({ state, input: { styling: "own-style" } });
+
+    expect(container.querySelector(".own-style")).toHaveClass("own-style", PARTS.WHOLE);
+    expect(container.querySelector("input")).toHaveClass("own-style", PARTS.MAIN);
+  });
+
+  test("onremove still only uses the caller hook", async () => {
+    const state = $state({ ...stateDefaults(), values: ["a", "b"] });
+    const onremove = vi.fn(() => true);
+    const user = userEvent.setup();
+    const { getByRole } = render(TagsInputCtxProvider, {
+      state,
+      input: { events: { onremove } },
+    });
+
+    await user.click(getByRole("button", { name: "Remove a" }));
+
+    expect(onremove).toHaveBeenCalledWith(["a", "b"], "a", 0);
+    expect(state.values).toEqual(["a", "b"]);
   });
 });
