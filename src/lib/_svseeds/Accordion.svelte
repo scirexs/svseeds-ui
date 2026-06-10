@@ -4,14 +4,12 @@
   default value: *`(value)`*
   ```ts
   interface AccordionProps {
-    items: AccordionItem[];
+    items?: AccordionItem[];
+    children?: Snippet;
     current?: string; // bindable, undefined = all closed
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
-    deps?: AccordionDeps;
-  }
-  interface AccordionDeps {
-    svsDisclosure?: Omit<DisclosureProps, DisclosureReqdProps | DisclosureBindProps>;
+    disclosure?: Omit<DisclosureProps, DisclosureReqdProps | DisclosureBindProps | "id" | "inactive">;
   }
   type AccordionComponent = { component: Component<any>; props?: Record<string, unknown> };
   type AccordionItem = {
@@ -22,29 +20,35 @@
   };
   ```
   `value`s must be unique within `items`. Accordion is exclusive: at most one item is open at a time.
+  Provide `items` for data mode or `children` for declarative mode; `children` wins when both are present.
+  ### Exports
+  Accordion provides `DisclosureContext` from `_Disclosure.svelte`, so declarative `<Disclosure id=...>` children self-coordinate through `current`.
   ### Anatomy
   ```svelte
   <div class="whole" role="group">
-    {#each items as item}
-      <Disclosure label={item.label} variant={...} aria-disabled={item.disabled}>
-        {item.panel}
-      </Disclosure>
-    {/each}
+    {#if children}
+      {children}
+    {:else}
+      {#each items as item}
+        <Disclosure id={item.value} label={item.label} inactive={item.disabled || undefined}>
+          {item.panel}
+        </Disclosure>
+      {/each}
+    {/if}
   </div>
   ```
+  `DisclosureContext` supplies exclusive open state plus base variant/styling. Data-mode child styling defaults to `"svs-accordion svs-disclosure"` and can be customized via `disclosure`.
 -->
 <script module lang="ts">
   export interface AccordionProps {
-    items: AccordionItem[];
+    items?: AccordionItem[];
+    children?: Snippet;
     current?: string; // bindable, undefined = all closed
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
-    deps?: AccordionDeps;
+    disclosure?: Omit<DisclosureProps, DisclosureReqdProps | DisclosureBindProps | "id" | "inactive">;
   }
-  export interface AccordionDeps {
-    svsDisclosure?: Omit<DisclosureProps, DisclosureReqdProps | DisclosureBindProps>;
-  }
-  export type AccordionReqdProps = "items";
+  export type AccordionReqdProps = never;
   export type AccordionBindProps = "current";
   export type AccordionComponent = { component: Component<any>; props?: Record<string, unknown> };
   export type AccordionItem = {
@@ -62,21 +66,39 @@
 
   import { type Component, type Snippet, untrack } from "svelte";
   import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, omit } from "./core";
-  import Disclosure, { type DisclosureProps, type DisclosureReqdProps, type DisclosureBindProps } from "./_Disclosure.svelte";
+  import Disclosure, { setDisclosureContext, type DisclosureContext, type DisclosureProps, type DisclosureReqdProps, type DisclosureBindProps } from "./_Disclosure.svelte";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { items, current = $bindable<string | undefined>(), styling, variant = VARIANT.NEUTRAL, deps }: AccordionProps = $props();
+  let { items, children, current = $bindable<string | undefined>(), styling, variant = VARIANT.NEUTRAL, disclosure }: AccordionProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
-  const selected = $derived(items.some((it) => it.value === current && !it.disabled) ? current : undefined);
+  const ctxCurrent = $derived(current);
+  const ctxVariant = $derived(variant);
+  const ctxStyling = $derived(styling);
+  const ctx: DisclosureContext = {
+    get current() {
+      return ctxCurrent;
+    },
+    set current(v: string | undefined) {
+      current = v;
+    },
+    get variant() {
+      return ctxVariant;
+    },
+    get styling() {
+      return ctxStyling;
+    },
+  };
+  setDisclosureContext(ctx);
+  const selected = $derived(children || !items ? current : items.some((it) => it.value === current && !it.disabled) ? current : undefined);
 
-  // *** Initialize Deps *** //
-  const svsDisclosure = $derived({
-    ...omit(deps?.svsDisclosure, "styling"),
-    styling: deps?.svsDisclosure?.styling ?? `${preset} svs-disclosure`,
+  // *** Initialize Child Props *** //
+  const childProps = $derived({
+    ...omit(disclosure, "styling"),
+    styling: disclosure?.styling ?? `${preset} svs-disclosure`,
   });
 
   // *** Bind Handlers *** //
@@ -87,30 +109,20 @@
 
 <!---------------------------------------->
 
-{#if items.length > 0}
+{#if children}
   <div class={cls(PARTS.WHOLE, variant)} role="group">
-    {#each items as item, i (item.value)}
+    {@render children()}
+  </div>
+{:else if items && items.length > 0}
+  <div class={cls(PARTS.WHOLE, variant)} role="group">
+    {#each items as item (item.value)}
       {#snippet label(open: boolean, variant: string)}
         {@render labelContent(item.label, open, variant)}
       {/snippet}
-      {#snippet children(variant: string)}
+      {#snippet panel(variant: string)}
         {@render panelContent(item.panel, variant)}
       {/snippet}
-      <Disclosure
-        {label}
-        {children}
-        variant={item.disabled ? VARIANT.INACTIVE : variant}
-        aria-disabled={item.disabled ? "true" : undefined}
-        class={item.disabled ? VARIANT.INACTIVE : undefined}
-        bind:open={
-          () => !item.disabled && current === item.value,
-          (v) => {
-            if (item.disabled) return;
-            current = v ? item.value : undefined;
-          }
-        }
-        {...svsDisclosure}
-      />
+      <Disclosure id={item.value} {label} children={panel} inactive={item.disabled || undefined} {variant} {...childProps} />
     {/each}
   </div>
 {/if}

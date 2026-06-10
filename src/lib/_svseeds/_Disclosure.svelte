@@ -3,27 +3,29 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface DisclosureProps extends Omit<HTMLDetailsAttributes, "children"> {
+  interface DisclosureProps extends Omit<HTMLDetailsAttributes, "children" | "name"> {
     label: string | Snippet<[boolean, string]>; // Snippet<[open,variant]>
     children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false)
     duration?: number; // (200)
-    inactive?: string; // reason; when set: aria-disabled + aria-description, variant->INACTIVE, open/toggle suppressed
+    inactive?: string | boolean; // reason string (aria-description) OR true for reason-less soft-disable
     attach?: Attachment;
     element?: HTMLDetailsElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
-    // other HTMLDetailsAttributes are passed to <details> via ...rest; `class` is merged onto root
+    // other HTMLDetailsAttributes except `name` are passed to <details> via ...rest; `class` is merged onto root
   }
   ```
+  ### Exports
+  `DisclosureContext`, `setDisclosureContext(ctx)`, and `getDisclosureContext()` provide an optional accordion context. When a `DisclosureContext` is present (e.g. from an Accordion), `<Disclosure id=...>` routes its open state through `ctx.current` exclusively; `variant` and `styling` then default to the context's.
   ### Anatomy
   `main` renders through separate animated/static paths; slide uses sanitized `dur`.
   ```svelte
-  <details class={["whole", class]} {...rest} bind:this={element} {@attach attach}>
+  <details class={["whole", class]} {...rest} id={id} bind:this={element} {@attach attach}>
     <summary class="label" aria-disabled aria-description>
       {label}
     </summary>
-    {#if open}
+    {#if effOpen}
       <div class="main" transition:slide={{ duration: dur }}>
         {children}
       </div>
@@ -37,12 +39,12 @@
   ```
 -->
 <script module lang="ts">
-  export interface DisclosureProps extends Omit<HTMLDetailsAttributes, "children"> {
+  export interface DisclosureProps extends Omit<HTMLDetailsAttributes, "children" | "name"> {
     label: string | Snippet<[boolean, string]>; // Snippet<[open,variant]>
     children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false)
     duration?: number; // (200)
-    inactive?: string; // reason; when set: aria-disabled + aria-description, variant->INACTIVE, open/toggle suppressed
+    inactive?: string | boolean; // reason string (aria-description) OR true for reason-less soft-disable
     attach?: Attachment;
     element?: HTMLDetailsElement; // bindable
     styling?: SVSClass;
@@ -50,6 +52,13 @@
   }
   export type DisclosureReqdProps = "label" | "children";
   export type DisclosureBindProps = "open" | "variant" | "element";
+
+  export interface DisclosureContext extends SVSContext {
+    get current(): string | undefined;
+    set current(v: string | undefined);
+  }
+
+  export const [getDisclosureContext, setDisclosureContext] = createContext<DisclosureContext>();
 
   const DEFAULT_DURATION = 200;
   const noMotion = shouldReduceMotion();
@@ -70,42 +79,68 @@
   import { type Attachment } from "svelte/attachments";
   import { type HTMLDetailsAttributes, type MouseEventHandler, type ToggleEventHandler } from "svelte/elements";
   import { slide } from "svelte/transition";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isNeutral, isUnsignedInteger, shouldReduceMotion } from "./core";
+  import {
+    type SVSClass,
+    type SVSVariant,
+    type SVSContext,
+    VARIANT,
+    PARTS,
+    fnClass,
+    isNeutral,
+    isUnsignedInteger,
+    shouldReduceMotion,
+    createContext,
+  } from "./core";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { label, children, open = $bindable(false), duration = -1, ontoggle, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), inactive, class: c, onclick, ...rest }: DisclosureProps = $props();
+  let { label, children, open = $bindable(false), duration = -1, ontoggle, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), inactive, id, name, class: c, onclick, ...rest }: DisclosureProps & { name?: string } = $props();
+  const ctx = getDisclosureContext();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(preset, styling ?? ctx?.styling));
   const dur = $derived(noMotion ? 0 : !isUnsignedInteger(duration) ? DEFAULT_DURATION : duration);
-  const reason = $derived(inactive?.trim() ? inactive : undefined);
-  const inactiveAttrs = $derived(reason ? { "aria-disabled": true, "aria-description": reason } : {});
+  const isInactive = $derived(inactive === true || (typeof inactive === "string" && inactive.trim().length > 0));
+  const reason = $derived(typeof inactive === "string" && inactive.trim() ? inactive : undefined);
+  const inactiveAttrs = $derived(isInactive ? { "aria-disabled": true, ...(reason ? { "aria-description": reason } : {}) } : {});
   const guard = new ToggleGuard();
-  let hidden = $state(!open);
   let neutral = $state(isNeutral(variant) ? variant : VARIANT.NEUTRAL);
+  const base = $derived(ctx ? ctx.variant : neutral);
+  const effOpen = $derived(ctx ? id != null && ctx.current === id : open);
+  let hidden = $state(!initialOpen());
   let mounted = false;
   let prevVariant = $state<SVSVariant>();
+
+  function initialOpen() {
+    return ctx ? id != null && ctx.current === id : open;
+  }
+  function setOpen(v: boolean) {
+    if (ctx) ctx.current = v && id != null ? id : undefined;
+    else open = v;
+  }
 
   // *** Bind Handlers *** //
   // External variant writes are styling-only; preserve the neutral fallback without changing open state.
   $effect(() => {
-    neutral = isNeutral(variant) ? variant : neutral;
+    neutral = ctx ? (isNeutral(ctx.variant) ? ctx.variant : VARIANT.NEUTRAL) : isNeutral(variant) ? variant : neutral;
+  });
+  $effect(() => {
+    if (ctx && !effOpen && !isInactive && prevVariant === undefined) variant = base;
   });
   $effect(() => {
     variant;
-    untrack(() => (reason && isNeutral(variant) ? storeVariant() : undefined));
+    untrack(() => (isInactive && isNeutral(variant) ? storeVariant() : undefined));
   });
   $effect.pre(() => {
-    open;
-    reason;
+    effOpen;
+    isInactive;
     untrack(() => (mounted ? syncOpen() : undefined));
   });
   function syncOpen() {
-    if (reason) return collapseInactive();
+    if (isInactive) return collapseInactive();
     restoreVariant();
-    toggleOpen(open);
+    toggleOpen(effOpen);
   }
   function toggleOpen(isOpen: boolean) {
     guard.activate(dur);
@@ -120,11 +155,11 @@
     if (!target) return;
     target.open = bool;
     hidden = !target.open;
-    variant = bool ? VARIANT.ACTIVE : neutral;
+    variant = bool ? VARIANT.ACTIVE : base;
   }
   function storeVariant(collapse?: boolean) {
     if (collapse && variant === VARIANT.INACTIVE && prevVariant !== undefined) return;
-    prevVariant = isNeutral(variant) ? variant : neutral;
+    prevVariant = isNeutral(variant) ? variant : base;
     variant = VARIANT.INACTIVE;
   }
   function restoreVariant() {
@@ -135,13 +170,13 @@
   function collapseInactive() {
     storeVariant(true);
     if (element?.open) element.open = false;
-    if (open) open = false;
+    if (effOpen) setOpen(false);
     if (!hidden) hidden = true;
   }
 
   // *** Event Handlers *** //
   const hclick: MouseEventHandler<HTMLElement> = (ev) => {
-    if (reason) {
+    if (isInactive) {
       ev.preventDefault();
       collapseInactive();
       return;
@@ -150,28 +185,28 @@
     ev.preventDefault();
     if (guard.active) return;
     if (!element?.open) hidden = false;
-    open = !open;
+    setOpen(!effOpen);
   };
   const htoggle: ToggleEventHandler<HTMLDetailsElement> = (ev) => {
     ontoggle?.(ev);
     if (!element) return;
-    if (reason) return collapseInactive();
-    if (element.open && !open) {
+    if (isInactive) return collapseInactive();
+    if (element.open && !effOpen) {
       hidden = false;
-      open = true;
-    } else if (!element.open && open) {
-      open = false;
+      setOpen(true);
+    } else if (!element.open && effOpen) {
+      setOpen(false);
     }
   };
   onMount(() => {
-    reason ? collapseInactive() : toggle(open);
+    isInactive ? collapseInactive() : toggle(effOpen);
     mounted = true;
   });
 </script>
 
 <!---------------------------------------->
 
-<details bind:this={element} class={[cls(PARTS.WHOLE, variant), c]} {...rest} ontoggle={htoggle} {@attach attach}>
+<details bind:this={element} class={[cls(PARTS.WHOLE, variant), c]} {...rest} {id} ontoggle={htoggle} {@attach attach}>
   {@render inner()}
 </details>
 
@@ -180,10 +215,10 @@
     {#if typeof label === "string"}
       {label}
     {:else if typeof label === "function"}
-      {@render label(open, variant)}
+      {@render label(effOpen, variant)}
     {/if}
   </summary>
-  {#if open}
+  {#if effOpen}
     <div class={cls(PARTS.MAIN, variant)} transition:slide={{ duration: dur }}>
       {@render children(variant)}
     </div>

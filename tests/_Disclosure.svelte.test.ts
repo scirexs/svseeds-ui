@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, waitFor } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
-import { createRawSnippet } from "svelte";
+import { createRawSnippet, tick } from "svelte";
 import Disclosure from "#svs/_Disclosure.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import DisclosureCtxProvider from "./fixtures/DisclosureCtxProvider.svelte";
 import DisclosureVariantBinding from "./fixtures/DisclosureVariantBinding.svelte";
 
 const label = "Disclosure Label";
@@ -27,6 +28,7 @@ const labelSnippet = createRawSnippet((open: () => boolean, variant: () => strin
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
@@ -619,6 +621,58 @@ describe("Soft-disable (inactive)", () => {
     });
   });
 
+  test("inactive={true} soft-disables without a reason", async () => {
+    const props = $state({ label, children: childrenSnippet, open: false, inactive: true as string | boolean | undefined, variant: VARIANT.NEUTRAL as string, duration: 0 });
+    const user = userEvent.setup();
+    const { getByRole, getByText } = render(Disclosure, props);
+    const details = getByRole("group") as HTMLDetailsElement;
+    const summary = getByText(label);
+
+    await waitFor(() => {
+      expect(summary).toHaveAttribute("aria-disabled", "true");
+      expect(summary).not.toHaveAttribute("aria-description");
+      expect(details).toHaveClass(VARIANT.INACTIVE);
+    });
+
+    await user.click(summary);
+
+    expect(details).not.toHaveAttribute("open");
+    expect(props.open).toBe(false);
+  });
+
+  test("inactive={true} collapses an initially open disclosure", async () => {
+    const props = $state({ label, children: childrenSnippet, open: true, inactive: true as string | boolean | undefined, variant: VARIANT.NEUTRAL as string, duration: 0 });
+    const { getByRole, getByText } = render(Disclosure, props);
+    const details = getByRole("group") as HTMLDetailsElement;
+    const summary = getByText(label);
+
+    await waitFor(() => {
+      expect(details).not.toHaveAttribute("open");
+      expect(props.open).toBe(false);
+      expect(props.variant).toBe(VARIANT.INACTIVE);
+      expect(summary).toHaveAttribute("aria-disabled", "true");
+      expect(summary).not.toHaveAttribute("aria-description");
+    });
+  });
+
+  test("inactive={false} is fully active", async () => {
+    const props = $state({ label, children: childrenSnippet, open: false, inactive: false as string | boolean | undefined, variant: VARIANT.NEUTRAL as string, duration: 0 });
+    const user = userEvent.setup();
+    const { getByRole, getByText } = render(Disclosure, props);
+    const details = getByRole("group") as HTMLDetailsElement;
+    const summary = getByText(label);
+
+    expect(summary).not.toHaveAttribute("aria-disabled");
+    expect(summary).not.toHaveAttribute("aria-description");
+
+    await user.click(summary);
+
+    await waitFor(() => {
+      expect(details).toHaveAttribute("open");
+      expect(props.open).toBe(true);
+    });
+  });
+
   test("native toggle stays collapsed while inactive", async () => {
     const props = $state({ label, children: childrenSnippet, open: false, inactive: "locked", duration: 0 });
     const { getByRole } = render(Disclosure, props);
@@ -631,6 +685,138 @@ describe("Soft-disable (inactive)", () => {
       expect(details).not.toHaveAttribute("open");
       expect(props.open).toBe(false);
     });
+  });
+});
+
+describe("Accordion context", () => {
+  const detailsByLabel = (container: HTMLElement, text: string) =>
+    Array.from(container.querySelectorAll("details")).find((details) => details.textContent?.includes(text)) as HTMLDetailsElement;
+  const summaryByLabel = (container: HTMLElement, text: string) =>
+    Array.from(container.querySelectorAll("summary")).find((summary) => summary.textContent?.includes(text)) as HTMLElement;
+
+  test("context-driven current opens through the animated main path", async () => {
+    const props = $state({ current: undefined as string | undefined, variant: "accordion-base" });
+    const { container, rerender } = render(DisclosureCtxProvider, props);
+    const detailsA = detailsByLabel(container, "Section A");
+
+    expect(detailsA.open).toBe(false);
+    expect(container.querySelectorAll("#a .main")).toHaveLength(1);
+
+    props.current = "a";
+    await rerender(props);
+
+    await waitFor(() => {
+      expect(detailsA.open).toBe(true);
+      expect(container.querySelector("#a .main.active")).toBeInTheDocument();
+      expect(container.querySelectorAll("#a .main")).toHaveLength(1);
+    });
+  });
+
+  test("summary click syncs current in both directions", async () => {
+    const props = $state({ current: undefined as string | undefined, variant: "accordion-base" });
+    const user = userEvent.setup();
+    const { container } = render(DisclosureCtxProvider, props);
+    const detailsA = detailsByLabel(container, "Section A");
+    const summaryA = summaryByLabel(container, "Section A");
+
+    await user.click(summaryA);
+    await waitFor(() => {
+      expect(props.current).toBe("a");
+      expect(detailsA.open).toBe(true);
+    });
+
+    await user.click(summaryA);
+    await waitFor(() => {
+      expect(props.current).toBeUndefined();
+      expect(detailsA.open).toBe(false);
+    });
+  });
+
+  test("external details toggle syncs through context", async () => {
+    const props = $state({ current: undefined as string | undefined, variant: "accordion-base" });
+    const { container } = render(DisclosureCtxProvider, props);
+    const detailsA = detailsByLabel(container, "Section A");
+
+    detailsA.open = true;
+    detailsA.dispatchEvent(new Event("toggle"));
+
+    await waitFor(() => expect(props.current).toBe("a"));
+
+    detailsA.open = false;
+    detailsA.dispatchEvent(new Event("toggle"));
+
+    await waitFor(() => expect(props.current).toBeUndefined());
+  });
+
+  test("opening B closes A through current-driven effOpen", async () => {
+    const props = $state({ current: "a" as string | undefined, variant: "accordion-base" });
+    const user = userEvent.setup();
+    const { container } = render(DisclosureCtxProvider, props);
+    const detailsA = detailsByLabel(container, "Section A");
+    const detailsB = detailsByLabel(container, "Section B");
+
+    await waitFor(() => expect(detailsA.open).toBe(true));
+
+    await user.click(summaryByLabel(container, "Section B"));
+
+    await waitFor(() => {
+      expect(props.current).toBe("b");
+      expect(detailsA.open).toBe(false);
+      expect(detailsB.open).toBe(true);
+    });
+  });
+
+  test("provider base variant wins for collapsed children and active/inactive still derive locally", async () => {
+    const props = $state({ current: undefined as string | undefined, variant: "accordion-base", inactiveA: "locked" as string | undefined });
+    const { container, rerender } = render(DisclosureCtxProvider, props);
+    const detailsA = detailsByLabel(container, "Section A");
+    const detailsB = detailsByLabel(container, "Section B");
+
+    await waitFor(() => {
+      expect(detailsA).toHaveClass(VARIANT.INACTIVE);
+      expect(detailsB).toHaveClass("accordion-base");
+      expect(detailsB).not.toHaveClass("child-local");
+    });
+
+    props.inactiveA = undefined;
+    props.current = "a";
+    await rerender(props);
+
+    await waitFor(() => {
+      expect(detailsA).toHaveClass(VARIANT.ACTIVE);
+      expect(detailsB).toHaveClass("accordion-base");
+    });
+  });
+
+  test("name is dropped at runtime", () => {
+    const { getByTestId } = render(Disclosure, {
+      label,
+      children: childrenSnippet,
+      name: "grp",
+      "data-testid": "named-disclosure",
+    } as never);
+
+    expect(getByTestId("named-disclosure")).not.toHaveAttribute("name");
+  });
+
+  test("exclusivity changes settle without effect-depth warnings", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const props = $state({ current: undefined as string | undefined, variant: "accordion-base" });
+    const user = userEvent.setup();
+    const { container } = render(DisclosureCtxProvider, props);
+
+    await user.click(summaryByLabel(container, "Section A"));
+    await user.click(summaryByLabel(container, "Section B"));
+    await user.click(summaryByLabel(container, "Section A"));
+    await tick();
+
+    await waitFor(() => {
+      expect(detailsByLabel(container, "Section A").open).toBe(true);
+      expect(detailsByLabel(container, "Section B").open).toBe(false);
+      expect(props.current).toBe("a");
+    });
+    expect([...warn.mock.calls, ...error.mock.calls].flat().join("\n")).not.toContain("effect_update_depth");
   });
 });
 
