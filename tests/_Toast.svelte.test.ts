@@ -1,48 +1,36 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { configure, fireEvent, render, waitFor, waitForElementToBeRemoved } from "@testing-library/svelte";
-import { userEvent } from "@testing-library/user-event";
-import { createRawSnippet } from "svelte";
-import Toast, { removeToast, toast } from "#svs/_Toast.svelte";
+import { configure, fireEvent, render, waitFor, within } from "@testing-library/svelte";
+import { createRawSnippet, tick } from "svelte";
+import Toast, { createToaster, type ToastItem } from "#svs/_Toast.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import ToastSnippetProbe from "./fixtures/ToastSnippetProbe.svelte";
 
-type ToastSnippetParams = [string, string, string, string]; // [message, type, id, variant]
 const testid = "test-toast";
-const toastfn = createRawSnippet(
-  (
-    message: () => string,
-    type: () => string,
-    id: () => string,
-    variant: () => string,
-  ) => {
-    return {
-      render: () => `<div data-testid="${testid}">${message()}-${type()}-${id()}-${variant()}</div>`,
-    };
-  },
-);
+const DEFAULT_ANIMATION = 200;
+const DEFAULT_DISMISS = 30000;
+const children = createRawSnippet<[ToastItem, string]>((item, variant) => ({
+  render: () => `<div data-testid="${testid}">${item().message}-${item().type}-${item().id}-${variant()}</div>`,
+}));
 
-// Mock window.matchMedia for prefers-reduced-motion
 Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: vi.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,
-    addListener: vi.fn(), // deprecated
-    removeListener: vi.fn(), // deprecated
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
   })),
 });
 
-// Mock HTMLElement.showPopover/hidePopover
 HTMLElement.prototype.showPopover = vi.fn();
 HTMLElement.prototype.hidePopover = vi.fn();
 
 beforeEach(() => {
   vi.useFakeTimers();
-  // jsdom>=29 implements the Popover API, so the toast container (popover="manual")
-  // is treated as hidden until shown. Include hidden elements in role queries here.
   configure({ defaultHidden: true });
 });
 
@@ -53,489 +41,426 @@ afterEach(() => {
   configure({ defaultHidden: false });
 });
 
+async function flush() {
+  await Promise.resolve();
+  await tick();
+}
+
+async function advance(ms: number) {
+  await vi.advanceTimersByTimeAsync(ms);
+  await tick();
+}
+
+function setup(options?: Parameters<typeof createToaster>[0], props: Partial<Parameters<typeof render<typeof Toast>>[1]> = {}) {
+  const toaster = createToaster(options);
+  const rendered = render(Toast, { toaster, children, ...props });
+  return { toaster, ...rendered };
+}
+
 describe("Toast component initialization", () => {
   test("renders with minimal props", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const props = { children };
-    const { getByRole } = render(Toast, props);
+    const { getByRole } = setup();
 
-    const toastContainer = getByRole("region");
-    expect(toastContainer).toBeTruthy();
-    expect(toastContainer).toHaveAttribute("role", "region");
-    expect(toastContainer).toHaveAttribute("tabindex", "-1");
-    expect(toastContainer).toHaveAttribute("popover", "manual");
-    expect(toastContainer).toHaveAttribute("aria-label", "0 notifications");
-  });
-
-  test("initializes with custom name", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const name = "custom-toast";
-    const props = { children, name };
-    const { getByRole } = render(Toast, props);
-
-    const toastContainer = getByRole("region");
-    expect(toastContainer).toBeTruthy();
+    const region = getByRole("region");
+    expect(region).toBeTruthy();
+    expect(region).toHaveAttribute("role", "region");
+    expect(region).toHaveAttribute("tabindex", "-1");
+    expect(region).toHaveAttribute("popover", "manual");
+    expect(region).toHaveAttribute("aria-label", "0 notifications");
   });
 
   test("sets default variant", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const { getByRole } = render(Toast, { children, variant: VARIANT.NEUTRAL });
+    const { getByRole } = setup(undefined, { variant: VARIANT.NEUTRAL });
 
     expect(getByRole("region")).toHaveClass("svs-toast", PARTS.WHOLE, VARIANT.NEUTRAL);
   });
 
   test("preserves custom variant", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const customVariant = "warning";
-    const props = $state({ children, variant: customVariant });
+    const toaster = createToaster();
+    const props = $state({ toaster, children, variant: "warning" });
     render(Toast, props);
 
-    expect(props.variant).toBe(customVariant);
+    expect(props.variant).toBe("warning");
   });
 
   test("handles prefers-reduced-motion", async () => {
-    // noMotion is evaluated once at module import time, so re-import to apply the mock.
     vi.resetModules();
     const mockMatchMedia = vi.fn().mockReturnValue({ matches: true });
     window.matchMedia = mockMatchMedia;
 
-    // The module-level evaluation triggers the media query on import (no render needed).
     await import("#svs/_Toast.svelte");
 
     expect(mockMatchMedia).toHaveBeenCalledWith("(prefers-reduced-motion: reduce)");
   });
+});
 
-  test("applies custom timeout", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const timeout = 5000;
-    const props = { children, timeout };
-    render(Toast, props);
+describe("Toaster management", () => {
+  test("add() adds toast", async () => {
+    const { toaster, getByRole } = setup();
+    const region = getByRole("region");
 
-    // Timeout is passed to ToastContainer constructor
-    // We can verify this by checking toast behavior with timeout
-    expect(true).toBe(true); // Basic test that component renders
+    const id = toaster.add("Test message");
+    expect(id).toBeTruthy();
+
+    await waitFor(() => expect(region).toHaveAttribute("aria-label", "1 notifications"));
+  });
+
+  test("dismiss() then removal", async () => {
+    const { toaster, getByRole } = setup();
+    const region = getByRole("region");
+
+    const id = toaster.add("Test message");
+    await waitFor(() => expect(region).toHaveAttribute("aria-label", "1 notifications"));
+    toaster.dismiss(id);
+    await advance(DEFAULT_ANIMATION);
+
+    await waitFor(() => expect(region).toHaveAttribute("aria-label", "0 notifications"));
+  });
+
+  test("multiple add/dismiss", async () => {
+    const { toaster, getByRole } = setup();
+    const region = getByRole("region");
+
+    toaster.add("Message 1", { type: "info" });
+    const id2 = toaster.add("Message 2", { type: "warning" });
+    toaster.add("Message 3", { type: "error" });
+    await waitFor(() => expect(region).toHaveAttribute("aria-label", "3 notifications"));
+    toaster.dismiss(id2);
+    await advance(DEFAULT_ANIMATION);
+
+    await waitFor(() => expect(region).toHaveAttribute("aria-label", "2 notifications"));
+  });
+
+  test("independent toasters", async () => {
+    const a = setup();
+    const b = setup();
+    const regionA = within(a.container).getByRole("region");
+    const regionB = within(b.container).getByRole("region");
+
+    a.toaster.add("A");
+    await waitFor(() => expect(regionA).toHaveAttribute("aria-label", "1 notifications"));
+
+    expect(regionB).toHaveAttribute("aria-label", "0 notifications");
+  });
+
+  test("add returns id usable by dismiss", async () => {
+    const { toaster, getByRole } = setup();
+    const region = getByRole("region");
+
+    expect(() => toaster.dismiss("nope")).not.toThrow();
+    const id = toaster.add("Message");
+    toaster.dismiss(id);
+    await advance(DEFAULT_ANIMATION);
+
+    await waitFor(() => expect(region).toHaveAttribute("aria-label", "0 notifications"));
+  });
+
+  test("remove() drops immediately", async () => {
+    const { toaster, getByRole } = setup();
+    const region = getByRole("region");
+
+    const id = toaster.add("Message");
+    await waitFor(() => expect(region).toHaveAttribute("aria-label", "1 notifications"));
+    toaster.remove(id);
+
+    await waitFor(() => expect(region).toHaveAttribute("aria-label", "0 notifications"));
+  });
+
+  test("clear() dismisses all", async () => {
+    const { toaster, getByRole } = setup();
+    const region = getByRole("region");
+
+    toaster.add("Message 1");
+    toaster.add("Message 2");
+    toaster.add("Message 3");
+    await waitFor(() => expect(region).toHaveAttribute("aria-label", "3 notifications"));
+    toaster.clear();
+    await advance(DEFAULT_ANIMATION);
+
+    await waitFor(() => expect(region).toHaveAttribute("aria-label", "0 notifications"));
+  });
+
+  test("pause/resume on unknown id no-op", () => {
+    const toaster = createToaster();
+
+    expect(() => toaster.pause("nope")).not.toThrow();
+    expect(() => toaster.resume("nope")).not.toThrow();
   });
 });
 
-describe("Toast management functions", () => {
-  test("toast() function adds toast", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const props = { children };
-    const { getByRole } = render(Toast, props);
+describe("Duration behavior", () => {
+  test("auto-dismiss after toaster duration", async () => {
+    const timeout = 500;
+    const { toaster, getByRole } = setup({ duration: timeout });
+    const region = getByRole("region");
 
-    const toastContainer = getByRole("region");
-    const message = "Test message";
-    const type = "info";
-    const toastId = toast(message, type);
+    toaster.add("Auto dismiss message");
+    await flush();
+    await advance(timeout);
+    expect(getByRole("dialog")).toHaveClass(PARTS.MAIN, VARIANT.INACTIVE);
+    await advance(DEFAULT_ANIMATION);
 
-    expect(toastId).toBeTruthy();
-    expect(typeof toastId).toBe("string"); // Should be generated ID
-
-    // Wait for the toast to be rendered
-    waitFor(() => {
-      expect(toastContainer).toHaveAttribute("aria-label", "1 notifications");
-    });
+    await waitFor(() => expect(region).toHaveAttribute("aria-label", "0 notifications"));
   });
 
-  test("toast() function with all parameters", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const name = "named-toast";
-    const props = { children, name };
-    render(Toast, props);
+  test("default safety-net auto-dismiss (30 s)", async () => {
+    const { toaster, getByRole } = setup();
+    const region = getByRole("region");
 
-    const message = "Custom message";
-    const type = "error";
-    const timeout = 3000;
-    const toastId = toast(message, type, name, timeout);
+    toaster.add("Safety net");
+    await waitFor(() => expect(region).toHaveAttribute("aria-label", "1 notifications"));
+    await advance(DEFAULT_DISMISS - 1);
+    expect(region).toHaveAttribute("aria-label", "1 notifications");
+    await advance(1 + DEFAULT_ANIMATION);
 
-    expect(toastId).toBeTruthy();
+    await waitFor(() => expect(region).toHaveAttribute("aria-label", "0 notifications"));
   });
 
-  test("removeToast() function", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const props = { children };
-    const { getByRole } = render(Toast, props);
+  test("Infinity persists", async () => {
+    const persistent = setup({ duration: Infinity });
+    const finite = setup({ duration: 100 });
+    const persistentRegion = within(persistent.container).getByRole("region");
+    const finiteRegion = within(finite.container).getByRole("region");
 
-    const toastContainer = getByRole("region");
-    const toastId = toast("Test message");
+    persistent.toaster.add("Persistent");
+    finite.toaster.add("One off", { duration: Infinity });
+    await waitFor(() => expect(persistentRegion).toHaveAttribute("aria-label", "1 notifications"));
+    await waitFor(() => expect(finiteRegion).toHaveAttribute("aria-label", "1 notifications"));
+    await advance(DEFAULT_DISMISS + DEFAULT_ANIMATION + 1000);
 
-    waitFor(() => {
-      expect(toastContainer).toHaveAttribute("aria-label", "1 notifications");
-    });
-
-    removeToast(toastId);
-
-    // Wait for hide animation duration
-    waitFor(() => {
-      expect(toastContainer).toHaveAttribute("aria-label", "0 notifications");
-    });
+    expect(persistentRegion).toHaveAttribute("aria-label", "1 notifications");
+    expect(finiteRegion).toHaveAttribute("aria-label", "1 notifications");
   });
 
-  test("multiple toasts management", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const props = { children };
-    const { getByRole } = render(Toast, props);
+  test("per-toast duration overrides toaster default", async () => {
+    const { toaster, getByRole } = setup({ duration: 1000 });
+    const region = getByRole("region");
 
-    const toastContainer = getByRole("region");
-    const id1 = toast("Message 1", "info");
-    const id2 = toast("Message 2", "warning");
-    const id3 = toast("Message 3", "error");
+    toaster.add("Override", { duration: 100 });
+    await waitFor(() => expect(region).toHaveAttribute("aria-label", "1 notifications"));
+    await advance(100 + DEFAULT_ANIMATION);
 
-    waitFor(() => {
-      expect(toastContainer).toHaveAttribute("aria-label", "3 notifications");
-    });
-
-    removeToast(id2);
-    waitFor(() => {
-      expect(toastContainer).toHaveAttribute("aria-label", "2 notifications");
-    });
+    await waitFor(() => expect(region).toHaveAttribute("aria-label", "0 notifications"));
   });
 });
 
 describe("Toast display and interaction", () => {
-  test("toast appears with correct content", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const props = { children, variant: "primary" };
-    const { getByTestId } = render(Toast, props);
+  test("children receives item and leave state uses effective variant", async () => {
+    const { toaster, getByRole, getByTestId } = setup(undefined, { variant: "primary" });
 
-    const message = "Display message";
-    const type = "success";
-    toast(message, type);
+    const id = toaster.add("Display message", { type: "success" });
+    await flush();
+    const element = getByTestId(testid);
+    expect(element.textContent).toContain("Display message");
+    expect(element.textContent).toContain("success");
+    expect(element.textContent).toContain(id);
 
-    waitFor(() => {
-      const toastElement = getByTestId(testid);
-      expect(toastElement.textContent).toContain(message);
-      expect(toastElement.textContent).toContain(type);
-      expect(toastElement.textContent).toContain("primary");
-    });
+    toaster.dismiss(id);
+    await tick();
+
+    expect(getByRole("dialog")).toHaveClass(PARTS.MAIN, VARIANT.INACTIVE);
   });
 
-  test("toast with empty type", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const props = { children };
-    const { getByTestId } = render(Toast, props);
+  test("children snippet receives updated effective variant", async () => {
+    const toaster = createToaster();
+    const { getByRole, getByTestId } = render(ToastSnippetProbe, { toaster, variant: "primary" });
 
-    const message = "No type message";
-    toast(message); // No type specified
+    const id = toaster.add("Compiled snippet", { type: "success" });
+    await flush();
 
-    waitFor(() => {
-      const toastElement = getByTestId(testid);
-      expect(toastElement.textContent).toContain(message);
-      expect(toastElement.textContent).toContain(`${message}--`); // Empty type
-    });
+    expect(getByRole("dialog")).toHaveClass(PARTS.MAIN, "primary");
+    expect(getByTestId("toast-snippet-probe")).toHaveTextContent(`Compiled snippet-success-${id}-primary`);
+
+    toaster.dismiss(id);
+    await tick();
+
+    expect(getByRole("dialog")).toHaveClass(PARTS.MAIN, VARIANT.INACTIVE);
+    expect(getByTestId("toast-snippet-probe")).toHaveTextContent(
+      `Compiled snippet-success-${id}-${VARIANT.INACTIVE}`,
+    );
   });
 
-  test("toast auto-dismiss with timeout", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const timeout = 500;
-    const props = { children, timeout };
-    const { getByRole } = render(Toast, props);
+  test("type feeds dialog aria-label", async () => {
+    const { toaster, getAllByRole } = setup();
 
-    const toastContainer = getByRole("region");
-    toast("Auto dismiss message", "info");
+    toaster.add("Typed", { type: "error" });
+    toaster.add("Untyped");
+    await flush();
 
-    waitFor(() => {
-      expect(toastContainer).toHaveAttribute("aria-label", "1 notifications");
-    });
-
-    // Fast-forward through timeout + hide duration
-    waitFor(() => {
-      expect(toastContainer).toHaveAttribute("aria-label", "0 notifications");
-    }, { interval: timeout + 200 });
+    const dialogs = getAllByRole("dialog");
+    expect(dialogs[0]).toHaveAttribute("aria-label", "error message");
+    expect(dialogs[1]).toHaveAttribute("aria-label", "message");
   });
 
-  test("toast without auto-dismiss (infinite timeout)", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const props = { children }; // No timeout = Infinity
-    const { getByRole } = render(Toast, props);
+  test("pointer-enter pauses auto-dismiss", async () => {
+    const timeout = 300;
+    const { toaster, getByRole } = setup({ duration: timeout });
+    const region = getByRole("region");
 
-    const toastContainer = getByRole("region");
-    toast("Persistent message", "info");
+    toaster.add("Hover message");
+    await flush();
+    await fireEvent.pointerEnter(getByRole("dialog"));
+    await advance(timeout + DEFAULT_ANIMATION + 100);
 
-    waitFor(() => {
-      expect(toastContainer).toHaveAttribute("aria-label", "1 notifications");
-    });
-
-    // Fast-forward a long time - should still be there
-    waitFor(() => {
-      expect(toastContainer).toHaveAttribute("aria-label", "1 notifications");
-    }, { timeout: 10000, interval: 10000 });
-  });
-});
-
-describe("Toast interaction events", () => {
-  test("pointer enter resets timer", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const timeout = 500;
-    const props = { children, timeout };
-    const { getByRole } = render(Toast, props);
-
-    const toastContainer = getByRole("region");
-    toast("Hover message", "info");
-
-    waitFor(() => {
-      const toastDialog = getByRole("dialog");
-      expect(toastDialog).toBeTruthy();
-
-      // Simulate pointer enter
-      fireEvent.pointerEnter(toastDialog);
-    });
-
-    // Timer should be reset, toast should still be visible
-    waitFor(() => {
-      expect(toastContainer).toHaveAttribute("aria-label", "1 notifications");
-    }, { timeout: 2000, interval: 1000 });
+    expect(region).toHaveAttribute("aria-label", "1 notifications");
   });
 
-  test("pointer leave restarts timer", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const timeout = 500;
-    const props = { children, timeout };
-    const { getByRole } = render(Toast, props);
+  test("pointer-leave (touch) re-arms x1.5", async () => {
+    const timeout = 400;
+    const { toaster, getByRole } = setup({ duration: timeout });
+    const region = getByRole("region");
 
-    const toastContainer = getByRole("region");
-    toast("Leave message", "info");
+    toaster.add("Touch message");
+    await flush();
+    const dialog = getByRole("dialog");
+    await fireEvent.pointerEnter(dialog);
+    await fireEvent.pointerLeave(dialog, { pointerType: "touch" });
+    await advance(timeout + 10);
+    expect(region).toHaveAttribute("aria-label", "1 notifications");
+    expect(getByRole("dialog")).toHaveClass(PARTS.MAIN, VARIANT.NEUTRAL);
+    await advance(timeout * 0.5 - 10 + DEFAULT_ANIMATION);
 
-    waitFor(() => {
-      const toastDialog = getByRole("dialog");
-      // Simulate pointer enter then leave
-      fireEvent.pointerLeave(toastDialog, { pointerType: "mouse" });
-    });
-
-    // Should restart with normal timeout
-    waitFor(() => {
-      expect(toastContainer).toHaveAttribute("aria-label", "0 notifications");
-    }, { interval: timeout + 250 });
+    await waitFor(() => expect(region).toHaveAttribute("aria-label", "0 notifications"));
   });
 
-  test("touch leave extends timer", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const timeout = 600;
-    const props = { children, timeout };
-    const { getByRole } = render(Toast, props);
+  test("pointer-cancel re-arms", async () => {
+    const timeout = 300;
+    const { toaster, getByRole } = setup({ duration: timeout });
+    const region = getByRole("region");
 
-    const toastContainer = getByRole("region");
-    toast("Touch message", "info");
+    toaster.add("Cancel message");
+    await flush();
+    const dialog = getByRole("dialog");
+    await advance(timeout - 50);
+    await fireEvent.pointerCancel(dialog, { pointerType: "mouse" });
+    await advance(50 + DEFAULT_ANIMATION);
 
-    waitFor(() => {
-      const toastDialog = getByRole("dialog");
-      // Simulate touch leave (extends timer by 1.5x)
-      fireEvent.pointerLeave(toastDialog, { pointerType: "touch" });
-    });
+    expect(region).toHaveAttribute("aria-label", "1 notifications");
+    expect(dialog).toHaveClass(PARTS.MAIN, VARIANT.NEUTRAL);
+    await advance(50 + DEFAULT_ANIMATION);
 
-    waitFor(() => {
-      // Should still be visible after normal timeout
-      expect(toastContainer).toHaveAttribute("aria-label", "1 notifications");
-    }, { interval: timeout + 250 });
-
-    waitFor(() => {
-      // Should be gone after extended timeout
-      expect(toastContainer).toHaveAttribute("aria-label", "0 notifications");
-    }, { interval: timeout * 1.5 + 250 });
-  });
-
-  test("pointer cancel resets timer", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const timeout = 1000;
-    const props = { children, timeout };
-    const { getByRole } = render(Toast, props);
-
-    const toastContainer = getByRole("region");
-    toast("Cancel message", "info");
-
-    waitFor(() => {
-      const toastDialog = getByRole("dialog");
-      fireEvent.pointerCancel(toastDialog, { pointerType: "mouse" });
-    });
-
-    waitFor(() => {
-      // Should restart with normal timeout
-      expect(toastContainer).toHaveAttribute("aria-label", "0 notifications");
-    }, { interval: timeout + 250 });
+    await waitFor(() => expect(region).toHaveAttribute("aria-label", "0 notifications"));
   });
 });
 
 describe("Keyboard navigation", () => {
-  test("F6 key focuses toast container", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const props = { children };
-    const { getByRole } = render(Toast, props);
+  test("F6 key focuses toast container", async () => {
+    const { toaster, getByRole } = setup();
+    const region = getByRole("region");
+    const focusSpy = vi.spyOn(region, "focus");
+    const showPopoverSpy = vi.spyOn(region, "showPopover");
 
-    const toastContainer = getByRole("region");
-    const focusSpy = vi.spyOn(toastContainer, "focus");
-    toast("Focus message", "info");
+    toaster.add("Focus message");
+    await waitFor(() => expect(showPopoverSpy).toHaveBeenCalled());
+    document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "F6", bubbles: true, composed: false }));
 
-    waitFor(() => {
-      // Simulate F6 key on body
-      fireEvent.keyDown(document.body, { key: "F6" });
-      expect(focusSpy).toHaveBeenCalled();
-    });
+    expect(focusSpy).toHaveBeenCalled();
   });
 
-  test("F6 key with composed event is ignored", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const props = { children };
-    const { getByRole } = render(Toast, props);
+  test("F6 key with composed event is ignored", async () => {
+    const { toaster, getByRole } = setup();
+    const region = getByRole("region");
+    const focusSpy = vi.spyOn(region, "focus");
+    const showPopoverSpy = vi.spyOn(region, "showPopover");
 
-    const toastContainer = getByRole("region");
-    const focusSpy = vi.spyOn(toastContainer, "focus");
-    toast("Composed message", "info");
+    toaster.add("Composed message");
+    await waitFor(() => expect(showPopoverSpy).toHaveBeenCalled());
+    document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "F6", bubbles: true, composed: true }));
 
-    waitFor(() => {
-      // Simulate F6 key with composed flag
-      fireEvent.keyDown(document.body, { key: "F6", composed: true });
-      expect(focusSpy).not.toHaveBeenCalled();
-    });
+    expect(focusSpy).not.toHaveBeenCalled();
   });
 
-  test("other keys are ignored", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const props = { children };
-    const { getByRole } = render(Toast, props);
+  test("other keys are ignored", async () => {
+    const { toaster, getByRole } = setup();
+    const region = getByRole("region");
+    const focusSpy = vi.spyOn(region, "focus");
+    const showPopoverSpy = vi.spyOn(region, "showPopover");
 
-    const toastContainer = getByRole("region");
-    const focusSpy = vi.spyOn(toastContainer, "focus");
-    toast("Other key message", "info");
+    toaster.add("Other key message");
+    await waitFor(() => expect(showPopoverSpy).toHaveBeenCalled());
+    document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, composed: false }));
+    document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, composed: false }));
 
-    waitFor(() => {
-      // Simulate other keys
-      fireEvent.keyDown(document.body, { key: "Escape" });
-      fireEvent.keyDown(document.body, { key: "Enter" });
-
-      expect(focusSpy).not.toHaveBeenCalled();
-    });
+    expect(focusSpy).not.toHaveBeenCalled();
   });
 });
 
-describe("Styling and CSS classes", () => {
+describe("Styling and lifecycle", () => {
   const preset = "svs-toast";
 
-  test("default styling classes", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const props = { children, variant: VARIANT.NEUTRAL };
-    const { container, getByRole } = render(Toast, props);
+  test("applies CSS classes correctly", async () => {
+    const { toaster, container, getByRole } = setup(undefined, { variant: VARIANT.NEUTRAL });
 
-    toast("Styled message", "info");
+    toaster.add("Styled message");
+    await flush();
+    const region = getByRole("region");
+    const middle = container.querySelector(`[class*="${PARTS.MIDDLE}"]`);
+    const main = getByRole("dialog");
 
-    waitFor(() => {
-      const toastContainer = getByRole("region");
-      const toastMiddle = container.querySelector(`[class*="${PARTS.MIDDLE}"]`);
-      const toastMain = getByRole("dialog");
-
-      expect(toastContainer).toHaveClass(preset, PARTS.WHOLE, VARIANT.NEUTRAL);
-      expect(toastMiddle).toHaveClass(preset, PARTS.MIDDLE, VARIANT.NEUTRAL);
-      expect(toastMain).toHaveClass(preset, PARTS.MAIN, VARIANT.NEUTRAL);
-    });
+    expect(region).toHaveClass(preset, PARTS.WHOLE, VARIANT.NEUTRAL);
+    expect(middle).toHaveClass(preset, PARTS.MIDDLE, VARIANT.NEUTRAL);
+    expect(main).toHaveClass(preset, PARTS.MAIN, VARIANT.NEUTRAL);
   });
 
-  test("inactive variant during hide animation", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const timeout = 100;
-    const variant = "custom";
-    const props = { children, timeout, variant };
-    const { getByRole } = render(Toast, props);
+  test("INACTIVE while leaving", async () => {
+    const { toaster, getByRole } = setup(undefined, { variant: "custom" });
 
-    toast("Hide message", "info");
+    const id = toaster.add("Hide message");
+    await flush();
+    expect(getByRole("dialog")).toHaveClass(PARTS.MAIN, "custom");
+    toaster.dismiss(id);
 
-    // Wait for timeout to trigger hide
-    waitFor(() => {
-      const toastDialog = getByRole("dialog");
-      expect(toastDialog).toHaveClass(variant, PARTS.MAIN, VARIANT.INACTIVE);
-    }, { interval: timeout });
+    await waitFor(() => expect(getByRole("dialog")).toHaveClass(PARTS.MAIN, VARIANT.INACTIVE));
   });
 
   test("custom styling", async () => {
-    const children = vi.fn().mockImplementation(toastfn);
     const customStyling = "custom-toast-style";
-    const props = { children, styling: customStyling };
-    const { getByRole } = render(Toast, props);
+    const { toaster, getByRole } = setup(undefined, { styling: customStyling });
 
-    toast("Custom styled message", "info");
-    await vi.runOnlyPendingTimersAsync();
+    toaster.add("Custom styled message");
+    await flush();
 
-    const toastContainer = getByRole("region");
-    expect(toastContainer).toHaveClass(customStyling, PARTS.WHOLE);
-  });
-});
-
-describe("Edge cases and error handling", () => {
-  test("invalid duration defaults to DEFALT_DURATION", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const props = { children, duration: -5 }; // Invalid duration
-    render(Toast, props);
-
-    // Component should render without error
-    expect(true).toBe(true);
+    expect(getByRole("region")).toHaveClass(customStyling, PARTS.WHOLE);
   });
 
-  test("removing non-existent toast", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const props = { children };
-    render(Toast, props);
+  test("showPopover/hidePopover lifecycle", async () => {
+    const { toaster, getByRole } = setup();
+    const region = getByRole("region");
+    const showPopoverSpy = vi.spyOn(region, "showPopover");
+    const hidePopoverSpy = vi.spyOn(region, "hidePopover");
 
-    // Should not throw error
-    expect(() => removeToast("non-existent-id")).not.toThrow();
+    const id = toaster.add("Popover message");
+    await waitFor(() => expect(showPopoverSpy).toHaveBeenCalled());
+    toaster.dismiss(id);
+    await advance(DEFAULT_ANIMATION);
+
+    await waitFor(() => expect(hidePopoverSpy).toHaveBeenCalled());
   });
 
-  test("adding toast to non-existent named container", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const props = { children, name: "existing" };
-    render(Toast, props);
+  test("flip duration from animation prop", async () => {
+    const { toaster, getAllByRole } = setup(undefined, { animation: 300 });
 
-    // Should return empty string for non-existent container
-    const result = toast("Message", "info", "non-existent");
-    expect(result).toBe("");
+    toaster.add("First message");
+    toaster.add("Second message");
+    await flush();
+
+    expect(getAllByRole("dialog")).toHaveLength(2);
   });
 
-  test("popover methods are called correctly", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const props = { children };
-    const { getByRole } = render(Toast, props);
+  test("animation prop controls leave removal delay", async () => {
+    const animation = 350;
+    const { toaster, getByRole } = setup({ duration: Infinity }, { animation });
+    const region = getByRole("region");
 
-    const toastContainer = getByRole("region");
-    const showPopoverSpy = vi.spyOn(toastContainer, "showPopover");
-    const hidePopoverSpy = vi.spyOn(toastContainer, "hidePopover");
+    const id = toaster.add("Animated removal");
+    await waitFor(() => expect(region).toHaveAttribute("aria-label", "1 notifications"));
+    toaster.dismiss(id);
+    await advance(animation - 1);
 
-    const toastId = toast("Popover message", "info");
+    expect(region).toHaveAttribute("aria-label", "1 notifications");
+    expect(getByRole("dialog")).toHaveClass(PARTS.MAIN, VARIANT.INACTIVE);
+    await advance(1);
 
-    waitFor(() => {
-      expect(showPopoverSpy).toHaveBeenCalled();
-      const toastDialog = getByRole("dialog");
-      // Remove all toasts to trigger hide
-      removeToast(toastId);
-      waitForElementToBeRemoved(toastDialog).then(() => {
-        expect(hidePopoverSpy).toHaveBeenCalled();
-      });
-    });
-  });
-});
-
-describe("Animation and transitions", () => {
-  test("flip animation with custom duration", () => {
-    const children = vi.fn().mockImplementation(toastfn);
-    const duration = 300;
-    const props = { children, duration };
-    const { getAllByRole } = render(Toast, props);
-
-    toast("First message", "info");
-    toast("Second message", "info");
-
-    waitFor(() => {
-      // Check that toasts are rendered with animation
-      const toastElements = getAllByRole("dialog");
-      expect(toastElements).toHaveLength(2);
-    });
-  });
-
-  test("zero duration with prefers-reduced-motion", async () => {
-    // Duration is forced to 0 when prefers-reduced-motion is set; the check runs at module import.
-    vi.resetModules();
-    const mockMatchMedia = vi.fn().mockReturnValue({ matches: true });
-    window.matchMedia = mockMatchMedia;
-
-    // The module-level evaluation triggers the media query on import (no render needed).
-    await import("#svs/_Toast.svelte");
-
-    expect(mockMatchMedia).toHaveBeenCalledWith("(prefers-reduced-motion: reduce)");
+    await waitFor(() => expect(region).toHaveAttribute("aria-label", "0 notifications"));
   });
 });

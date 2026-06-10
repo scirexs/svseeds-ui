@@ -4,21 +4,20 @@
   default value: *`(value)`*
   ```ts
   interface ToastProps {
-    children: Snippet<[string, string, string, string]>; // Snippet<[message,type,id,variant]>
-    name?: string;
-    timeout?: number;
-    duration?: number; // (200)
+    toaster: Toaster;
+    children: Snippet<[ToastItem, string]>; // Snippet<[item,variant]>
+    animation?: number; // (200)
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
   ```
   ### Anatomy
   ```svelte
-  <div class="whole">
-    {#each}
-      <div class="middle" animate:flip={{ duration }}>
+  <div class="whole" popover="manual">
+    {#each toaster.toasts as item (item.id)}
+      <div class="middle" animate:flip={{ duration: animation }}>
         <div class="main">
-          {children}
+          {children(item, variant)}
         </div>
       </div>
     {/each}
@@ -26,186 +25,153 @@
   ```
   ### Exports
   ```ts
-  // Displays a toast notification.
-  //
-  // *@param* message - Text message to display in the toast
-  // *@param* type - Optional toast type/category (also used for part of aria-label)
-  // *@param* name - Unique identifier for the toast component
-  // *@param* timeout - Custom auto-dismiss timeout in milliseconds
-  // *@returns* ID of the displayed toast
-  function toast(message: string, type?: string, name?: string, timeout?: number): string
+  function createToaster(options?: ToasterOptions): Toaster
 
-  // Removes a specific toast notification.
-  //
-  // *@param* id - ID of the toast to remove
-  // *@param* name - Unique identifier for the toast component
-  function removeToast(id: string, name?: string)
+  class Toaster {
+    readonly toasts: ToastItem[];
+    add(message: string, options?: ToastAddOptions): string;
+    dismiss(id: string): void;
+    remove(id: string): void;
+    clear(): void;
+    pause(id: string): void;
+    resume(id: string, extend?: boolean): void;
+  }
   ```
 -->
 <script module lang="ts">
   export interface ToastProps {
-    children: Snippet<[string, string, string, string]>; // Snippet<[message,type,id,variant]>
-    name?: string;
-    timeout?: number;
-    duration?: number; // (200)
+    toaster: Toaster;
+    children: Snippet<[ToastItem, string]>; // Snippet<[item,variant]>
+    animation?: number; // (200)
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
-  export type ToastReqdProps = "children";
+  export type ToastReqdProps = "toaster" | "children";
   export type ToastBindProps = never;
 
-  export function toast(message: string, type?: string, name?: string, timeout?: number): string {
-    return core.add(message, type, name, timeout);
+  export interface ToasterOptions {
+    duration?: number;
   }
-  export function removeToast(id: string, name?: string) {
-    core.remove(id, name);
+  export interface ToastAddOptions {
+    type?: string;
+    duration?: number;
+  }
+  export interface ToastItem {
+    readonly id: string;
+    readonly message: string;
+    readonly type: string;
+    readonly visible: boolean;
+  }
+
+  export function createToaster(options?: ToasterOptions): Toaster {
+    return new Toaster(options);
   }
 
   const DEFAULT_DURATION = 200;
+  const DEFAULT_DISMISS = 30000;
   const noMotion = shouldReduceMotion();
   const preset = "svs-toast";
+  let idSeq = 0;
 
-  function isValidTimeout(timeout?: number): timeout is number {
-    return !!timeout && isUnsignedInteger(timeout);
+  function resolveDuration(value: number | undefined, fallback: number): number {
+    if (value !== undefined && !Number.isFinite(value)) return Infinity;
+    return value !== undefined && isUnsignedInteger(value) ? value : fallback;
   }
-  class ToastCore {
-    #containers: Map<string, ToastContainer> = new Map();
-    #uniqueId;
+  function label(item: ToastItem): string {
+    return item.type ? `${item.type} message` : "message";
+  }
 
-    constructor() {
-      this.#uniqueId = new UniqueId();
+  class ToastRecord implements ToastItem {
+    readonly id: string;
+    readonly message: string;
+    readonly type: string;
+    readonly duration: number;
+    #visible = $state(false);
+    #dismissed = $state(false);
+    timeoutId?: number;
+
+    constructor(id: string, message: string, type: string, duration: number) {
+      this.id = id;
+      this.message = message;
+      this.type = type;
+      this.duration = duration;
     }
-    register(container: ToastContainer, name?: string) {
-      this.#containers.set(this.#uniqueId.register(name), container);
+    get visible(): boolean {
+      return this.#visible;
     }
-    add(message: string, type?: string, name?: string, timeout?: number): string {
-      return this.#containers.get(name ?? this.#uniqueId.default)?.addToast(type ?? "", message, timeout) ?? "";
+    set visible(v: boolean) {
+      this.#visible = v;
     }
-    remove(id: string, name?: string) {
-      this.#containers.get(name ?? this.#uniqueId.default)?.hideToast(id);
+    get dismissed(): boolean {
+      return this.#dismissed;
+    }
+    dismiss() {
+      this.#dismissed = true;
+      this.#visible = false;
     }
   }
-  class UniqueId {
-    #default = "";
-    #ids: Set<string> = new Set();
-    get default(): string {
-      return this.#default;
-    }
-    register(name?: string): string {
-      if (!name) return "";
-      if (this.#ids.has(name)) return "";
-      if (!this.#default) this.#default = name;
-      this.#ids.add(name);
-      return name;
-    }
-  }
-  class ToastContainer {
-    #open: boolean = $state(false);
-    #style: string;
-    #keydownFn = (ev: KeyboardEvent) => {};
-    #uid: string;
+
+  export class Toaster {
+    #toasts = $state<ToastRecord[]>([]);
+    #default: number;
+    #uid = `svs-toast-${idSeq++}`;
     #seq = 0;
-    element = $state<HTMLDivElement>();
-    toasts: Toast[] = $state([]);
-    onkeydown = $derived(this.#open ? this.#keydownFn : undefined);
 
-    constructor(duration: number, onkeydown: (ev: KeyboardEvent) => void, uid: string, timeout?: number) {
-      this.#style = `position:fixed;background-color:transparent;pointer-events:none;`;
-      this.#keydownFn = onkeydown;
-      this.#uid = uid;
-      Toast.init(duration, timeout);
+    constructor(options?: ToasterOptions) {
+      this.#default = resolveDuration(options?.duration, DEFAULT_DISMISS);
     }
-    addToast(type: string, message: string, timeout?: number): string {
-      if (!this.toasts.length) this.#show();
-      const toast = new Toast(type, message, (id) => this.remove(id), `${this.#uid}-${this.#seq++}`, timeout);
-      this.toasts.push(toast);
+    get toasts(): ToastItem[] {
+      return this.#toasts;
+    }
+    add(message: string, options?: ToastAddOptions): string {
+      const duration = resolveDuration(options?.duration, this.#default);
+      const toast = new ToastRecord(`${this.#uid}-${this.#seq++}`, message, options?.type ?? "", duration);
+      this.#toasts.push(toast);
+      queueMicrotask(() => {
+        if (!toast.dismissed && this.#toasts.includes(toast)) toast.visible = true;
+      });
+      this.#arm(toast, false);
       return toast.id;
     }
-    hideToast(id: string) {
-      this.toasts.find((x) => x.id === id)?.hide();
+    dismiss(id: string) {
+      const toast = this.#find(id);
+      if (!toast) return;
+      this.#clear(toast);
+      toast.dismiss();
     }
     remove(id: string) {
-      this.toasts = this.toasts.filter((x) => x.id !== id);
-      if (!this.toasts.length) this.hide();
+      const toast = this.#find(id);
+      if (toast) this.#clear(toast);
+      this.#toasts = this.#toasts.filter((x) => x.id !== id);
     }
-    #show() {
-      this.element?.showPopover();
-      this.#open = true;
+    clear() {
+      this.#toasts.forEach((toast) => this.dismiss(toast.id));
     }
-    hide() {
-      this.element?.hidePopover();
-      this.#open = false;
+    pause(id: string) {
+      const toast = this.#find(id);
+      if (!toast) return;
+      this.#clear(toast);
     }
-
-    get open(): boolean {
-      return this.#open;
+    resume(id: string, extend?: boolean) {
+      const toast = this.#find(id);
+      if (!toast) return;
+      this.#arm(toast, !!extend);
     }
-    get style(): string {
-      return this.#style;
+    #find(id: string): ToastRecord | undefined {
+      return this.#toasts.find((toast) => toast.id === id);
     }
-  }
-  class Toast {
-    static #DEFALT_TIMEOUT = Infinity;
-    static #DURATION = 0;
-    #isVisible = $state(false);
-    #id: string;
-    #type: string;
-    #message: string;
-    #remove: (id: string) => void;
-    #timeout: number;
-    #timeoutId: number = 0;
-    constructor(type: string, message: string, remove: (id: string) => void, id: string, timeout?: number) {
-      this.#id = id;
-      this.#type = type;
-      this.#message = message;
-      this.#remove = remove;
-      this.#timeout = isValidTimeout(timeout) ? timeout : Toast.#DEFALT_TIMEOUT;
-      this.#setAutoDismiss();
+    #clear(toast: ToastRecord) {
+      if (toast.timeoutId === undefined) return;
+      clearTimeout(toast.timeoutId);
+      toast.timeoutId = undefined;
     }
-    show() {
-      this.#isVisible = true;
-    }
-    hide() {
-      this.#isVisible = false;
-      this.reset();
-      setTimeout(() => {
-        this.#remove(this.#id);
-      }, Toast.#DURATION);
-    }
-    reset() {
-      clearTimeout(this.#timeoutId);
-    }
-    restart(ev: PointerEvent) {
-      this.#setAutoDismiss(ev.pointerType === "touch");
-    }
-    #setAutoDismiss(extend?: boolean) {
-      if (!Number.isFinite(this.#timeout)) return;
+    #arm(toast: ToastRecord, extend: boolean) {
+      this.#clear(toast);
+      if (!Number.isFinite(toast.duration)) return;
       if (typeof window === "undefined") return;
-      const timer = extend ? this.#timeout * 1.5 : this.#timeout;
-      this.#timeoutId = window.setTimeout(() => this.hide(), timer);
-    }
-
-    static init(duration: number, timeout?: number) {
-      Toast.#DEFALT_TIMEOUT = isValidTimeout(timeout) ? timeout : Infinity;
-      Toast.#DURATION = duration;
-    }
-    get label(): string {
-      return this.#type ? `${this.#type} message` : "message";
-    }
-    get isVisible(): boolean {
-      return this.#isVisible;
-    }
-    get id(): string {
-      return this.#id;
-    }
-    get type(): string {
-      return this.#type;
-    }
-    get message(): string {
-      return this.#message;
+      toast.timeoutId = window.setTimeout(() => this.dismiss(toast.id), extend ? toast.duration * 1.5 : toast.duration);
     }
   }
-  const core = new ToastCore();
 
   import { type Snippet } from "svelte";
   import { flip } from "svelte/animate";
@@ -214,48 +180,85 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { children, name, timeout, duration = -1, styling, variant = VARIANT.NEUTRAL }: ToastProps = $props();
+  let { toaster, children, animation = -1, styling, variant = VARIANT.NEUTRAL }: ToastProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
-  const dur = $derived(noMotion ? 0 : !isUnsignedInteger(duration) ? DEFAULT_DURATION : duration);
-  const uid = $props.id();
-  // svelte-ignore state_referenced_locally
-  const container = new ToastContainer(dur, onkeydown, uid, timeout);
-  // svelte-ignore state_referenced_locally
-  core.register(container, name ?? uid);
+  const dur = $derived(noMotion ? 0 : !isUnsignedInteger(animation) ? DEFAULT_DURATION : animation);
+  const style = "position:fixed;background-color:transparent;pointer-events:none;";
+  let region = $state<HTMLDivElement>();
+  let open = $state(false);
+  const shown = new Set<string>();
+  const removeTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+  // *** Bind Handlers *** //
+  $effect(() => {
+    const has = toaster.toasts.length > 0;
+    if (has && !open) {
+      region?.showPopover();
+      open = true;
+    } else if (!has && open) {
+      region?.hidePopover();
+      open = false;
+    }
+  });
+
+  $effect(() => {
+    const snapshot = toaster.toasts.map((item) => ({
+      id: item.id,
+      visible: item.visible,
+      dismissed: item instanceof ToastRecord && item.dismissed,
+    }));
+    const current = new Set(snapshot.map((item) => item.id));
+    for (const [id, timer] of removeTimers) {
+      if (!current.has(id)) {
+        clearTimeout(timer);
+        removeTimers.delete(id);
+        shown.delete(id);
+      }
+    }
+    for (const item of snapshot) {
+      if (item.visible) {
+        shown.add(item.id);
+        const timer = removeTimers.get(item.id);
+        if (timer !== undefined) {
+          clearTimeout(timer);
+          removeTimers.delete(item.id);
+        }
+      } else if ((shown.has(item.id) || item.dismissed) && !removeTimers.has(item.id)) {
+        const drop = () => {
+          removeTimers.delete(item.id);
+          shown.delete(item.id);
+          toaster.remove(item.id);
+        };
+        removeTimers.set(item.id, setTimeout(drop, dur));
+      }
+    }
+  });
 
   // *** Event Handlers *** //
-  function mount(_node: HTMLDivElement, index: number) {
-    setTimeout(() => container.toasts[index].show(), 0);
-  }
-  function enter(index: number): () => void {
-    return () => container.toasts[index].reset();
-  }
-  function leave(index: number): (ev: PointerEvent) => void {
-    return (ev) => container.toasts[index].restart(ev);
-  }
   function onkeydown(ev: KeyboardEvent) {
+    if (!open) return;
     if (ev.key !== "F6") return;
     if (ev.composed) return;
-    container.element?.focus();
+    region?.focus();
   }
 </script>
 
 <!---------------------------------------->
-<svelte:body onkeydown={container.onkeydown} />
+<svelte:body {onkeydown} />
 
 <div
-  bind:this={container.element}
+  bind:this={region}
   class={cls(PARTS.WHOLE, variant)}
   role="region"
   tabindex="-1"
   popover="manual"
-  aria-label={`${container.toasts.length} notifications`}
-  style={container.style}
+  aria-label={`${toaster.toasts.length} notifications`}
+  {style}
 >
-  {#each container.toasts as toast, i (toast.id)}
-    {@const v = toast.isVisible ? variant : VARIANT.INACTIVE}
+  {#each toaster.toasts as item (item.id)}
+    {@const v = item.visible ? variant : VARIANT.INACTIVE}
     <div
       class={cls(PARTS.MIDDLE, v)}
       style="width:fit-content;height:fit-content;overflow:hidden;"
@@ -266,15 +269,14 @@
         class={cls(PARTS.MAIN, v)}
         role="dialog"
         aria-modal="false"
-        aria-label={toast.label}
+        aria-label={label(item)}
         tabindex="0"
         style="pointer-events:auto;"
-        onpointerenter={enter(i)}
-        onpointerleave={leave(i)}
-        onpointercancel={leave(i)}
-        use:mount={i}
+        onpointerenter={() => toaster.pause(item.id)}
+        onpointerleave={(ev) => toaster.resume(item.id, ev.pointerType === "touch")}
+        onpointercancel={(ev) => toaster.resume(item.id, ev.pointerType === "touch")}
       >
-        {@render children(toast.message, toast.type, toast.id, variant)}
+        {@render children(item, v)}
       </div>
     </div>
   {/each}
