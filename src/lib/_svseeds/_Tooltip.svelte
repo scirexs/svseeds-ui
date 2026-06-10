@@ -3,134 +3,174 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface TooltipProps {
-    children?: Snippet<[string, string, boolean]>; // Snippet<[text,variant,isFlipped]>
-    name?: string;
+  interface TooltipParams {
+    text?: string;
+    content?: Snippet<[string, SVSVariant, boolean]>; // Snippet<[text, variant, flipped]>
     position?: Position; // ("top")
     align?: Align; // ("center")
     offset?: Vector; // ({ x: 0, y: 0 })
-    element?: HTMLDivElement; // bindable
+    delay?: number; // (1000; 0 = immediate, negative = 1000)
+    cursor?: boolean; // (false)
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
+  type TooltipDefaults = Omit<TooltipParams, "text" | "content">;
   type Vector = { x: number, y: number };
   type Position = "top" | "right" | "bottom" | "left";
   type Align = "start" | "center" | "end";
   ```
   ### Anatomy
+  The internal renderer auto-mounts to `document.body` on first hover. Do not place it manually.
   ```svelte
-  <div class="whole" bind:this={element} conditional>
-    {#if children}
-      {children}
+  <div class="whole" role="tooltip">
+    {#if content}
+      {content(text, variant, flipped)}
     {:else}
-      {text} // `text` is a property of the tooltip function's params
+      {text}
     {/if}
   </div>
   ```
   ### Exports
   ```ts
-  // Attachment factory for both standard HTML elements (`{@attach tooltip(params)}`)
+  // Attachment factory for standard HTML elements (`{@attach tooltip(params)}`)
   // and SvSeeds components (`attach={tooltip(params)}`).
-  //
-  // *@param* text - Text content for the tooltip's aria-label
-  // *@param* delay - Delay in milliseconds before the tooltip appears (default: 1000)
-  // *@param* cursor - Whether the tooltip should follow cursor movement
-  // *@param* name - Unique identifier for the tooltip component
-  function tooltip(params: { text: string, delay?: number, cursor?: boolean, name?: string }): Attachment<HTMLElement>
+  function tooltip(params: TooltipParams): Attachment<HTMLElement>
+
+  // Sets library-wide defaults. Callable repeatedly; last call wins per key.
+  function initTooltip(defaults: Partial<TooltipDefaults>): void
   ```
 -->
 <script module lang="ts">
-  export interface TooltipProps {
-    children?: Snippet<[string, string, boolean]>; // Snippet<[text,variant,isFlipped]>
-    name?: string;
-    position?: Position; // ("top")
-    align?: Align; // ("center")
-    offset?: Vector; // ({ x: 0, y: 0 })
-    element?: HTMLDivElement; // bindable
+  export interface TooltipParams {
+    text?: string;
+    content?: Snippet<[string, SVSVariant, boolean]>;
+    position?: Position;
+    align?: Align;
+    offset?: Vector;
+    delay?: number;
+    cursor?: boolean;
     styling?: SVSClass;
-    variant?: SVSVariant; // (VARIANT.NEUTRAL)
+    variant?: SVSVariant;
   }
-  export type TooltipReqdProps = never;
-  export type TooltipBindProps = "element";
-  export function tooltip(params: { text: string; delay?: number; cursor?: boolean; name?: string }): Attachment<HTMLElement> {
-    return (node) => core.attach(node, params.text, params.delay, params.cursor, params.name);
-  }
+  export type TooltipDefaults = Omit<TooltipParams, "text" | "content">;
   export type Vector = { x: number; y: number };
   export type Position = "top" | "right" | "bottom" | "left";
   export type Align = "start" | "center" | "end";
 
+  export function tooltip(params: TooltipParams): Attachment<HTMLElement> {
+    return (node) => {
+      const p = resolve(params);
+      const text = params.text;
+      if (typeof text === "string" && text.length > 0) node.ariaDescription = text;
+      const unlisten = on(node, "pointerenter", (ev) => {
+        ensureMounted();
+        core.beginShow(node, ev, p);
+      });
+      return () => {
+        unlisten();
+        core.hide();
+      };
+    };
+  }
+  export function initTooltip(d: Partial<TooltipDefaults>): void {
+    defaults = { ...defaults, ...d };
+  }
+
   type valueof<T> = T[keyof T];
   type Unlisten = () => void;
+  type ResolvedTooltipParams = Required<Omit<TooltipDefaults, "styling">> & {
+    text: string;
+    content?: Snippet<[string, SVSVariant, boolean]>;
+    styling?: SVSClass;
+  };
   const preset = "svs-tooltip";
   const INIT_VEC = { x: 0, y: 0 };
+  const DEFAULT_DELAY = 1000;
   const VISIBLE = {
     NONE: 0,
     HIDDEN: 1,
     VISIBLE: 2,
   } as const;
 
+  let defaults: TooltipDefaults = {
+    position: "top",
+    align: "center",
+    offset: { ...INIT_VEC },
+    delay: DEFAULT_DELAY,
+    cursor: false,
+    variant: VARIANT.NEUTRAL,
+    styling: undefined,
+  };
+  let mounted = false;
+
+  function resolve(params: TooltipParams): ResolvedTooltipParams {
+    const delay = params.delay ?? defaults.delay ?? DEFAULT_DELAY;
+    const offset = params.offset ?? defaults.offset ?? INIT_VEC;
+    return {
+      text: params.text ?? "",
+      content: params.content,
+      position: params.position ?? defaults.position ?? "top",
+      align: params.align ?? defaults.align ?? "center",
+      offset: { x: offset.x, y: offset.y },
+      delay: delay < 0 ? DEFAULT_DELAY : delay,
+      cursor: params.cursor ?? defaults.cursor ?? false,
+      variant: params.variant ?? defaults.variant ?? VARIANT.NEUTRAL,
+      styling: params.styling ?? defaults.styling,
+    };
+  }
+  function ensureMounted() {
+    if (mounted || typeof document === "undefined") return;
+    mount(TooltipRoot, { target: document.body });
+    mounted = true;
+  }
+
   class TooltipCore {
-    static #DELAY = 1000;
     static #INTERVAL = 20;
     text = $state("");
+    content = $state<Snippet<[string, SVSVariant, boolean]> | undefined>();
+    variant = $state<SVSVariant>(VARIANT.NEUTRAL);
+    styling = $state<SVSClass | undefined>();
     flipped = $state(false);
     visible: valueof<typeof VISIBLE> = $state(VISIBLE.NONE);
     #tid: ReturnType<typeof setTimeout> | undefined;
     #listeners: Unlisten[] = [];
-    #uniqueId;
-    #position;
+    #position = new TooltipPosition();
+    #storedPosition: Position = "top";
+    #storedAlign: Align = "center";
+    #storedOffset: Vector = { ...INIT_VEC };
 
-    constructor() {
-      this.#uniqueId = new UniqueId();
-      this.#position = new TooltipPosition();
+    beginShow(node: HTMLElement, ev: PointerEvent, p: ResolvedTooltipParams) {
+      this.#position.setAnchor(ev, node, p.cursor);
+      this.#storedPosition = p.position;
+      this.#storedAlign = p.align;
+      this.#storedOffset = { ...p.offset };
+      this.#show(p);
+      this.#listeners.push(on(node, "pointercancel", () => this.hide()));
+      this.#listeners.push(on(node, "pointerleave", () => this.hide()));
+      if (p.cursor) this.#listeners.push(on(node, "pointermove", this.#setMove()));
     }
-    register(name?: string): string {
-      return this.#uniqueId.register(name);
-    }
-    getPoint(position: Position, align: Align, size: Vector, offset: Vector): Vector {
-      this.#position.setPoint(position, align, size, offset);
+    computePoint(size: Vector): Vector {
+      this.#position.setPoint(this.#storedPosition, this.#storedAlign, size, this.#storedOffset);
       this.flipped = this.#position.isFlipped;
       return this.#position.point;
     }
-    mount(id: string): boolean {
-      return this.visible !== VISIBLE.NONE && this.isTarget(id);
-    }
-    isTarget(id: string): boolean {
-      return this.#uniqueId.current === id;
-    }
-    attach(node: HTMLElement, text: string, delay?: number, cursor?: boolean, name?: string): () => void {
-      node.ariaDescription = text;
-      if (!delay || delay < 0) delay = TooltipCore.#DELAY;
-      return this.#cleanup(on(node, "pointerenter", this.#setEnter(node, text, delay, cursor, name)));
-    }
-    #cleanup(unlisten: Unlisten): () => void {
-      return () => {
-        unlisten();
-        this.#hide();
-      };
-    }
-    #setEnter(node: HTMLElement, text: string, delay: number, cursor?: boolean, name?: string): (ev: PointerEvent) => void {
-      return (ev) => {
-        this.#position.setAnchor(ev, node, cursor);
-        this.#show(text, delay, name);
-        this.#listeners.push(on(node, "pointercancel", () => this.#hide()));
-        this.#listeners.push(on(node, "pointerleave", () => this.#hide()));
-        if (cursor) this.#listeners.push(on(node, "pointermove", this.#setMove()));
-      };
-    }
-    #show(text: string, delay: number, name?: string) {
-      this.#hide();
-      this.#prep(text, name);
-      this.#tid = setTimeout(() => (this.visible = VISIBLE.VISIBLE), delay);
-    }
-    #hide() {
+    hide() {
       clearTimeout(this.#tid);
+      this.#tid = undefined;
       this.visible = VISIBLE.NONE;
       this.#listeners.forEach((x) => x());
+      this.#listeners = [];
     }
-    #prep(text: string, name?: string) {
-      this.text = text;
-      this.#uniqueId.current = name;
+    #show(p: ResolvedTooltipParams) {
+      this.hide();
+      this.#prep(p);
+      this.#tid = setTimeout(() => (this.visible = VISIBLE.VISIBLE), p.delay);
+    }
+    #prep(p: ResolvedTooltipParams) {
+      this.text = p.text;
+      this.content = p.content;
+      this.variant = p.variant;
+      this.styling = p.styling;
       this.visible = VISIBLE.HIDDEN;
     }
     #setMove(): (ev: PointerEvent) => void {
@@ -138,28 +178,6 @@
         if (this.visible === VISIBLE.VISIBLE) return;
         this.#position.trackCursor(ev);
       });
-    }
-  }
-  class UniqueId {
-    #default = "";
-    #current = "";
-    #ids: Set<string> = new Set();
-    get default(): string {
-      return this.#default;
-    }
-    get current(): string {
-      return this.#current ? this.#current : this.#default;
-    }
-    set current(id: string | undefined) {
-      if (!id) return;
-      if (this.#ids.has(id)) this.#current = id;
-    }
-    register(name?: string): string {
-      if (!name) return "";
-      if (this.#ids.has(name)) return "";
-      if (!this.#default) this.#default = name;
-      this.#ids.add(name);
-      return name;
     }
   }
   class TooltipPosition {
@@ -263,21 +281,17 @@
   }
   const core = new TooltipCore();
 
-  import { type Snippet, untrack } from "svelte";
+  import TooltipRoot from "./_Tooltip.svelte";
+  import { type Snippet, mount, untrack } from "svelte";
   import { on } from "svelte/events";
   import { type Attachment } from "svelte/attachments";
   import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, throttle } from "./core";
 </script>
 
 <script lang="ts">
-  // prettier-ignore
-  let { children, name, position = "top", align = "center", offset = { ...INIT_VEC }, element = $bindable(), styling, variant = VARIANT.NEUTRAL }: TooltipProps = $props();
-
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
-  const uid = $props.id();
-  // svelte-ignore state_referenced_locally
-  const id = core.register(name ?? uid);
+  const cls = $derived(fnClass(preset, core.styling));
+  let el: HTMLDivElement | undefined = $state();
   let point: Vector = $state.raw(INIT_VEC);
 
   // *** Reactive Handlers *** //
@@ -286,22 +300,20 @@
     untrack(() => setPosition());
   });
   function setPosition() {
-    if (core.visible !== VISIBLE.VISIBLE || !core.isTarget(id)) return;
-    const size = { x: element?.offsetWidth ?? 0, y: element?.offsetHeight ?? 0 };
-    point = core.getPoint(position, align, size, offset);
+    if (core.visible !== VISIBLE.VISIBLE) return;
+    const size = { x: el?.offsetWidth ?? 0, y: el?.offsetHeight ?? 0 };
+    point = core.computePoint(size);
   }
-  const visibility = $derived(
-    core.visible === VISIBLE.VISIBLE && core.isTarget(id) ? "visibility: visible;" : "visibility: hidden; z-index: -9999;",
-  );
+  const visibility = $derived(core.visible === VISIBLE.VISIBLE ? "visibility: visible;" : "visibility: hidden; z-index: -9999;");
   const style = $derived(`position: fixed; left: ${point.x}px; top: ${point.y}px; ${visibility}`);
 </script>
 
 <!---------------------------------------->
 
-{#if core.mount(id)}
-  <div bind:this={element} class={cls(PARTS.WHOLE, variant)} {style} {id} role="tooltip">
-    {#if children}
-      {@render children(core.text, variant, core.flipped)}
+{#if core.visible !== VISIBLE.NONE}
+  <div bind:this={el} class={cls(PARTS.WHOLE, core.variant)} {style} role="tooltip">
+    {#if core.content}
+      {@render core.content(core.text, core.variant, core.flipped)}
     {:else}
       {core.text}
     {/if}
