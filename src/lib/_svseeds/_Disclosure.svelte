@@ -58,7 +58,7 @@
     set current(v: string | undefined);
   }
 
-  export const [getDisclosureContext, setDisclosureContext] = createContext<DisclosureContext>();
+  export const [getDisclosureContext, setDisclosureContext] = _createContext<DisclosureContext>();
 
   const DEFAULT_DURATION = 200;
   const noMotion = shouldReduceMotion();
@@ -89,7 +89,7 @@
     isNeutral,
     isUnsignedInteger,
     shouldReduceMotion,
-    createContext,
+    _createContext,
   } from "./core";
 </script>
 

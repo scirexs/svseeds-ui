@@ -1,5 +1,30 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { BASE, debounce, fnClass, omit, PARTS, shouldReduceMotion, throttle, VARIANT } from "#svs/core";
+import { getContext, setContext } from "svelte";
+import {
+  BASE,
+  debounce,
+  fnClass,
+  isNeutral,
+  isUnsignedInteger,
+  omit,
+  PARTS,
+  shouldReduceMotion,
+  throttle,
+  VARIANT,
+  _createContext,
+  _isVariantMap,
+  _prepRule,
+  _ruleClass,
+} from "#svs/core";
+
+vi.mock("svelte", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("svelte")>();
+  return {
+    ...actual,
+    getContext: vi.fn(),
+    setContext: vi.fn((_, context) => context),
+  };
+});
 
 describe("const vars", () => {
   test("VARIANT", () => {
@@ -27,6 +52,102 @@ describe("const vars", () => {
   });
   test("BASE", () => {
     expect(BASE).toBe("base");
+  });
+});
+
+describe("class rule helpers", () => {
+  test("_isVariantMap rejects primitive values, arrays, and clsx condition objects", () => {
+    expect(_isVariantMap("class-name")).toBe(false);
+    expect(_isVariantMap(["class-name"])).toBe(false);
+    expect(_isVariantMap({ selected: true, disabled: false })).toBe(false);
+  });
+
+  test("_isVariantMap accepts plain objects whose values are class values", () => {
+    expect(_isVariantMap({ [BASE]: "base-class", [VARIANT.ACTIVE]: ["active-class"] })).toBe(true);
+    expect(_isVariantMap({ [VARIANT.NEUTRAL]: { neutralClass: null } })).toBe(true);
+  });
+
+  test("_prepRule trims blank strings and returns undefined for empty rules", () => {
+    expect(_prepRule()).toBeUndefined();
+    expect(_prepRule("   ")).toBeUndefined();
+    expect(_prepRule({})).toBeUndefined();
+    expect(_prepRule("  ui-button  ")).toBe("  ui-button  ");
+  });
+
+  test("_prepRule wraps part-level class values as base rules", () => {
+    expect(_prepRule({ [PARTS.WHOLE]: "whole-class", [PARTS.MAIN]: ["main-class"] })).toEqual({
+      [PARTS.WHOLE]: { [BASE]: "whole-class" },
+      [PARTS.MAIN]: { [BASE]: ["main-class"] },
+    });
+  });
+
+  test("_prepRule preserves variant maps", () => {
+    expect(_prepRule({ [PARTS.WHOLE]: { [BASE]: "base-class", [VARIANT.ACTIVE]: "active-class" } })).toEqual({
+      [PARTS.WHOLE]: { [BASE]: "base-class", [VARIANT.ACTIVE]: "active-class" },
+    });
+  });
+
+  test("_ruleClass returns base, variant, fallback neutral, or undefined", () => {
+    const rule = {
+      [PARTS.WHOLE]: { [BASE]: "base-class", [VARIANT.ACTIVE]: "active-class", [VARIANT.NEUTRAL]: "neutral-class" },
+      [PARTS.MAIN]: { [VARIANT.ACTIVE]: "main-active" },
+      [PARTS.TOP]: { [BASE]: "top-base" },
+    };
+
+    expect(_ruleClass(rule, PARTS.WHOLE, VARIANT.ACTIVE)).toEqual(["base-class", "active-class"]);
+    expect(_ruleClass(rule, PARTS.WHOLE, VARIANT.INACTIVE)).toEqual(["base-class", "neutral-class"]);
+    expect(_ruleClass(rule, PARTS.MAIN, VARIANT.ACTIVE)).toBe("main-active");
+    expect(_ruleClass(rule, PARTS.TOP, VARIANT.ACTIVE)).toBe("top-base");
+    expect(_ruleClass(rule, PARTS.RIGHT, VARIANT.ACTIVE)).toBeUndefined();
+  });
+});
+
+describe("variant and number helpers", () => {
+  test("isNeutral returns false only for active and inactive variants", () => {
+    expect(isNeutral(VARIANT.NEUTRAL)).toBe(true);
+    expect(isNeutral("custom")).toBe(true);
+    expect(isNeutral("")).toBe(true);
+    expect(isNeutral(VARIANT.ACTIVE)).toBe(false);
+    expect(isNeutral(VARIANT.INACTIVE)).toBe(false);
+  });
+
+  test("isUnsignedInteger accepts zero and positive integers", () => {
+    expect(isUnsignedInteger(0)).toBe(true);
+    expect(isUnsignedInteger(1)).toBe(true);
+    expect(isUnsignedInteger(Number.MAX_SAFE_INTEGER)).toBe(true);
+  });
+
+  test("isUnsignedInteger rejects negative, fractional, and non-finite numbers", () => {
+    expect(isUnsignedInteger(-1)).toBe(false);
+    expect(isUnsignedInteger(1.1)).toBe(false);
+    expect(isUnsignedInteger(NaN)).toBe(false);
+    expect(isUnsignedInteger(Infinity)).toBe(false);
+  });
+});
+
+describe("_createContext", () => {
+  test("returns get and set functions backed by the same private key", () => {
+    const [getCtx, setCtx] = _createContext<{ value: string }>();
+    const value = { value: "context-value" };
+
+    expect(setCtx(value)).toBe(value);
+    expect(setContext).toHaveBeenCalledWith(expect.any(Symbol), value);
+
+    const key = vi.mocked(setContext).mock.calls[0]?.[0];
+    getCtx();
+    expect(getContext).toHaveBeenCalledWith(key);
+  });
+
+  test("uses a unique key for each context factory", () => {
+    const [, setFirst] = _createContext<string>();
+    const [, setSecond] = _createContext<string>();
+
+    setFirst("first");
+    setSecond("second");
+
+    const firstKey = vi.mocked(setContext).mock.calls.at(-2)?.[0];
+    const secondKey = vi.mocked(setContext).mock.calls.at(-1)?.[0];
+    expect(firstKey).not.toBe(secondKey);
   });
 });
 
@@ -566,11 +687,21 @@ describe("omit", () => {
     const result = omit(undefined);
     expect(result).toStrictEqual({});
   });
+  test("return empty object for null at runtime", () => {
+    const result = omit(null as never);
+    expect(result).toStrictEqual({});
+  });
   test("return shallow copied object", () => {
     const obj = { a: 1, b: 2, c: 3 };
     const result = omit(obj, "a", "c");
     expect(result).toStrictEqual({ b: 2 });
     expect(obj).toStrictEqual({ a: 1, b: 2, c: 3 });
+  });
+  test("return a new shallow copy when no keys are omitted", () => {
+    const obj = { a: 1 };
+    const result = omit(obj);
+    expect(result).toStrictEqual(obj);
+    expect(result).not.toBe(obj);
   });
 });
 
@@ -615,6 +746,18 @@ describe("debounce", () => {
     debouncedFn("test", 123);
     vi.advanceTimersByTime(100);
     expect(mockFn).toHaveBeenCalledWith("test", 123);
+  });
+  test("uses the latest args after repeated calls", () => {
+    const mockFn = vi.fn();
+    const debouncedFn = debounce(100, mockFn);
+
+    debouncedFn("first");
+    vi.advanceTimersByTime(50);
+    debouncedFn("second");
+    vi.advanceTimersByTime(100);
+
+    expect(mockFn).toHaveBeenCalledTimes(1);
+    expect(mockFn).toHaveBeenCalledWith("second");
   });
 });
 
@@ -663,6 +806,18 @@ describe("throttle", () => {
     expect(mockFn).toHaveBeenCalledTimes(1);
     expect(mockFn).toHaveBeenCalledWith("third");
   });
+  test("runs queued calls when the interval has elapsed", () => {
+    const mockFn = vi.fn();
+    const throttledFn = throttle(100, mockFn);
+
+    throttledFn("first");
+    vi.advanceTimersByTime(100);
+    throttledFn("second");
+    vi.advanceTimersByTime(0);
+
+    expect(mockFn).toHaveBeenCalledTimes(2);
+    expect(mockFn).toHaveBeenLastCalledWith("second");
+  });
 });
 
 describe("fnClass styling object heuristic", () => {
@@ -687,7 +842,8 @@ describe("fnClass styling object heuristic", () => {
 describe("shouldReduceMotion", () => {
   const original = window.matchMedia;
   afterEach(() => {
-    window.matchMedia = original;
+    if (typeof window !== "undefined") window.matchMedia = original;
+    vi.unstubAllGlobals();
   });
 
   test("returns true when prefers-reduced-motion is reduce", () => {
@@ -705,5 +861,10 @@ describe("shouldReduceMotion", () => {
     window.matchMedia = mock as unknown as typeof window.matchMedia;
     shouldReduceMotion();
     expect(mock).toHaveBeenCalledWith("(prefers-reduced-motion: reduce)");
+  });
+
+  test("returns false when window is unavailable", () => {
+    vi.stubGlobal("window", undefined);
+    expect(shouldReduceMotion()).toBe(false);
   });
 });

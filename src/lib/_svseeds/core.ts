@@ -8,12 +8,15 @@ export {
   BASE,
   VARIANT,
   PARTS,
+  _createContext,
+  _isVariantMap,
+  _prepRule,
+  _ruleClass,
   fnClass,
   isNeutral,
   isUnsignedInteger,
   shouldReduceMotion,
   omit,
-  createContext,
   debounce,
   throttle,
 };
@@ -208,7 +211,20 @@ function omit<T extends object, K extends keyof T>(obj?: T, ...keys: K[]): Omit<
   keys.forEach((key) => delete ret[key]);
   return ret;
 }
-function createContext<T>(): [() => T | undefined, (context: T) => T] {
+/**
+ * Creates a scoped Svelte context backed by a fresh unique key.
+ * @internal
+ *
+ * @returns A tuple of `[getContext, setContext]` bound to a private Symbol key
+ *
+ * @example
+ * ```typescript
+ * const [getCtx, setCtx] = _createContext<MyContext>();
+ * setCtx(value);
+ * const ctx = getCtx();
+ * ```
+ */
+function _createContext<T>(): [() => T | undefined, (context: T) => T] {
   const key = Symbol();
   return [() => getContext<T | undefined>(key), (context: T) => setContext(key, context)];
 }

@@ -97,12 +97,12 @@
     oninvalid?: (ev: Event) => void;
   }
 
-  export const [getTagsInputContext, setTagsInputContext] = createContext<TagsInputContext>();
+  export const [getTagsInputContext, setTagsInputContext] = _createContext<TagsInputContext>();
 
   import { type Snippet } from "svelte";
   import { type Attachment } from "svelte/attachments";
   import { type HTMLInputAttributes, type KeyboardEventHandler } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, type SVSContext, VARIANT, PARTS, fnClass, createContext } from "./core";
+  import { type SVSClass, type SVSVariant, type SVSContext, VARIANT, PARTS, fnClass, _createContext } from "./core";
 </script>
 
 <script lang="ts">
