@@ -593,14 +593,12 @@ describe("Specify state transition & event handlers", () => {
     expect(btm).toHaveClass(dynObj.base, dynObj.active);
   });
 
-  test("deps configuration", () => {
+  test("toggleGroup configuration", () => {
     const svsToggleGroupStyle = "custom-toggle-group";
-    const deps = {
-      svsToggleGroup: {
-        styling: svsToggleGroupStyle,
-      },
+    const toggleGroup = {
+      styling: svsToggleGroupStyle,
     };
-    const props = { options, deps };
+    const props = { options, toggleGroup };
     const { getAllByRole } = render(ToggleGroupField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
     const innerGroup = innerToggleGroupOf(whole);
@@ -608,6 +606,14 @@ describe("Specify state transition & event handlers", () => {
     expect(whole).toBeInTheDocument();
     expect(innerGroup).toHaveClass(svsToggleGroupStyle, PARTS.WHOLE);
     expect(innerGroup).not.toHaveClass("svs-toggle-group");
+  });
+
+  test("default inner ToggleGroup styling keeps field and ToggleGroup presets", () => {
+    const { getAllByRole } = render(ToggleGroupField, { options });
+    const whole = getAllByRole("group")[0] as HTMLDivElement;
+    const innerGroup = innerToggleGroupOf(whole);
+
+    expect(innerGroup).toHaveClass(seed, "svs-toggle-group", PARTS.WHOLE);
   });
 
   test("clicking a toggle updates bound values and variant", async () => {
@@ -652,13 +658,13 @@ describe("Specify state transition & event handlers", () => {
     expect(container.querySelectorAll('input[type="hidden"]')).toHaveLength(0);
   });
 
-  test("deps children override toggle content", () => {
+  test("toggleGroup children override toggle content", () => {
     const childid = "custom-child";
     const children = createRawSnippet((value: () => string, text: () => string, variant: () => string) => {
       return { render: () => `<span data-testid="${childid}-${value()}">${text()}:${variant()}</span>` };
     });
-    const deps = { svsToggleGroup: { children } };
-    const { getAllByRole, getByTestId } = render(ToggleGroupField, { options, deps, values: ["opt2"] });
+    const toggleGroup = { children };
+    const { getAllByRole, getByTestId } = render(ToggleGroupField, { options, toggleGroup, values: ["opt2"] });
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
     expect(buttons[0]).toContainElement(getByTestId(`${childid}-opt1`));
@@ -666,10 +672,10 @@ describe("Specify state transition & event handlers", () => {
     expect(getByTestId(`${childid}-opt2`)).toHaveTextContent(`Option 2:${VARIANT.ACTIVE}`);
   });
 
-  test("deps cannot lose field-controlled error props", async () => {
+  test("toggleGroup cannot lose field-controlled error props", async () => {
     const props = $state({
       options,
-      deps: { svsToggleGroup: { styling: "custom-toggle-group" } },
+      toggleGroup: { styling: "custom-toggle-group" },
       validations: [validationFn],
       values: [] as string[],
       variant: VARIANT.NEUTRAL,

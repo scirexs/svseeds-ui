@@ -26,10 +26,7 @@
     elements?: HTMLButtonElement[]; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
-    deps?: ToggleGroupFieldDeps;
-  }
-  interface ToggleGroupFieldDeps {
-    svsToggleGroup?: Omit<
+    toggleGroup?: Omit<
       ToggleGroupProps,
       ToggleGroupReqdProps | ToggleGroupBindProps | "ariaDescId" | "ariaErrMsgId" | "multiple" | "variant" | "events"
     >;
@@ -51,7 +48,7 @@
       <span class="left" conditional>{left}</span>
       <input style="display:none" aria-hidden="true" oninvalid />
       {#if name}{#each values as value}<input type="hidden" {name} {value} />{/each}{/if}
-      <ToggleGroup {options} {multiple} {...deps.svsToggleGroup} bind:values bind:elements />
+      <ToggleGroup {options} {multiple} {...toggleGroup} bind:values bind:elements />
       <span class="right" conditional>{right}</span>
     </div>
     <div class="bottom" conditional: has text, or always when reserve>{bottom}</div>
@@ -77,10 +74,7 @@
     elements?: HTMLButtonElement[]; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
-    deps?: ToggleGroupFieldDeps;
-  }
-  export interface ToggleGroupFieldDeps {
-    svsToggleGroup?: Omit<
+    toggleGroup?: Omit<
       ToggleGroupProps,
       ToggleGroupReqdProps | ToggleGroupBindProps | "ariaDescId" | "ariaErrMsgId" | "multiple" | "variant" | "events"
     >;
@@ -106,7 +100,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { options, label, extra, aux, left, right, bottom, reserve = false, flip = false, values = $bindable([]), multiple = true, validations = [], constraints = [], name, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), deps }: ToggleGroupFieldProps = $props();
+  let { options, label, extra, aux, left, right, bottom, reserve = false, flip = false, values = $bindable([]), multiple = true, validations = [], constraints = [], name, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), toggleGroup }: ToggleGroupFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
@@ -120,9 +114,9 @@
 
   // *** Initialize Deps *** //
   const svsToggleGroup = $derived({
-    ...deps?.svsToggleGroup,
+    ...toggleGroup,
     ariaDescId: idDesc,
-    styling: deps?.svsToggleGroup?.styling ?? `${preset} svs-toggle-group`,
+    styling: toggleGroup?.styling ?? `${preset} svs-toggle-group`,
   });
 
   // *** States *** //
