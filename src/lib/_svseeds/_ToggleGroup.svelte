@@ -24,6 +24,9 @@
     onremove?: (values: string[], value: string, index: number) => void | boolean;
   }
   ```
+  ### Exports
+  `ToggleGroupContext`, `setToggleGroupContext(ctx)`, and `getToggleGroupContext()` provide the optional field context used by `ToggleGroupField`.
+  When a `ToggleGroupContext` is present (i.e. rendered inside `ToggleGroupField`), `values`/`elements`/`variant`/`ariaDescId`/`ariaErrMsgId` are taken from the context; `styling` uses the component prop when supplied and otherwise falls back to the context, and add/remove hooks run the component prop hook before the context hook. `options`/`multiple`/`children`/`attach` stay caller-controlled.
   ### Anatomy
   ```svelte
   <span class="whole" aria-describedby={ariaDescId} aria-errormessage={ariaErrMsgId}>
@@ -64,57 +67,88 @@
 
   const preset = "svs-toggle-group";
 
+  export interface ToggleGroupContext extends SVSContext {
+    get values(): string[];
+    set values(v: string[]);
+    set elements(v: HTMLButtonElement[]);
+    get ariaDescId(): string | undefined;
+    get ariaErrMsgId(): string | undefined;
+    events?: ToggleGroupEvents;
+  }
+
+  export const [getToggleGroupContext, setToggleGroupContext] = createContext<ToggleGroupContext>();
+
   import { type Snippet } from "svelte";
   import { type Attachment } from "svelte/attachments";
   import { type HTMLButtonAttributes } from "svelte/elements";
   import { type SvelteMap } from "svelte/reactivity";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass } from "./core";
+  import { type SVSClass, type SVSVariant, type SVSContext, VARIANT, PARTS, fnClass, createContext } from "./core";
 </script>
 
 <script lang="ts">
   // prettier-ignore
   let { options, children, values = $bindable([]), multiple = true, events, ariaDescId, ariaErrMsgId, attach, elements = $bindable([]), styling, variant = VARIANT.NEUTRAL }: ToggleGroupProps = $props();
+  const ctx = getToggleGroupContext();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(preset, styling ?? ctx?.styling));
   const role = $derived(multiple ? "checkbox" : "radio");
   const roleGroup = $derived(multiple ? "group" : "radiogroup");
+  const effVariant = $derived(ctx ? ctx.variant : variant);
+  const effValues = $derived(ctx ? ctx.values : values);
+  const effAriaDescId = $derived(ctx ? ctx.ariaDescId : ariaDescId);
+  const effAriaErrMsgId = $derived(ctx ? ctx.ariaErrMsgId : ariaErrMsgId);
 
   // *** Bind Handlers *** //
   let opts = $derived(
     [...options].map(([value, def]) => {
       const { text, disabled, ...attrs } = typeof def === "string" ? { text: def } : def;
-      return { value, text, disabled: disabled ?? false, attrs, checked: values.includes(value) };
+      return { value, text, disabled: disabled ?? false, attrs, checked: effValues.includes(value) };
     }),
   );
-  let invalid = $derived(ariaErrMsgId ? true : undefined);
+  let invalid = $derived(effAriaErrMsgId ? true : undefined);
   let activeIndex = $derived.by(() => {
     if (multiple) return -1;
     const checked = opts.findIndex((o) => o.checked && !o.disabled);
     if (checked >= 0) return checked;
     return opts.findIndex((o) => !o.disabled);
   });
+  function setValues(v: string[]) {
+    if (ctx) ctx.values = v;
+    else values = v;
+  }
   $effect(() => {
-    if (!multiple && values.length > 1) values = values.slice(0, 1);
+    if (!multiple && effValues.length > 1) setValues(effValues.slice(0, 1));
+  });
+  $effect(() => {
+    if (ctx) ctx.elements = elements;
   });
 
   // *** Event Handlers *** //
   const update = $derived(
     multiple
       ? (value: string) => {
-          const set = new Set(values);
+          const set = new Set(effValues);
           set.has(value) ? set.delete(value) : set.add(value);
           return opts.filter((o) => set.has(o.value)).map((o) => o.value);
         }
-      : (value: string) => (values.includes(value) ? [] : [value]),
+      : (value: string) => (effValues.includes(value) ? [] : [value]),
   );
+  function onaddHook(vs: string[], v: string): boolean | void {
+    if (events?.onadd?.(vs, v)) return true;
+    if (ctx?.events?.onadd?.(vs, v)) return true;
+  }
+  function onremoveHook(vs: string[], v: string, i: number): boolean | void {
+    if (events?.onremove?.(vs, v, i)) return true;
+    if (ctx?.events?.onremove?.(vs, v, i)) return true;
+  }
   function updateValues(value: string): () => void {
     return () => {
       if (opts.find((o) => o.value === value)?.disabled) return;
-      const adding = !values.includes(value);
-      if (adding && events?.onadd?.(values, value)) return;
-      if (!adding && events?.onremove?.(values, value, values.indexOf(value))) return;
-      values = update(value);
+      const adding = !effValues.includes(value);
+      if (adding && onaddHook(effValues, value)) return;
+      if (!adding && onremoveHook(effValues, value, effValues.indexOf(value))) return;
+      setValues(update(value));
     };
   }
   function nextEnabledIndex(start: number, step: 1 | -1): number {
@@ -145,7 +179,7 @@
     if (target < 0) return;
     ev.preventDefault();
     elements[target]?.focus();
-    values = [opts[target].value];
+    setValues([opts[target].value]);
   }
 </script>
 
@@ -153,14 +187,14 @@
 
 {#if opts.length}
   <span
-    class={cls(PARTS.WHOLE, variant)}
+    class={cls(PARTS.WHOLE, effVariant)}
     role={roleGroup}
-    aria-describedby={ariaDescId}
+    aria-describedby={effAriaDescId}
     aria-invalid={invalid}
-    aria-errormessage={ariaErrMsgId}
+    aria-errormessage={effAriaErrMsgId}
   >
     {#each opts as { value, text, disabled, attrs, checked }, i (value)}
-      {@const v = checked ? VARIANT.ACTIVE : variant}
+      {@const v = checked ? VARIANT.ACTIVE : effVariant}
       {@const c = cls(PARTS.MAIN, v)}
       <button
         {...attrs}

@@ -9,7 +9,7 @@
     // other button attributes
   }
   interface ToggleGroupFieldProps {
-    options: SvelteMap<string, string | ToggleOption> | Map<string, string | ToggleOption>;
+    options?: SvelteMap<string, string | ToggleOption> | Map<string, string | ToggleOption>;
     label?: string;
     extra?: string;
     aux?: Snippet<[string[], string]>; // Snippet<[values,variant]>
@@ -30,6 +30,7 @@
       ToggleGroupProps,
       ToggleGroupReqdProps | ToggleGroupBindProps | "ariaDescId" | "ariaErrMsgId" | "multiple" | "variant" | "events"
     >;
+    children?: Snippet;
   }
   type ToggleGroupFieldValidation = SVSFieldValidation<string[]>;
   type ToggleGroupFieldConstraint = SVSFieldConstraint;
@@ -48,16 +49,17 @@
       <span class="left" conditional>{left}</span>
       <input style="display:none" aria-hidden="true" oninvalid />
       {#if name}{#each values as value}<input type="hidden" {name} {value} />{/each}{/if}
-      <ToggleGroup {options} {multiple} {...toggleGroup} bind:values bind:elements />
+      {#if children}{@render children()}{:else if options}<ToggleGroup {options} {multiple} {...toggleGroup} />{/if}
       <span class="right" conditional>{right}</span>
     </div>
     <div class="bottom" conditional: has text, or always when reserve>{bottom}</div>
   </div>
   ```
+  When a declarative child is supplied, the field's `multiple` and `toggleGroup` props are ignored.
 -->
 <script module lang="ts">
   export interface ToggleGroupFieldProps {
-    options: SvelteMap<string, string | ToggleOption> | Map<string, string | ToggleOption>;
+    options?: SvelteMap<string, string | ToggleOption> | Map<string, string | ToggleOption>;
     label?: string;
     extra?: string;
     aux?: Snippet<[string[], string]>; // Snippet<[values,variant]>
@@ -78,8 +80,9 @@
       ToggleGroupProps,
       ToggleGroupReqdProps | ToggleGroupBindProps | "ariaDescId" | "ariaErrMsgId" | "multiple" | "variant" | "events"
     >;
+    children?: Snippet;
   }
-  export type ToggleGroupFieldReqdProps = "options";
+  export type ToggleGroupFieldReqdProps = never;
   export type ToggleGroupFieldBindProps = "values" | "variant" | "elements";
   export type ToggleGroupFieldValidation = SVSFieldValidation<string[]>;
   export type ToggleGroupFieldConstraint = SVSFieldConstraint;
@@ -91,6 +94,8 @@
   import { type SvelteMap } from "svelte/reactivity";
   import { type SVSClass, type SVSVariant, type SVSFieldValidation, type SVSFieldConstraint, VARIANT, PARTS, fnClass, isNeutral } from "./core";
   import ToggleGroup, {
+    setToggleGroupContext,
+    type ToggleGroupContext,
     type ToggleOption,
     type ToggleGroupProps,
     type ToggleGroupReqdProps,
@@ -100,7 +105,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { options, label, extra, aux, left, right, bottom, reserve = false, flip = false, values = $bindable([]), multiple = true, validations = [], constraints = [], name, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), toggleGroup }: ToggleGroupFieldProps = $props();
+  let { options, label, extra, aux, left, right, bottom, reserve = false, flip = false, values = $bindable([]), multiple = true, validations = [], constraints = [], name, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), toggleGroup, children }: ToggleGroupFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
@@ -112,12 +117,32 @@
   const message = $derived(variant === VARIANT.INACTIVE ? errmsg || bottom : bottom);
   let element: HTMLInputElement | undefined = $state();
 
-  // *** Initialize Deps *** //
-  const svsToggleGroup = $derived({
-    ...toggleGroup,
-    ariaDescId: idDesc,
-    styling: toggleGroup?.styling ?? `${preset} svs-toggle-group`,
-  });
+  // *** Initialize Context *** //
+  const ctx: ToggleGroupContext = {
+    get values() {
+      return values;
+    },
+    set values(v) {
+      values = v;
+    },
+    set elements(v: HTMLButtonElement[]) {
+      elements = v;
+    },
+    get variant() {
+      return neutral;
+    },
+    get styling() {
+      return `${preset} svs-toggle-group`;
+    },
+    get ariaDescId() {
+      return idDesc;
+    },
+    get ariaErrMsgId() {
+      return idMsg;
+    },
+    events: { onadd: hadd },
+  };
+  setToggleGroupContext(ctx);
 
   // *** States *** //
   let neutral = $state(isNeutral(variant) ? variant : VARIANT.NEUTRAL);
@@ -176,7 +201,7 @@
 
 <!---------------------------------------->
 
-{#if options.size}
+{#if children || options?.size}
   <div class={cls(PARTS.WHOLE, variant)} role="group" aria-labelledby={idLabel}>
     {#if label?.trim() || aux}
       <div class={cls(PARTS.TOP, variant)}>
@@ -190,7 +215,11 @@
     <div class={cls(PARTS.MIDDLE, variant)}>
       {@render side(PARTS.LEFT, left)}
       {@render fnForm()}
-      <ToggleGroup {...svsToggleGroup} bind:values bind:elements ariaErrMsgId={idMsg} variant={neutral} {options} {multiple} events={{ onadd: hadd }} />
+      {#if children}
+        {@render children()}
+      {:else if options}
+        <ToggleGroup {...toggleGroup} {options} {multiple} />
+      {/if}
       {@render side(PARTS.RIGHT, right)}
     </div>
     {@render desc(!flip)}

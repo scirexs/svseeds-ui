@@ -3,7 +3,8 @@ import { render, waitFor } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet, tick } from "svelte";
 import ToggleGroup, { type ToggleOption } from "#svs/_ToggleGroup.svelte";
-import { PARTS, VARIANT } from "#svs/core";
+import { PARTS, VARIANT, fnClass } from "#svs/core";
+import ToggleGroupCtxProvider from "./fixtures/ToggleGroupCtxProvider.svelte";
 
 const options = new Map([
   ["option1", "Option 1"],
@@ -545,6 +546,174 @@ describe("User interactions", () => {
     await user.click(buttons[0]);
     expect(props.values).toEqual(["option1"]);
     expect(attach).toHaveBeenCalledTimes(3); // Called once for each button during mount
+  });
+});
+
+describe("Embedded in field context", () => {
+  const preset = "svs-toggle-group";
+  const cls = fnClass(preset);
+
+  test("variant comes from context", () => {
+    const state = $state({ values: [] as string[], variant: VARIANT.ACTIVE, elements: [] as HTMLButtonElement[] });
+    const { getByRole } = render(ToggleGroupCtxProvider, { state, input: { options } });
+    const group = getByRole("group") as HTMLSpanElement;
+
+    expect(group).toHaveClass(...`${cls(PARTS.WHOLE, VARIANT.ACTIVE)}`.split(" "));
+  });
+
+  test("styling comes from context unless own styling is present", () => {
+    const state = $state({ values: [] as string[], variant: VARIANT.NEUTRAL, styling: "ctx-style", elements: [] as HTMLButtonElement[] });
+    const ctxOnly = render(ToggleGroupCtxProvider, { state, input: { options } });
+    expect(ctxOnly.getByRole("group")).toHaveClass(...`${fnClass(preset, "ctx-style")(PARTS.WHOLE, VARIANT.NEUTRAL)}`.split(" "));
+    ctxOnly.unmount();
+
+    const ownWins = render(ToggleGroupCtxProvider, { state, input: { options, styling: "own-style" } });
+    const group = ownWins.getByRole("group") as HTMLSpanElement;
+    expect(group).toHaveClass(...`${fnClass(preset, "own-style")(PARTS.WHOLE, VARIANT.NEUTRAL)}`.split(" "));
+    expect(group).not.toHaveClass("ctx-style");
+  });
+
+  test("values come from context checked state", () => {
+    const state = $state({ values: ["option2"], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
+    const { getAllByRole } = render(ToggleGroupCtxProvider, { state, input: { options } });
+    const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
+
+    expect(buttons[0]).toHaveAttribute("aria-checked", "false");
+    expect(buttons[1]).toHaveAttribute("aria-checked", "true");
+    expect(buttons[2]).toHaveAttribute("aria-checked", "false");
+  });
+
+  test("click writes to context values", async () => {
+    const state = $state({ values: [] as string[], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
+    const user = userEvent.setup();
+    const { getAllByRole } = render(ToggleGroupCtxProvider, { state, input: { options, multiple: true } });
+
+    await user.click(getAllByRole("checkbox")[0]);
+    expect(state.values).toEqual(["option1"]);
+  });
+
+  test("click toggles off through context", async () => {
+    const state = $state({ values: ["option1"], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
+    const user = userEvent.setup();
+    const { getAllByRole } = render(ToggleGroupCtxProvider, { state, input: { options } });
+
+    await user.click(getAllByRole("checkbox")[0]);
+    expect(state.values).toEqual([]);
+  });
+
+  test("elements are mirrored into context", async () => {
+    const state = $state({ values: [] as string[], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
+    const { getAllByRole } = render(ToggleGroupCtxProvider, { state, input: { options } });
+    const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
+
+    await tick();
+    expect(state.elements).toHaveLength(3);
+    expect(state.elements[0]).toBe(buttons[0]);
+  });
+
+  test("ariaErrMsgId and aria-invalid come from context", () => {
+    const state = $state({
+      values: [] as string[],
+      variant: VARIANT.NEUTRAL,
+      ariaErrMsgId: "err-1",
+      elements: [] as HTMLButtonElement[],
+    });
+    const { getByRole } = render(ToggleGroupCtxProvider, { state, input: { options, ariaErrMsgId: "own-err" } });
+    const group = getByRole("group") as HTMLSpanElement;
+
+    expect(group).toHaveAttribute("aria-errormessage", "err-1");
+    expect(group).toHaveAttribute("aria-invalid", "true");
+  });
+
+  test("ariaDescId comes from context", () => {
+    const state = $state({
+      values: [] as string[],
+      variant: VARIANT.NEUTRAL,
+      ariaDescId: "desc-1",
+      elements: [] as HTMLButtonElement[],
+    });
+    const { getByRole } = render(ToggleGroupCtxProvider, { state, input: { options, ariaDescId: "own-desc" } });
+
+    expect(getByRole("group")).toHaveAttribute("aria-describedby", "desc-1");
+  });
+
+  test("context onadd hook can cancel add", async () => {
+    const state = $state({ values: [] as string[], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
+    const onadd = vi.fn(() => true);
+    const user = userEvent.setup();
+    const { getAllByRole } = render(ToggleGroupCtxProvider, { state, hooks: { events: { onadd } }, input: { options } });
+
+    await user.click(getAllByRole("checkbox")[0]);
+    expect(onadd).toHaveBeenCalledWith([], "option1");
+    expect(state.values).toEqual([]);
+  });
+
+  test("own and context onadd both fire", async () => {
+    const state = $state({ values: [] as string[], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
+    const ownOnadd = vi.fn(() => false);
+    const ctxOnadd = vi.fn(() => false);
+    const user = userEvent.setup();
+    const { getAllByRole } = render(ToggleGroupCtxProvider, {
+      state,
+      hooks: { events: { onadd: ctxOnadd } },
+      input: { options, events: { onadd: ownOnadd } },
+    });
+
+    await user.click(getAllByRole("checkbox")[0]);
+    expect(ownOnadd).toHaveBeenCalledOnce();
+    expect(ctxOnadd).toHaveBeenCalledOnce();
+    expect(state.values).toEqual(["option1"]);
+  });
+
+  test("context onremove hook can cancel remove", async () => {
+    const state = $state({ values: ["option1"], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
+    const onremove = vi.fn(() => true);
+    const user = userEvent.setup();
+    const { getAllByRole } = render(ToggleGroupCtxProvider, { state, hooks: { events: { onremove } }, input: { options } });
+
+    await user.click(getAllByRole("checkbox")[0]);
+    expect(onremove).toHaveBeenCalledWith(["option1"], "option1", 0);
+    expect(state.values).toEqual(["option1"]);
+  });
+
+  test("own and context onremove both fire in order", async () => {
+    const state = $state({ values: ["option1"], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
+    const ownOnremove = vi.fn(() => false);
+    const ctxOnremove = vi.fn(() => false);
+    const user = userEvent.setup();
+    const { getAllByRole } = render(ToggleGroupCtxProvider, {
+      state,
+      hooks: { events: { onremove: ctxOnremove } },
+      input: { options, events: { onremove: ownOnremove } },
+    });
+
+    await user.click(getAllByRole("checkbox")[0]);
+    expect(ownOnremove).toHaveBeenCalledWith(["option1"], "option1", 0);
+    expect(ctxOnremove).toHaveBeenCalledWith(["option1"], "option1", 0);
+    expect(ownOnremove.mock.invocationCallOrder[0]).toBeLessThan(ctxOnremove.mock.invocationCallOrder[0]);
+    expect(state.values).toEqual([]);
+  });
+
+  test("single-select via context", async () => {
+    const state = $state({ values: ["option1"], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
+    const user = userEvent.setup();
+    const { getAllByRole } = render(ToggleGroupCtxProvider, { state, input: { options, multiple: false } });
+
+    await user.click(getAllByRole("radio")[1]);
+    expect(state.values).toEqual(["option2"]);
+  });
+
+  test("single-select keyboard navigation writes to context values", async () => {
+    const state = $state({ values: ["option1"], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
+    const user = userEvent.setup();
+    const { getAllByRole } = render(ToggleGroupCtxProvider, { state, input: { options, multiple: false } });
+    const buttons = getAllByRole("radio") as HTMLButtonElement[];
+
+    buttons[0].focus();
+    await user.keyboard("[ArrowRight]");
+    expect(buttons[1]).toHaveFocus();
+    expect(state.values).toEqual(["option2"]);
+    expect(buttons[1]).toHaveAttribute("aria-checked", "true");
   });
 });
 

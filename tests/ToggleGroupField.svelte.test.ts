@@ -3,8 +3,9 @@ import { fireEvent, render, waitFor, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet, tick } from "svelte";
 import { SvelteMap } from "svelte/reactivity";
-import ToggleGroupField, { type ToggleOption } from "#svs/ToggleGroupField.svelte";
-import { PARTS, VARIANT } from "#svs/core";
+import ToggleGroupField, { type ToggleGroupFieldProps, type ToggleOption } from "#svs/ToggleGroupField.svelte";
+import { PARTS, VARIANT, fnClass } from "#svs/core";
+import ToggleGroupFieldEmbedded from "./fixtures/ToggleGroupFieldEmbedded.svelte";
 
 const label = "label_text";
 const extra = "(optional)";
@@ -862,5 +863,159 @@ describe("Specify state transition & event handlers", () => {
     expect(alert).toHaveAttribute("role", "alert");
     expect(alert).toHaveTextContent("required");
     expect(whole.lastElementChild).toHaveClass(PARTS.MIDDLE);
+  });
+});
+
+describe("Compound / children", () => {
+  const seed = "svs-toggle-group-field";
+  const options = new SvelteMap([
+    ["opt1", "Option 1"],
+    ["opt2", "Option 2"],
+    ["opt3", "Option 3"],
+  ]);
+  const middleOf = (whole: HTMLElement) => whole.querySelector(`.${PARTS.MIDDLE}`) as HTMLDivElement;
+  const innerToggleGroupOf = (whole: HTMLElement) => middleOf(whole).querySelector('[role="group"], [role="radiogroup"]') as HTMLElement;
+  const proxyInput = (whole: HTMLElement) => whole.querySelector('input[aria-hidden="true"]') as HTMLInputElement;
+
+  test("default child renders without children", () => {
+    const { getAllByRole } = render(ToggleGroupField, { options });
+    const whole = getAllByRole("group")[0] as HTMLDivElement;
+    const middle = middleOf(whole);
+    const innerGroup = innerToggleGroupOf(whole);
+
+    expect(whole.firstElementChild).toBe(middle);
+    expect(innerGroup).toBeInTheDocument();
+    expect(within(innerGroup).getAllByRole("checkbox")).toHaveLength(options.size);
+  });
+
+  test("explicit child wires click to field values", async () => {
+    const field = $state<ToggleGroupFieldProps>({});
+    const user = userEvent.setup();
+    const { getAllByRole } = render(ToggleGroupFieldEmbedded, { field, input: { options } });
+
+    await user.click(getAllByRole("checkbox")[0]);
+    await tick();
+    expect(field.values).toEqual(["opt1"]);
+  });
+
+  test("explicit child reflects field values checked state", () => {
+    const field = $state({ values: ["opt2"] });
+    const { getAllByRole } = render(ToggleGroupFieldEmbedded, { field, input: { options } });
+    const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
+
+    expect(buttons[1]).toHaveAttribute("aria-checked", "true");
+  });
+
+  test("explicit child receives validation message aria from field", async () => {
+    const field = $state({
+      validations: [() => "too few"],
+      bottom: "help text",
+      values: [] as string[],
+      variant: VARIANT.NEUTRAL,
+    });
+    const { getAllByRole, getByRole } = render(ToggleGroupFieldEmbedded, { field, input: { options } });
+    const whole = getAllByRole("group")[0] as HTMLDivElement;
+    const innerGroup = innerToggleGroupOf(whole);
+
+    await fireEvent.invalid(proxyInput(whole));
+    const alert = getByRole("alert");
+    expect(field.variant).toBe(VARIANT.INACTIVE);
+    expect(alert).toHaveTextContent("too few");
+    expect(innerGroup).toHaveAttribute("aria-errormessage", alert.id);
+    expect(innerGroup).toHaveAttribute("aria-invalid", "true");
+  });
+
+  test("explicit child gets aria-describedby from field", () => {
+    const field = $state({ bottom: "help text" });
+    const { getAllByRole } = render(ToggleGroupFieldEmbedded, { field, input: { options } });
+    const whole = getAllByRole("group")[0] as HTMLDivElement;
+    const desc = whole.querySelector(`.${PARTS.BOTTOM}`) as HTMLDivElement;
+
+    expect(innerToggleGroupOf(whole)).toHaveAttribute("aria-describedby", desc.id);
+  });
+
+  test("explicit child honours its own styling over context default", () => {
+    const field = $state({});
+    const { getAllByRole } = render(ToggleGroupFieldEmbedded, { field, input: { options, styling: "own-group" } });
+    const whole = getAllByRole("group")[0] as HTMLDivElement;
+    const innerGroup = innerToggleGroupOf(whole);
+
+    expect(innerGroup).toHaveClass(...`${fnClass("svs-toggle-group", "own-group")(PARTS.WHOLE, VARIANT.NEUTRAL)}`.split(" "));
+    expect(innerGroup).not.toHaveClass(seed);
+  });
+
+  test("elements binding flows to field with explicit child", async () => {
+    const field = $state({ elements: [] as HTMLButtonElement[] });
+    const { getAllByRole } = render(ToggleGroupFieldEmbedded, { field, input: { options } });
+    const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
+
+    await tick();
+    expect(field.elements).toHaveLength(options.size);
+    expect(field.elements?.[0]).toBe(buttons[0]);
+  });
+
+  test("constraint onadd cancels through field", async () => {
+    const field = $state({
+      constraints: [() => "nope"],
+      values: [] as string[],
+      variant: VARIANT.NEUTRAL,
+    });
+    const user = userEvent.setup();
+    const { getAllByRole, getByRole } = render(ToggleGroupFieldEmbedded, { field, input: { options } });
+
+    await user.click(getAllByRole("checkbox")[0]);
+    await tick();
+    expect(field.values).toEqual([]);
+    expect(field.variant).toBe(VARIANT.INACTIVE);
+    expect(getByRole("alert")).toHaveTextContent("nope");
+  });
+
+  test("single-select declarative child", async () => {
+    const field = $state({ values: ["opt1"] });
+    const user = userEvent.setup();
+    const { getAllByRole } = render(ToggleGroupFieldEmbedded, { field, input: { options, multiple: false } });
+
+    await user.click(getAllByRole("radio")[1]);
+    await tick();
+    expect(field.values).toEqual(["opt2"]);
+  });
+
+  test("field multiple is ignored when child supplied", async () => {
+    const field = $state({ multiple: false, values: [] as string[] });
+    const user = userEvent.setup();
+    const { getAllByRole } = render(ToggleGroupFieldEmbedded, { field, input: { options, multiple: true } });
+    const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
+
+    await user.click(buttons[0]);
+    await user.click(buttons[1]);
+    await tick();
+    expect(field.values).toEqual(["opt1", "opt2"]);
+  });
+
+  test("children win over field options", () => {
+    const otherOptions = new SvelteMap([["child", "Child Option"]]);
+    const field = $state({ options });
+    const { getAllByRole } = render(ToggleGroupFieldEmbedded, { field, input: { options: otherOptions } });
+    const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
+
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0]).toHaveTextContent("Child Option");
+  });
+
+  test("field still hidden when no options and no children", () => {
+    const { queryByRole } = render(ToggleGroupField, {});
+
+    expect(queryByRole("group")).toBeNull();
+  });
+
+  test("whole renders in declarative form with no field options", () => {
+    const field = $state({ name: "grp", values: ["opt1"] });
+    const { container, getAllByRole } = render(ToggleGroupFieldEmbedded, { field, input: { options } });
+    const whole = getAllByRole("group")[0] as HTMLDivElement;
+
+    expect(whole).toBeInTheDocument();
+    expect(innerToggleGroupOf(whole)).toBeInTheDocument();
+    expect(proxyInput(whole)).toBeInTheDocument();
+    expect(container.querySelector('input[type="hidden"][name="grp"][value="opt1"]')).toBeInTheDocument();
   });
 });
