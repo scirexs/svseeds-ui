@@ -3,892 +3,523 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface SortableProps {
-    items: SortableItems; // wrapper around string array to handle drag and drop
-    item: Snippet<[string, string, PointerEventHandler]>; // Snippet<[value, variant, onpointerdown]>
-    ghost?: Snippet<[string]>; // custom ghost element while dragging (translucent item); Snippet<[value]>
-    name?: string;        // name of this group (random string)
-    mode?: "std" | "clone" | "swap";  // sort mode ("std")
-    accept?: string[];    // list of accepted group names (undefined); undefined=any,[]=none
-    sort?: boolean;       // enable sorting within the same group (true)
-    multiple?: boolean;   // enable multiple selection and dragging (false)
-    draggable?: boolean;  // enable default pointerdown handler (true)
-    appendable?: boolean; // enable appending when entering group area (false)
-    confirm?: boolean     // enable confirmation delay before moving items (false)
-    styling?: SVSClass;
-    variant?: SVSVariant;     // (VARIANT.NEUTRAL)
-  }
-  ```
-  ### Anatomy
-  ```svelte
-  <ul class="whole">
-    {#each items.values as value, i}
-      <li class="main">{item(value)}</li>
-    {/each}
-  </ul>
-  ```
-  ### Exports
-  ```ts
-  // Methods have the same functionality as standard array methods
-  class SortableItems {
-    constructor(values: string[])
-    at(index: number): string | undefined
-    replace(index: number, value: string): boolean
-    push(value: string)
-    pop(): string | undefined
-    unshift(value: string)
-    shift(): string | undefined
-    insert(index: number, value: string) // alternative to splice
-    extract(index: number): string | undefined // alternative to splice
-    isEmpty(): boolean
-    clear(): void
-    get length(): number
-    get values(): string[]
-    set values(values: string[])
-  }
-  ```
--->
-<script module lang="ts">
-  import { cubicOut } from "svelte/easing";
-  const tp: TransitionParams = { duration: 300, easing: cubicOut }; // config of transition
-  const minDistance = 10; // (px) define how far to drag to be triggered
-  const pollingRate = 15; // (ms) throttle interval of pointermove event while dragging
-  const confirmTime = 500; // (ms) define how long to hover on item to confirm
-  const triggerDrag: TriggerButton[] = ["main"]; // define draggable by which buttons
-  const triggerSelect: TriggerButton[] = ["main"]; // define selectable by which buttons (for multi select)
-  const preset = "svs-sortable";
-
-  /***************************************************************/
-
-  type SortableMode = "std" | "clone" | "swap";
-  export interface SortableProps {
-    items: SortableItems; // wrapper around string array to handle drag and drop
-    item: Snippet<[string, string, PointerEventHandler]>; // Snippet<[value, variant, onpointerdown]>
-    ghost?: Snippet<[string]>; // custom ghost element while dragging (translucent item); Snippet<[value]>
-    name?: string; // name of this group (random string)
-    mode?: SortableMode; // sort mode ("std")
-    accept?: string[]; // list of accepted group names (undefined); undefined=any,[]=none
-    sort?: boolean; // enable sorting within the same group (true)
-    multiple?: boolean; // enable multiple selection and dragging (false)
-    draggable?: boolean; // enable default pointerdown handler (true)
-    appendable?: boolean; // enable appending when entering group area (false)
-    confirm?: boolean; // enable confirmation delay before moving items (false)
+  interface SortableProps<T = string> {
+    items: T[]; // bindable plain array
+    item: Snippet<[T, SVSVariant, Attachment]>; // Snippet<[value, variant, dragHandle]>
+    key?: (item: T) => PropertyKey; // identity extractor; required for object items
+    clone?: (item: T) => T; // required for object items in clone mode
+    group?: SortableGroupController; // shared controller from createSortableGroup()
+    id?: string; // list id used by accept
+    ghost?: Snippet<[T]>; // custom floating preview
+    mode?: "move" | "clone" | "swap"; // ("move")
+    accept?: string[] | ((fromId: string) => boolean); // undefined=any in group, []=none
+    sort?: boolean; // enable sorting within the same list (true)
+    multiple?: boolean; // enable multi-select followers (false)
+    draggable?: boolean; // whole item is draggable when no handle is attached (true)
+    appendable?: boolean; // append when entering the list area (false)
+    confirm?: boolean; // hover delay before committing (false)
+    dragging?: boolean; // bindable group drag activity
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
+  ```
+  Generic `T` is the item value type. Use `bind:items` with a plain array; mutations happen in place.
+  For object items, provide `key={(item) => item.id}`. For `mode="clone"` with objects, also provide `clone`.
+  Connect lists by passing the same `group={createSortableGroup()}` or by wrapping them in `<SortableGroup>`.
+  The third `item` snippet argument is an attachment for a custom drag handle: `{@attach handle}`.
+
+  ### Anatomy
+  ```svelte
+  <ul class="whole">
+    {#each items as value (key(value))}
+      <li class="main" data-svs-key={key(value)}>
+        {item(value, variant, handle)}
+      </li>
+    {/each}
+  </ul>
+  A position:fixed floating shadow is rendered while dragging.
+  ```
+
+  ### Exports
+  `createSortableGroup()` creates an isolated drag controller. `SortableGroupController`,
+  `getSortableContext()`, and `setSortableContext()` are the context contract consumed by
+  `SortableGroup.svelte`.
+-->
+<script module lang="ts">
+  export interface SortableProps<T = string> {
+    items: T[];
+    item: Snippet<[T, SVSVariant, Attachment]>;
+    key?: (item: T) => PropertyKey;
+    clone?: (item: T) => T;
+    group?: SortableGroupController;
+    id?: string;
+    ghost?: Snippet<[T]>;
+    mode?: SortableMode;
+    accept?: SortableAccept;
+    sort?: boolean;
+    multiple?: boolean;
+    draggable?: boolean;
+    appendable?: boolean;
+    confirm?: boolean;
+    dragging?: boolean;
+    styling?: SVSClass;
+    variant?: SVSVariant;
+  }
   export type SortableReqdProps = "items" | "item";
-  export type SortableBindProps = never;
+  export type SortableBindProps = "items" | "dragging";
+  export type SortableMode = "move" | "clone" | "swap";
 
-  export class SortableItems {
-    #inner: KeyValue[] = $state([]);
-    #state: DragState = $state("idle");
-
-    constructor(values: string[]) {
-      this.#inner = SortableItems._newItems(values);
-    }
-    at(index: number): string | undefined {
-      return this.#inner.at(index)?.value;
-    }
-    replace(index: number, value: string): boolean {
-      return this.#replace(value, this.#inner.at(index));
-    }
-    push(value: string) {
-      this.#inner.push(SortableItems._newItem(value));
-    }
-    pop(): string | undefined {
-      return this.#take(this.#inner.pop());
-    }
-    unshift(value: string) {
-      this.#inner.unshift(SortableItems._newItem(value));
-    }
-    shift(): string | undefined {
-      return this.#take(this.#inner.shift());
-    }
-    insert(index: number, value: string) {
-      this.#inner.splice(index, 0, SortableItems._newItem(value));
-    }
-    extract(index: number): string | undefined {
-      return this.#take(this.#inner.splice(index, 1)[0]);
-    }
-    isEmpty(): boolean {
-      return this.#inner.length <= 0;
-    }
-    clear() {
-      this.#delKeys();
-      this.#inner = [];
-    }
-    get length(): number {
-      return this.#inner.length;
-    }
-    get active(): boolean {
-      return this.#state !== "idle";
-    }
-    get dragging(): boolean {
-      return this.#state === "dragging";
-    }
-    get updated(): KeyValue[] {
-      return this.#inner;
-    }
-    get values(): string[] {
-      return this.#inner.map((x) => x.value);
-    }
-    set values(values: string[]) {
-      this.#delKeys();
-      this.#inner = SortableItems._newItems(values);
-    }
-
-    #replace(value: string, item?: KeyValue): boolean {
-      if (!item) {
-        return false;
-      }
-      rand.set(item.key, value);
-      item.value = value;
-      return true;
-    }
-    #take(item?: KeyValue): string | undefined {
-      rand.del(item?.key);
-      return item?.value;
-    }
-    #delKeys() {
-      this.#inner.forEach((x) => rand.del(x.key));
-    }
-
-    _index(key: string): number {
-      return this.#inner.findIndex((x) => x.key === key);
-    }
-    _value(key: string): string {
-      return rand.get(key);
-    }
-    _send(key: string) {
-      this.#inner.splice(this._index(key), 1);
-    }
-    _append(key: string) {
-      this.#inner.push({ key, value: rand.get(key) });
-    }
-    _receive(pkey: string, key: string, after: boolean) {
-      this.#inner.splice(this._index(pkey) + (after ? 1 : 0), 0, { key, value: rand.get(key) });
-    }
-    _insert(index: number, key: string, after: boolean) {
-      this.#inner.splice(index + (after ? 1 : 0), 0, { key, value: rand.get(key) });
-    }
-    _clone(pkey: string, key: string, after: boolean): string {
-      const newItem = SortableItems._newItem(rand.get(key));
-      if (pkey === "") {
-        this.#inner.push(newItem);
-      } else {
-        this.#inner.splice(this._index(pkey) + (after ? 1 : 0), 0, newItem);
-      }
-      return newItem.key;
-    }
-    get _inner(): KeyValue[] {
-      return this.#inner;
-    }
-    get _keys(): string[] {
-      return this.#inner.map((x) => x.key);
-    }
-    set _state(state: DragState) {
-      this.#state = state;
-    }
-
-    static _newItem(value?: string): KeyValue {
-      const key = rand.gen(value);
-      return { key, value: value ?? key };
-    }
-    static _newItems(values: string[]): KeyValue[] {
-      return values.map((x) => SortableItems._newItem(x));
-    }
+  export interface SortableGroupController extends SVSContext {
+    readonly identity: symbol;
+    readonly dragging: boolean;
+    readonly activeKey: string;
+    readonly confirmKey: string;
+    readonly shadow: SortableShadowState;
+    readonly send: TransitionFn;
+    readonly receive: TransitionFn;
+    register<T>(member: SortableMember<T>): () => void;
+    prepare<T>(member: SortableMember<T>, key: string, ev: PointerEvent, el: HTMLElement, followers: string[]): boolean;
+    setGhost(ghost: boolean, ev?: PointerEvent): void;
+    move(ev: PointerEvent): void;
+    commit(): void;
+    cancel(): void;
+    over<T>(member: SortableMember<T>, key: string): void;
+    leave(): void;
+    enterGroup<T>(member: SortableMember<T>): void;
+    itemVariant(key: string, selected: boolean, base: SVSVariant): SVSVariant;
   }
 
-  type PointerEventHandler = (ev: PointerEvent) => void;
-  type TriggerButton = "main" | "sub" | "middle" | "back" | "forward" | "ctrl" | "alt" | "shift" | "meta";
-  type Point = { x: number; y: number };
-  type KeyValue = {
-    key: string;
-    value: string;
-  };
+  type SortableAccept = string[] | ((fromId: string) => boolean);
   type TransitionParams = {
     duration: number;
     easing: EasingFunction;
   };
-  type DragContext = "stay" | "leave" | "return" | "others";
-  type DragState = "ready" | "dragging" | "idle";
+  type TransitionFn = ReturnType<typeof crossfade>[number];
+  type TriggerButton = "main" | "sub" | "middle" | "back" | "forward" | "ctrl" | "alt" | "shift" | "meta";
+  type Point = { x: number; y: number };
   type VoidFn = () => void;
+  type SortableMember<T = unknown> = {
+    id: string;
+    get items(): T[];
+    key(item: T): PropertyKey;
+    clone(item: T): T;
+    get mode(): SortableMode;
+    get accept(): SortableAccept | undefined;
+    get sort(): boolean;
+    get multiple(): boolean;
+    get confirm(): boolean;
+    touch(): void;
+  };
+  type ActiveDrag<T = unknown> = {
+    source: SortableMember<T>;
+    current: SortableMember;
+    sourceKey: string;
+    activeKey: string;
+    sourceIndex: number;
+    item: T;
+    mode: SortableMode;
+    followers: string[];
+    pendingSwap?: { member: SortableMember; key: string };
+  };
+  type SortableShadowState = {
+    rendering: boolean;
+    visible: boolean;
+    ownerId: string;
+    item: unknown;
+    point: Point;
+    cssSize: string;
+    ghost: boolean;
+  };
 
-  class RandKey {
-    static ALPHABETIC = [...[...Array(25)].map((_, i) => i + 65), ...[...Array(25)].map((_, i) => i + 97)];
-    static CHAR_COUNT = 50;
-    static LEN = 5;
-    #store = new Map<string, string>();
+  export const [getSortableContext, setSortableContext] = _createContext<SortableGroupController>();
 
-    static #code(): number {
-      return RandKey.ALPHABETIC[Math.trunc(Math.random() * RandKey.CHAR_COUNT)];
-    }
-    static #gen(): string {
-      return String.fromCharCode(
-        ...Array(RandKey.LEN)
-          .fill(null)
-          .map((_) => RandKey.#code()),
-      );
-    }
-    gen(value?: string): string {
-      let key = RandKey.#gen();
-      while (this.#store.has(key)) {
-        key = RandKey.#gen();
-      }
-      this.#store.set(key, value ?? key);
-      return key;
-    }
-    get(key: string): string {
-      return this.#store.get(key) ?? "NOT_STORED";
-    }
-    set(key: string, value: string) {
-      this.#store.set(key, value);
-    }
-    del(key?: string) {
-      if (key) this.#store.delete(key);
-    }
+  const tp: TransitionParams = { duration: 300, easing: cubicOut };
+  const minDistance = 10;
+  const pollingRate = 15;
+  const confirmTime = 500;
+  const triggerDrag: TriggerButton[] = ["main"];
+  const triggerSelect: TriggerButton[] = ["main"];
+  const preset = "svs-sortable";
+  const emptyAttachment: Attachment = () => {};
+  const ondragstart = () => false;
+
+  export function createSortableGroup(
+    presentation?: { get variant(): SVSVariant; get styling(): SVSClass | undefined },
+  ): SortableGroupController {
+    const [send, receive] = crossfade(tp);
+    return new SortableController(Symbol("svs-sortable-group"), send, receive, presentation);
   }
-  class ListenerHandler {
+
+  class SortableController implements SortableGroupController {
+    readonly identity;
+    readonly send;
+    readonly receive;
+    #presentation;
+    #members = new Map<string, SortableMember>();
     #listeners: VoidFn[] = [];
-    start(pointerup: PointerEventHandler, pointercancel: PointerEventHandler, pointermove?: PointerEventHandler) {
-      this.#listeners.push(on(window, "pointerup", pointerup));
-      this.#listeners.push(on(window, "pointercancel", pointercancel));
-      if (pointermove) {
-        this.#listeners.push(on(window, "pointermove", throttle(pollingRate, pointermove)));
-      }
-    }
-    stop() {
-      if (this.#listeners.length <= 0) {
-        return;
-      }
-      this.#listeners.forEach((x) => x());
-      this.#listeners = [];
-    }
-  }
-  class Shadow {
-    static SHOW = "visibility: visible;";
-    static HIDE = "visibility: hidden;";
-    static FIT = "width: fit-contents; height: fit-contents;";
-    static FREE = "";
-    elem: HTMLElement | undefined = $state.raw();
-    pt = $state(point(0, 0));
-    rendering = $state(false);
-    cssVisibility = $state(Shadow.HIDE);
-    cssSize;
-    isGhost;
-    #anchor = point(0, 0);
-
-    constructor(ghost?: Snippet<[string]>) {
-      this.isGhost = ghost !== undefined;
-      this.cssSize = this.isGhost ? Shadow.FIT : Shadow.FREE;
-    }
-    prepare(ev: PointerEvent, el: HTMLElement, standby: boolean) {
-      if (!standby) {
-        return;
-      }
-      this.rendering = true;
-      let anchor: Point | undefined;
-      if (this.isGhost) {
-        anchor = Shadow.anchorGhost(ev);
-        this.cssSize = Shadow.FIT;
-      } else {
-        const rect = el.getBoundingClientRect();
-        anchor = Shadow.anchorDefault(rect);
-        this.cssSize = `width: ${rect.width}px; height: ${rect.height}px;`;
-      }
-      point(anchor.x, anchor.y, this.#anchor);
-    }
-    show() {
-      this.cssVisibility = Shadow.SHOW;
-    }
-    hide() {
-      this.rendering = false;
-      this.cssVisibility = Shadow.HIDE;
-    }
-    move(vector: Point) {
-      point(this.#anchor.x + vector.x, this.#anchor.y + vector.y, this.pt);
-    }
-    setOffset() {
-      if (!this.isGhost || !this.elem) {
-        return;
-      }
-      const rect = this.elem.getBoundingClientRect();
-      point(this.#anchor.x - rect.width / 2, this.#anchor.y - rect.height / 2, this.#anchor);
-    }
-    static anchorDefault(rect: DOMRect): Point {
-      return point(rect.x, rect.y);
-    }
-    static anchorGhost(ev: PointerEvent): Point {
-      return point(ev.clientX, ev.clientY);
-    }
-  }
-  class MultiSelect {
-    #all: SvelteSet<string> = new SvelteSet();
-    #main = "";
-    #sub: Set<string> = new Set();
-    #standby = false;
-    #deselect = false;
-    #items;
-    #multi;
-    #trigger;
-
-    constructor(items: SortableItems, multi: boolean, trigger: TriggerButton[]) {
-      this.#items = items;
-      this.#multi = multi;
-      this.#trigger = createTriggerNumber(trigger);
-    }
-    matchTrigger(trigger: number): boolean {
-      return trigger === this.#trigger;
-    }
-    start(key: string, trigger: number) {
-      this.#standby = false;
-      if (this.#multi && this.matchTrigger(trigger)) {
-        this.#standby = true;
-        this.#deselect = this.#all.has(key);
-        this.#replaceMain(key);
-      }
-    }
-    toggle() {
-      if (!this.#standby) {
-        return;
-      }
-      if (this.#deselect) {
-        this.#all.delete(this.#main);
-        this.#main = "";
-      } else {
-        this.#sub.add(this.#main);
-        this.#main = "";
-      }
-      this.#standby = false;
-    }
-    cancel(key: string) {
-      if (!this.#multi) {
-        return;
-      }
-      this.#replaceMain(key);
-      this.#standby = false;
-    }
-    has(key: string) {
-      return this.#all.has(key);
-    }
-    clear() {
-      this.#all.clear();
-      this.#main = "";
-      this.#sub.clear();
-      this.#standby = false;
-    }
-    #replaceMain(key: string) {
-      if (this.#main === key) {
-        return;
-      }
-      if (this.#main !== "") {
-        this.#all.delete(this.#main);
-        this.#sub.add(this.#main);
-      }
-      this.#all.add(key);
-      this.#sub.delete(key);
-      this.#main = key;
-    }
-    get follower(): string[] {
-      return this.#items._keys.filter((x) => this.#sub.has(x));
-    }
-  }
-  class DragTarget {
-    static EMPTY_ARRAY = [];
-    #items: SortableItems | undefined;
-    #group: KeyValue | undefined;
-    #key = "";
-    #follower: string[] = DragTarget.EMPTY_ARRAY;
-
-    set(key: string, items?: SortableItems, group?: KeyValue, follower?: string[]) {
-      if (items) {
-        this.#items = items;
-      }
-      if (group) {
-        this.#group = group;
-      }
-      this.#key = key;
-      if (follower) {
-        this.#follower = follower;
-      }
-    }
-    delete() {
-      this.#items?.extract(this.#items._index(this.#key));
-    }
-    send(key?: string) {
-      this.#items?._send(key ?? this.#key);
-    }
-    push(key: string) {
-      this.#items?._append(key);
-    }
-    receive(key: string, after: boolean) {
-      this.#items?._receive(this.#key, key, after);
-    }
-    insert(index: number, key: string, after: boolean) {
-      this.#items?._insert(index, key, after);
-    }
-    clone(key: string, after: boolean): string {
-      return this.#items?._clone(this.#key, key, after) ?? "";
-    }
-    clear() {
-      this.#items = undefined;
-      this.#group = undefined;
-      this.#key = "";
-      this.#follower = DragTarget.EMPTY_ARRAY;
-    }
-    get items(): SortableItems | undefined {
-      return this.#items;
-    }
-    get group(): KeyValue | undefined {
-      return this.#group;
-    }
-    get key(): string {
-      return this.#key;
-    }
-    get index(): number {
-      return this.#items?._index(this.#key) ?? NaN;
-    }
-    get follower(): string[] {
-      return this.#follower.filter((x) => x !== this.#key);
-    }
-  }
-  class DraggingHandler {
-    #base = new DragTarget();
-    #from = new DragTarget();
-    #to = new DragTarget();
-    #mode = "std";
-    #oldIndex = NaN;
-    #dest: TargetKeyHolder;
-
-    constructor(dest: TargetKeyHolder) {
-      this.#dest = dest;
-    }
-    start(mode: SortableMode, items: SortableItems, group: KeyValue, key: string, follower?: string[]) {
-      this.#mode = mode;
-      this.#base.set(key, items, group, follower);
-      this.#from.set(key, items, group);
-      this.#oldIndex = this.#base.index;
-    }
-    end(): boolean {
-      if (this.#mode === "swap") {
-        this.#swap();
-      }
-      if (this.#isNotMove()) {
-        return false;
-      }
-      const follower = this.#base.follower.toReversed();
-      if (this.#isCloned()) {
-        follower.forEach((key) => this.#cloneFollower(key));
-      } else {
-        follower.forEach((key) => this.#moveFollower(key));
-      }
-      return true;
-    }
-    clear() {
-      this.#base.clear();
-      this.#from.clear();
-      this.#to.clear();
-      this.#mode = "std";
-      this.#oldIndex = NaN;
-    }
-    sort(items: SortableItems, group: KeyValue, key: string, sort: boolean, guard: TransitionGuard) {
-      if (this.#isNotSetFrom()) {
-        return;
-      }
-      this.#to.set(key, items, group);
-      switch (this.#mode) {
-        case "std":
-          this.#sortStd(sort);
-          break;
-        case "clone":
-          this.#sortClone(sort, guard);
-          break;
-        case "swap":
-          this.#sortSwap(sort);
-          break;
-      }
-    }
-    append(items: SortableItems, group: KeyValue, sort: boolean, guard: TransitionGuard) {
-      if (this.#isNotSetFrom()) {
-        return;
-      }
-      this.#to.set("", items, group);
-      switch (this.#mode) {
-        case "std":
-          this.#appendStd(sort);
-          break;
-        case "clone":
-          this.#appendClone(sort, guard);
-          break;
-        case "swap":
-          this.#dest.clear();
-          break;
-      }
-    }
-    #sortStd(sort: boolean) {
-      if (sort) {
-        this.#move();
-        return;
-      }
-      switch (this.#getDragContext()) {
-        case "stay":
-          break;
-        case "leave":
-          this.#move();
-          break;
-        case "return":
-          this.#restore();
-          break;
-        case "others":
-          this.#move();
-          break;
-      }
-    }
-    #sortClone(sort: boolean, guard: TransitionGuard) {
-      let move = false;
-      switch (this.#getDragContext()) {
-        case "stay":
-          move = sort;
-          break;
-        case "leave":
-          this.#clone(guard);
-          break;
-        case "return":
-          this.#delete(guard);
-          move = sort;
-          break;
-        case "others":
-          move = true;
-          break;
-      }
-      if (move) {
-        this.#move();
-      }
-    }
-    #sortSwap(sort: boolean) {
-      if (sort) {
-        this.#dest.set(this.#to.key);
-        return;
-      }
-      switch (this.#getDragContext()) {
-        case "stay":
-          this.#to.set("");
-          this.#dest.clear();
-          break;
-        case "leave":
-          this.#dest.set(this.#to.key);
-          break;
-      }
-    }
-    #appendStd(sort: boolean) {
-      switch (this.#getDragContext()) {
-        case "stay":
-          break;
-        case "leave":
-          this.#push();
-          break;
-        case "return":
-          sort ? this.#push() : this.#restore();
-          break;
-        case "others":
-          this.#push();
-          break;
-      }
-    }
-    #appendClone(sort: boolean, guard: TransitionGuard) {
-      switch (this.#getDragContext()) {
-        case "stay":
-          break;
-        case "leave":
-          this.#clone(guard);
-          break;
-        case "return":
-          this.#delete(guard);
-          break;
-        case "others":
-          this.#push();
-          break;
-      }
-    }
-    #restore() {
-      this.#from.send();
-      this.#base.insert(this.#oldIndex, this.#base.key, false);
-      this.#from.set(this.#base.key, this.#base.items, this.#base.group);
-    }
-    #move() {
-      const after = this.#isInsertAfter(this.#from);
-      this.#from.send();
-      this.#to.receive(this.#from.key, after);
-      this.#from.set(this.#from.key, this.#to.items, this.#to.group);
-    }
-    #push() {
-      this.#from.send();
-      this.#to.push(this.#from.key);
-      this.#from.set(this.#from.key, this.#to.items, this.#to.group);
-    }
-    #clone(guard: TransitionGuard) {
-      const newKey = this.#to.clone(this.#from.key, false);
-      this.#from.set(newKey, this.#to.items, this.#to.group);
-      guard.add(newKey);
-    }
-    #delete(guard: TransitionGuard) {
-      guard.delete(this.#from.key);
-      this.#from.delete();
-      this.#from.set(this.#base.key, this.#base.items, this.#base.group);
-    }
-    #swap() {
-      this.#dest.clear();
-      if (this.#isNotSetTo()) {
-        return;
-      }
-      const from = this.#from.index;
-      this.#from.send();
-      this.#to.receive(this.#from.key, false);
-      this.#to.send();
-      this.#from.insert(from, this.#to.key, false);
-      this.#from.set(this.#from.key, this.#to.items, this.#to.group);
-    }
-    #moveFollower(key: string) {
-      this.#base.send(key);
-      this.#from.receive(key, true);
-    }
-    #cloneFollower(key: string) {
-      this.#from.clone(key, true);
-    }
-    #isStaying(target: DragTarget): boolean {
-      return this.#base.group?.key === target.group?.key;
-    }
-    #getDragContext(): DragContext {
-      if (this.#isStaying(this.#from) && this.#isStaying(this.#to)) {
-        return "stay"; // move within same group
-      } else if (this.#isStaying(this.#from) && !this.#isStaying(this.#to)) {
-        return "leave"; // move to other group
-      } else if (!this.#isStaying(this.#from) && this.#isStaying(this.#to)) {
-        return "return"; // come back to the group
-      } else {
-        return "others"; // move between other groups
-      }
-    }
-    #isNotSetFrom(): boolean {
-      return !(this.#oldIndex >= 0);
-    }
-    #isNotSetTo(): boolean {
-      return this.#to.key === "";
-    }
-    #isInsertAfter(from: DragTarget): boolean {
-      return from.group?.key === this.#to.group?.key && from.index < this.#to.index;
-    }
-    #isNotMove(): boolean {
-      return this.#base.group?.key === this.#from.group?.key && this.#base.key === this.#from.key && this.#oldIndex === this.#from.index;
-    }
-    #isCloned(): boolean {
-      return this.#mode === "clone" && this.#base.key !== this.#from.key;
-    }
-    get group(): KeyValue | undefined {
-      return this.#base.group;
-    }
-  }
-  class DragHandler {
-    #key = $state("");
-    #target;
-    #pointer;
-    #guard;
-    #standby = false;
+    #pointer = new PointerVector(minDistance);
+    #trigger = createTriggerNumber(triggerDrag);
+    #timer: ReturnType<typeof setTimeout> | undefined;
+    #active: ActiveDrag | undefined = $state.raw();
+    #standby:
+      | {
+          member: SortableMember;
+          key: string;
+          el: HTMLElement;
+          followers: string[];
+          item: unknown;
+          ghost: boolean;
+          anchor: Point;
+        }
+      | undefined = $state.raw();
     #dragging = $state(false);
-    #trigger;
+    #activeKey = $state("");
+    #confirmKey = $state("");
+    shadow: SortableShadowState = $state({
+      rendering: false,
+      visible: false,
+      ownerId: "",
+      item: undefined,
+      point: point(0, 0),
+      cssSize: "",
+      ghost: false,
+    });
 
-    constructor(tp: TransitionParams, trigger: TriggerButton[], tolerance: number, skey: TargetKeyHolder) {
-      this.#target = new DraggingHandler(skey);
-      this.#pointer = new PointerVector(tolerance);
-      this.#guard = new TransitionGuard(tp.duration);
-      this.#trigger = createTriggerNumber(trigger);
+    constructor(
+      identity: symbol,
+      send: TransitionFn,
+      receive: TransitionFn,
+      presentation?: { get variant(): SVSVariant; get styling(): SVSClass | undefined },
+    ) {
+      this.identity = identity;
+      this.send = send;
+      this.receive = receive;
+      this.#presentation = presentation;
     }
-    matchTrigger(trigger: number): boolean {
-      return trigger === this.#trigger;
+    get variant(): SVSVariant {
+      return this.#presentation?.variant ?? VARIANT.NEUTRAL;
     }
-    prepare(ev: PointerEvent, key: string, trigger: number): boolean {
-      this.#standby = false;
-      if (this.matchTrigger(trigger)) {
-        this.#standby = true;
-        this.#key = key;
-        this.#pointer.init(ev);
-        this.#target.clear();
-        this.#guard.clear();
-      }
-      return this.#standby;
-    }
-    isStandby(): boolean {
-      return this.#standby && !this.#dragging;
-    }
-    start(ev: PointerEvent, mode: SortableMode, items: SortableItems, group: KeyValue, follower: string[]): boolean {
-      if (!this.#standby) {
-        return false;
-      }
-      if (this.#pointer.reachMinDistance(ev)) {
-        this.#start(mode, items, group, follower);
-      }
-      return this.#dragging;
-    }
-    isAcceptable(key: string, group: string, accept?: string[]): boolean {
-      if (!this.#dragging || this.#guard.exists(key) || !this.#target.group) {
-        return false;
-      }
-      if (!accept || this.#target.group.key === group) {
-        return true;
-      }
-      return accept.includes(this.#target.group.value);
-    }
-    isSortable(sort: boolean, group: string): boolean {
-      return sort || this.#target.group?.key !== group;
-    }
-    sort(items: SortableItems, group: KeyValue, key: string, sort: boolean) {
-      this.#guard.timed(key);
-      this.#target.sort(items, group, key, sort, this.#guard);
-    }
-    append(items: SortableItems, group: KeyValue, sort: boolean) {
-      this.#target.append(items, group, sort, this.#guard);
-    }
-    end(): boolean {
-      return this.#target.end();
-    }
-    vector(ev: PointerEvent): Point {
-      return this.#pointer.vector(ev);
-    }
-    deactivate() {
-      this.#key = "";
-      this.#dragging = false;
-    }
-
-    #start(mode: SortableMode, items: SortableItems, group: KeyValue, follower: string[]) {
-      this.#dragging = true;
-      this.#standby = false;
-      this.#guard.start(this.#key);
-      this.#target.clear();
-      this.#target.start(mode, items, group, this.#key, follower);
-    }
-    get key(): string {
-      return this.#key;
-    }
-    get active(): boolean {
-      return this.#key !== "";
+    get styling(): SVSClass | undefined {
+      return this.#presentation?.styling;
     }
     get dragging(): boolean {
       return this.#dragging;
     }
-  }
-  class TransitionGuard {
-    #set: Set<string> = new Set();
-    #interval;
-
-    constructor(interval: number) {
-      this.#interval = interval;
+    get activeKey(): string {
+      return this.#activeKey;
     }
-    start(key: string) {
-      this.#set.clear();
-      this.#set.add(key);
+    get confirmKey(): string {
+      return this.#confirmKey;
     }
-    add(key: string) {
-      this.#set.add(key);
+    register<T>(member: SortableMember<T>): () => void {
+      this.#members.set(member.id, member as SortableMember);
+      return () => {
+        this.#members.delete(member.id);
+        if (this.#active?.source.id === member.id || this.#active?.current.id === member.id) this.cancel();
+      };
     }
-    delete(key: string) {
-      this.#set.delete(key);
-    }
-    timed(key: string) {
-      this.#set.add(key);
-      setTimeout(() => {
-        this.#set.delete(key);
-      }, this.#interval);
-    }
-    clear() {
-      this.#set.clear();
-    }
-    exists(key: string): boolean {
-      return this.#set.has(key);
-    }
-  }
-  class PointerVector {
-    #tolerance;
-    #initial: Point = point(0, 0);
-    #current: Point = point(0, 0);
-
-    constructor(tolerance: number) {
-      this.#tolerance = tolerance;
-    }
-    init(ev: PointerEvent) {
-      point(ev.clientX, ev.clientY, this.#initial);
-      point(0, 0, this.#current);
-    }
-    reachMinDistance(ev: PointerEvent): boolean {
-      this.#refresh(ev);
-      return this.#distance() > this.#tolerance;
-    }
-    vector(ev: PointerEvent): Point {
-      this.#refresh(ev);
-      return this.#difference();
-    }
-    #refresh(ev: PointerEvent) {
-      point(ev.clientX, ev.clientY, this.#current);
-    }
-    #difference(): Point {
-      return point(this.#current.x - this.#initial.x, this.#current.y - this.#initial.y);
-    }
-    #distance(): number {
-      return Math.sqrt(Math.pow(this.#current.x - this.#initial.x, 2) + Math.pow(this.#current.y - this.#initial.y, 2));
-    }
-  }
-  class TargetKeyHolder {
-    #key = $state("");
-    set(key: string) {
-      this.#key = key;
-    }
-    clear() {
-      this.#key = "";
-    }
-    is(key: string): boolean {
-      return this.#key === key;
-    }
-    get key(): string {
-      return this.#key;
-    }
-  }
-  class DelayRunner {
-    #delay;
-    #immed = false;
-    #tid: ReturnType<typeof setTimeout> | undefined;
-
-    constructor(delay: number) {
-      if (delay <= 0) {
-        this.#immed = true;
-      }
-      this.#delay = delay;
-    }
-    run(confirm: boolean, fn: VoidFn) {
-      if (!confirm || this.#immed) {
-        fn();
-        return;
-      }
+    prepare<T>(member: SortableMember<T>, key: string, ev: PointerEvent, el: HTMLElement, followers: string[]): boolean {
       this.cancel();
-      this.#tid = setTimeout(fn, this.#delay);
+      if (getTriggerNumber(ev) !== this.#trigger) return false;
+      const index = findIndex(member, key);
+      if (index < 0) return false;
+      this.#pointer.init(ev);
+      const rect = el.getBoundingClientRect();
+      const item = member.items[index];
+      this.#standby = {
+        member,
+        key,
+        el,
+        followers,
+        item,
+        ghost: false,
+        anchor: point(rect.x, rect.y),
+      };
+      this.#activeKey = key;
+      this.shadow.rendering = false;
+      this.shadow.visible = false;
+      this.shadow.ownerId = member.id;
+      this.shadow.item = item;
+      this.shadow.point = point(rect.x, rect.y);
+      this.shadow.cssSize = `width: ${rect.width}px; height: ${rect.height}px;`;
+      this.#listen();
+      return true;
     }
-    cancel() {
-      if (!this.#tid) {
+    setGhost(ghost: boolean, ev?: PointerEvent) {
+      if (!this.#standby) return;
+      this.#standby.ghost = ghost;
+      this.shadow.ghost = ghost;
+      if (ghost) {
+        const p = ev ? point(ev.clientX, ev.clientY) : this.#standby.anchor;
+        this.#standby.anchor = p;
+        this.shadow.point = p;
+        this.shadow.cssSize = "width: fit-content; height: fit-content;";
+      }
+    }
+    move(ev: PointerEvent): void {
+      if (this.#standby && !this.#active) {
+        if (!this.#pointer.reachMinDistance(ev)) return;
+        const { member, key, followers, item } = this.#standby;
+        this.#active = {
+          source: member,
+          current: member,
+          sourceKey: key,
+          activeKey: key,
+          sourceIndex: findIndex(member, key),
+          item,
+          mode: member.mode,
+          followers,
+        };
+        this.#dragging = true;
+        this.shadow.rendering = true;
+        this.shadow.visible = true;
+      }
+      if (!this.#active || !this.#standby) return;
+      const vector = this.#pointer.vector(ev);
+      this.shadow.point = point(this.#standby.anchor.x + vector.x, this.#standby.anchor.y + vector.y);
+    }
+    commit(): void {
+      this.#clearDelay();
+      if (this.#active) {
+        this.#commitSwap();
+        this.#commitFollowers();
+      }
+      this.#clearDrag();
+    }
+    cancel(): void {
+      this.#clearDelay();
+      this.#clearDrag();
+    }
+    over<T>(member: SortableMember<T>, key: string): void {
+      if (!this.#active || !this.#isAcceptable(member) || this.#guardSameTarget(member, key)) return;
+      const run = () => this.#sort(member, key);
+      if (member.confirm && this.#canSort(member)) {
+        this.#confirmKey = key;
+        this.#clearDelay();
+        this.#timer = setTimeout(run, confirmTime);
+      } else {
+        run();
+      }
+    }
+    leave(): void {
+      this.#confirmKey = "";
+      this.#clearDelay();
+    }
+    enterGroup<T>(member: SortableMember<T>): void {
+      if (!this.#active || !this.#isAcceptable(member)) return;
+      if (member.items.length > 0 && !memberIsAppendable(member)) return;
+      const run = () => this.#append(member);
+      if (member.confirm) {
+        this.#clearDelay();
+        this.#timer = setTimeout(run, confirmTime);
+      } else {
+        run();
+      }
+    }
+    itemVariant(key: string, selected: boolean, base: SVSVariant): SVSVariant {
+      return selected || this.#activeKey === key || this.#confirmKey === key ? VARIANT.ACTIVE : base;
+    }
+    #listen() {
+      this.#stopListeners();
+      this.#listeners = [
+        on(window, "pointermove", throttle(pollingRate, (ev) => this.move(ev))),
+        on(window, "pointerup", () => this.commit()),
+        on(window, "pointercancel", () => this.cancel()),
+      ];
+    }
+    #stopListeners() {
+      this.#listeners.forEach((stop) => stop());
+      this.#listeners = [];
+    }
+    #clearDelay() {
+      if (this.#timer) clearTimeout(this.#timer);
+      this.#timer = undefined;
+    }
+    #clearDrag() {
+      this.#stopListeners();
+      this.#active = undefined;
+      this.#standby = undefined;
+      this.#dragging = false;
+      this.#activeKey = "";
+      this.#confirmKey = "";
+      this.shadow.rendering = false;
+      this.shadow.visible = false;
+      this.shadow.ownerId = "";
+      this.shadow.item = undefined;
+      this.shadow.ghost = false;
+    }
+    #sort(member: SortableMember, key: string) {
+      if (!this.#active || !this.#canSort(member)) return;
+      this.#confirmKey = "";
+      switch (this.#active.mode) {
+        case "move":
+          this.#moveTo(member, key);
+          break;
+        case "clone":
+          this.#cloneTo(member, key);
+          break;
+        case "swap":
+          this.#active.pendingSwap = { member, key };
+          this.#confirmKey = key;
+          break;
+      }
+    }
+    #append(member: SortableMember) {
+      if (!this.#active) return;
+      this.#confirmKey = "";
+      switch (this.#active.mode) {
+        case "move":
+          this.#moveTo(member);
+          break;
+        case "clone":
+          this.#cloneTo(member);
+          break;
+        case "swap":
+          this.#active.pendingSwap = undefined;
+          break;
+      }
+    }
+    #moveTo(member: SortableMember, key?: string) {
+      if (!this.#active) return;
+      const active = this.#active;
+      const from = active.current;
+      const fromIndex = findIndex(from, active.activeKey);
+      if (fromIndex < 0) return;
+      const toIndex = insertIndex(member, key, from, fromIndex);
+      if (from.id === member.id && fromIndex === toIndex) return;
+      const [value] = from.items.splice(fromIndex, 1);
+      member.items.splice(adjustIndex(member, from, fromIndex, toIndex), 0, value);
+      from.touch();
+      member.touch();
+      active.current = member;
+      active.activeKey = stringifyKey(member.key(value));
+      this.#activeKey = active.activeKey;
+      this.shadow.item = value;
+    }
+    #cloneTo(member: SortableMember, key?: string) {
+      if (!this.#active) return;
+      const active = this.#active;
+      if (active.current.id === active.source.id && member.id === active.source.id) {
+        if (member.sort) this.#moveTo(member, key);
         return;
       }
-      clearTimeout(this.#tid);
-      this.#tid = undefined;
+      if (active.current.id !== active.source.id) {
+        if (member.id === active.source.id) {
+          const cloneIndex = findIndex(active.current, active.activeKey);
+          if (cloneIndex >= 0) {
+            active.current.items.splice(cloneIndex, 1);
+            active.current.touch();
+          }
+          active.current = active.source;
+          active.activeKey = active.sourceKey;
+          this.#activeKey = active.activeKey;
+          this.shadow.item = active.item;
+          if (member.sort) this.#moveTo(member, key);
+          return;
+        }
+        this.#moveTo(member, key);
+        return;
+      }
+      const value = active.source.clone(active.item);
+      const index = insertIndex(member, key, active.current, findIndex(active.current, active.activeKey));
+      member.items.splice(index, 0, value);
+      member.touch();
+      active.current = member;
+      active.activeKey = stringifyKey(member.key(value));
+      this.#activeKey = active.activeKey;
+      this.shadow.item = value;
     }
-    exists(confirm: boolean): boolean {
-      return confirm && !this.#immed;
+    #commitSwap() {
+      const active = this.#active;
+      if (!active?.pendingSwap) return;
+      this.#swapWith(active.pendingSwap.member, active.pendingSwap.key);
+      active.pendingSwap = undefined;
+    }
+    #swapWith(targetMember: SortableMember, targetKey: string) {
+      const active = this.#active;
+      if (!active) return;
+      const targetIndex = findIndex(targetMember, targetKey);
+      const fromMember = active.current;
+      const fromIndex = findIndex(fromMember, active.activeKey);
+      if (targetIndex < 0 || fromIndex < 0) return;
+      const targetValue = targetMember.items[targetIndex];
+      const fromValue = fromMember.items[fromIndex];
+      fromMember.items.splice(fromIndex, 1, targetValue);
+      targetMember.items.splice(targetIndex, 1, fromValue);
+      fromMember.touch();
+      targetMember.touch();
+      active.current = targetMember;
+      active.activeKey = stringifyKey(targetMember.key(fromValue));
+      this.#activeKey = active.activeKey;
+    }
+    #commitFollowers() {
+      const active = this.#active;
+      if (!active || active.followers.length <= 0 || active.current.id === active.source.id) return;
+      const values = active.followers
+        .map((key) => {
+          const index = findIndex(active.source, key);
+          return index >= 0 ? { key, index, value: active.source.items[index] } : undefined;
+        })
+        .filter((x): x is { key: string; index: number; value: unknown } => x !== undefined);
+      if (active.mode === "clone") {
+        const cloned = values.map(({ value }) => active.source.clone(value));
+        insertAfter(active.current, active.activeKey, cloned);
+        active.current.touch();
+        return;
+      }
+      values
+        .toSorted((a, b) => b.index - a.index)
+        .forEach(({ index }) => active.source.items.splice(index, 1));
+      insertAfter(
+        active.current,
+        active.activeKey,
+        values.map(({ value }) => value),
+      );
+      active.source.touch();
+      active.current.touch();
+    }
+    #isAcceptable(member: SortableMember): boolean {
+      if (!this.#active) return false;
+      if (member.id === this.#active.current.id || member.id === this.#active.source.id) return true;
+      const accept = member.accept;
+      if (!accept) return true;
+      if (Array.isArray(accept)) return accept.includes(this.#active.source.id);
+      return accept(this.#active.source.id);
+    }
+    #canSort(member: SortableMember): boolean {
+      if (!this.#active) return false;
+      return member.sort || member.id !== this.#active.current.id;
+    }
+    #guardSameTarget(member: SortableMember, key: string): boolean {
+      if (!this.#active) return true;
+      return member.id === this.#active.current.id && key === this.#active.activeKey;
     }
   }
 
-  function point(x: number, y: number, obj?: Point): Point {
-    if (!obj) {
-      return { x, y };
-    }
-    obj.x = x;
-    obj.y = y;
-    return obj;
+  function memberIsAppendable(member: SortableMember & { appendable?: boolean }): boolean {
+    return member.appendable === true;
+  }
+  function findIndex(member: SortableMember, key: string): number {
+    return member.items.findIndex((item) => stringifyKey(member.key(item)) === key);
+  }
+  function insertIndex(member: SortableMember, key: string | undefined, from: SortableMember, fromIndex: number): number {
+    if (!key) return member.items.length;
+    const index = findIndex(member, key);
+    if (index < 0) return member.items.length;
+    return member.id === from.id && fromIndex < index ? index + 1 : index;
+  }
+  function adjustIndex(member: SortableMember, from: SortableMember, fromIndex: number, toIndex: number): number {
+    return member.id === from.id && fromIndex < toIndex ? toIndex - 1 : toIndex;
+  }
+  function insertAfter(member: SortableMember, key: string, values: unknown[]) {
+    const index = findIndex(member, key);
+    member.items.splice(index < 0 ? member.items.length : index + 1, 0, ...values);
+  }
+  function point(x: number, y: number): Point {
+    return { x, y };
+  }
+  function stringifyKey(key: PropertyKey): string {
+    return String(key);
   }
   function createTriggerNumber(buttonsArray: TriggerButton[]): number {
     let ret = 0;
@@ -928,208 +559,216 @@
   }
   function getTriggerNumber(ev: PointerEvent): number {
     let num = ev.buttons;
-    if (ev.ctrlKey) {
-      num += 0b000100000;
-    }
-    if (ev.altKey) {
-      num += 0b001000000;
-    }
-    if (ev.shiftKey) {
-      num += 0b010000000;
-    }
-    if (ev.metaKey) {
-      num += 0b100000000;
-    }
+    if (ev.ctrlKey) num += 0b000100000;
+    if (ev.altKey) num += 0b001000000;
+    if (ev.shiftKey) num += 0b010000000;
+    if (ev.metaKey) num += 0b100000000;
     return num;
   }
 
-  const rand = new RandKey();
-  const dest = new TargetKeyHolder();
-  const drag = new DragHandler(tp, triggerDrag, minDistance, dest);
-  const delay = new DelayRunner(confirmTime);
-  const [s, r] = crossfade(tp);
-  const ondragstart = () => false;
+  class PointerVector {
+    #tolerance;
+    #initial: Point = point(0, 0);
+    #current: Point = point(0, 0);
 
-  import { type Snippet, untrack, onDestroy } from "svelte";
-  import { SvelteSet } from "svelte/reactivity";
+    constructor(tolerance: number) {
+      this.#tolerance = tolerance;
+    }
+    init(ev: PointerEvent) {
+      this.#initial = point(ev.clientX, ev.clientY);
+      this.#current = point(ev.clientX, ev.clientY);
+    }
+    reachMinDistance(ev: PointerEvent): boolean {
+      this.#refresh(ev);
+      return Math.hypot(this.#current.x - this.#initial.x, this.#current.y - this.#initial.y) > this.#tolerance;
+    }
+    vector(ev: PointerEvent): Point {
+      this.#refresh(ev);
+      return point(this.#current.x - this.#initial.x, this.#current.y - this.#initial.y);
+    }
+    #refresh(ev: PointerEvent) {
+      this.#current = point(ev.clientX, ev.clientY);
+    }
+  }
+
+  import { cubicOut } from "svelte/easing";
+  import { type Snippet, onDestroy, untrack } from "svelte";
+  import { type Attachment } from "svelte/attachments";
   import { on } from "svelte/events";
-  import { type EasingFunction, crossfade } from "svelte/transition";
+  import { SvelteSet } from "svelte/reactivity";
+  import { crossfade, type EasingFunction } from "svelte/transition";
   import { flip } from "svelte/animate";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, throttle } from "./core";
+  import { type SVSClass, type SVSVariant, type SVSContext, VARIANT, PARTS, fnClass, throttle, isNeutral, _createContext } from "./core";
 </script>
 
-<script lang="ts">
+<script lang="ts" generics="T = string">
   // prettier-ignore
-  let { items, item, ghost, name, mode = "std", accept, sort = true, multiple = false, draggable = true, appendable = false, confirm = false, styling, variant = VARIANT.NEUTRAL }: SortableProps = $props();
+  let { items = $bindable(), item, key, clone, group, id, ghost, mode = "move", accept, sort = true, multiple = false, draggable = true, appendable = false, confirm = false, dragging = $bindable(false), styling, variant = VARIANT.NEUTRAL }: SortableProps<T> = $props();
 
-  // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const context = getSortableContext();
   // svelte-ignore state_referenced_locally
-  const group: KeyValue = SortableItems._newItem(name);
-  const elems: HTMLElement[] = $state([]);
+  const controller = group ?? context ?? createSortableGroup();
+  const autoId = $props.id();
   // svelte-ignore state_referenced_locally
-  const shadow = new Shadow(ghost);
-  // svelte-ignore state_referenced_locally
-  const selector = new MultiSelect(items, multiple, triggerSelect);
-  const listener = new ListenerHandler();
+  const listId = id ?? autoId;
+  const itemKey = $derived(key ?? ((x: T) => x as PropertyKey));
+  const itemClone = $derived(clone ?? ((x: T) => x));
+  const cls = $derived(fnClass(preset, styling ?? controller.styling));
+  const effVariant = $derived(!isNeutral(variant) ? variant : controller.variant);
+  const selected = new SvelteSet<string>();
+  let pendingSelect = $state("");
+  let pendingDeselect = $state(false);
+  let unregister: VoidFn | undefined;
 
-  // *** Reactive Handlers *** //
-  $effect.pre(() => {
-    drag.dragging;
-    drag.active;
-    untrack(() => setDragState());
-  });
-  function setDragState() {
-    if (drag.dragging) {
-      items._state = "dragging";
-    } else if (drag.active) {
-      items._state = "ready";
-    } else {
-      items._state = "idle";
-    }
-  }
+  const member: SortableMember<T> & { get appendable(): boolean } = {
+    id: listId,
+    get items() {
+      return items;
+    },
+    key(value: T) {
+      return itemKey(value);
+    },
+    clone(value: T) {
+      return itemClone(value);
+    },
+    get mode() {
+      return mode;
+    },
+    get accept() {
+      return accept;
+    },
+    get sort() {
+      return sort;
+    },
+    get multiple() {
+      return multiple;
+    },
+    get confirm() {
+      return confirm;
+    },
+    touch() {
+      items = items;
+    },
+    get appendable() {
+      return appendable;
+    },
+  };
+
+  unregister = controller.register(member);
+
   $effect(() => {
-    shadow.rendering;
-    untrack(() => adjustShadowPosition());
+    controller.dragging;
+    untrack(() => (dragging = controller.dragging));
   });
-  function adjustShadowPosition() {
-    if (!shadow.rendering) {
-      return;
-    }
-    shadow.setOffset();
-  }
 
-  // *** Utilities *** //
-  function isSelected(key: string): boolean {
-    return selector.has(key) || drag.key === key || dest.is(key);
+  function keyString(value: T): string {
+    return stringifyKey(itemKey(value));
   }
-  function preDown(ev: PointerEvent): number {
+  function handle(element: Element): void {
+    if (!(element instanceof HTMLElement)) return;
+    element.dataset.svsHandle = "";
+    element.style.touchAction = "none";
+  }
+  function isSelected(key: string): boolean {
+    return selected.has(key);
+  }
+  function onPointerDown(ev: PointerEvent) {
+    const target = ev.target;
+    if (!(target instanceof Element) || !(ev.currentTarget instanceof HTMLElement)) return;
+    const li = target.closest<HTMLElement>("[data-svs-key]");
+    if (!li || !ev.currentTarget.contains(li)) return;
+    const hasHandle = li.querySelector("[data-svs-handle]") !== null;
+    const insideHandle = target.closest("[data-svs-handle]") !== null;
+    if (hasHandle ? !insideHandle : !draggable) return;
     ev.preventDefault();
     ev.stopPropagation();
-    if (drag.dragging) {
-      return 0;
+    try {
+      li.releasePointerCapture(ev.pointerId);
+    } catch {
+      // jsdom and uncaptured pointers can throw here.
     }
-    cleanup();
+    const key = li.dataset.svsKey ?? "";
     const trigger = getTriggerNumber(ev);
-    if (!drag.matchTrigger(trigger) && !selector.matchTrigger(trigger)) {
-      return 0;
+    if (multiple && trigger === createTriggerNumber(triggerSelect)) {
+      pendingSelect = key;
+      pendingDeselect = selected.has(key);
+    } else {
+      pendingSelect = "";
+      pendingDeselect = false;
     }
-    return trigger;
-  }
-  function postDrag() {
-    if (drag.dragging && drag.end()) {
-      selector.clear();
+    const followers = multiple && selected.has(key) ? [...selected].filter((x) => x !== key) : [];
+    if (controller.prepare(member, key, ev, li, followers)) {
+      controller.setGhost?.(ghost !== undefined, ev);
     }
   }
-  function cleanup() {
-    delay.cancel();
-    drag.deactivate();
-    shadow.hide();
-    listener.stop();
+  function onPointerOver(ev: PointerEvent) {
+    if (!controller.dragging) return;
+    const target = ev.target;
+    if (!(target instanceof Element) || !(ev.currentTarget instanceof HTMLElement)) return;
+    const li = target.closest<HTMLElement>("[data-svs-key]");
+    if (!li || !ev.currentTarget.contains(li)) {
+      if (target === ev.currentTarget) controller.enterGroup(member);
+      return;
+    }
+    controller.over(member, li.dataset.svsKey ?? "");
+  }
+  function onPointerOut(ev: PointerEvent) {
+    if (!controller.dragging) return;
+    const current = ev.currentTarget;
+    const related = ev.relatedTarget;
+    if (current instanceof Element && related instanceof Node && current.contains(related)) return;
+    controller.leave();
+  }
+  function onPointerEnter() {
+    controller.enterGroup(member);
+  }
+  function onPointerUp() {
+    if (!multiple || controller.dragging || !pendingSelect) return;
+    pendingDeselect ? selected.delete(pendingSelect) : selected.add(pendingSelect);
+    pendingSelect = "";
+    pendingDeselect = false;
   }
 
-  // *** Event Handlers *** //
-  function downF(key: string, el: HTMLElement): PointerEventHandler {
-    return (ev: PointerEvent) => {
-      const trigger = preDown(ev);
-      if (!trigger) {
-        return;
-      }
-      el.releasePointerCapture(ev.pointerId);
-      const onmove = drag.prepare(ev, key, trigger) ? move : undefined;
-      shadow.prepare(ev, el, drag.isStandby());
-      selector.start(key, trigger);
-      listener.start(up, cancel, onmove);
-    };
-  }
-  function move(ev: PointerEvent) {
-    if (drag.isStandby()) {
-      if (!drag.start(ev, mode, items, group, selector.follower)) {
-        return;
-      }
-      shadow.show();
-      selector.cancel(drag.key);
-    }
-    if (drag.dragging) {
-      shadow.move(drag.vector(ev));
-    }
-  }
-  function enterF(key: string): PointerEventHandler {
-    return (ev: PointerEvent) => {
-      if (!drag.isAcceptable(key, group.key, accept)) {
-        return;
-      }
-      if (delay.exists(confirm) && drag.isSortable(sort, group.key)) {
-        dest.set(key);
-      }
-      delay.run(confirm, () => drag.sort(items, group, key, sort));
-    };
-  }
-  function leave(ev: PointerEvent) {
-    dest.clear();
-    delay.cancel();
-  }
-  function up(ev: PointerEvent) {
-    selector.toggle();
-    postDrag();
-    cleanup();
-  }
-  function cancel(ev: PointerEvent) {
-    postDrag();
-    cleanup();
-  }
-  function groupenter(ev: PointerEvent) {
-    if (items.isEmpty() || appendable) {
-      if (!drag.isAcceptable(group.key, group.key, accept)) {
-        return;
-      }
-      delay.run(confirm, () => drag.append(items, group, sort));
-    }
-  }
-  function groupleave(ev: PointerEvent) {
-    delay.cancel();
-  }
-
-  onDestroy(() => cleanup());
+  onDestroy(() => {
+    unregister?.();
+    controller.cancel();
+  });
 </script>
 
 <!---------------------------------------->
 
 <ul
-  class={cls(PARTS.WHOLE, variant)}
-  onpointerenter={drag.active ? groupenter : undefined}
-  onpointerleave={drag.active ? groupleave : undefined}
+  class={cls(PARTS.WHOLE, effVariant)}
+  onpointerdown={onPointerDown}
+  onpointerover={onPointerOver}
+  onpointerout={onPointerOut}
+  onpointerenter={onPointerEnter}
+  onpointerup={onPointerUp}
 >
-  {#each items._inner as { key, value }, i (key)}
-    {@const style = "touch-action:none;"}
-    {@const itemStatus = isSelected(key) ? VARIANT.ACTIVE : variant}
-    {@const onpointerdown = draggable ? downF(key, elems[i]) : undefined}
-    {@const onpointerenter = drag.active ? enterF(key) : undefined}
-    {@const onpointerleave = drag.active ? leave : undefined}
+  {#each items as value (keyString(value))}
+    {@const k = keyString(value)}
+    {@const itemVariant = controller.itemVariant(k, isSelected(k), effVariant)}
     <li
-      bind:this={elems[i]}
-      class={cls(PARTS.MAIN, itemStatus)}
-      in:s={{ key }}
-      out:r={{ key }}
+      class={cls(PARTS.MAIN, itemVariant)}
+      data-svs-key={k}
+      in:controller.receive={{ key: k }}
+      out:controller.send={{ key: k }}
       animate:flip={tp}
-      {style}
-      {onpointerdown}
-      {onpointerenter}
-      {onpointerleave}
+      style="touch-action:none;"
       {ondragstart}
     >
-      {@render item(value, itemStatus, downF(key, elems[i]))}
+      {@render item(value, itemVariant, handle)}
     </li>
   {/each}
 </ul>
-{#if shadow.rendering}
-  {@const style = `opacity: 0.5; pointer-events: none; position: fixed; left: ${shadow.pt.x}px; top: ${shadow.pt.y}px; ${shadow.cssVisibility} ${shadow.cssSize}`}
+{#if controller.shadow.rendering && controller.shadow.ownerId === listId}
+  {@const shadowStyle = `opacity: 0.5; pointer-events: none; position: fixed; left: ${controller.shadow.point.x}px; top: ${controller.shadow.point.y}px; visibility: ${controller.shadow.visible ? "visible" : "hidden"}; ${controller.shadow.cssSize}`}
   <ul style="display: contents;">
-    <li bind:this={shadow.elem} class={shadow.isGhost ? undefined : cls(PARTS.MAIN, variant)} {style}>
-      {#if shadow.isGhost}
-        {@render ghost!(items._value(drag.key))}
+    <li class={controller.shadow.ghost ? undefined : cls(PARTS.MAIN, effVariant)} style={shadowStyle}>
+      {#if controller.shadow.ghost && ghost}
+        {@render ghost(controller.shadow.item as T)}
       {:else}
-        {@render item(items._value(drag.key), variant, () => cleanup())}
+        {@render item(controller.shadow.item as T, effVariant, emptyAttachment)}
       {/if}
     </li>
   </ul>
