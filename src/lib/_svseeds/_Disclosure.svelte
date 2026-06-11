@@ -120,7 +120,7 @@
     else open = v;
   }
 
-  // *** Bind Handlers *** //
+  // *** Reactive Handlers *** //
   // External variant writes are styling-only; preserve the neutral fallback without changing open state.
   $effect(() => {
     neutral = ctx ? (isNeutral(ctx.variant) ? ctx.variant : VARIANT.NEUTRAL) : isNeutral(variant) ? variant : neutral;

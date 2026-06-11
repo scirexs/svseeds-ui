@@ -119,7 +119,7 @@
     element.setCustomValidity("");
   }
 
-  // *** Bind Handlers *** //
+  // *** Reactive Handlers *** //
   const showPlaceholder = $derived(!options.has("") && (placeholder !== undefined || value === ""));
   const opts = $derived([
     ...(showPlaceholder ? [{ val: "", text: placeholder ?? "", selected: value === "" }] : []),

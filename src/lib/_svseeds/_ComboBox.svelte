@@ -79,7 +79,7 @@
   let overflow = $state({ x: false, y: false });
   let listElem = $state<HTMLUListElement>();
 
-  // *** Bind Handlers *** //
+  // *** Reactive Handlers *** //
   const listboxStyle = $derived(
     `position:absolute;cursor:default;user-select:none;visibility: ${expanded ? "visible" : "hidden"};${overflow.x ? "right:0%;" : ""}${overflow.y ? "bottom:100%;" : ""}`,
   );

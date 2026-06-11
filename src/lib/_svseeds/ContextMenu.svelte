@@ -111,7 +111,7 @@
     return () => cleanups.forEach((x) => x());
   });
 
-  // *** Bind Handlers *** //
+  // *** Reactive Handlers *** //
   let dynStyle = $derived(
     `position:fixed;left:${position.x}px;top:${position.y}px;${open ? "visibility:visible;" : "visibility:hidden;z-index:-9999;"}`,
   );
@@ -162,7 +162,7 @@
   const hkeydown: KeyboardEventHandler<HTMLDocument> = (ev) => {
     if (ev.key === "Escape") hide();
   };
-  function hkeydownMenu(ev: KeyboardEvent) {
+  const hkeydownMenu = (ev: KeyboardEvent) => {
     const list = menuItems();
     const cur = list.indexOf(document.activeElement as HTMLElement);
     switch (ev.key) {
@@ -189,7 +189,7 @@
       default:
         typeahead(ev);
     }
-  }
+  };
 </script>
 
 <!---------------------------------------->

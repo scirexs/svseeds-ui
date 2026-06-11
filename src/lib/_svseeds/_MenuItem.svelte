@@ -61,7 +61,7 @@
   const effVariant = $derived(ctx ? ctx.variant : variant);
 
   // *** Event Handlers *** //
-  function hclick(ev: MouseEvent) {
+  const hclick = (ev: MouseEvent) => {
     if (disabled) {
       ev.preventDefault();
       ev.stopPropagation();
@@ -69,7 +69,7 @@
     }
     onselect?.(ev);
     ctx?.close();
-  }
+  };
 </script>
 
 <!---------------------------------------->

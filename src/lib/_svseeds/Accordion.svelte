@@ -101,7 +101,7 @@
     styling: disclosure?.styling ?? `${preset} svs-disclosure`,
   });
 
-  // *** Bind Handlers *** //
+  // *** Reactive Handlers *** //
   $effect(() => {
     if (current !== selected) untrack(() => (current = selected));
   });

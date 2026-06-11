@@ -85,7 +85,7 @@
   let focused = $state(0);
   let elems: HTMLButtonElement[] = [];
 
-  // *** Bind Handlers *** //
+  // *** Reactive Handlers *** //
   $effect.pre(() => {
     current;
     selected;
@@ -158,10 +158,10 @@
     elems[target]?.focus();
     if (!manual) current = tabs[target].value;
   }
-  function hfocusin(ev: FocusEvent) {
+  const hfocusin = (ev: FocusEvent) => {
     const index = elems.indexOf(ev.target as HTMLButtonElement);
     if (index >= 0 && !tabs[index]?.disabled) focused = index;
-  }
+  };
 </script>
 
 <!---------------------------------------->

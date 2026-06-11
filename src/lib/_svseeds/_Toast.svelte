@@ -191,7 +191,7 @@
   const shown = new Set<string>();
   const removeTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-  // *** Bind Handlers *** //
+  // *** Reactive Handlers *** //
   $effect(() => {
     const has = toaster.toasts.length > 0;
     if (has && !open) {

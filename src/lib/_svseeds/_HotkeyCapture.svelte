@@ -91,7 +91,7 @@
   const cls = $derived(fnClass(preset, styling));
   let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
 
-  // *** Bind Handlers *** //
+  // *** Reactive Handlers *** //
   $effect(() => {
     neutral = isNeutral(variant) ? variant : neutral;
   });

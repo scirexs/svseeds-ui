@@ -244,7 +244,7 @@
     ariaLabel: rest.ariaLabel ?? ariaLabel,
   };
 
-  // *** Bind Handlers *** //
+  // *** Reactive Handlers *** //
   $effect.pre(() => {
     theme.dark = dark!;
   });

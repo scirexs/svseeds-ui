@@ -100,7 +100,7 @@
     if (n !== value) value = n;
   });
 
-  // *** Bind Handlers *** //
+  // *** Reactive Handlers *** //
   const rgb = $derived(parseHex(value) ?? [0, 0, 0]);
   const alp = $derived(correctAlpha(alpha));
 </script>

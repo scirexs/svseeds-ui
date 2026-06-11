@@ -83,7 +83,7 @@
   let style = $derived(baseStyle);
   let ofTimer: ReturnType<typeof setTimeout> | undefined;
 
-  // *** Bind Handlers *** //
+  // *** Reactive Handlers *** //
   function toggle() {
     if (open) {
       if (!element?.open) element?.showModal();

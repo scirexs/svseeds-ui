@@ -68,7 +68,7 @@
     role === "button" ? { "aria-pressed": value, "aria-checked": undefined } : { "aria-checked": value, "aria-pressed": undefined },
   );
 
-  // *** Bind Handlers *** //
+  // *** Reactive Handlers *** //
   // Track runtime changes to a custom neutral variant (ignore ACTIVE/INACTIVE).
   $effect(() => {
     neutral = isNeutral(variant) ? variant : neutral;

@@ -129,7 +129,7 @@
     element.setCustomValidity("");
   }
 
-  // *** Bind Handlers *** //
+  // *** Reactive Handlers *** //
   $effect.pre(() => {
     value;
     untrack(() => validate(true));

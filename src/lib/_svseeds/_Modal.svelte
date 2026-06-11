@@ -54,7 +54,7 @@
   const cls = $derived(fnClass(preset, styling));
   const dur = $derived(noMotion ? 0 : !isUnsignedInteger(duration) ? DEFAULT_DURATION : duration);
 
-  // *** Bind Handlers *** //
+  // *** Reactive Handlers *** //
   $effect.pre(() => {
     open;
     untrack(() => toggle());

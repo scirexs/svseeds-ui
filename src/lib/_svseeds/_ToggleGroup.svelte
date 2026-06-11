@@ -99,7 +99,7 @@
   const effAriaDescId = $derived(ctx ? ctx.ariaDescId : ariaDescId);
   const effAriaErrMsgId = $derived(ctx ? ctx.ariaErrMsgId : ariaErrMsgId);
 
-  // *** Bind Handlers *** //
+  // *** Reactive Handlers *** //
   let opts = $derived(
     [...options].map(([value, def]) => {
       const { text, disabled, ...attrs } = typeof def === "string" ? { text: def } : def;

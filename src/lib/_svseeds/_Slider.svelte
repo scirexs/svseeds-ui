@@ -81,7 +81,7 @@
   // svelte-ignore state_referenced_locally
   else if (value < rmin || value > rmax) value = clamp(value);
 
-  // *** Bind Handlers *** //
+  // *** Reactive Handlers *** //
   const rate = $derived(
     span === 0 ? Math.trunc(bg.min + (bg.max - bg.min) / 2) : Math.trunc(bg.min + ((value - rmin) / span) * (bg.max - bg.min)),
   );

@@ -125,7 +125,7 @@
     return "";
   }
 
-  // *** Bind Handlers *** //
+  // *** Reactive Handlers *** //
   const opts = $derived(Array.from(options, ([value, text]) => ({ value, text, checked: values.includes(value) })));
   $effect.pre(() => {
     values;
