@@ -1,8 +1,8 @@
-import { afterEach, describe, expect, test, vi } from "vitest";
-import { fireEvent, render, within } from "@testing-library/svelte";
+import { describe, expect, test, vi } from "vitest";
+import { render } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet, tick } from "svelte";
-import Toggle, { type ToggleProps } from "#svs/_Toggle.svelte";
+import Toggle from "#svs/_Toggle.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 
 type ToggleElement = HTMLButtonElement | undefined;
@@ -485,7 +485,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const { getByRole, getByTestId } = render(Toggle, props);
     const whole = getByRole("group") as HTMLSpanElement;
     const button = getByRole("button") as HTMLButtonElement;
-    const mainsp = getByTestId(mainid);
+    getByTestId(mainid);
     const leftdv = getByTestId(leftid).parentElement;
     const rightdv = getByTestId(rightid).parentElement;
 

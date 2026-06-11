@@ -547,7 +547,7 @@ describe("Specify attrs & form validation & event handlers", () => {
       variant: VARIANT.INACTIVE,
     };
 
-    const { getByRole, getByTestId, rerender } = render(Button, props);
+    const { getByRole, getByTestId } = render(Button, props);
     const btn = getByRole("button") as HTMLButtonElement;
     const leftsp = getByTestId(leftid).parentElement;
     const mainsp = btn.children[1];

@@ -1,6 +1,5 @@
-import { afterEach, describe, expect, test, vi } from "vitest";
-import { fireEvent, render, waitFor, within } from "@testing-library/svelte";
-import { userEvent } from "@testing-library/user-event";
+import { describe, expect, test, vi } from "vitest";
+import { fireEvent, render, waitFor } from "@testing-library/svelte";
 import { createRawSnippet, flushSync } from "svelte";
 import Slider from "#svs/_Slider.svelte";
 import { PARTS, VARIANT } from "#svs/core";
@@ -263,7 +262,6 @@ describe("Specify attrs & value handling & styling", () => {
 
   test("value change interaction", async () => {
     const props = $state({ min: 0, max: 100, value: 50 });
-    const user = userEvent.setup();
     const { container } = render(Slider, props);
     const main = container.querySelector('input[type="range"]') as HTMLInputElement;
 

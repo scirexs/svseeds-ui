@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { fireEvent, render, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet, tick } from "svelte";
@@ -168,7 +168,6 @@ describe("Specify props & state transition & event handlers", () => {
   const errmsg = "invalid";
   const constraintFn = ({ value }: { value: string }) => (value.length < 2 ? errmsg : "");
   const validationFn = ({ value }: { value: string[] }) => (value.length === 0 ? errmsg : "");
-  const constraints = [constraintFn];
   const validations = [validationFn];
 
   test("reserved bottom stays mounted across error transition", async () => {

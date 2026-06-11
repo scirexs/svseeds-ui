@@ -15,7 +15,7 @@ const childrenSnippet = createRawSnippet(() => {
   return { render: () => `<div data-testid="${childrenTestId}">${childrenContent}</div>` };
 });
 
-const labelSnippet = createRawSnippet((open: () => boolean, variant: () => string) => {
+const labelSnippet = createRawSnippet((_open: () => boolean, variant: () => string) => {
   return {
     render: () => `<span data-testid="test-label">${label} - ${variant()}</span>`,
     setup: (element) => {

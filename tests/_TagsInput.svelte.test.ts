@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { fireEvent, render, waitFor } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
@@ -164,7 +164,6 @@ describe("Tag addition functionality", () => {
     const user = userEvent.setup();
     const { container } = render(TagsInput, props);
     const input = container.querySelector("input") as HTMLInputElement;
-
     await user.type(input, "new tag");
     await user.keyboard("{Enter}");
 
@@ -303,6 +302,7 @@ describe("Tag addition functionality", () => {
     const user = userEvent.setup();
     const { container } = render(TagsInput, props);
     const input = container.querySelector("input") as HTMLInputElement;
+    input.focus();
 
     await user.keyboard("{Enter}");
 

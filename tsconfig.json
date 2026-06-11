@@ -4,6 +4,8 @@
     "allowJs": true,
     "checkJs": true,
     "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "outDir": "./_svseeds",
   },
   "exclude": ["_svseeds", ".ref"]

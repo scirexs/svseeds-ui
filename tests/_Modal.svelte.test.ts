@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { fireEvent, render, waitFor, within } from "@testing-library/svelte";
+import { fireEvent, render, waitFor } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet, tick } from "svelte";
 import Modal from "#svs/_Modal.svelte";
@@ -92,7 +92,7 @@ describe("Modal basic functionality", () => {
       children: childrenSnippet,
       open: true,
     });
-    const dialog = getByRole("dialog") as HTMLDialogElement;
+    const dialog = getByRole("dialog");
     const content = getByText(childrenText);
     expect(dialog).toContainElement(content);
   });
@@ -103,7 +103,7 @@ describe("Modal basic functionality", () => {
       ariaLabel,
       open: true,
     });
-    const dialog = getByRole("dialog") as HTMLDialogElement;
+    const dialog = getByRole("dialog");
     expect(dialog).toHaveAttribute("aria-label", ariaLabel);
   });
 
@@ -504,7 +504,7 @@ describe("Modal edge cases", () => {
       open: true,
     });
 
-    const dialog = getByRole("dialog") as HTMLDialogElement;
+    getByRole("dialog");
     expect(getByText("Modal Title")).toBeInTheDocument();
     expect(getByText("Some content")).toBeInTheDocument();
     expect(getByText("Action")).toBeInTheDocument();

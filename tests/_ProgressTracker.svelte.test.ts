@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { render, within } from "@testing-library/svelte";
 import { createRawSnippet } from "svelte";
 import ProgressTracker from "#svs/_ProgressTracker.svelte";
@@ -9,15 +9,15 @@ const auxid = "test-aux";
 const extraid = "test-extra";
 const childrenid = "test-children";
 
-const auxfn = createRawSnippet((index: () => number, label: () => string, variant: () => string) => {
+const auxfn = createRawSnippet((index: () => number, _label: () => string, variant: () => string) => {
   return { render: () => `<span data-testid="${auxid}">${variant()}-${index()}</span>` };
 });
 
-const extrafn = createRawSnippet((index: () => number, label: () => string, variant: () => string) => {
+const extrafn = createRawSnippet((index: () => number, _label: () => string, variant: () => string) => {
   return { render: () => `<span data-testid="${extraid}">${variant()}-${index()}</span>` };
 });
 
-const childrenfn = createRawSnippet((index: () => number, label: () => string, variant: () => string) => {
+const childrenfn = createRawSnippet((index: () => number, label: () => string, _variant: () => string) => {
   return { render: () => `<span data-testid="${childrenid}">${label()}-${index()}</span>` };
 });
 
@@ -65,7 +65,7 @@ describe("Basic structure and rendering", () => {
     expect(aux).toHaveBeenCalledTimes(4);
 
     // Check that aux is rendered for each step
-    items.forEach((item, index) => {
+    items.forEach((item) => {
       const auxElement = within(item).getByTestId(auxid);
       expect(auxElement).toBeInTheDocument();
     });
@@ -278,7 +278,7 @@ describe("Styling and CSS classes", () => {
       extra: { base: "extra-base", inactive: "extra-inactive" },
     };
 
-    const { getByRole, getAllByRole, getAllByTestId } = render(ProgressTracker, {
+    const { getByRole, getAllByRole } = render(ProgressTracker, {
       current: 1,
       labels,
       variant: VARIANT.ACTIVE,
@@ -293,7 +293,7 @@ describe("Styling and CSS classes", () => {
     expect(list).toHaveClass("whole-base", "whole-active");
 
     // Check middle items
-    items.forEach((item, index) => {
+    items.forEach((item) => {
       if (item.getAttribute("role") !== "separator") {
         expect(item).toHaveClass("middle-base");
 
@@ -305,7 +305,7 @@ describe("Styling and CSS classes", () => {
   });
 
   test("CSS classes with aux and extra snippets", () => {
-    const { getAllByRole, getAllByTestId } = render(ProgressTracker, {
+    const { getAllByTestId } = render(ProgressTracker, {
       current: 1,
       labels,
       variant: VARIANT.ACTIVE,
@@ -504,7 +504,7 @@ describe("Edge cases and error handling", () => {
       labels: singleLabel,
     });
 
-    const list = getByRole("list");
+    getByRole("list");
     const items = getAllByRole("listitem");
 
     expect(items).toHaveLength(1);

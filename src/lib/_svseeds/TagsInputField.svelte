@@ -165,7 +165,7 @@
   }
 
   // *** Event Handlers *** //
-  function onadd(values: string[], value: string): undefined | boolean {
+  function onadd(_values: string[], value: string): undefined | boolean {
     variant = neutral;
     shift(false, check(value));
     return variant === VARIANT.INACTIVE;
@@ -177,7 +177,7 @@
       if (msg) return msg;
     }
   }
-  function onchange(ev: Event) {
+  function onchange(_ev: Event) {
     if (!isNeutral(variant)) shift();
   }
   function oninvalid(ev: Event) {

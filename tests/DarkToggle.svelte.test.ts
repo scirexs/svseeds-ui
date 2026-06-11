@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { fireEvent, render, waitFor } from "@testing-library/svelte";
+import { render, waitFor } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import { compile } from "svelte/compiler";
