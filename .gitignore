@@ -45,6 +45,7 @@ node_modules/
 /.codex/
 CLAUDE.md
 AGENTS.md
+SKILL.md
 
 # Others
 .devconfig/
