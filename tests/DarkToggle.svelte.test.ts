@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { render, waitFor } from "@testing-library/svelte";
+import { render, waitFor, within } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import { compile } from "svelte/compiler";
@@ -207,6 +207,112 @@ describe("DarkToggle - User interactions", () => {
 
     expect(props.element).toBe(button);
     expect(props.element?.tagName).toBe("BUTTON");
+  });
+});
+
+describe("DarkToggle - Singleton sync", () => {
+  beforeEach(() => {
+    document.documentElement.className = "";
+    document.documentElement.style.cssText = "";
+    mockMatchMedia.mockReturnValue({
+      matches: false,
+      media: "(prefers-color-scheme: dark)",
+    });
+  });
+
+  test("setTheme updates a mounted instance", async () => {
+    const props = $state({ dark: undefined });
+    const { container } = render(DarkToggle, props);
+
+    await waitFor(() => {
+      expect(props.dark).toBe(false);
+      expect(container.querySelector("circle")).toBeInTheDocument();
+    });
+
+    setTheme(true);
+    await waitFor(() => {
+      expect(props.dark).toBe(true);
+      expect(container.querySelector("circle")).not.toBeInTheDocument();
+      expect(document.documentElement).toHaveClass(THEME.DARK);
+    });
+
+    setTheme(false);
+    await waitFor(() => {
+      expect(props.dark).toBe(false);
+      expect(container.querySelector("circle")).toBeInTheDocument();
+      expect(document.documentElement).toHaveClass(THEME.LIGHT);
+    });
+  });
+
+  test("toggleTheme updates a mounted instance", async () => {
+    const props = $state({ dark: false });
+    render(DarkToggle, props);
+
+    toggleTheme();
+    await waitFor(() => {
+      expect(props.dark).toBe(true);
+    });
+
+    toggleTheme();
+    await waitFor(() => {
+      expect(props.dark).toBe(false);
+    });
+  });
+
+  test("instances stay in sync with each other", async () => {
+    const a = $state({ dark: false });
+    const b = $state({ dark: false });
+    const ra = render(DarkToggle, a);
+    render(DarkToggle, b);
+    const user = userEvent.setup();
+    const button = within(ra.container).getByRole("button");
+
+    setTheme(true);
+    await waitFor(() => {
+      expect(a.dark).toBe(true);
+      expect(b.dark).toBe(true);
+    });
+
+    await user.click(button);
+    await waitFor(() => {
+      expect(a.dark).toBe(false);
+      expect(b.dark).toBe(false);
+    });
+  });
+
+  test("explicit dark prop wins at mount over a conflicting singleton", async () => {
+    forceTheme(true);
+
+    const props = $state({ dark: false });
+    render(DarkToggle, props);
+
+    await waitFor(() => {
+      expect(props.dark).toBe(false);
+      expect(isDark()).toBe(false);
+      expect(document.documentElement).toHaveClass(THEME.LIGHT);
+    });
+  });
+
+  test("settles cleanly after repeated clicks", async () => {
+    const props = $state({ dark: false });
+    const user = userEvent.setup();
+    const { getByRole } = render(DarkToggle, props);
+    const button = getByRole("button");
+
+    await user.click(button);
+    await waitFor(() => {
+      expect(props.dark).toBe(true);
+    });
+
+    await user.click(button);
+    await waitFor(() => {
+      expect(props.dark).toBe(false);
+    });
+
+    await user.click(button);
+    await waitFor(() => {
+      expect(props.dark).toBe(true);
+    });
   });
 });
 

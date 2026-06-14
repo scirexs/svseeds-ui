@@ -22,7 +22,7 @@
   ```ts
   const THEME: { LIGHT: "light"; DARK: "dark" } // theme class-name constants
   function setThemeToRoot(theme?: string): void // set the theme class on <html>; falls back to prefers-color-scheme when omitted
-  function setTheme(dark: boolean): void // set the page-wide (singleton) theme; updates shared state/DOM but not the `dark` prop of mounted instances
+  function setTheme(dark: boolean): void // set the page-wide (singleton) theme; updates shared state/DOM and the `dark` prop of mounted instances
   function toggleTheme(): void // flip the page-wide (singleton) theme
   function isDark(): boolean // whether the page-wide (singleton) theme is currently dark
   ```
@@ -51,7 +51,7 @@
     html.classList.add(theme);
   }
   // Programmatic control of the page-wide (singleton) theme.
-  // Note: this updates the shared theme/DOM but not the `dark` prop of already-mounted instances.
+  // Note: updates the shared theme/DOM and the `dark` prop of every mounted instance.
   export function setTheme(dark: boolean) {
     theme.dark = dark;
   }
@@ -182,7 +182,7 @@
 
   class Theme {
     #props: ThemeProps;
-    #theme: string;
+    #theme = $state<string>("");
     set dark(bool: boolean) {
       this.#switch(bool);
     }
@@ -232,6 +232,7 @@
   const twColors = new Set<string>();
   const theme = new Theme();
 
+  import { untrack } from "svelte";
   import { VARIANT } from "./core";
   import Toggle, { type ToggleProps } from "./_Toggle.svelte";
 </script>
@@ -253,8 +254,15 @@
   };
 
   // *** Reactive Handlers *** //
+  function syncTheme(dark: boolean) {
+    theme.dark = dark;
+  }
   $effect.pre(() => {
-    theme.dark = dark!;
+    dark;
+    untrack(() => syncTheme(dark!));
+  });
+  $effect.pre(() => {
+    dark = theme.dark;
   });
 </script>
 
