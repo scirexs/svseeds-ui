@@ -10,11 +10,12 @@
     step?: number; // (1)
     integer?: boolean; // (false)
     spin?: boolean; // (false)
-    options?: SvelteSet<number> | Set<number>;
-    decrementLabel?: string; // ("Decrement")
-    incrementLabel?: string; // ("Increment")
+    stack?: boolean; // (false)
     decrement?: Snippet<[string]>; // Snippet<[variant]>
     increment?: Snippet<[string]>; // Snippet<[variant]>
+    options?: SvelteSet<number> | Set<number>;
+    ariaDecLabel?: string; // ("Decrement")
+    ariaIncLabel?: string; // ("Increment")
     attach?: Attachment;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
@@ -24,12 +25,20 @@
   ```
   ### Anatomy
   ```svelte
-  <div class="whole">
-    <button class="left" type="button" conditional: spin>
+  <span class="whole">
+    <button class="left" type="button" conditional: spin && !stack>
       <span class="extra">decrement</span>
     </button>
     <input class="main" type="text" inputmode="numeric|decimal" />
-    <button class="right" type="button" conditional: spin>
+    <span class="aux" conditional: spin && stack>
+      <button class="right" type="button">
+        <span class="extra">increment</span>
+      </button>
+      <button class="left" type="button">
+        <span class="extra">decrement</span>
+      </button>
+    </span>
+    <button class="right" type="button" conditional: spin && !stack>
       <span class="extra">increment</span>
     </button>
     <datalist conditional>
@@ -37,7 +46,7 @@
         <option value={option}></option>
       {/each}
     </datalist>
-  </div>
+  </span>
   ```
 -->
 <script module lang="ts">
@@ -51,11 +60,12 @@
     step?: number; // (1)
     integer?: boolean; // (false)
     spin?: boolean; // (false)
-    options?: SvelteSet<number> | Set<number>;
-    decrementLabel?: string; // ("Decrement")
-    incrementLabel?: string; // ("Increment")
+    stack?: boolean; // (false)
     decrement?: Snippet<[string]>; // Snippet<[variant]>
     increment?: Snippet<[string]>; // Snippet<[variant]>
+    options?: SvelteSet<number> | Set<number>;
+    ariaDecLabel?: string; // ("Decrement")
+    ariaIncLabel?: string; // ("Increment")
     attach?: Attachment;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
@@ -88,7 +98,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { value = $bindable(), min, max, step = 1, integer = false, spin = false, options, decrementLabel = "Decrement", incrementLabel = "Increment", decrement, increment, onchange: onchangeProp, oninvalid: oninvalidProp, onkeydown, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, id: idProp, "aria-describedby": ariaDescribedbyProp, class: c, "aria-invalid": ariaInvalid, ...rest }: NumberInputProps = $props();
+  let { value = $bindable(), min, max, step = 1, integer = false, spin = false, stack = false, options, ariaDecLabel = "Decrement", ariaIncLabel = "Increment", decrement, increment, onchange: onchangeProp, oninvalid: oninvalidProp, onkeydown, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, id: idProp, "aria-describedby": ariaDescribedbyProp, class: c, "aria-invalid": ariaInvalid, ...rest }: NumberInputProps = $props();
   const ctx = _getNumberInputContext();
 
   // *** Initialize *** //
@@ -103,7 +113,6 @@
   const allowNeg = $derived(min === undefined || min < 0);
   const mode = $derived(integer ? "numeric" : "decimal");
   const disabled = $derived(Boolean(rest.disabled));
-  const now = $derived(effValue === undefined ? undefined : effValue);
   const decDisabled = $derived(disabled || (min !== undefined && (effValue ?? min) <= min));
   const incDisabled = $derived(disabled || (max !== undefined && (effValue ?? min ?? 0) >= max));
 
@@ -119,8 +128,10 @@
   });
 
   // *** States *** //
-  let text = $state(untrack(() => format(effValue)));
-  let last = $state(untrack(() => format(effValue)));
+  // svelte-ignore state_referenced_locally
+  let text = $state(format(effValue));
+  // svelte-ignore state_referenced_locally
+  let last = $state(format(effValue));
   let focused = $state(false);
   let wait: ReturnType<typeof setTimeout> | undefined = undefined;
   let repeat: ReturnType<typeof setInterval> | undefined = undefined;
@@ -268,29 +279,9 @@
 
 <!---------------------------------------->
 
-<div class={cls(PARTS.WHOLE, effVariant)}>
-  {#if spin}
-    <button
-      class={cls(PARTS.LEFT, effVariant)}
-      type="button"
-      tabindex="-1"
-      aria-label={decrementLabel}
-      disabled={decDisabled}
-      onpointerdown={hdown(-1)}
-      onpointerup={hup}
-      onpointerleave={hup}
-      onpointercancel={hup}
-    >
-      <span class={cls(PARTS.EXTRA, effVariant)}>
-        {#if decrement}
-          {@render decrement(effVariant)}
-        {:else}
-          <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="10" height="10">
-            <path d="M0 7h16v2H0z" />
-          </svg>
-        {/if}
-      </span>
-    </button>
+<span class={cls(PARTS.WHOLE, effVariant)}>
+  {#if spin && !stack}
+    {@render decBtn()}
   {/if}
   <input
     value={text}
@@ -302,7 +293,7 @@
     list={idList}
     inputmode={mode}
     role={spin ? "spinbutton" : undefined}
-    aria-valuenow={spin ? now : undefined}
+    aria-valuenow={spin ? effValue : undefined}
     aria-valuemin={spin ? min : undefined}
     aria-valuemax={spin ? max : undefined}
     onbeforeinput={hbeforeinput}
@@ -317,29 +308,13 @@
     aria-errormessage={effAriaErrMsgId}
     {@attach attach}
   />
-  {#if spin}
-    <button
-      class={cls(PARTS.RIGHT, effVariant)}
-      type="button"
-      tabindex="-1"
-      aria-label={incrementLabel}
-      disabled={incDisabled}
-      onpointerdown={hdown(1)}
-      onpointerup={hup}
-      onpointerleave={hup}
-      onpointercancel={hup}
-    >
-      <span class={cls(PARTS.EXTRA, effVariant)}>
-        {#if increment}
-          {@render increment(effVariant)}
-        {:else}
-          <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="10" height="10">
-            <path d="M7 0h2v16H7z" />
-            <path d="M0 7h16v2H0z" />
-          </svg>
-        {/if}
-      </span>
-    </button>
+  {#if spin && stack}
+    <span class={cls(PARTS.AUX, effVariant)}>
+      {@render incBtn()}
+      {@render decBtn()}
+    </span>
+  {:else if spin}
+    {@render incBtn()}
   {/if}
   {#if options?.size}
     <datalist id={idList}>
@@ -348,4 +323,52 @@
       {/each}
     </datalist>
   {/if}
-</div>
+</span>
+
+{#snippet decBtn()}
+  <button
+    class={cls(PARTS.LEFT, effVariant)}
+    type="button"
+    tabindex="-1"
+    aria-label={ariaDecLabel}
+    disabled={decDisabled}
+    onpointerdown={hdown(-1)}
+    onpointerup={hup}
+    onpointerleave={hup}
+    onpointercancel={hup}
+  >
+    <span class={cls(PARTS.EXTRA, effVariant)}>
+      {#if decrement}
+        {@render decrement(effVariant)}
+      {:else}
+        <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="10" height="10">
+          <path d="M0 7h16v2H0z" />
+        </svg>
+      {/if}
+    </span>
+  </button>
+{/snippet}
+{#snippet incBtn()}
+  <button
+    class={cls(PARTS.RIGHT, effVariant)}
+    type="button"
+    tabindex="-1"
+    aria-label={ariaIncLabel}
+    disabled={incDisabled}
+    onpointerdown={hdown(1)}
+    onpointerup={hup}
+    onpointerleave={hup}
+    onpointercancel={hup}
+  >
+    <span class={cls(PARTS.EXTRA, effVariant)}>
+      {#if increment}
+        {@render increment(effVariant)}
+      {:else}
+        <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="10" height="10">
+          <path d="M7 0h2v16H7z" />
+          <path d="M0 7h16v2H0z" />
+        </svg>
+      {/if}
+    </span>
+  </button>
+{/snippet}

@@ -76,8 +76,8 @@ describe("NumberField default child and passthrough", () => {
       spin: true,
       options: new Set([1, 2]),
       name: "qty",
-      decrementLabel: "Less",
-      incrementLabel: "More",
+      ariaDecLabel: "Less",
+      ariaIncLabel: "More",
     });
     let input = container.querySelector("input") as HTMLInputElement;
     const list = container.querySelector("datalist") as HTMLDataListElement;
@@ -90,6 +90,21 @@ describe("NumberField default child and passthrough", () => {
     expect(list.querySelectorAll("option")).toHaveLength(2);
     expect(getByRole("button", { name: "Less" })).toBeInTheDocument();
     expect(getByRole("button", { name: "More" })).toBeInTheDocument();
+  });
+
+  test("forwards decrement/increment snippets to the spin buttons", () => {
+    const decrement = createRawSnippet(() => ({ render: () => "<i data-testid='dec'></i>" }));
+    const increment = createRawSnippet(() => ({ render: () => "<i data-testid='inc'></i>" }));
+    const { getByTestId } = render(NumberField, { spin: true, decrement, increment });
+
+    expect(getByTestId("dec")).toBeInTheDocument();
+    expect(getByTestId("inc")).toBeInTheDocument();
+  });
+
+  test("forwards stack to NumberInput (stacked spin buttons)", () => {
+    const { container } = render(NumberField, { spin: true, stack: true });
+
+    expect(container.querySelector(`.${PARTS.AUX}`)).not.toBeNull();
   });
 
   test("children snippet replaces the default input", () => {

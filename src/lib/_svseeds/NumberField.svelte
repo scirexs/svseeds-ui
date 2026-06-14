@@ -18,9 +18,12 @@
     step?: number; // (1)
     integer?: boolean; // (false)
     spin?: boolean; // (false)
+    stack?: boolean; // (false)
     options?: SvelteSet<number> | Set<number>;
-    decrementLabel?: string;
-    incrementLabel?: string;
+    ariaDecLabel?: string;
+    ariaIncLabel?: string;
+    decrement?: Snippet<[string]>; // Snippet<[variant]> spin decrement button content
+    increment?: Snippet<[string]>; // Snippet<[variant]> spin increment button content
     validations?: NumberFieldValidation[];
     name?: string;
     element?: HTMLInputElement; // bindable
@@ -65,9 +68,12 @@
     step?: number; // (1)
     integer?: boolean; // (false)
     spin?: boolean; // (false)
+    stack?: boolean; // (false)
     options?: SvelteSet<number> | Set<number>;
-    decrementLabel?: string;
-    incrementLabel?: string;
+    ariaDecLabel?: string;
+    ariaIncLabel?: string;
+    decrement?: Snippet<[string]>; // Snippet<[variant]> spin decrement button content
+    increment?: Snippet<[string]>; // Snippet<[variant]> spin increment button content
     validations?: NumberFieldValidation[];
     name?: string;
     element?: HTMLInputElement; // bindable
@@ -89,7 +95,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { label, extra, aux, left, right, bottom, reserve = false, flip = false, value = $bindable(), min, max, step = 1, integer = false, spin = false, options, decrementLabel, incrementLabel, validations = [], name, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), children }: NumberFieldProps = $props();
+  let { label, extra, aux, left, right, bottom, reserve = false, flip = false, value = $bindable(), min, max, step = 1, integer = false, spin = false, stack = false, options, ariaDecLabel, ariaIncLabel, decrement, increment, validations = [], name, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), children }: NumberFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling));
@@ -192,7 +198,7 @@
     {#if children}
       {@render children()}
     {:else}
-      <NumberInput {min} {max} {step} {integer} {spin} {options} {decrementLabel} {incrementLabel} {name} />
+      <NumberInput {min} {max} {step} {integer} {spin} {stack} {options} {ariaDecLabel} {ariaIncLabel} {decrement} {increment} {name} />
     {/if}
     {@render side(PARTS.RIGHT, right)}
   </div>

@@ -18,6 +18,7 @@ describe("_NumberInput rendering", () => {
     expect(input).toHaveClass("svs-number-input", PARTS.MAIN, "x");
     expect(input).toHaveAttribute("list", list.id);
     expect(within(list).getAllByRole("option", { hidden: true })).toHaveLength(3);
+    expect(container.querySelector(`.${PARTS.WHOLE}`)?.tagName).toBe("SPAN");
 
     rerender({ integer: true });
     expect(input).toHaveAttribute("inputmode", "numeric");
@@ -172,8 +173,8 @@ describe("_NumberInput spin behavior", () => {
     const inc = createRawSnippet(() => ({ render: () => "<i data-testid='inc'></i>" }));
     const { container, getByRole, getByTestId } = render(NumberInput, {
       spin: true,
-      decrementLabel: "Less",
-      incrementLabel: "More",
+      ariaDecLabel: "Less",
+      ariaIncLabel: "More",
       decrement: dec,
       increment: inc,
     });
@@ -186,6 +187,28 @@ describe("_NumberInput spin behavior", () => {
     const plain = render(NumberInput);
     expect(plain.container.querySelector("button")).toBeNull();
     expect(container.querySelector(`.${PARTS.LEFT}`)).toContainElement(getByRole("button", { name: "Less" }));
+  });
+
+  test("stack mode wraps both spin buttons in a PARTS.AUX span after the input", () => {
+    const split = render(NumberInput, { spin: true });
+    const splitInput = split.container.querySelector("input") as HTMLInputElement;
+    const splitDec = split.container.querySelector(`.${PARTS.LEFT}`) as HTMLButtonElement;
+    const splitInc = split.container.querySelector(`.${PARTS.RIGHT}`) as HTMLButtonElement;
+
+    expect(split.container.querySelector(`.${PARTS.AUX}`)).toBeNull();
+    expect(splitDec.compareDocumentPosition(splitInput) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(splitInput.compareDocumentPosition(splitInc) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    const { container } = render(NumberInput, { spin: true, stack: true });
+    const auxes = container.querySelectorAll(`.${PARTS.AUX}`);
+    const aux = auxes[0];
+    const input = container.querySelector("input") as HTMLInputElement;
+
+    expect(auxes).toHaveLength(1);
+    expect(aux).not.toBeNull();
+    expect(aux).toContainElement(within(aux as HTMLElement).getByRole("button", { name: "Decrement" }));
+    expect(aux).toContainElement(within(aux as HTMLElement).getByRole("button", { name: "Increment" }));
+    expect(input.compareDocumentPosition(aux as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   test("increments, decrements, disables at bounds, and respects disabled attr", async () => {
