@@ -19,7 +19,7 @@
   ### Anatomy
   ```svelte
   <span class="whole">
-    <input class={["main", class]} type="text" {...rest} bind:value bind:this={element} {@attach attach} />
+    <input class="main" {...rest} type="text" />
     <div class="extra" conditional>{extra}</div>
     <ul class="bottom">
       {#each options as option}

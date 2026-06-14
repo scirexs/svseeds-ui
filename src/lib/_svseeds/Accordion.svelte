@@ -21,8 +21,8 @@
   ```
   `value`s must be unique within `items`. Accordion is exclusive: at most one item is open at a time.
   Provide `items` for data mode or `children` for declarative mode; `children` wins when both are present.
-  ### Exports
-  Accordion provides `DisclosureContext` from `_Disclosure.svelte`, so declarative `<Disclosure id=...>` children self-coordinate through `current`.
+  ### Behavior
+  Declarative `<Disclosure id=...>` children automatically coordinate exclusive open state through `current` and inherit the base `variant`/`styling`.
   ### Anatomy
   ```svelte
   <div class="whole" role="group">
@@ -37,7 +37,7 @@
     {/if}
   </div>
   ```
-  `DisclosureContext` supplies exclusive open state plus base variant/styling. Data-mode child styling defaults to `"svs-accordion svs-disclosure"` and can be customized via `disclosure`.
+  Data-mode child styling defaults to `"svs-accordion svs-disclosure"` and can be customized via `disclosure`.
 -->
 <script module lang="ts">
   export interface AccordionProps {
@@ -66,7 +66,7 @@
 
   import { type Component, type Snippet, untrack } from "svelte";
   import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, omit } from "./core";
-  import Disclosure, { setDisclosureContext, type DisclosureContext, type DisclosureProps, type DisclosureReqdProps, type DisclosureBindProps } from "./_Disclosure.svelte";
+  import Disclosure, { _setDisclosureContext, type DisclosureContext, type DisclosureProps, type DisclosureReqdProps, type DisclosureBindProps } from "./_Disclosure.svelte";
 </script>
 
 <script lang="ts">
@@ -92,7 +92,7 @@
       return ctxStyling;
     },
   };
-  setDisclosureContext(ctx);
+  _setDisclosureContext(ctx);
   const selected = $derived(children || !items ? current : items.some((it) => it.value === current && !it.disabled) ? current : undefined);
 
   // *** Initialize Child Props *** //

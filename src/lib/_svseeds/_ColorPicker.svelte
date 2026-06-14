@@ -19,21 +19,14 @@
   <label class="whole">
     <div class="middle"> // this middle element can provide the default transparency background when checkered is true
       <div class="main"> // this main element is color sample and positions the transparent, focusable native input overlay
-        <input class={class} type="color" {...rest} bind:value bind:this={element} {@attach attach} />
+        <input {...rest} type="color" />
       </div>
     </div>
   </label>
   ```
   ### Exports
   ```ts
-  // Converts RGB color values to hexadecimal color code.
-  //
-  // *@param* rgb - Array of RGB values [red, green, blue] where each value is 0-255
-  // *@returns* Hexadecimal color code string starting with '#'
-  //
-  // *@example*
-  // getHex([255, 123, 34])  // "#ff7b22"
-  // getHex([255, 255, 255]) // "#ffffff"
+  // Converts RGB color values [red, green, blue] to hexadecimal color code.
   function getHex(rgb: [number, number, number]): string
   ```
 -->

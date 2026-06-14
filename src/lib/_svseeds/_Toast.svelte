@@ -25,16 +25,17 @@
   ```
   ### Exports
   ```ts
+  // Creates an isolated toast store to pass to <Toast> and drive imperatively.
   function createToaster(options?: ToasterOptions): Toaster
 
   class Toaster {
-    readonly toasts: ToastItem[];
-    add(message: string, options?: ToastAddOptions): string;
-    dismiss(id: string): void;
-    remove(id: string): void;
-    clear(): void;
-    pause(id: string): void;
-    resume(id: string, extend?: boolean): void;
+    readonly toasts: ToastItem[];                          // reactive list of current toasts
+    add(message: string, options?: ToastAddOptions): string; // enqueue a toast; returns its id
+    dismiss(id: string): void;                             // start the hide animation (auto-removes afterward)
+    remove(id: string): void;                              // remove immediately without animation
+    clear(): void;                                         // dismiss all toasts
+    pause(id: string): void;                               // pause the auto-dismiss timer (e.g. on hover)
+    resume(id: string, extend?: boolean): void;            // restart the auto-dismiss timer; extend lengthens the duration
   }
   ```
 -->

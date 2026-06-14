@@ -21,10 +21,6 @@
     {children}
   </div>
   ```
-
-  ### Exports
-  Provides `SortableGroupController` via `setSortableContext` from `_Sortable.svelte`;
-  descendant `<Sortable>` children self-wire through that context.
 -->
 <script module lang="ts">
   export interface SortableGroupProps {
@@ -40,7 +36,7 @@
 
   import { type Snippet } from "svelte";
   import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass } from "./core";
-  import { createSortableGroup, setSortableContext, type SortableGroupController } from "./_Sortable.svelte";
+  import { createSortableGroup, _setSortableContext, type SortableGroupController } from "./_Sortable.svelte";
 </script>
 
 <script lang="ts">
@@ -60,7 +56,7 @@
     },
   });
 
-  setSortableContext(controller);
+  _setSortableContext(controller);
 </script>
 
 <!---------------------------------------->

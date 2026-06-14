@@ -15,12 +15,11 @@
     // type, role, tabindex, aria-disabled, and onclick are component-owned
   }
   ```
-  ### Exports
-  `MenuItemContext`, `setMenuItemContext(ctx)`, and `getMenuItemContext()` provide optional menu coordination.
-  When a `MenuItemContext` is present, `variant` defaults to the context variant, `styling` falls back to the context styling, and activation calls `ctx.close()` after `onselect`.
+  ### Embedded
+  Placed inside a `ContextMenu`, `variant` defaults to the menu's and `styling` falls back to it; activating the item closes the menu after `onselect`.
   ### Anatomy
   ```svelte
-  <button class={["whole", class]} {...rest} type="button" role="menuitem" tabindex="-1" aria-disabled bind:this={element} {@attach attach}>
+  <button class="whole" {...rest} type="button" role="menuitem" tabindex="-1" aria-disabled>
     {children}
   </button>
   ```
@@ -41,7 +40,7 @@
   export interface MenuItemContext extends SVSContext {
     close(): void;
   }
-  export const [getMenuItemContext, setMenuItemContext] = _createContext<MenuItemContext>();
+  export const [_getMenuItemContext, _setMenuItemContext] = _createContext<MenuItemContext>();
 
   const preset = "svs-menu-item";
 
@@ -54,7 +53,7 @@
 <script lang="ts">
   // prettier-ignore
   let { children, onselect, disabled = false, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: MenuItemProps = $props();
-  const ctx = getMenuItemContext();
+  const ctx = _getMenuItemContext();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling ?? ctx?.styling));

@@ -18,6 +18,15 @@
     {/if}
   </Toggle>
   ```
+  ### Exports
+  ```ts
+  const THEME: { LIGHT: "light"; DARK: "dark" } // theme class-name constants
+  function setThemeToRoot(theme?: string): void // set the theme class on <html>; falls back to prefers-color-scheme when omitted
+  function setTheme(dark: boolean): void // set the page-wide (singleton) theme; updates shared state/DOM but not the `dark` prop of mounted instances
+  function toggleTheme(): void // flip the page-wide (singleton) theme
+  function isDark(): boolean // whether the page-wide (singleton) theme is currently dark
+  ```
+
   SSR default theme: light.
 
   DarkToggle emits an SSR-only `<svelte:head>` guard that sets the `light` or
@@ -40,6 +49,17 @@
     const html = window.document.documentElement;
     html.classList.remove(THEME.LIGHT, THEME.DARK);
     html.classList.add(theme);
+  }
+  // Programmatic control of the page-wide (singleton) theme.
+  // Note: this updates the shared theme/DOM but not the `dark` prop of already-mounted instances.
+  export function setTheme(dark: boolean) {
+    theme.dark = dark;
+  }
+  export function toggleTheme() {
+    theme.dark = !theme.dark;
+  }
+  export function isDark(): boolean {
+    return theme.dark;
   }
 
   const THEME_SELECTOR = ":root";
@@ -211,18 +231,6 @@
   }
   const twColors = new Set<string>();
   const theme = new Theme();
-
-  // Programmatic control of the page-wide (singleton) theme.
-  // Note: this updates the shared theme/DOM but not the `dark` prop of already-mounted instances.
-  export function setTheme(dark: boolean) {
-    theme.dark = dark;
-  }
-  export function toggleTheme() {
-    theme.dark = !theme.dark;
-  }
-  export function isDark(): boolean {
-    return theme.dark;
-  }
 
   import { VARIANT } from "./core";
   import Toggle, { type ToggleProps } from "./_Toggle.svelte";

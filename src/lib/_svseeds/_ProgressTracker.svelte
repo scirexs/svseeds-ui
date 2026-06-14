@@ -18,7 +18,7 @@
   ```
   ### Anatomy
   ```svelte
-  <ol class={["whole", class]} {...rest}>
+  <ol class="whole" {...rest}>
     {#each labels as label}
       <li class="middle">
         <div class="main">

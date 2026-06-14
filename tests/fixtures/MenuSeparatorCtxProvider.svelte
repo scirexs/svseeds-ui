@@ -1,5 +1,5 @@
 <script module lang="ts">
-  import { setMenuItemContext, type MenuItemContext } from "#svs/_MenuItem.svelte";
+  import { _setMenuItemContext, type MenuItemContext } from "#svs/_MenuItem.svelte";
 </script>
 
 <script lang="ts">
@@ -16,7 +16,7 @@
     },
     close() {},
   };
-  setMenuItemContext(ctx);
+  _setMenuItemContext(ctx);
 </script>
 
 <MenuSeparator />

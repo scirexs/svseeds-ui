@@ -20,7 +20,7 @@
   ```
   ### Anatomy
   ```svelte
-  <button class={["whole", class]} {type} {onclick} {...rest} aria-disabled aria-description bind:this={element} {@attach attach}>
+  <button class="whole" {...rest} {type} {onclick} aria-disabled aria-description>
     <span class="left" conditional>{left}</span>
     <span class="main">{children}</span>
     <span class="right" conditional>{right}</span>

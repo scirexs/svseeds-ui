@@ -41,9 +41,9 @@
     <div class="middle">
       <span class="left" conditional>{left}</span>
       {#if type === "textarea"}
-        <textarea class={["main", class]} {...rest} bind:value bind:this={element} {@attach attach}></textarea>
+        <textarea class="main" {...rest}></textarea>
       {:else}
-        <input class={["main", class]} {...rest} {type} bind:value bind:this={element} {@attach attach} />
+        <input class="main" {...rest} {type} />
         <datalist conditional>
           {#each options as option}
             <option value={option}></option>

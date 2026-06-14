@@ -33,6 +33,11 @@
     {/each}
   </div>
   ```
+  ### Exports
+  ```ts
+  // Wraps a component and optional props as a TabComponent for use as a `label` or `panel`.
+  function toPanel(component: Component<any>, props?: Record<string, unknown>): TabComponent
+  ```
 -->
 <script module lang="ts">
   export interface TabsProps {

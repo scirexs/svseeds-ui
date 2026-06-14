@@ -22,7 +22,7 @@
   ```svelte
   <span class="whole" conditional>
     <span class="left" conditional>{left}</span>
-    <button class={["main", class]} aria-pressed={value} aria-label={ariaLabel} {role} {...rest} bind:this={element} {@attach attach}>
+    <button class="main" {...rest} {role} aria-pressed aria-label>
       {children} conditional
     </button>
     <span class="right" conditional>{right}</span>

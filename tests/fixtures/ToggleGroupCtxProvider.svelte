@@ -1,6 +1,6 @@
 <script lang="ts">
   import ToggleGroup, {
-    setToggleGroupContext,
+    _setToggleGroupContext,
     type ToggleGroupContext,
     type ToggleGroupEvents,
     type ToggleGroupProps,
@@ -53,7 +53,7 @@
       onremove: (values, value, index) => hooks?.events?.onremove?.(values, value, index),
     },
   };
-  setToggleGroupContext(ctx);
+  _setToggleGroupContext(ctx);
 </script>
 
 <ToggleGroup {...input} />

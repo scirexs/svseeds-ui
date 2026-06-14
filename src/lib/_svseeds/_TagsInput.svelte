@@ -26,9 +26,6 @@
     onremove?: (values: string[], value: string, index: number) => void | boolean;
   }
   ```
-  ### Exports
-  `TagsInputContext`, `setTagsInputContext(ctx)`, and `getTagsInputContext()` provide the optional field context used by `TagsInputField`.
-  When a `TagsInputContext` is present (i.e. rendered inside `TagsInputField`), `values`/`value`/`variant`/`element`/`ariaErrMsgId`/`id`/`aria-describedby`/`onchange`/`oninvalid` and the field's validation `onadd` are taken from the context; the component's own same-named props are ignored. `styling` and all presentational props (`label`, `extra`, `side`, `confirm`, `trim`, `unique`, `removeAriaLabel`, `attach`, `placeholder`, ...) stay caller-controlled.
   ### Anatomy
   ```svelte
   <div class="whole">
@@ -50,7 +47,7 @@
         </span>
       {/each}
     </span>
-    <input class={["main", class]} {...rest} type="text" aria-invalid={ariaInvalid ?? (ariaErrMsgId ? true : undefined)} aria-errormessage={ariaErrMsgId} bind:value={() => effValue, (v) => setValue(v)} bind:this={element} {@attach attach} />
+    <input class="main" {...rest} type="text" aria-invalid aria-errormessage />
   </div>
   ```
 -->
@@ -97,7 +94,7 @@
     oninvalid?: (ev: Event) => void;
   }
 
-  export const [getTagsInputContext, setTagsInputContext] = _createContext<TagsInputContext>();
+  export const [_getTagsInputContext, _setTagsInputContext] = _createContext<TagsInputContext>();
 
   import { type Snippet } from "svelte";
   import { type Attachment } from "svelte/attachments";
@@ -108,7 +105,7 @@
 <script lang="ts">
   // prettier-ignore
   let { label, extra, values = $bindable([]), value = $bindable(""), side = "left", removeAriaLabel = (text: string) => `Remove ${text}`, confirm = [CONFIRM_KEY], trim = true, unique = true, ariaErrMsgId, events, onkeydown, onchange: onchangeProp, oninvalid: oninvalidProp, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, id: idProp, "aria-describedby": ariaDescribedbyProp, class: c, "aria-invalid": ariaInvalid, ...rest }: TagsInputProps = $props();
-  const ctx = getTagsInputContext();
+  const ctx = _getTagsInputContext();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling ?? ctx?.styling));

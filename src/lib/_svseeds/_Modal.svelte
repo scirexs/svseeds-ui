@@ -18,7 +18,7 @@
   ```
   ### Anatomy
   ```svelte
-  <dialog class={["whole", class]} aria-label={ariaLabel} {...rest} bind:this={element}>
+  <dialog class="whole" {...rest} aria-label>
     {children}
   </dialog>
   ```

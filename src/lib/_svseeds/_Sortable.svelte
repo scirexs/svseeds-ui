@@ -32,7 +32,7 @@
   ```svelte
   <ul class="whole">
     {#each items as value (key(value))}
-      <li class="main" data-svs-key={key(value)}>
+      <li class="main">
         {item(value, variant, handle)}
       </li>
     {/each}
@@ -41,9 +41,10 @@
   ```
 
   ### Exports
-  `createSortableGroup()` creates an isolated drag controller. `SortableGroupController`,
-  `getSortableContext()`, and `setSortableContext()` are the context contract consumed by
-  `SortableGroup.svelte`.
+  ```ts
+  // Creates an isolated drag controller; pass it as `group` to connect multiple lists, or wrap them in <SortableGroup>.
+  function createSortableGroup(): SortableGroupController
+  ```
 -->
 <script module lang="ts">
   export interface SortableProps<T = string> {
@@ -131,7 +132,7 @@
     ghost: boolean;
   };
 
-  export const [getSortableContext, setSortableContext] = _createContext<SortableGroupController>();
+  export const [_getSortableContext, _setSortableContext] = _createContext<SortableGroupController>();
 
   const tp: TransitionParams = { duration: 300, easing: cubicOut };
   const minDistance = 10;
@@ -605,7 +606,7 @@
   // prettier-ignore
   let { items = $bindable(), item, key, clone, group, id, ghost, mode = "move", accept, sort = true, multiple = false, draggable = true, appendable = false, confirm = false, dragging = $bindable(false), styling, variant = VARIANT.NEUTRAL }: SortableProps<T> = $props();
 
-  const context = getSortableContext();
+  const context = _getSortableContext();
   // svelte-ignore state_referenced_locally
   const controller = group ?? context ?? createSortableGroup();
   const autoId = $props.id();

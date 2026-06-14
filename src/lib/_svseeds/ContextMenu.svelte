@@ -24,11 +24,11 @@
   };
   type MenuItemData = MenuItemEntry | MenuSeparatorData;
   ```
-  ### Exports
-  ContextMenu provides `MenuItemContext` from `_MenuItem.svelte`, so declarative `MenuItem` and `MenuSeparator` children inherit `variant`/`styling` and item activation closes the menu. ContextMenu owns focus restore, arrow/Home/End/Tab navigation, and typeahead.
+  ### Behavior
+  Declarative `MenuItem`/`MenuSeparator` children inherit `variant`/`styling`, and activating an item closes the menu. ContextMenu owns focus restore, arrow/Home/End/Tab navigation, and typeahead.
   ### Anatomy
   ```svelte
-  <div class={["whole", class]} aria-orientation="vertical" {...rest} role="menu" tabindex="-1" style={dynStyle} bind:this={element} {@attach attach}>
+  <div class="whole" {...rest} role="menu" tabindex="-1" aria-orientation="vertical">
     {#if children}
       {children}
     {:else if items}
@@ -72,7 +72,7 @@
   import { type HTMLAttributes, type KeyboardEventHandler } from "svelte/elements";
   import { on } from "svelte/events";
   import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass } from "./core";
-  import MenuItem, { setMenuItemContext, type MenuItemContext } from "./_MenuItem.svelte";
+  import MenuItem, { _setMenuItemContext, type MenuItemContext } from "./_MenuItem.svelte";
   import MenuSeparator from "./_MenuSeparator.svelte";
 </script>
 
@@ -97,7 +97,7 @@
       hide();
     },
   };
-  setMenuItemContext(ctx);
+  _setMenuItemContext(ctx);
 
   let position = $state({ x: 0, y: 0 });
   let prevFocus: HTMLElement | null = null;

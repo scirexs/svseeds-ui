@@ -23,7 +23,7 @@
   `closable=false` creates a forced-action modal (no light-dismiss/Escape).
   ### Anatomy
   ```svelte
-  <dialog class={["whole", class]} {...rest} {style} bind:this={element}>
+  <dialog class="whole" {...rest} {style}>
     {children}
   </dialog>
   ```

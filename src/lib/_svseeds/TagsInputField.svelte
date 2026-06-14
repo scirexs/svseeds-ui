@@ -72,7 +72,7 @@
 
   import { type Snippet, untrack } from "svelte";
   import { type SVSClass, type SVSVariant, type SVSFieldValidation, type SVSFieldConstraint, VARIANT, PARTS, fnClass, isNeutral } from "./core";
-  import TagsInput, { setTagsInputContext, type TagsInputContext } from "./_TagsInput.svelte";
+  import TagsInput, { _setTagsInputContext, type TagsInputContext } from "./_TagsInput.svelte";
 </script>
 
 <script lang="ts">
@@ -127,7 +127,7 @@
     onchange,
     oninvalid,
   };
-  setTagsInputContext(ctx);
+  _setTagsInputContext(ctx);
 
   // *** States *** //
   let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;

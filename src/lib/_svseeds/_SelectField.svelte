@@ -39,7 +39,7 @@
     </div>
     <div class="middle">
       <span class="left" conditional>{left}</span>
-      <select class={["main", class]} {...rest} bind:value bind:this={element} {@attach attach}>
+      <select class="main" {...rest}>
         <option value="" conditional>{placeholder}</option>
         {#each options as { option, text }}
           <option value={option}>{text}</option>

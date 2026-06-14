@@ -94,7 +94,7 @@
   import { type SvelteMap } from "svelte/reactivity";
   import { type SVSClass, type SVSVariant, type SVSFieldValidation, type SVSFieldConstraint, VARIANT, PARTS, fnClass, isNeutral } from "./core";
   import ToggleGroup, {
-    setToggleGroupContext,
+    _setToggleGroupContext,
     type ToggleGroupContext,
     type ToggleOption,
     type ToggleGroupProps,
@@ -142,7 +142,7 @@
     },
     events: { onadd: hadd },
   };
-  setToggleGroupContext(ctx);
+  _setToggleGroupContext(ctx);
 
   // *** States *** //
   let neutral = $state(isNeutral(variant) ? variant : VARIANT.NEUTRAL);

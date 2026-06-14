@@ -12,11 +12,11 @@
     // role and aria-orientation are component-owned
   }
   ```
-  ### Exports
-  Consumes `MenuItemContext` from `_MenuItem.svelte` when present. In embedded mode `variant` defaults to the context variant and `styling` falls back to the context styling.
+  ### Embedded
+  Placed inside a `ContextMenu`, `variant` defaults to the menu's and `styling` falls back to it.
   ### Anatomy
   ```svelte
-  <div class={["whole", class]} {...rest} role="separator" aria-orientation="horizontal" bind:this={element} {@attach attach}></div>
+  <div class="whole" {...rest} role="separator" aria-orientation="horizontal"></div>
   ```
 -->
 <script module lang="ts">
@@ -34,13 +34,13 @@
   import { type Attachment } from "svelte/attachments";
   import { type HTMLAttributes } from "svelte/elements";
   import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass } from "./core";
-  import { getMenuItemContext } from "./_MenuItem.svelte";
+  import { _getMenuItemContext } from "./_MenuItem.svelte";
 </script>
 
 <script lang="ts">
   // prettier-ignore
   let { attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: MenuSeparatorProps = $props();
-  const ctx = getMenuItemContext();
+  const ctx = _getMenuItemContext();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling ?? ctx?.styling));

@@ -24,14 +24,11 @@
     onremove?: (values: string[], value: string, index: number) => void | boolean;
   }
   ```
-  ### Exports
-  `ToggleGroupContext`, `setToggleGroupContext(ctx)`, and `getToggleGroupContext()` provide the optional field context used by `ToggleGroupField`.
-  When a `ToggleGroupContext` is present (i.e. rendered inside `ToggleGroupField`), `values`/`elements`/`variant`/`ariaDescId`/`ariaErrMsgId` are taken from the context; `styling` uses the component prop when supplied and otherwise falls back to the context, and add/remove hooks run the component prop hook before the context hook. `options`/`multiple`/`children`/`attach` stay caller-controlled.
   ### Anatomy
   ```svelte
-  <span class="whole" aria-describedby={ariaDescId} aria-errormessage={ariaErrMsgId}>
-    {#each options as { value, text, disabled, ...attrs }}
-      <button {...attrs} class="main" disabled={disabled || undefined} {@attach attach}>
+  <span class="whole" aria-describedby aria-errormessage>
+    {#each options as { text, ...attrs }}
+      <button class="main" {...attrs}>
         {text} or {children}
       </button>
     {/each}
@@ -76,7 +73,7 @@
     events?: ToggleGroupEvents;
   }
 
-  export const [getToggleGroupContext, setToggleGroupContext] = _createContext<ToggleGroupContext>();
+  export const [_getToggleGroupContext, _setToggleGroupContext] = _createContext<ToggleGroupContext>();
 
   import { type Snippet } from "svelte";
   import { type Attachment } from "svelte/attachments";
@@ -88,7 +85,7 @@
 <script lang="ts">
   // prettier-ignore
   let { options, children, values = $bindable([]), multiple = true, events, ariaDescId, ariaErrMsgId, attach, elements = $bindable([]), styling, variant = VARIANT.NEUTRAL }: ToggleGroupProps = $props();
-  const ctx = getToggleGroupContext();
+  const ctx = _getToggleGroupContext();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling ?? ctx?.styling));

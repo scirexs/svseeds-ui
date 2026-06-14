@@ -37,7 +37,7 @@
     <div class="middle">
       {#each options as { value, text }, i}
         <label class="main">
-          <input class={["left", class]} bind:this={elements[i]} {@attach attach} />
+          <input class="left" {...rest} />
           <span class="right">{text}</span>
         </label>
       {/each}

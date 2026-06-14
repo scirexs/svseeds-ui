@@ -16,27 +16,18 @@
     // other HTMLDetailsAttributes except `name` are passed to <details> via ...rest; `class` is merged onto root
   }
   ```
-  ### Exports
-  `DisclosureContext`, `setDisclosureContext(ctx)`, and `getDisclosureContext()` provide an optional accordion context. When a `DisclosureContext` is present (e.g. from an Accordion), `<Disclosure id=...>` routes its open state through `ctx.current` exclusively; `variant` and `styling` then default to the context's.
   ### Anatomy
-  `main` renders through separate animated/static paths; slide uses sanitized `dur`.
   ```svelte
-  <details class={["whole", class]} {...rest} id={id} bind:this={element} {@attach attach}>
+  <details class="whole" {...rest}>
     <summary class="label" aria-disabled aria-description>
       {label}
     </summary>
-    {#if effOpen}
-      <div class="main" transition:slide={{ duration: dur }}>
-        {children}
-      </div>
-    {/if}
-    {#if hidden}
-      <div class="main">
-        {children}
-      </div>
-    {/if}
+    <div class="main" transition:slide conditional>
+      {children}
+    </div>
   </details>
   ```
+  `main` is rendered only while open, with a slide transition of `duration` ms.
 -->
 <script module lang="ts">
   export interface DisclosureProps extends Omit<HTMLDetailsAttributes, "children" | "name"> {
@@ -58,7 +49,7 @@
     set current(v: string | undefined);
   }
 
-  export const [getDisclosureContext, setDisclosureContext] = _createContext<DisclosureContext>();
+  export const [_getDisclosureContext, _setDisclosureContext] = _createContext<DisclosureContext>();
 
   const DEFAULT_DURATION = 200;
   const noMotion = shouldReduceMotion();
@@ -96,7 +87,7 @@
 <script lang="ts">
   // prettier-ignore
   let { label, children, open = $bindable(false), duration = -1, ontoggle, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), inactive, id, name, class: c, onclick, ...rest }: DisclosureProps & { name?: string } = $props();
-  const ctx = getDisclosureContext();
+  const ctx = _getDisclosureContext();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling ?? ctx?.styling));

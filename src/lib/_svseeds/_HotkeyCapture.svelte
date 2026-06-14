@@ -17,7 +17,7 @@
   ```
   ### Anatomy
   ```svelte
-  <input class={["main", class]} type="text" readonly {...rest} bind:value bind:this={element} {@attach attach} />
+  <input class="main" {...rest} type="text" readonly />
   ```
   ### Exports
   ```ts
@@ -31,6 +31,7 @@
     kind: "key" | "pointer" | "wheel";
     event: KeyboardEvent | PointerEvent | WheelEvent;
   }
+  // Parses a space-separated hotkey string (e.g. "Ctrl Shift A") into its modifier flags and trailing key.
   function parseHotkey(value: string): Omit<HotkeyCaptureDetail, "event" | "kind">;
   ```
 -->

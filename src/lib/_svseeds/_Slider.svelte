@@ -25,7 +25,7 @@
   ```svelte
   <span class="whole">
     <span class="left">{left}</span>
-    <input class={["main", class]} type="range" {min} {max} {...rest} bind:value bind:this={element} {@attach attach} />
+    <input class="main" {...rest} type="range" {min} {max} />
     <datalist conditional>
       {#each options as option}
         <option value={option}></option>

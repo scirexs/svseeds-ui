@@ -1,5 +1,5 @@
 <script module lang="ts">
-  import { setMenuItemContext, type MenuItemContext } from "#svs/_MenuItem.svelte";
+  import { _setMenuItemContext, type MenuItemContext } from "#svs/_MenuItem.svelte";
 </script>
 
 <script lang="ts">
@@ -20,7 +20,7 @@
       closed += 1;
     },
   };
-  setMenuItemContext(ctx);
+  _setMenuItemContext(ctx);
   const label = createRawSnippet(() => ({ render: () => `<span>Item</span>` }));
 </script>
 
