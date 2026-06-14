@@ -62,7 +62,8 @@
   export type ToggleGroupReqdProps = "options";
   export type ToggleGroupBindProps = "values" | "elements";
 
-  const preset = "svs-toggle-group";
+  export const _TOGGLE_GROUP_PRESET = "svs-toggle-group";
+  const preset = _TOGGLE_GROUP_PRESET;
 
   export interface ToggleGroupContext extends SVSContext {
     get values(): string[];

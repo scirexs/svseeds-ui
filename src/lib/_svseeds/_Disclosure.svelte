@@ -53,7 +53,8 @@
 
   const DEFAULT_DURATION = 200;
   const noMotion = shouldReduceMotion();
-  const preset = "svs-disclosure";
+  export const _DISCLOSURE_PRESET = "svs-disclosure";
+  const preset = _DISCLOSURE_PRESET;
 
   class ToggleGuard {
     #active = false;

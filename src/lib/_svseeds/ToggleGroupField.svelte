@@ -94,6 +94,7 @@
   import { type SvelteMap } from "svelte/reactivity";
   import { type SVSClass, type SVSVariant, type SVSFieldValidation, type SVSFieldConstraint, VARIANT, PARTS, fnClass, isNeutral } from "./core";
   import ToggleGroup, {
+    _TOGGLE_GROUP_PRESET,
     _setToggleGroupContext,
     type ToggleGroupContext,
     type ToggleOption,
@@ -132,7 +133,7 @@
       return neutral;
     },
     get styling() {
-      return `${preset} svs-toggle-group`;
+      return `${preset} ${_TOGGLE_GROUP_PRESET}`;
     },
     get ariaDescId() {
       return idDesc;

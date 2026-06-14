@@ -896,9 +896,11 @@ describe("Compound / children", () => {
     const { container, getByRole } = render(TagsInputField);
     const whole = getByRole("group") as HTMLDivElement;
     const middle = container.querySelector(`.${PARTS.MIDDLE}`) as HTMLElement;
+    const main = within(middle).getByRole("textbox") as HTMLInputElement;
 
     expect(middle).toBeInTheDocument();
     expect(within(middle).getAllByRole("textbox")).toHaveLength(1);
+    expect(main.parentElement).toHaveClass("svs-tags-input-field", "svs-tags-input", PARTS.WHOLE, VARIANT.NEUTRAL);
     expect(whole.firstElementChild).toBe(middle);
   });
 

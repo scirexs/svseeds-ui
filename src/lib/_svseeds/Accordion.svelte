@@ -37,7 +37,7 @@
     {/if}
   </div>
   ```
-  Data-mode child styling defaults to `"svs-accordion svs-disclosure"` and can be customized via `disclosure`.
+  Data-mode child styling defaults to the combined parent/child preset and can be customized via `disclosure`.
 -->
 <script module lang="ts">
   export interface AccordionProps {
@@ -66,7 +66,7 @@
 
   import { type Component, type Snippet, untrack } from "svelte";
   import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, omit } from "./core";
-  import Disclosure, { _setDisclosureContext, type DisclosureContext, type DisclosureProps, type DisclosureReqdProps, type DisclosureBindProps } from "./_Disclosure.svelte";
+  import Disclosure, { _DISCLOSURE_PRESET, _setDisclosureContext, type DisclosureContext, type DisclosureProps, type DisclosureReqdProps, type DisclosureBindProps } from "./_Disclosure.svelte";
 </script>
 
 <script lang="ts">
@@ -98,7 +98,7 @@
   // *** Initialize Child Props *** //
   const childProps = $derived({
     ...omit(disclosure, "styling"),
-    styling: disclosure?.styling ?? `${preset} svs-disclosure`,
+    styling: disclosure?.styling ?? `${preset} ${_DISCLOSURE_PRESET}`,
   });
 
   // *** Reactive Handlers *** //

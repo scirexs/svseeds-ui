@@ -77,7 +77,8 @@
     onremove?: (values: string[], value: string, index: number) => void | boolean;
   }
 
-  const preset = "svs-tags-input";
+  export const _TAGS_INPUT_PRESET = "svs-tags-input";
+  const preset = _TAGS_INPUT_PRESET;
   const CONFIRM_KEY = "Enter";
 
   export interface TagsInputContext extends SVSContext {

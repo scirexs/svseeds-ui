@@ -72,7 +72,7 @@
 
   import { type Snippet, untrack } from "svelte";
   import { type SVSClass, type SVSVariant, type SVSFieldValidation, type SVSFieldConstraint, VARIANT, PARTS, fnClass, isNeutral } from "./core";
-  import TagsInput, { _setTagsInputContext, type TagsInputContext } from "./_TagsInput.svelte";
+  import TagsInput, { _TAGS_INPUT_PRESET, _setTagsInputContext, type TagsInputContext } from "./_TagsInput.svelte";
 </script>
 
 <script lang="ts">
@@ -115,7 +115,7 @@
       return idMsg;
     },
     get styling() {
-      return `${preset} svs-tags-input`;
+      return `${preset} ${_TAGS_INPUT_PRESET}`;
     },
     get id() {
       return id;

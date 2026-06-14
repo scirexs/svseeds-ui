@@ -48,7 +48,8 @@
   export type ToggleReqdProps = never;
   export type ToggleBindProps = "value" | "variant" | "element";
 
-  const preset = "svs-toggle";
+  export const _TOGGLE_PRESET = "svs-toggle";
+  const preset = _TOGGLE_PRESET;
 
   import { type Snippet, untrack } from "svelte";
   import { type Attachment } from "svelte/attachments";
