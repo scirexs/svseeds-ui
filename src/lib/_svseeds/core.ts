@@ -50,7 +50,7 @@ type SVSContext = {
   get variant(): SVSVariant;
   get styling(): SVSClass | undefined;
 };
-type CollectionEvents<T> = {
+interface CollectionEvents<T> {
   // Return the subset to commit: undefined => all, [] => none.
   onadd?: (detail: { values: T[]; added: T[] }) => T[] | void;
   onremove?: (detail: { values: T[]; removed: T[] }) => T[] | void;
