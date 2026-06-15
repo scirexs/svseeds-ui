@@ -92,7 +92,7 @@
   import { type Snippet, untrack } from "svelte";
   import { type Attachment } from "svelte/attachments";
   import { type SvelteSet } from "svelte/reactivity";
-  import { type HTMLInputAttributes, type KeyboardEventHandler } from "svelte/elements";
+  import { type HTMLInputAttributes, type KeyboardEventHandler, type FormEventHandler, type EventHandler } from "svelte/elements";
   import { type SVSClass, type SVSVariant, type SVSContext, VARIANT, PARTS, fnClass, _createContext } from "./core";
 </script>
 
@@ -154,17 +154,17 @@
   }
 
   // *** Event Handlers *** //
-  const hbeforeinput = (ev: InputEvent) => {
+  const hbeforeinput: EventHandler<InputEvent, HTMLInputElement> = (ev) => {
     if (!ev.inputType.startsWith("insert")) return;
-    const input = ev.currentTarget as HTMLInputElement;
+    const input = ev.currentTarget;
     const ins = ev.data ?? "";
     const start = input.selectionStart ?? input.value.length;
     const end = input.selectionEnd ?? input.value.length;
     const next = `${input.value.slice(0, start)}${ins}${input.value.slice(end)}`;
     if (!legal(next)) ev.preventDefault();
   };
-  const hinput = (ev: Event) => {
-    const input = ev.currentTarget as HTMLInputElement;
+  const hinput: FormEventHandler<HTMLInputElement> = (ev) => {
+    const input = ev.currentTarget;
     if (!legal(input.value)) {
       input.value = last;
       text = last;
@@ -174,20 +174,20 @@
     }
     setValue(parse(text));
   };
-  const hchange = (ev: Event) => {
-    commit((ev.currentTarget as HTMLInputElement).value);
+  const hchange: FormEventHandler<HTMLInputElement> = (ev) => {
+    commit(ev.currentTarget.value);
     onchangeProp?.(ev as any);
     ctx?.onchange?.(ev);
   };
-  const hblur = (ev: FocusEvent) => {
-    commit((ev.currentTarget as HTMLInputElement).value);
+  const hblur: FormEventHandler<HTMLInputElement> = (ev) => {
+    commit(ev.currentTarget.value);
     focused = false;
   };
   const hfocus = () => {
     focused = true;
   };
-  const hinvalid = (ev: Event) => {
-    oninvalidProp?.(ev as any);
+  const hinvalid: FormEventHandler<HTMLInputElement> = (ev) => {
+    oninvalidProp?.(ev);
     ctx?.oninvalid?.(ev);
   };
   const hkeydown: KeyboardEventHandler<HTMLInputElement> = (ev) => {
@@ -259,9 +259,6 @@
     const [, exp = "0"] = s.split("e-");
     return Number(exp) || 0;
   }
-  function roundTo(n: number, d: number): number {
-    return Number(n.toFixed(d));
-  }
   function unit(): number {
     return Number.isFinite(step) && step > 0 ? step : 1;
   }
@@ -271,7 +268,7 @@
     const base = min ?? 0;
     const lo = min ?? -Infinity;
     const hi = max ?? Infinity;
-    let v = base + roundTo(Math.round((n - base) / u) * u, d);
+    let v = base + Number((Math.round((n - base) / u) * u).toFixed(d));
     if (integer) v = Math.round(v);
     return Math.min(hi, Math.max(lo, v));
   }
