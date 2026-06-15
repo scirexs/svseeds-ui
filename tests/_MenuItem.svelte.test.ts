@@ -6,7 +6,7 @@ import { PARTS, VARIANT } from "#svs/core";
 import MenuItemCtxProvider from "./fixtures/MenuItemCtxProvider.svelte";
 
 const children = createRawSnippet(() => ({ render: () => "<span>Item</span>" }));
-const root = (c: HTMLElement) => c.querySelector('[role="menuitem"]') as HTMLButtonElement;
+const root = (c: HTMLElement) => c.querySelector('[role="menuitem"]') as HTMLButtonElement | HTMLAnchorElement;
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -118,6 +118,72 @@ describe("MenuItem activation", () => {
   test("enabled click without onselect does not throw", async () => {
     const { container } = render(MenuItem, { children });
     await expect(fireEvent.click(root(container))).resolves.toBeTruthy();
+  });
+});
+
+describe("MenuItem as anchor", () => {
+  test("href renders anchor semantics", () => {
+    const { container } = render(MenuItem, { children, href: "/go" });
+    const anchor = root(container);
+
+    expect(anchor.tagName).toBe("A");
+    expect(anchor).toHaveAttribute("href", "/go");
+    expect(anchor).toHaveAttribute("role", "menuitem");
+    expect(anchor).not.toHaveAttribute("type");
+    expect(anchor).toHaveAttribute("tabindex", "-1");
+  });
+
+  test("enabled anchor click calls onselect", async () => {
+    const onselect = vi.fn((ev: MouseEvent) => ev.preventDefault());
+    const { container } = render(MenuItem, { children, href: "/go", onselect });
+
+    await fireEvent.click(root(container));
+
+    expect(onselect).toHaveBeenCalledTimes(1);
+  });
+
+  test("context anchor click closes and disabled anchor prevents navigation", async () => {
+    const onselect = vi.fn((ev: MouseEvent) => ev.preventDefault());
+    const enabled = $state({ closed: 0, onselect, href: "/go" });
+    const rendered = render(MenuItemCtxProvider, enabled);
+
+    await fireEvent.click(root(rendered.container));
+
+    expect(onselect).toHaveBeenCalledTimes(1);
+    expect(enabled.closed).toBe(1);
+    rendered.unmount();
+
+    const disabledSelect = vi.fn();
+    const disabled = $state({ closed: 0, onselect: disabledSelect, disabled: true, href: "/go" });
+    const blocked = render(MenuItemCtxProvider, disabled);
+    const ev = new MouseEvent("click", { bubbles: true, cancelable: true });
+
+    await fireEvent(root(blocked.container), ev);
+
+    expect(disabledSelect).not.toHaveBeenCalled();
+    expect(disabled.closed).toBe(0);
+    expect(ev.defaultPrevented).toBe(true);
+  });
+
+  test("component-owned anchor semantics cannot be overridden", () => {
+    const { container } = render(MenuItem, {
+      children,
+      href: "/go",
+      type: "submit",
+      role: "link",
+    } as any);
+    const anchor = root(container);
+
+    expect(anchor).toHaveAttribute("role", "menuitem");
+    expect(anchor).not.toHaveAttribute("type");
+  });
+
+  test("element binding resolves to anchor", () => {
+    const props = $state({ children, href: "/go", element: undefined as HTMLButtonElement | HTMLAnchorElement | undefined });
+    const { container } = render(MenuItem, props);
+
+    expect(props.element).toBe(root(container));
+    expect(props.element?.tagName).toBe("A");
   });
 });
 

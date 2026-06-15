@@ -3,7 +3,8 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface MenuSeparatorProps extends Omit<HTMLAttributes<HTMLDivElement>, "children" | "role"> {
+  interface MenuSeparatorProps extends Omit<HTMLAttributes<HTMLDivElement>, "children" | "role" | "aria-orientation"> {
+    ariaOrientation?: "horizontal" | "vertical"; // inferred from MenuList orientation when absent
     attach?: Attachment<HTMLDivElement>;
     element?: HTMLDivElement; // bindable
     styling?: SVSClass;
@@ -13,14 +14,15 @@
   }
   ```
   ### Embedded
-  Placed inside a `ContextMenu`, `variant` defaults to the menu's and `styling` falls back to it.
+  Placed inside a `MenuList`, `variant` defaults to the menu's and `styling` falls back to it. `ariaOrientation` is ARIA-only: by default a vertical menu renders a horizontal separator, and a horizontal menu renders a vertical separator.
   ### Anatomy
   ```svelte
-  <div class="whole" {...rest} role="separator" aria-orientation="horizontal"></div>
+  <div class="whole" {...rest} role="separator" aria-orientation={ariaOrientation}></div>
   ```
 -->
 <script module lang="ts">
-  export interface MenuSeparatorProps extends Omit<HTMLAttributes<HTMLDivElement>, "children" | "role"> {
+  export interface MenuSeparatorProps extends Omit<HTMLAttributes<HTMLDivElement>, "children" | "role" | "aria-orientation"> {
+    ariaOrientation?: "horizontal" | "vertical"; // inferred from MenuList orientation when absent
     attach?: Attachment<HTMLDivElement>;
     element?: HTMLDivElement; // bindable
     styling?: SVSClass;
@@ -39,12 +41,13 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: MenuSeparatorProps = $props();
+  let { ariaOrientation, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: MenuSeparatorProps = $props();
   const ctx = _getMenuItemContext();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(_MENU_SEPARATOR_PRESET, styling ?? ctx?.styling));
   const effVariant = $derived(ctx ? ctx.variant : variant);
+  const effAriaOrientation = $derived(ariaOrientation ?? (ctx?.orientation === "horizontal" ? "vertical" : "horizontal"));
 </script>
 
 <!---------------------------------------->
@@ -54,6 +57,6 @@
   class={[cls(PARTS.WHOLE, effVariant), c]}
   {...rest}
   role="separator"
-  aria-orientation="horizontal"
+  aria-orientation={effAriaOrientation}
   {@attach attach}
 ></div>

@@ -7,8 +7,8 @@
   import { createRawSnippet } from "svelte";
 
   // prettier-ignore
-  let { variant = $bindable("neutral"), styling = $bindable(undefined), closed = $bindable(0), onselect, disabled, itemStyling }:
-    { variant?: string; styling?: any; closed?: number; onselect?: (ev: MouseEvent) => void; disabled?: boolean; itemStyling?: any } = $props();
+  let { variant = $bindable("neutral"), styling = $bindable(undefined), closed = $bindable(0), onselect, disabled, href, itemStyling }:
+    { variant?: string; styling?: any; closed?: number; onselect?: (ev: MouseEvent) => void; disabled?: boolean; href?: string; itemStyling?: any } = $props();
   const ctx: MenuItemContext = {
     get variant() {
       return variant;
@@ -24,4 +24,4 @@
   const label = createRawSnippet(() => ({ render: () => `<span>Item</span>` }));
 </script>
 
-<MenuItem {onselect} {disabled} styling={itemStyling} children={label} />
+<MenuItem {onselect} {disabled} {href} styling={itemStyling} children={label} />

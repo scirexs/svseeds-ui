@@ -53,11 +53,29 @@ describe("MenuSeparator", () => {
     expect(separator).toHaveAttribute("aria-orientation", "horizontal");
   });
 
+  test("explicit ariaOrientation overrides the default", () => {
+    const { container } = render(MenuSeparator, { ariaOrientation: "vertical" });
+    expect(root(container)).toHaveAttribute("aria-orientation", "vertical");
+  });
+
   test("embedded context can drive variant and styling", () => {
     const { container } = render(MenuSeparatorCtxProvider, {
       variant: VARIANT.ACTIVE,
       styling: "ctx-separator",
     });
     expect(root(container)).toHaveClass("ctx-separator", PARTS.WHOLE, VARIANT.ACTIVE);
+  });
+
+  test("embedded context drives inferred aria orientation", () => {
+    const horizontal = render(MenuSeparatorCtxProvider, { orientation: "horizontal" });
+    expect(root(horizontal.container)).toHaveAttribute("aria-orientation", "vertical");
+    horizontal.unmount();
+
+    const vertical = render(MenuSeparatorCtxProvider, { orientation: "vertical" });
+    expect(root(vertical.container)).toHaveAttribute("aria-orientation", "horizontal");
+    vertical.unmount();
+
+    const explicit = render(MenuSeparatorCtxProvider, { orientation: "horizontal", ariaOrientation: "horizontal" });
+    expect(root(explicit.container)).toHaveAttribute("aria-orientation", "horizontal");
   });
 });
