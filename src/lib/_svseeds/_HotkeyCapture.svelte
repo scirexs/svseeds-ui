@@ -14,13 +14,6 @@
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
     // class & other input attributes are passed to the input via ...rest (class is merged onto the input)
   }
-  ```
-  ### Anatomy
-  ```svelte
-  <input class="main" {...rest} type="text" readonly />
-  ```
-  ### Exports
-  ```ts
   interface HotkeyCaptureDetail {
     value: string;
     ctrl: boolean;
@@ -31,6 +24,13 @@
     kind: "key" | "pointer" | "wheel";
     event: KeyboardEvent | PointerEvent | WheelEvent;
   }
+  ```
+  ### Anatomy
+  ```svelte
+  <input class="main" {...rest} type="text" readonly />
+  ```
+  ### Exports
+  ```ts
   // Parses a space-separated hotkey string (e.g. "Ctrl Shift A") into its modifier flags and trailing key.
   function parseHotkey(value: string): Omit<HotkeyCaptureDetail, "event" | "kind">;
   ```

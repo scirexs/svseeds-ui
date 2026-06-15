@@ -26,8 +26,9 @@
   }
   interface FileRejection {
     file: File;
-    reason: "accept" | "maxSize" | "maxFiles";
+    reason: FileRejectReason;
   }
+  type FileRejectReason = "accept" | "maxSize" | "maxFiles";
   ```
   ### Anatomy
   ```svelte
@@ -40,16 +41,8 @@
     <div class="aux" if={aux && !flip}>{aux}</div>
   </div>
   ```
+
   Drag-over renders the local variant as `active`; `children` must be presentational and interactive controls belong in `aux`.
-  ### Exports
-  ```ts
-  const _FILE_INPUT_PRESET: "svs-file-input"
-  interface FileInputContext
-  const [_getFileInputContext, _setFileInputContext]
-  interface FileInputEvents
-  interface FileRejection
-  type FileRejectReason
-  ```
   `accept` is re-checked by the primitive because drag-drop bypasses the native picker filter.
   Very old Safari versions that cannot assign `input.files` may not submit dropped files programmatically.
 -->
