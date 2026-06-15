@@ -7,7 +7,7 @@
     value?: string; // bindable ("#000000")
     alpha?: number; // (1)
     checkered?: boolean; // (true)
-    attach?: Attachment;
+    attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
@@ -35,7 +35,7 @@
     value?: string; // bindable ("#000000")
     alpha?: number; // (1)
     checkered?: boolean; // (true)
-    attach?: Attachment;
+    attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)

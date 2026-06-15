@@ -16,7 +16,7 @@
     type?: "text" | "textarea" | "email" | "password" | "search" | "tel" | "url";  // ("text")
     options?: SvelteSet<string> | Set<string>;
     validations?: TextFieldValidation[];
-    attach?: Attachment;
+    attach?: Attachment<HTMLInputElement | HTMLTextAreaElement>;
     element?: HTMLInputElement | HTMLTextAreaElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
@@ -70,7 +70,7 @@
     type?: "text" | "textarea" | "email" | "password" | "search" | "tel" | "url"; // ("text")
     options?: SvelteSet<string> | Set<string>;
     validations?: TextFieldValidation[];
-    attach?: Attachment;
+    attach?: Attachment<HTMLInputElement | HTMLTextAreaElement>;
     element?: HTMLInputElement | HTMLTextAreaElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)

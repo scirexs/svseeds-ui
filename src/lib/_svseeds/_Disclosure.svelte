@@ -9,7 +9,7 @@
     open?: boolean; // bindable (false)
     duration?: number; // (200)
     inactive?: string | boolean; // reason string (aria-description) OR true for reason-less soft-disable
-    attach?: Attachment;
+    attach?: Attachment<HTMLDetailsElement>;
     element?: HTMLDetailsElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
@@ -36,7 +36,7 @@
     open?: boolean; // bindable (false)
     duration?: number; // (200)
     inactive?: string | boolean; // reason string (aria-description) OR true for reason-less soft-disable
-    attach?: Attachment;
+    attach?: Attachment<HTMLDetailsElement>;
     element?: HTMLDetailsElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)

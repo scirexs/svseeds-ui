@@ -16,7 +16,7 @@
     options?: SvelteSet<number> | Set<number>;
     ariaDecLabel?: string; // ("Decrement")
     ariaIncLabel?: string; // ("Increment")
-    attach?: Attachment;
+    attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
@@ -66,7 +66,7 @@
     options?: SvelteSet<number> | Set<number>;
     ariaDecLabel?: string; // ("Decrement")
     ariaIncLabel?: string; // ("Increment")
-    attach?: Attachment;
+    attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)

@@ -16,7 +16,7 @@
     flip?: boolean; // (false)
     value?: string; // bindable
     validations?: SelectFieldValidation[];
-    attach?: Attachment;
+    attach?: Attachment<HTMLSelectElement>;
     element?: HTMLSelectElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
@@ -65,7 +65,7 @@
     flip?: boolean; // (false)
     value?: string; // bindable
     validations?: SelectFieldValidation[];
-    attach?: Attachment;
+    attach?: Attachment<HTMLSelectElement>;
     element?: HTMLSelectElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)

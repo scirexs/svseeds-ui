@@ -12,7 +12,7 @@
     step?: number | "any"; // (1)
     options?: SvelteSet<number> | Set<number>;
     fillRange?: Range; // ({ min: 5, max: 95 }); linear-gradient rate limit of slider's track
-    attach?: Attachment;
+    attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)

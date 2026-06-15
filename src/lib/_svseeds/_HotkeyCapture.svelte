@@ -8,7 +8,7 @@
     active?: boolean; // bindable (false)
     disabled?: boolean; //  (false)
     oncapture?: (detail: HotkeyCaptureDetail) => void;
-    attach?: Attachment;
+    attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
@@ -44,7 +44,7 @@
     active?: boolean; // bindable (false)
     disabled?: boolean; // (false)
     oncapture?: (detail: HotkeyCaptureDetail) => void;
-    attach?: Attachment;
+    attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)

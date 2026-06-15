@@ -15,7 +15,7 @@
     flip?: boolean; // (false) - render aux before the zone instead of after
     aux?: Snippet<[File[], (file: File) => void, string]>; // Snippet<[files,remove,variant]>; rendered outside the label
     events?: FileInputEvents;
-    attach?: Attachment;
+    attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
@@ -62,7 +62,7 @@
     flip?: boolean; // (false)
     aux?: Snippet<[File[], (file: File) => void, string]>; // Snippet<[files,remove,variant]>
     events?: FileInputEvents;
-    attach?: Attachment;
+    attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)

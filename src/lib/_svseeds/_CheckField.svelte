@@ -15,7 +15,7 @@
     multiple?: boolean; // (true)
     validations?: CheckFieldValidation[];
     constraints?: CheckFieldConstraint[];
-    attach?: Attachment;
+    attach?: Attachment<HTMLInputElement>;
     elements?: HTMLInputElement[]; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)

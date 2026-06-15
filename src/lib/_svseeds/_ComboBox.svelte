@@ -9,7 +9,7 @@
     value?: string; // bindable
     expanded?: boolean; // bindable
     search?: boolean // (true)
-    attach?: Attachment;
+    attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)

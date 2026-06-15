@@ -11,7 +11,7 @@
     onclick?: MouseEventHandler<HTMLButtonElement> | null;
     form?: HTMLFormElement;
     inactive?: string; // reason; when set: aria-disabled + aria-description, variant->INACTIVE, onclick suppressed
-    attach?: Attachment;
+    attach?: Attachment<HTMLButtonElement>;
     element?: HTMLButtonElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)

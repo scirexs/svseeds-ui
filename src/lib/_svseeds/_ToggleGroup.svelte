@@ -14,7 +14,7 @@
     events?: ToggleGroupEvents;
     ariaDescId?: string;
     ariaErrMsgId?: string; // bindable
-    attach?: Attachment;
+    attach?: Attachment<HTMLButtonElement>;
     elements?: HTMLButtonElement[]; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
@@ -50,7 +50,7 @@
     events?: ToggleGroupEvents;
     ariaDescId?: string;
     ariaErrMsgId?: string; // bindable
-    attach?: Attachment;
+    attach?: Attachment<HTMLButtonElement>;
     elements?: HTMLButtonElement[]; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)

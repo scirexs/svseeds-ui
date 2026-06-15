@@ -15,7 +15,7 @@
     unique?: boolean; // (true)
     ariaErrMsgId?: string;
     events?: TagsInputEvents;
-    attach?: Attachment;
+    attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
@@ -64,7 +64,7 @@
     unique?: boolean; // (true)
     ariaErrMsgId?: string;
     events?: TagsInputEvents;
-    attach?: Attachment;
+    attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
