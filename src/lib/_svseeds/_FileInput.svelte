@@ -21,8 +21,8 @@
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
     // class & other HTMLInputAttributes are passed to <input> via ...rest (class is merged onto the control)
   }
-  interface FileInputEvents {
-    onadd?: (detail: { candidates: File[]; rejected: FileRejection[]; files: File[] }) => File[] | void;
+  interface FileInputEvents extends Omit<CollectionEvents<File>, "onadd"> {
+    onadd?: (detail: { values: File[]; added: File[]; rejected: FileRejection[] }) => File[] | void;
   }
   interface FileRejection {
     file: File;
@@ -74,9 +74,9 @@
     file: File;
     reason: FileRejectReason;
   }
-  export interface FileInputEvents {
-    // Return the subset of candidates to additionally reject before commit.
-    onadd?: (detail: { candidates: File[]; rejected: FileRejection[]; files: File[] }) => File[] | void;
+  export interface FileInputEvents extends Omit<CollectionEvents<File>, "onadd"> {
+    // Return the subset of added candidates to commit: undefined => all, [] => none.
+    onadd?: (detail: { values: File[]; added: File[]; rejected: FileRejection[] }) => File[] | void;
   }
 
   export const _FILE_INPUT_PRESET = "svs-file-input";
@@ -106,7 +106,7 @@
     type DragEventHandler,
     type EventHandler,
   } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, type SVSContext, VARIANT, PARTS, fnClass, _createContext } from "./core";
+  import { type SVSClass, type SVSVariant, type SVSContext, type CollectionEvents, VARIANT, PARTS, fnClass, _createContext } from "./core";
 </script>
 
 <script lang="ts">
@@ -183,16 +183,21 @@
       else if (!withinSize(file)) rejected.push({ file, reason: "maxSize" });
       else accepted.push(file);
     }
-    const detail = { candidates: accepted, rejected, files: current };
-    const vetoed = new Set<File>();
-    for (const f of events?.onadd?.(detail) ?? []) vetoed.add(f);
-    for (const f of ctx?.events?.onadd?.(detail) ?? []) vetoed.add(f);
-    const committed = accepted.filter((f) => !vetoed.has(f));
-    const next = multiple ? [...current, ...committed] : committed;
+    const detail = { values: effFiles, added: accepted, rejected };
+    let committed = accepted;
+    const a = events?.onadd?.(detail);      if (a) committed = committed.filter((f) => a.includes(f));
+    const b = ctx?.events?.onadd?.(detail);  if (b) committed = committed.filter((f) => b.includes(f));
+    const next = multiple ? [...current, ...committed] : (committed.length ? committed : effFiles);
     if (!sameFileArray(effFiles, next)) setFiles(next);
+    else syncInputFiles();
     rejectBy = [...new Set(rejected.map((r) => r.reason))];
   }
   const remove = (file: File) => {
+    const detail = { values: effFiles, removed: [file] };
+    let keep = [file];
+    const a = events?.onremove?.(detail);      if (a) keep = keep.filter((f) => a.includes(f));
+    const b = ctx?.events?.onremove?.(detail);  if (b) keep = keep.filter((f) => b.includes(f));
+    if (!keep.length) return;
     const next = effFiles.filter((f) => f !== file);
     if (!sameFileArray(effFiles, next)) setFiles(next);
   };

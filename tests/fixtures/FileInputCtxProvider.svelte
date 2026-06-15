@@ -54,6 +54,7 @@
     },
     events: {
       onadd: (detail) => hooks?.events?.onadd?.(detail),
+      onremove: (detail) => hooks?.events?.onremove?.(detail),
     },
     onchange: (ev) => hooks?.onchange?.(ev),
     oninvalid: (ev) => hooks?.oninvalid?.(ev),

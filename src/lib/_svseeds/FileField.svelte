@@ -191,29 +191,28 @@
   }
 
   // *** Event Handlers *** //
-  function onadd(detail: { candidates: File[]; rejected: FileRejection[]; files: File[] }): File[] {
+  function onadd(detail: { values: File[]; added: File[]; rejected: FileRejection[] }): File[] {
     let msg: string | undefined;
     for (const { file, reason } of detail.rejected) {
       const m = check(file, reason);
       if (m && !msg) msg = m;
     }
-    const vetoed: File[] = [];
-    for (const file of detail.candidates) {
+    let committed = detail.added;
+    for (const file of detail.added) {
       const m = check(file);
       if (m) {
-        vetoed.push(file);
+        committed = committed.filter((f) => f !== file);
         if (!msg) msg = m;
       }
     }
-    const committed = detail.candidates.filter((f) => !vetoed.includes(f));
-    const next = multiple ? [...detail.files, ...committed] : committed;
+    const next = multiple ? [...detail.values, ...committed] : committed;
     const changed = next.length !== files.length || next.some((f, i) => f !== files[i]);
     addError = !!msg && changed;
     adding = true;
     variant = neutral;
     element?.setCustomValidity(msg ?? "");
     shift(false, msg);
-    return vetoed;
+    return committed;
   }
   function check(file: File, reason?: FileRejectReason): string | undefined {
     if (!element) return;

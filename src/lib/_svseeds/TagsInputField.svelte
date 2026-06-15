@@ -165,10 +165,12 @@
   }
 
   // *** Event Handlers *** //
-  function onadd(_values: string[], value: string): undefined | boolean {
+  function onadd(detail: { values: string[]; added: string[] }): string[] | void {
+    const value = detail.added[0];
+    if (!value) return;
     variant = neutral;
     shift(false, check(value));
-    return variant === VARIANT.INACTIVE;
+    if (variant === VARIANT.INACTIVE) return [];
   }
   function check(value: string): string | undefined {
     if (!element) return;

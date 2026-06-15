@@ -162,7 +162,7 @@ describe("Tag addition functionality", () => {
   test("adds tag on Enter key", async () => {
     const props = $state({ values: [] as string[], value: "" });
     const user = userEvent.setup();
-    const { container } = render(TagsInput, props);
+    const { container } = render(TagsInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
     await user.type(input, "new tag");
     await user.keyboard("{Enter}");
@@ -174,7 +174,7 @@ describe("Tag addition functionality", () => {
   test("adds tag on custom confirm key", async () => {
     const props = $state({ values: [] as string[], value: "", confirm: ["Tab"] });
     const user = userEvent.setup();
-    const { container } = render(TagsInput, props);
+    const { container } = render(TagsInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
 
     await user.type(input, "new tag");
@@ -238,7 +238,7 @@ describe("Tag addition functionality", () => {
     await user.type(input, "  spaced  ");
     await user.keyboard("{Enter}");
 
-    expect(onadd).toHaveBeenCalledWith([], "spaced");
+    expect(onadd).toHaveBeenCalledWith({ values: [], added: ["spaced"] });
     expect(props.values).toEqual(["spaced"]);
   });
 
@@ -272,10 +272,11 @@ describe("Tag addition functionality", () => {
     expect(props.values).toEqual(["  spaced tag  "]);
   });
 
-  test("prevents duplicate tags by default", async () => {
-    const props = $state({ values: ["existing"], value: "" });
+  test("prevents duplicate tags by default without firing onadd", async () => {
+    const onadd = vi.fn();
+    const props = $state({ values: ["existing"], value: "", events: { onadd } });
     const user = userEvent.setup();
-    const { container } = render(TagsInput, props);
+    const { container } = render(TagsInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
 
     await user.type(input, "existing");
@@ -283,6 +284,7 @@ describe("Tag addition functionality", () => {
 
     expect(props.values).toEqual(["existing"]);
     expect(props.value).toBe("");
+    expect(onadd).not.toHaveBeenCalled();
   });
 
   test("allows duplicate tags when unique=false", async () => {
@@ -359,7 +361,7 @@ describe("Tag removal functionality", () => {
 });
 
 describe("Event handlers", () => {
-  test("calls onadd event handler", async () => {
+  test("calls onadd event handler and commits when it returns undefined", async () => {
     const onadd = vi.fn();
     const onremove = vi.fn();
     const props = $state({
@@ -374,12 +376,12 @@ describe("Event handlers", () => {
     await user.type(input, "new tag");
     await user.keyboard("{Enter}");
 
-    expect(onadd).toHaveBeenCalledWith([], "new tag");
+    expect(onadd).toHaveBeenCalledWith({ values: [], added: ["new tag"] });
     expect(props.values).toEqual(["new tag"]);
   });
 
-  test("cancels tag addition when onadd returns true", async () => {
-    const onadd = vi.fn().mockReturnValue(true);
+  test("cancels tag addition when onadd returns [] and keeps input text", async () => {
+    const onadd = vi.fn().mockReturnValue([]);
     const props = $state({
       values: [] as string[],
       value: "",
@@ -392,8 +394,29 @@ describe("Event handlers", () => {
     await user.type(input, "new tag");
     await user.keyboard("{Enter}");
 
-    expect(onadd).toHaveBeenCalledWith([], "new tag");
+    expect(onadd).toHaveBeenCalledWith({ values: [], added: ["new tag"] });
     expect(props.values).toEqual([]);
+    expect(props.value).toBe("new tag");
+    expect(input).toHaveValue("new tag");
+  });
+
+  test("commits tag addition when onadd returns the added value", async () => {
+    const onadd = vi.fn().mockReturnValue(["new tag"]);
+    const props = $state({
+      values: [] as string[],
+      value: "",
+      events: { onadd },
+    });
+    const user = userEvent.setup();
+    const { getByRole } = render(TagsInput, { props });
+    const input = getByRole("textbox") as HTMLInputElement;
+
+    await user.type(input, "new tag");
+    await user.keyboard("{Enter}");
+
+    expect(onadd).toHaveBeenCalledWith({ values: [], added: ["new tag"] });
+    expect(props.values).toEqual(["new tag"]);
+    expect(props.value).toBe("");
   });
 
   test("calls onremove event handler", async () => {
@@ -409,13 +432,13 @@ describe("Event handlers", () => {
     await user.click(badges[0]);
 
     await waitFor(() => {
-      expect(onremove).toHaveBeenCalledWith(["tag1", "tag2"], "tag1", 0);
+      expect(onremove).toHaveBeenCalledWith({ values: ["tag1", "tag2"], removed: ["tag1"] });
       expect(props.values).toEqual(["tag2"]);
     });
   });
 
-  test("cancels tag removal when onremove returns true", async () => {
-    const onremove = vi.fn().mockReturnValue(true);
+  test("cancels tag removal when onremove returns []", async () => {
+    const onremove = vi.fn().mockReturnValue([]);
     const props = $state({
       values: ["tag1", "tag2"],
       events: { onremove },
@@ -427,8 +450,26 @@ describe("Event handlers", () => {
     await user.click(badges[0]);
 
     await waitFor(() => {
-      expect(onremove).toHaveBeenCalledWith(["tag1", "tag2"], "tag1", 0);
+      expect(onremove).toHaveBeenCalledWith({ values: ["tag1", "tag2"], removed: ["tag1"] });
       expect(props.values).toEqual(["tag1", "tag2"]);
+    });
+  });
+
+  test("removes tag when onremove returns the removed value", async () => {
+    const onremove = vi.fn().mockReturnValue(["tag1"]);
+    const props = $state({
+      values: ["tag1", "tag2"],
+      events: { onremove },
+    });
+    const user = userEvent.setup();
+    const { container } = render(TagsInput, { props });
+
+    const badges = container.querySelectorAll(".svs-tags-input.extra");
+    await user.click(badges[0]);
+
+    await waitFor(() => {
+      expect(onremove).toHaveBeenCalledWith({ values: ["tag1", "tag2"], removed: ["tag1"] });
+      expect(props.values).toEqual(["tag2"]);
     });
   });
 });
@@ -618,8 +659,8 @@ describe("Embedded in field context", () => {
 
   test("onadd composition runs user hook before field hook", async () => {
     const state = $state(stateDefaults());
-    const userOnadd = vi.fn(() => false);
-    const fieldOnadd = vi.fn(() => false);
+    const userOnadd = vi.fn();
+    const fieldOnadd = vi.fn();
     const user = userEvent.setup();
     const { getByRole } = render(TagsInputCtxProvider, {
       state,
@@ -630,16 +671,16 @@ describe("Embedded in field context", () => {
     await user.type(getByRole("textbox"), "tag1");
     await user.keyboard("{Enter}");
 
-    expect(userOnadd).toHaveBeenCalledWith([], "tag1");
-    expect(fieldOnadd).toHaveBeenCalledWith([], "tag1");
+    expect(userOnadd).toHaveBeenCalledWith({ values: [], added: ["tag1"] });
+    expect(fieldOnadd).toHaveBeenCalledWith({ values: [], added: ["tag1"] });
     expect(userOnadd.mock.invocationCallOrder[0]).toBeLessThan(fieldOnadd.mock.invocationCallOrder[0]);
     expect(state.values).toEqual(["tag1"]);
   });
 
-  test("onadd cancellation by user hook short-circuits field hook", async () => {
+  test("onadd intersection lets field hook block after user hook allows", async () => {
     const state = $state(stateDefaults());
-    const userOnadd = vi.fn(() => true);
-    const fieldOnadd = vi.fn(() => false);
+    const userOnadd = vi.fn(() => ["blocked"]);
+    const fieldOnadd = vi.fn(() => []);
     const user = userEvent.setup();
     const { getByRole } = render(TagsInputCtxProvider, {
       state,
@@ -650,15 +691,15 @@ describe("Embedded in field context", () => {
     await user.type(getByRole("textbox"), "blocked");
     await user.keyboard("{Enter}");
 
-    expect(userOnadd).toHaveBeenCalledWith([], "blocked");
-    expect(fieldOnadd).not.toHaveBeenCalled();
+    expect(userOnadd).toHaveBeenCalledWith({ values: [], added: ["blocked"] });
+    expect(fieldOnadd).toHaveBeenCalledWith({ values: [], added: ["blocked"] });
     expect(state.values).toEqual([]);
   });
 
-  test("onadd cancellation by field hook", async () => {
+  test("onadd intersection lets user hook block even when field hook allows", async () => {
     const state = $state(stateDefaults());
-    const userOnadd = vi.fn(() => false);
-    const fieldOnadd = vi.fn(() => true);
+    const userOnadd = vi.fn(() => []);
+    const fieldOnadd = vi.fn(() => ["blocked"]);
     const user = userEvent.setup();
     const { getByRole } = render(TagsInputCtxProvider, {
       state,
@@ -669,8 +710,8 @@ describe("Embedded in field context", () => {
     await user.type(getByRole("textbox"), "blocked");
     await user.keyboard("{Enter}");
 
-    expect(userOnadd).toHaveBeenCalledWith([], "blocked");
-    expect(fieldOnadd).toHaveBeenCalledWith([], "blocked");
+    expect(userOnadd).toHaveBeenCalledWith({ values: [], added: ["blocked"] });
+    expect(fieldOnadd).toHaveBeenCalledWith({ values: [], added: ["blocked"] });
     expect(state.values).toEqual([]);
   });
 
@@ -721,18 +762,21 @@ describe("Embedded in field context", () => {
     expect(container.querySelector("input")).toHaveClass("own-style", PARTS.MAIN);
   });
 
-  test("onremove still only uses the caller hook", async () => {
+  test("onremove local hook composes with context through intersection", async () => {
     const state = $state({ ...stateDefaults(), values: ["a", "b"] });
-    const onremove = vi.fn(() => true);
+    const onremove = vi.fn(() => []);
+    const fieldOnremove = vi.fn(() => ["a"]);
     const user = userEvent.setup();
     const { getByRole } = render(TagsInputCtxProvider, {
       state,
+      hooks: { events: { onremove: fieldOnremove } },
       input: { events: { onremove } },
     });
 
     await user.click(getByRole("button", { name: "Remove a" }));
 
-    expect(onremove).toHaveBeenCalledWith(["a", "b"], "a", 0);
+    expect(onremove).toHaveBeenCalledWith({ values: ["a", "b"], removed: ["a"] });
+    expect(fieldOnremove).toHaveBeenCalledWith({ values: ["a", "b"], removed: ["a"] });
     expect(state.values).toEqual(["a", "b"]);
   });
 });

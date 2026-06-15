@@ -173,13 +173,14 @@
     }
     return "";
   }
-  function hadd(_values: string[], value: string): boolean {
+  function hadd(detail: { values: string[]; added: string[] }): string[] | void {
+    const value = detail.added[0];
+    if (!value) return;
     const msg = check(value);
     if (msg) {
       shift(false, msg);
-      return true;
+      return [];
     }
-    return false;
   }
 
   // *** Reactive Handlers *** //

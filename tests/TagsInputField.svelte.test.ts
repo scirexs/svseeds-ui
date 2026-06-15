@@ -734,7 +734,7 @@ describe("a11y, structure, form & review fixes", () => {
   });
 
   test("events.onadd on embedded child cancels add and composes with field", async () => {
-    const onadd = vi.fn(() => true);
+    const onadd = vi.fn(() => []);
     const props = $state({
       values: [] as string[],
       variant: VARIANT.NEUTRAL,
@@ -749,12 +749,12 @@ describe("a11y, structure, form & review fixes", () => {
     await user.type(main, "blocked");
     await user.keyboard("{Enter}");
 
-    expect(onadd).toHaveBeenCalledWith([], "blocked");
+    expect(onadd).toHaveBeenCalledWith({ values: [], added: ["blocked"] });
     expect(props.values).toEqual([]);
     expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(queryByText("blocked")).toBeNull();
 
-    const onadd2 = vi.fn(() => false);
+    const onadd2 = vi.fn();
     const props2 = $state({
       values: [] as string[],
       variant: VARIANT.NEUTRAL,
@@ -768,14 +768,14 @@ describe("a11y, structure, form & review fixes", () => {
     await user.type(main2, "allowed");
     await user.keyboard("{Enter}");
 
-    expect(onadd2).toHaveBeenCalledWith([], "allowed");
+    expect(onadd2).toHaveBeenCalledWith({ values: [], added: ["allowed"] });
     expect(props2.values).toEqual(["allowed"]);
     expect(props2.variant).toBe(VARIANT.ACTIVE);
     within(rendered.container).getByText("allowed");
   });
 
   test("events.onremove on embedded child cancels removal", async () => {
-    const onremove = vi.fn(() => true);
+    const onremove = vi.fn(() => []);
     const props = $state({
       values: ["a", "b"],
     });
@@ -787,7 +787,7 @@ describe("a11y, structure, form & review fixes", () => {
 
     await user.click(getByRole("button", { name: /a/ }));
 
-    expect(onremove).toHaveBeenCalledWith(["a", "b"], "a", 0);
+    expect(onremove).toHaveBeenCalledWith({ values: ["a", "b"], removed: ["a"] });
     expect(props.values).toEqual(["a", "b"]);
     getByText("a");
     getByText("b");

@@ -129,11 +129,11 @@ describe("_FileInput self-validation", () => {
 });
 
 describe("_FileInput events and context", () => {
-  test("prop onadd vetoes candidates and receives primitive rejections", async () => {
+  test("prop onadd commits returned files and receives primitive rejections", async () => {
     const keep = mkFile("keep.png", "image/png");
     const veto = mkFile("veto.png", "image/png");
     const rejected = mkFile("bad.txt", "text/plain");
-    const onadd = vi.fn(({ candidates }) => [candidates[1]]);
+    const onadd = vi.fn(({ added }: { added: File[] }) => [added[0]]);
     const props = $state({ files: [] as File[], rejectBy: [] as FileRejectReason[], multiple: true, accept: ".png", events: { onadd }, children: zone });
     const { container } = render(FileInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
@@ -143,10 +143,82 @@ describe("_FileInput events and context", () => {
     expect(names(props.files)).toEqual(["keep.png"]);
     expect(props.rejectBy).toEqual(["accept"]);
     expect(onadd).toHaveBeenCalledWith({
-      candidates: [keep, veto],
+      values: [],
+      added: [keep, veto],
       rejected: [{ file: rejected, reason: "accept" }],
-      files: [],
     });
+  });
+
+  test("prop onadd returning [] vetoes all accepted files", async () => {
+    const first = mkFile("first.png", "image/png");
+    const second = mkFile("second.png", "image/png");
+    const onadd = vi.fn(() => []);
+    const props = $state({ files: [] as File[], rejectBy: [] as FileRejectReason[], multiple: true, accept: ".png", events: { onadd }, children: zone });
+    const { container } = render(FileInput, { props });
+    const input = container.querySelector("input") as HTMLInputElement;
+
+    await fireEvent.change(input, { target: { files: [first, second] } });
+
+    expect(props.files).toEqual([]);
+    expect(onadd).toHaveBeenCalledWith({ values: [], added: [first, second], rejected: [] });
+  });
+
+  test("prop onadd returning undefined commits every accepted file", async () => {
+    const first = mkFile("first.png", "image/png");
+    const second = mkFile("second.png", "image/png");
+    const onadd = vi.fn();
+    const props = $state({ files: [] as File[], rejectBy: [] as FileRejectReason[], multiple: true, accept: ".png", events: { onadd }, children: zone });
+    const { container } = render(FileInput, { props });
+    const input = container.querySelector("input") as HTMLInputElement;
+
+    await fireEvent.change(input, { target: { files: [first, second] } });
+
+    expect(props.files).toEqual([first, second]);
+    expect(onadd).toHaveBeenCalledWith({ values: [], added: [first, second], rejected: [] });
+  });
+
+  test("single-mode onadd receives the pre-change file collection", async () => {
+    const existing = mkFile("existing.png", "image/png");
+    const next = mkFile("next.png", "image/png");
+    const onadd = vi.fn();
+    const props = $state({ files: [existing] as File[], rejectBy: [] as FileRejectReason[], accept: ".png", events: { onadd }, children: zone });
+    const { container } = render(FileInput, { props });
+    const input = container.querySelector("input") as HTMLInputElement;
+
+    await fireEvent.change(input, { target: { files: [next] } });
+
+    expect(props.files).toEqual([next]);
+    expect(onadd).toHaveBeenCalledWith({ values: [existing], added: [next], rejected: [] });
+  });
+
+  test("single-mode onadd full veto retains the existing file", async () => {
+    const existing = mkFile("existing.png", "image/png");
+    const incoming = mkFile("incoming.png", "image/png");
+    const onadd = vi.fn(() => []);
+    const props = $state({ files: [existing] as File[], rejectBy: [] as FileRejectReason[], accept: ".png", events: { onadd }, children: zone });
+    const { container } = render(FileInput, { props });
+    const input = container.querySelector("input") as HTMLInputElement;
+
+    await fireEvent.change(input, { target: { files: [incoming] } });
+
+    expect(props.files).toEqual([existing]);
+    expect(onadd).toHaveBeenCalledWith({ values: [existing], added: [incoming], rejected: [] });
+  });
+
+  test("single-mode primitive gate rejection retains the existing file", async () => {
+    const existing = mkFile("existing.png", "image/png");
+    const rejected = mkFile("bad.txt", "text/plain");
+    const onadd = vi.fn();
+    const props = $state({ files: [existing] as File[], rejectBy: [] as FileRejectReason[], accept: ".png", events: { onadd }, children: zone });
+    const { container } = render(FileInput, { props });
+    const input = container.querySelector("input") as HTMLInputElement;
+
+    await fireEvent.change(input, { target: { files: [rejected] } });
+
+    expect(props.files).toEqual([existing]);
+    expect(props.rejectBy).toEqual(["accept"]);
+    expect(onadd).toHaveBeenCalledWith({ values: [existing], added: [], rejected: [{ file: rejected, reason: "accept" }] });
+    if (typeof DataTransfer !== "undefined") expect(names([...(input.files ?? [])])).toEqual(["existing.png"]);
   });
 
   test("onadd still runs when every incoming file is rejected by the primitive gate", async () => {
@@ -161,13 +233,13 @@ describe("_FileInput events and context", () => {
     expect(props.files).toEqual([]);
     expect(props.rejectBy).toEqual(["accept"]);
     expect(onadd).toHaveBeenCalledWith({
-      candidates: [],
+      values: [],
+      added: [],
       rejected: [{ file: rejected, reason: "accept" }],
-      files: [],
     });
   });
 
-  test("context values win, writes commit through ctx, vetoes are unioned, and hooks order is prop then ctx", async () => {
+  test("context values win, writes commit through ctx, allow-lists intersect, and hooks order is prop then ctx", async () => {
     const propFile = mkFile("prop.png", "image/png");
     const ctxFile = mkFile("ctx.png", "image/png");
     const keep = mkFile("keep.png", "image/png");
@@ -192,8 +264,8 @@ describe("_FileInput events and context", () => {
     });
     const { container, getByTestId } = render(FileInputCtxProvider, {
       state,
-      hooks: { events: { onadd: () => [ctxVeto] }, onchange: ctxChange, oninvalid: ctxInvalid },
-      input: { files: [propFile], multiple: true, events: { onadd: () => [propVeto] }, onchange: propChange, oninvalid: propInvalid, children },
+      hooks: { events: { onadd: () => [keep, propVeto] }, onchange: ctxChange, oninvalid: ctxInvalid },
+      input: { files: [propFile], multiple: true, events: { onadd: () => [keep, ctxVeto] }, onchange: propChange, oninvalid: propInvalid, children },
     });
     const input = container.querySelector("input") as HTMLInputElement;
 
@@ -210,6 +282,120 @@ describe("_FileInput events and context", () => {
 
     await fireEvent.invalid(input);
     expect(order).toEqual(["prop-change", "ctx-change", "prop-invalid", "ctx-invalid"]);
+  });
+
+  test("prop onremove can veto removal with []", async () => {
+    const a = mkFile("a.png", "image/png");
+    const b = mkFile("b.png", "image/png");
+    const onremove = vi.fn(() => []);
+    const aux = createRawSnippet((files: () => File[], remove: () => (file: File) => void) => ({
+      render: () => `<button type="button" data-testid="remove">${files().map((f) => f.name).join(",")}</button>`,
+      setup: (node: Element) => {
+        $effect(() => {
+          node.textContent = files().map((f) => f.name).join(",");
+          (node as HTMLButtonElement).onclick = () => {
+            const file = files()[0];
+            if (file) remove()(file);
+          };
+        });
+      },
+    }));
+    const props = $state({ files: [a, b] as File[], multiple: true, events: { onremove }, children: zone, aux });
+    const { getByTestId } = render(FileInput, { props });
+
+    await fireEvent.click(getByTestId("remove"));
+
+    expect(onremove).toHaveBeenCalledWith({ values: [a, b], removed: [a] });
+    expect(props.files).toEqual([a, b]);
+  });
+
+  test("prop onremove commits when undefined is returned", async () => {
+    const a = mkFile("a.png", "image/png");
+    const b = mkFile("b.png", "image/png");
+    const onremove = vi.fn();
+    const aux = createRawSnippet((files: () => File[], remove: () => (file: File) => void) => ({
+      render: () => `<button type="button" data-testid="remove">${files().map((f) => f.name).join(",")}</button>`,
+      setup: (node: Element) => {
+        $effect(() => {
+          node.textContent = files().map((f) => f.name).join(",");
+          (node as HTMLButtonElement).onclick = () => {
+            const file = files()[0];
+            if (file) remove()(file);
+          };
+        });
+      },
+    }));
+    const props = $state({ files: [a, b] as File[], multiple: true, events: { onremove }, children: zone, aux });
+    const { getByTestId } = render(FileInput, { props });
+
+    await fireEvent.click(getByTestId("remove"));
+
+    expect(onremove).toHaveBeenCalledWith({ values: [a, b], removed: [a] });
+    expect(props.files).toEqual([b]);
+  });
+
+  test("prop onremove commits when the removed file is returned", async () => {
+    const a = mkFile("a.png", "image/png");
+    const b = mkFile("b.png", "image/png");
+    const onremove = vi.fn(() => [a]);
+    const aux = createRawSnippet((files: () => File[], remove: () => (file: File) => void) => ({
+      render: () => `<button type="button" data-testid="remove">${files().map((f) => f.name).join(",")}</button>`,
+      setup: (node: Element) => {
+        $effect(() => {
+          node.textContent = files().map((f) => f.name).join(",");
+          (node as HTMLButtonElement).onclick = () => {
+            const file = files()[0];
+            if (file) remove()(file);
+          };
+        });
+      },
+    }));
+    const props = $state({ files: [a, b] as File[], multiple: true, events: { onremove }, children: zone, aux });
+    const { getByTestId } = render(FileInput, { props });
+
+    await fireEvent.click(getByTestId("remove"));
+
+    expect(onremove).toHaveBeenCalledWith({ values: [a, b], removed: [a] });
+    expect(props.files).toEqual([b]);
+  });
+
+  test("prop and context onremove compose by intersection", async () => {
+    const a = mkFile("a.png", "image/png");
+    const b = mkFile("b.png", "image/png");
+    const ownOnremove = vi.fn(() => []);
+    const ctxOnremove = vi.fn(() => [a]);
+    const aux = createRawSnippet((files: () => File[], remove: () => (file: File) => void) => ({
+      render: () => `<button type="button" data-testid="remove">${files().map((f) => f.name).join(",")}</button>`,
+      setup: (node: Element) => {
+        $effect(() => {
+          node.textContent = files().map((f) => f.name).join(",");
+          (node as HTMLButtonElement).onclick = () => {
+            const file = files()[0];
+            if (file) remove()(file);
+          };
+        });
+      },
+    }));
+    const state = $state({
+      files: [a, b],
+      variant: VARIANT.NEUTRAL,
+      element: undefined as HTMLInputElement | undefined,
+      ariaErrMsgId: undefined as string | undefined,
+      styling: undefined as string | undefined,
+      id: undefined as string | undefined,
+      describedby: undefined as string | undefined,
+    });
+    const { getByTestId } = render(FileInputCtxProvider, {
+      state,
+      hooks: { events: { onremove: ctxOnremove } },
+      input: { multiple: true, events: { onremove: ownOnremove }, children: zone, aux },
+    });
+
+    await fireEvent.click(getByTestId("remove"));
+
+    expect(ownOnremove).toHaveBeenCalledWith({ values: [a, b], removed: [a] });
+    expect(ctxOnremove).toHaveBeenCalledWith({ values: [a, b], removed: [a] });
+    expect(state.files).toEqual([a, b]);
   });
 });
 

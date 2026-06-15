@@ -21,10 +21,7 @@
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
     // class & other HTMLInputAttributes are passed to <input> via ...rest (class is merged onto the control)
   }
-  interface TagsInputEvents { // cancel if returns true
-    onadd?: (values: string[], value: string) => void | boolean;
-    onremove?: (values: string[], value: string, index: number) => void | boolean;
-  }
+  interface TagsInputEvents extends CollectionEvents<string> {}
   ```
   ### Anatomy
   ```svelte
@@ -71,11 +68,7 @@
   }
   export type TagsInputReqdProps = never;
   export type TagsInputBindProps = "values" | "value" | "element";
-  export interface TagsInputEvents {
-    // cancel if true
-    onadd?: (values: string[], value: string) => void | boolean;
-    onremove?: (values: string[], value: string, index: number) => void | boolean;
-  }
+  export interface TagsInputEvents extends CollectionEvents<string> {}
 
   export const _TAGS_INPUT_PRESET = "svs-tags-input";
   const CONFIRM_KEY = "Enter";
@@ -99,7 +92,7 @@
   import { type Snippet } from "svelte";
   import { type Attachment } from "svelte/attachments";
   import { type HTMLInputAttributes, type KeyboardEventHandler } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, type SVSContext, VARIANT, PARTS, fnClass, _createContext } from "./core";
+  import { type SVSClass, type SVSVariant, type SVSContext, type CollectionEvents, VARIANT, PARTS, fnClass, _createContext } from "./core";
 </script>
 
 <script lang="ts">
@@ -130,20 +123,28 @@
   });
 
   // *** Event Handlers *** //
-  function onaddHook(vs: string[], v: string): boolean | void {
-    if (events?.onadd?.(vs, v)) return true;
-    if (ctx?.events?.onadd?.(vs, v)) return true;
+  function commitAdd(values: string[], added: string[]): string[] {
+    let keep = added;
+    const a = events?.onadd?.({ values, added });      if (a) keep = keep.filter((x) => a.includes(x));
+    const b = ctx?.events?.onadd?.({ values, added });  if (b) keep = keep.filter((x) => b.includes(x));
+    return keep;
   }
   function add(v: string) {
-    if (unique && effValues.includes(v)) {
-      setValue("");
-      return;
-    }
+    const added = unique && effValues.includes(v) ? [] : [v];
+    if (!added.length) { setValue(""); return; }
+    if (!commitAdd(effValues, added).includes(v)) return;
     setValues([...effValues, v]);
     setValue("");
   }
+  function commitRemove(values: string[], removed: string[]): string[] {
+    let keep = removed;
+    const a = events?.onremove?.({ values, removed });      if (a) keep = keep.filter((x) => a.includes(x));
+    const b = ctx?.events?.onremove?.({ values, removed });  if (b) keep = keep.filter((x) => b.includes(x));
+    return keep;
+  }
   function remove(index: number) {
-    if (events?.onremove?.(effValues, effValues[index], index)) return;
+    const target = effValues[index];
+    if (!commitRemove(effValues, [target]).includes(target)) return;
     setValues(effValues.filter((_, i) => i !== index));
   }
   const hkeydown: KeyboardEventHandler<HTMLInputElement> = (ev) => {
@@ -153,7 +154,6 @@
     const v = trim ? effValue.trim() : effValue;
     if (trim && v !== effValue) setValue(v);
     if (!v) return;
-    if (onaddHook(effValues, v)) return;
     add(v);
   };
 </script>

@@ -56,8 +56,8 @@
       return state.describedby;
     },
     events: {
-      onadd: (values, value) => hooks?.events?.onadd?.(values, value),
-      onremove: (values, value, index) => hooks?.events?.onremove?.(values, value, index),
+      onadd: (detail) => hooks?.events?.onadd?.(detail),
+      onremove: (detail) => hooks?.events?.onremove?.(detail),
     },
     onchange: (ev) => hooks?.onchange?.(ev),
     oninvalid: (ev) => hooks?.oninvalid?.(ev),

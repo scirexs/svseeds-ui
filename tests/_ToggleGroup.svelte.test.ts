@@ -292,15 +292,15 @@ describe("User interactions", () => {
     expect(buttons[1]).toHaveAttribute("aria-checked", "true");
   });
 
-  test("events.onadd can veto adding but does not gate removing", async () => {
-    const onadd = vi.fn((_values: string[], value: string) => value === "option2");
+  test("events.onadd can veto adding with [] but does not gate removing", async () => {
+    const onadd = vi.fn(({ added }: { added: string[] }) => (added[0] === "option2" ? [] : undefined));
     const props = $state({ options, values: [] as string[], events: { onadd } });
     const user = userEvent.setup();
     const { getAllByRole } = render(ToggleGroup, { props });
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
     await user.click(buttons[1]);
-    expect(onadd).toHaveBeenCalledWith([], "option2");
+    expect(onadd).toHaveBeenCalledWith({ values: [], added: ["option2"] });
     expect(props.values).toEqual([]);
     expect(buttons[1]).toHaveAttribute("aria-checked", "false");
 
@@ -315,8 +315,8 @@ describe("User interactions", () => {
     expect(buttons[0]).toHaveAttribute("aria-checked", "false");
   });
 
-  test("events.onremove can veto removing", async () => {
-    const onremove = vi.fn(() => true);
+  test("events.onremove can veto removing with []", async () => {
+    const onremove = vi.fn(() => []);
     const props = $state({ options, values: ["option1"], events: { onremove } });
     const user = userEvent.setup();
     const { getAllByRole } = render(ToggleGroup, { props });
@@ -324,7 +324,7 @@ describe("User interactions", () => {
 
     await user.click(buttons[0]);
 
-    expect(onremove).toHaveBeenCalledWith(["option1"], "option1", 0);
+    expect(onremove).toHaveBeenCalledWith({ values: ["option1"], removed: ["option1"] });
     expect(props.values).toEqual(["option1"]);
     expect(buttons[0]).toHaveAttribute("aria-checked", "true");
   });
@@ -336,7 +336,7 @@ describe("User interactions", () => {
       ["option3", "Option 3"],
     ]);
     const onadd = vi.fn();
-    const onremove = vi.fn(() => false);
+    const onremove = vi.fn();
     const props = $state({
       options: disabledOptions,
       values: ["option2"] as string[],
@@ -347,12 +347,12 @@ describe("User interactions", () => {
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
     await user.click(buttons[0]);
-    expect(onadd).toHaveBeenCalledWith(["option2"], "option1");
+    expect(onadd).toHaveBeenCalledWith({ values: ["option2"], added: ["option1"] });
     expect(onremove).not.toHaveBeenCalled();
     expect(props.values).toEqual(["option1", "option2"]);
 
     await user.click(buttons[0]);
-    expect(onremove).toHaveBeenCalledWith(["option1", "option2"], "option1", 0);
+    expect(onremove).toHaveBeenCalledWith({ values: ["option1", "option2"], removed: ["option1"] });
     expect(props.values).toEqual(["option2"]);
 
     onremove.mockClear();
@@ -637,21 +637,21 @@ describe("Embedded in field context", () => {
     expect(getByRole("group")).toHaveAttribute("aria-describedby", "desc-1");
   });
 
-  test("context onadd hook can cancel add", async () => {
+  test("context onadd hook can veto add with []", async () => {
     const state = $state({ values: [] as string[], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
-    const onadd = vi.fn(() => true);
+    const onadd = vi.fn(() => []);
     const user = userEvent.setup();
     const { getAllByRole } = render(ToggleGroupCtxProvider, { state, hooks: { events: { onadd } }, input: { options } });
 
     await user.click(getAllByRole("checkbox")[0]);
-    expect(onadd).toHaveBeenCalledWith([], "option1");
+    expect(onadd).toHaveBeenCalledWith({ values: [], added: ["option1"] });
     expect(state.values).toEqual([]);
   });
 
   test("own and context onadd both fire", async () => {
     const state = $state({ values: [] as string[], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
-    const ownOnadd = vi.fn(() => false);
-    const ctxOnadd = vi.fn(() => false);
+    const ownOnadd = vi.fn();
+    const ctxOnadd = vi.fn();
     const user = userEvent.setup();
     const { getAllByRole } = render(ToggleGroupCtxProvider, {
       state,
@@ -660,26 +660,43 @@ describe("Embedded in field context", () => {
     });
 
     await user.click(getAllByRole("checkbox")[0]);
-    expect(ownOnadd).toHaveBeenCalledOnce();
-    expect(ctxOnadd).toHaveBeenCalledOnce();
+    expect(ownOnadd).toHaveBeenCalledWith({ values: [], added: ["option1"] });
+    expect(ctxOnadd).toHaveBeenCalledWith({ values: [], added: ["option1"] });
     expect(state.values).toEqual(["option1"]);
   });
 
-  test("context onremove hook can cancel remove", async () => {
+  test("own and context onadd compose by intersection", async () => {
+    const state = $state({ values: [] as string[], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
+    const ownOnadd = vi.fn(() => ["option1"]);
+    const ctxOnadd = vi.fn(() => []);
+    const user = userEvent.setup();
+    const { getAllByRole } = render(ToggleGroupCtxProvider, {
+      state,
+      hooks: { events: { onadd: ctxOnadd } },
+      input: { options, events: { onadd: ownOnadd } },
+    });
+
+    await user.click(getAllByRole("checkbox")[0]);
+    expect(ownOnadd).toHaveBeenCalledWith({ values: [], added: ["option1"] });
+    expect(ctxOnadd).toHaveBeenCalledWith({ values: [], added: ["option1"] });
+    expect(state.values).toEqual([]);
+  });
+
+  test("context onremove hook can veto remove with []", async () => {
     const state = $state({ values: ["option1"], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
-    const onremove = vi.fn(() => true);
+    const onremove = vi.fn(() => []);
     const user = userEvent.setup();
     const { getAllByRole } = render(ToggleGroupCtxProvider, { state, hooks: { events: { onremove } }, input: { options } });
 
     await user.click(getAllByRole("checkbox")[0]);
-    expect(onremove).toHaveBeenCalledWith(["option1"], "option1", 0);
+    expect(onremove).toHaveBeenCalledWith({ values: ["option1"], removed: ["option1"] });
     expect(state.values).toEqual(["option1"]);
   });
 
   test("own and context onremove both fire in order", async () => {
     const state = $state({ values: ["option1"], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
-    const ownOnremove = vi.fn(() => false);
-    const ctxOnremove = vi.fn(() => false);
+    const ownOnremove = vi.fn();
+    const ctxOnremove = vi.fn();
     const user = userEvent.setup();
     const { getAllByRole } = render(ToggleGroupCtxProvider, {
       state,
@@ -688,10 +705,27 @@ describe("Embedded in field context", () => {
     });
 
     await user.click(getAllByRole("checkbox")[0]);
-    expect(ownOnremove).toHaveBeenCalledWith(["option1"], "option1", 0);
-    expect(ctxOnremove).toHaveBeenCalledWith(["option1"], "option1", 0);
+    expect(ownOnremove).toHaveBeenCalledWith({ values: ["option1"], removed: ["option1"] });
+    expect(ctxOnremove).toHaveBeenCalledWith({ values: ["option1"], removed: ["option1"] });
     expect(ownOnremove.mock.invocationCallOrder[0]).toBeLessThan(ctxOnremove.mock.invocationCallOrder[0]);
     expect(state.values).toEqual([]);
+  });
+
+  test("own and context onremove compose by intersection", async () => {
+    const state = $state({ values: ["option1"], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
+    const ownOnremove = vi.fn(() => []);
+    const ctxOnremove = vi.fn(() => ["option1"]);
+    const user = userEvent.setup();
+    const { getAllByRole } = render(ToggleGroupCtxProvider, {
+      state,
+      hooks: { events: { onremove: ctxOnremove } },
+      input: { options, events: { onremove: ownOnremove } },
+    });
+
+    await user.click(getAllByRole("checkbox")[0]);
+    expect(ownOnremove).toHaveBeenCalledWith({ values: ["option1"], removed: ["option1"] });
+    expect(ctxOnremove).toHaveBeenCalledWith({ values: ["option1"], removed: ["option1"] });
+    expect(state.values).toEqual(["option1"]);
   });
 
   test("single-select via context", async () => {

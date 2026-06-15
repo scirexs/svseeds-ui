@@ -5,6 +5,7 @@ export {
   type SVSFieldValidation,
   type SVSFieldConstraint,
   type SVSContext,
+  type CollectionEvents,
   BASE,
   VARIANT,
   PARTS,
@@ -48,6 +49,11 @@ type SVSFieldConstraint<E extends HTMLElement = HTMLInputElement> = (ctx: {
 type SVSContext = {
   get variant(): SVSVariant;
   get styling(): SVSClass | undefined;
+};
+type CollectionEvents<T> = {
+  // Return the subset to commit: undefined => all, [] => none.
+  onadd?: (detail: { values: T[]; added: T[] }) => T[] | void;
+  onremove?: (detail: { values: T[]; removed: T[] }) => T[] | void;
 };
 
 const BASE = "base";

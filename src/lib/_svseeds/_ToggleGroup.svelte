@@ -19,10 +19,7 @@
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
-  interface ToggleGroupEvents {
-    onadd?: (values: string[], value: string) => void | boolean;
-    onremove?: (values: string[], value: string, index: number) => void | boolean;
-  }
+  interface ToggleGroupEvents extends CollectionEvents<string> {}
   ```
   ### Anatomy
   ```svelte
@@ -55,10 +52,7 @@
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
-  export interface ToggleGroupEvents {
-    onadd?: (values: string[], value: string) => void | boolean;
-    onremove?: (values: string[], value: string, index: number) => void | boolean;
-  }
+  export interface ToggleGroupEvents extends CollectionEvents<string> {}
   export type ToggleGroupReqdProps = "options";
   export type ToggleGroupBindProps = "values" | "elements";
 
@@ -79,7 +73,7 @@
   import { type Attachment } from "svelte/attachments";
   import { type HTMLButtonAttributes } from "svelte/elements";
   import { type SvelteMap } from "svelte/reactivity";
-  import { type SVSClass, type SVSVariant, type SVSContext, VARIANT, PARTS, fnClass, _createContext } from "./core";
+  import { type SVSClass, type SVSVariant, type SVSContext, type CollectionEvents, VARIANT, PARTS, fnClass, _createContext } from "./core";
 </script>
 
 <script lang="ts">
@@ -131,20 +125,24 @@
         }
       : (value: string) => (effValues.includes(value) ? [] : [value]),
   );
-  function onaddHook(vs: string[], v: string): boolean | void {
-    if (events?.onadd?.(vs, v)) return true;
-    if (ctx?.events?.onadd?.(vs, v)) return true;
+  function commitAdd(values: string[], added: string[]): string[] {
+    let keep = added;
+    const a = events?.onadd?.({ values, added });      if (a) keep = keep.filter((x) => a.includes(x));
+    const b = ctx?.events?.onadd?.({ values, added });  if (b) keep = keep.filter((x) => b.includes(x));
+    return keep;
   }
-  function onremoveHook(vs: string[], v: string, i: number): boolean | void {
-    if (events?.onremove?.(vs, v, i)) return true;
-    if (ctx?.events?.onremove?.(vs, v, i)) return true;
+  function commitRemove(values: string[], removed: string[]): string[] {
+    let keep = removed;
+    const a = events?.onremove?.({ values, removed });      if (a) keep = keep.filter((x) => a.includes(x));
+    const b = ctx?.events?.onremove?.({ values, removed });  if (b) keep = keep.filter((x) => b.includes(x));
+    return keep;
   }
   function updateValues(value: string): () => void {
     return () => {
       if (opts.find((o) => o.value === value)?.disabled) return;
       const adding = !effValues.includes(value);
-      if (adding && onaddHook(effValues, value)) return;
-      if (!adding && onremoveHook(effValues, value, effValues.indexOf(value))) return;
+      const ok = adding ? commitAdd(effValues, [value]).includes(value) : commitRemove(effValues, [value]).includes(value);
+      if (!ok) return;
       setValues(update(value));
     };
   }
