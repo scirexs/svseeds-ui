@@ -83,7 +83,7 @@
     content?: Snippet<[string, SVSVariant, boolean]>;
     styling?: SVSClass;
   };
-  const preset = "svs-tooltip";
+  export const _TOOLTIP_PRESET = "svs-tooltip";
   const INIT_VEC = { x: 0, y: 0 };
   const DEFAULT_DELAY = 1000;
   const VISIBLE = {
@@ -290,7 +290,7 @@
 
 <script lang="ts">
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, core.styling));
+  const cls = $derived(fnClass(_TOOLTIP_PRESET, core.styling));
   let el: HTMLDivElement | undefined = $state();
   let point: Vector = $state.raw(INIT_VEC);
 

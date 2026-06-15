@@ -71,7 +71,7 @@
   const DEFAULT_DURATION = 200;
   const DEFAULT_DISMISS = 30000;
   const noMotion = shouldReduceMotion();
-  const preset = "svs-toast";
+  export const _TOAST_PRESET = "svs-toast";
   let idSeq = 0;
 
   function resolveDuration(value: number | undefined, fallback: number): number {
@@ -184,7 +184,7 @@
   let { toaster, children, animation = -1, styling, variant = VARIANT.NEUTRAL }: ToastProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(_TOAST_PRESET, styling));
   const dur = $derived(noMotion ? 0 : !isUnsignedInteger(animation) ? DEFAULT_DURATION : animation);
   const style = "position:fixed;background-color:transparent;pointer-events:none;";
   let region = $state<HTMLDivElement>();

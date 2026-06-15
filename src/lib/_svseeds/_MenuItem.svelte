@@ -42,7 +42,7 @@
   }
   export const [_getMenuItemContext, _setMenuItemContext] = _createContext<MenuItemContext>();
 
-  const preset = "svs-menu-item";
+  export const _MENU_ITEM_PRESET = "svs-menu-item";
 
   import { type Snippet } from "svelte";
   import { type Attachment } from "svelte/attachments";
@@ -56,7 +56,7 @@
   const ctx = _getMenuItemContext();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling ?? ctx?.styling));
+  const cls = $derived(fnClass(_MENU_ITEM_PRESET, styling ?? ctx?.styling));
   const effVariant = $derived(ctx ? ctx.variant : variant);
 
   // *** Event Handlers *** //

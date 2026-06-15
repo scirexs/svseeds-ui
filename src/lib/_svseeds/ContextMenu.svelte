@@ -61,7 +61,7 @@
   };
   export type MenuItemData = MenuItemEntry | MenuSeparatorData;
 
-  const preset = "svs-context-menu";
+  export const _CONTEXT_MENU_PRESET = "svs-context-menu";
 
   function isSeparator(x: MenuItemData): x is MenuSeparatorData {
     return "separator" in x;
@@ -83,7 +83,7 @@
   let { children, items, open = $bindable(false), lock = false, target, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: ContextMenuProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(_CONTEXT_MENU_PRESET, styling));
   const ctxVariant = $derived(variant);
   const ctxStyling = $derived(styling);
   const ctx: MenuItemContext = {

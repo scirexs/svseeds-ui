@@ -63,7 +63,6 @@
   export type ToggleGroupBindProps = "values" | "elements";
 
   export const _TOGGLE_GROUP_PRESET = "svs-toggle-group";
-  const preset = _TOGGLE_GROUP_PRESET;
 
   export interface ToggleGroupContext extends SVSContext {
     get values(): string[];
@@ -89,7 +88,7 @@
   const ctx = _getToggleGroupContext();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling ?? ctx?.styling));
+  const cls = $derived(fnClass(_TOGGLE_GROUP_PRESET, styling ?? ctx?.styling));
   const role = $derived(multiple ? "checkbox" : "radio");
   const roleGroup = $derived(multiple ? "group" : "radiogroup");
   const effVariant = $derived(ctx ? ctx.variant : variant);

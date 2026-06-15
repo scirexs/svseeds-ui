@@ -54,7 +54,6 @@
   const DEFAULT_DURATION = 200;
   const noMotion = shouldReduceMotion();
   export const _DISCLOSURE_PRESET = "svs-disclosure";
-  const preset = _DISCLOSURE_PRESET;
 
   class ToggleGuard {
     #active = false;
@@ -91,7 +90,7 @@
   const ctx = _getDisclosureContext();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling ?? ctx?.styling));
+  const cls = $derived(fnClass(_DISCLOSURE_PRESET, styling ?? ctx?.styling));
   const dur = $derived(noMotion ? 0 : !isUnsignedInteger(duration) ? DEFAULT_DURATION : duration);
   const isInactive = $derived(inactive === true || (typeof inactive === "string" && inactive.trim().length > 0));
   const reason = $derived(typeof inactive === "string" && inactive.trim() ? inactive : undefined);

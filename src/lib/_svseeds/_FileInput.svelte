@@ -80,7 +80,6 @@
   }
 
   export const _FILE_INPUT_PRESET = "svs-file-input";
-  const preset = _FILE_INPUT_PRESET;
   const SR_ONLY =
     "position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0;";
 
@@ -119,7 +118,7 @@
   let dragover = $state(false);
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling ?? ctx?.styling));
+  const cls = $derived(fnClass(_FILE_INPUT_PRESET, styling ?? ctx?.styling));
   const effVariant = $derived(dragover ? VARIANT.ACTIVE : ctx ? ctx.variant : variant);
   const effFiles = $derived(ctx ? ctx.files : files);
   const effId = $derived(ctx ? ctx.id : idProp);

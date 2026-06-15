@@ -68,7 +68,7 @@
   export type TagsInputFieldConstraint = SVSFieldConstraint;
   export type TagsInputFieldValidation = SVSFieldValidation<string[]>;
 
-  const preset = "svs-tags-input-field";
+  export const _TAGS_INPUT_FIELD_PRESET = "svs-tags-input-field";
 
   import { type Snippet, untrack } from "svelte";
   import { type SVSClass, type SVSVariant, type SVSFieldValidation, type SVSFieldConstraint, VARIANT, PARTS, fnClass, isNeutral } from "./core";
@@ -80,7 +80,7 @@
   let { label, extra, aux, left, right, bottom, reserve = false, flip = false, values = $bindable([]), constraints = [], validations = [], name, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), children }: TagsInputFieldProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(_TAGS_INPUT_FIELD_PRESET, styling));
   const uid = $props.id();
   const id = $derived(label?.trim() ? `${uid}-ctrl` : undefined);
   const idLabel = $derived(label?.trim() ? `${uid}-label` : undefined);
@@ -115,7 +115,7 @@
       return idMsg;
     },
     get styling() {
-      return `${preset} ${_TAGS_INPUT_PRESET}`;
+      return `${_TAGS_INPUT_FIELD_PRESET} ${_TAGS_INPUT_PRESET}`;
     },
     get id() {
       return id;

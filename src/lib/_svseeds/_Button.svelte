@@ -43,7 +43,7 @@
   export type ButtonReqdProps = "children";
   export type ButtonBindProps = "element" | "variant";
 
-  const preset = "svs-button";
+  export const _BUTTON_PRESET = "svs-button";
 
   import { type Snippet } from "svelte";
   import { type Attachment } from "svelte/attachments";
@@ -56,7 +56,7 @@
   let { children, left, right, type = "button", onclick, form, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), inactive, class: c, ...rest }: ButtonProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(_BUTTON_PRESET, styling));
   const idForm = $derived(form?.id || undefined);
   const reason = $derived(inactive?.trim() ? inactive : undefined);
   const inactiveAttrs = $derived(reason ? { "aria-disabled": true, "aria-description": reason } : {});

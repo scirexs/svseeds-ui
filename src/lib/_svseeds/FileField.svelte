@@ -87,7 +87,7 @@
   }) => string | undefined | null;
   export type FileFieldValidation = SVSFieldValidation<File[]>;
 
-  const preset = "svs-file-field";
+  export const _FILE_FIELD_PRESET = "svs-file-field";
 
   import { type Snippet, untrack } from "svelte";
   import { type SVSClass, type SVSVariant, type SVSFieldValidation, VARIANT, PARTS, fnClass, isNeutral } from "./core";
@@ -105,7 +105,7 @@
   let { label, extra, aux, left, right, bottom, reserve = false, flip = false, files = $bindable([]), multiple = false, accept, maxSize, maxFiles, zone = false, content, constraints = [], validations = [], name, element = $bindable(), variant = $bindable(VARIANT.NEUTRAL), styling, children }: FileFieldProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(_FILE_FIELD_PRESET, styling));
   const uid = $props.id();
   const id = $derived(label?.trim() ? `${uid}-ctrl` : undefined);
   const idLabel = $derived(label?.trim() ? `${uid}-label` : undefined);
@@ -133,7 +133,7 @@
       return idMsg;
     },
     get styling() {
-      return `${preset} ${_FILE_INPUT_PRESET}`;
+      return `${_FILE_FIELD_PRESET} ${_FILE_INPUT_PRESET}`;
     },
     get id() {
       return id;

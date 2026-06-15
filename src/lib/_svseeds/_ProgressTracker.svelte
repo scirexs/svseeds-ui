@@ -47,7 +47,7 @@
   export type ProgressTrackerReqdProps = "current" | "labels";
   export type ProgressTrackerBindProps = never;
 
-  const preset = "svs-progress-tracker";
+  export const _PROGRESS_TRACKER_PRESET = "svs-progress-tracker";
 
   import { type Snippet } from "svelte";
   import { type SvelteMap } from "svelte/reactivity";
@@ -62,7 +62,7 @@
   // *** Initialize *** //
   const defaultStatus: Record<string, string> = { [VARIANT.ACTIVE]: "completed" };
   const cur = $derived(isUnsignedInteger(current) ? current : 0);
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(_PROGRESS_TRACKER_PRESET, styling));
 
   // *** States *** //
   function getEachVariant(index: number): string {

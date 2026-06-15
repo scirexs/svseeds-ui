@@ -140,7 +140,7 @@
   const confirmTime = 500;
   const triggerDrag: TriggerButton[] = ["main"];
   const triggerSelect: TriggerButton[] = ["main"];
-  const preset = "svs-sortable";
+  export const _SORTABLE_PRESET = "svs-sortable";
   const emptyAttachment: Attachment = () => {};
   const ondragstart = () => false;
 
@@ -614,7 +614,7 @@
   const listId = id ?? autoId;
   const itemKey = $derived(key ?? ((x: T) => x as PropertyKey));
   const itemClone = $derived(clone ?? ((x: T) => x));
-  const cls = $derived(fnClass(preset, styling ?? controller.styling));
+  const cls = $derived(fnClass(_SORTABLE_PRESET, styling ?? controller.styling));
   const effVariant = $derived(!isNeutral(variant) ? variant : controller.variant);
   const selected = new SvelteSet<string>();
   let pendingSelect = $state("");

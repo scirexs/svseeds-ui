@@ -39,7 +39,7 @@
 
   const DEFAULT_DURATION = 200;
   const noMotion = shouldReduceMotion();
-  const preset = "svs-modal";
+  export const _MODAL_PRESET = "svs-modal";
 
   import { type Snippet, untrack, onMount } from "svelte";
   import { type HTMLDialogAttributes, type MouseEventHandler, type KeyboardEventHandler, type ToggleEventHandler } from "svelte/elements";
@@ -51,7 +51,7 @@
   let { children, open = $bindable(false), closable = true, duration = -1, ariaLabel, onclick, onkeydown, ontoggle, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: ModalProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(_MODAL_PRESET, styling));
   const dur = $derived(noMotion ? 0 : !isUnsignedInteger(duration) ? DEFAULT_DURATION : duration);
 
   // *** Reactive Handlers *** //

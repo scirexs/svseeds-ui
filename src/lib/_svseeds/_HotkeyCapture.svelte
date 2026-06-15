@@ -62,7 +62,7 @@
     event: KeyboardEvent | PointerEvent | WheelEvent;
   }
 
-  const preset = "svs-hotkey-capture";
+  export const _HOTKEY_CAPTURE_PRESET = "svs-hotkey-capture";
   const KEY_MODIFIER = new Set(["Control", "Alt", "Shift", "Meta"]);
   const KEY_UNSTABLE = new Set(["Process", "Dead", "Unidentified"]);
   const LABEL_SPACE = "SPACE";
@@ -89,7 +89,7 @@
   let { value = $bindable(""), active = $bindable(false), disabled = false, oncapture, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, onfocus, onblur, ...rest }: HotkeyCaptureProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(_HOTKEY_CAPTURE_PRESET, styling));
   let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
 
   // *** Reactive Handlers *** //

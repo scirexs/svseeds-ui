@@ -58,7 +58,7 @@
     disabled?: boolean; // (false)
   };
 
-  const preset = "svs-accordion";
+  export const _ACCORDION_PRESET = "svs-accordion";
 
   function isComponent(x: unknown): x is AccordionComponent {
     return typeof x === "object" && x !== null && "component" in x;
@@ -74,7 +74,7 @@
   let { items, children, current = $bindable<string | undefined>(), styling, variant = VARIANT.NEUTRAL, disclosure }: AccordionProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(_ACCORDION_PRESET, styling));
   const ctxCurrent = $derived(current);
   const ctxVariant = $derived(variant);
   const ctxStyling = $derived(styling);
@@ -98,7 +98,7 @@
   // *** Initialize Child Props *** //
   const childProps = $derived({
     ...omit(disclosure, "styling"),
-    styling: disclosure?.styling ?? `${preset} ${_DISCLOSURE_PRESET}`,
+    styling: disclosure?.styling ?? `${_ACCORDION_PRESET} ${_DISCLOSURE_PRESET}`,
   });
 
   // *** Reactive Handlers *** //

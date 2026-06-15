@@ -69,7 +69,7 @@
   const THEME_COLOR_PREFIX = "--color-";
   const THEME_TARGET_PREFIX = "--svs-";
   const ariaLabel = "Toggle theme color";
-  const preset = "svs-dark-toggle";
+  export const _DARK_TOGGLE_PRESET = "svs-dark-toggle";
   // Keep the string literals in sync with THEME; the inline script must be self-contained.
   const FOUC_SCRIPT =
     `<script>(function(){try{` +
@@ -249,7 +249,7 @@
   const svsToggle = {
     ...rest,
     children: main,
-    styling: rest.styling ?? `${preset} ${_TOGGLE_PRESET}`,
+    styling: rest.styling ?? `${_DARK_TOGGLE_PRESET} ${_TOGGLE_PRESET}`,
     ariaLabel: rest.ariaLabel ?? ariaLabel,
   };
 

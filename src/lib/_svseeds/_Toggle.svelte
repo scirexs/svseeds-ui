@@ -49,7 +49,6 @@
   export type ToggleBindProps = "value" | "variant" | "element";
 
   export const _TOGGLE_PRESET = "svs-toggle";
-  const preset = _TOGGLE_PRESET;
 
   import { type Snippet, untrack } from "svelte";
   import { type Attachment } from "svelte/attachments";
@@ -62,7 +61,7 @@
   let { children, left, right, value = $bindable(false), role = "button", ariaLabel, onclick, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, ...rest }: ToggleProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(_TOGGLE_PRESET, styling));
   // Remembers the latest neutral (off-state) variant so OFF restores a caller custom neutral.
   let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
   let state = $derived(

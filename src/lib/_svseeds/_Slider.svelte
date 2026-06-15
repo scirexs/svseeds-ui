@@ -54,7 +54,7 @@
   export type SliderBindProps = "value" | "element";
   export type Range = { min: number; max: number };
 
-  const preset = "svs-slider";
+  export const _SLIDER_PRESET = "svs-slider";
 
   import { type Snippet } from "svelte";
   import { type Attachment } from "svelte/attachments";
@@ -68,7 +68,7 @@
   let { min, max, left, right, value = $bindable(), options, fillRange = { min: 5, max: 95 }, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: SliderProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(_SLIDER_PRESET, styling));
   const uid = $props.id();
   const idList = $derived(options?.size ? `${uid}-list` : undefined);
   const rmin = $derived(min > max ? max : min);

@@ -75,7 +75,6 @@
   export type NumberInputBindProps = "value" | "element";
 
   export const _NUMBER_INPUT_PRESET = "svs-number-input";
-  const preset = _NUMBER_INPUT_PRESET;
 
   export interface NumberInputContext extends SVSContext {
     get value(): number | undefined;
@@ -102,7 +101,7 @@
   const ctx = _getNumberInputContext();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling ?? ctx?.styling));
+  const cls = $derived(fnClass(_NUMBER_INPUT_PRESET, styling ?? ctx?.styling));
   const uid = $props.id();
   const idList = $derived(options?.size ? `${uid}-list` : undefined);
   const effVariant = $derived(ctx ? ctx.variant : variant);

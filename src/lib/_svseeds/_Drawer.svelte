@@ -47,7 +47,7 @@
 
   const DEFAULT_DURATION = 200;
   const noMotion = shouldReduceMotion();
-  const preset = "svs-drawer";
+  export const _DRAWER_PRESET = "svs-drawer";
 
   function getPositionProp(position: Position): string {
     switch (position) {
@@ -77,7 +77,7 @@
   let { children, open = $bindable(false), position = "left", size = "auto", duration = -1, closable = true, ariaLabel, onclick, onkeydown, ontoggle, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: DrawerProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(_DRAWER_PRESET, styling));
   const dur = $derived(noMotion ? 0 : !isUnsignedInteger(duration) ? DEFAULT_DURATION : duration);
   const baseStyle = $derived(`${getPositionProp(position)}${getSizeProp(position, size)}--duration:${dur}ms;`);
   let style = $derived(baseStyle);

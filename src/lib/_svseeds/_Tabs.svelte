@@ -58,7 +58,7 @@
     disabled?: boolean; // (false)
   };
 
-  const preset = "svs-tabs";
+  export const _TABS_PRESET = "svs-tabs";
 
   export function toPanel(component: Component<any>, props?: Record<string, unknown>): TabComponent {
     return { component, props };
@@ -83,7 +83,7 @@
   let { tabs, current = $bindable<string | undefined>(undefined), manual = false, ariaOrientation = "horizontal", styling, variant = VARIANT.NEUTRAL }: TabsProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(_TABS_PRESET, styling));
   const uid = $props.id();
   const selected = $derived(tabs.some((tab) => tab.value === current && !tab.disabled) ? current! : firstSelectableValue(tabs));
   const selectedIndex = $derived(tabs.findIndex((tab) => tab.value === selected));

@@ -48,7 +48,7 @@
   export type ComboBoxReqdProps = "options";
   export type ComboBoxBindProps = "value" | "expanded" | "element";
 
-  const preset = "svs-combo-box";
+  export const _COMBO_BOX_PRESET = "svs-combo-box";
   const NA = -1;
 
   import { type Snippet } from "svelte";
@@ -70,7 +70,7 @@
   let { options, extra, value = $bindable(""), expanded = $bindable(false), search = true, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, onclick, onkeydown, oninput, onfocus, onblur, ...rest }: ComboBoxProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(_COMBO_BOX_PRESET, styling));
   const uid = $props.id();
   const idList = `${uid}-list`;
   let selected = $state(NA);

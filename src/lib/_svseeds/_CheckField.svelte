@@ -69,7 +69,7 @@
   export type CheckFieldValidation = SVSFieldValidation<string[]>;
   export type CheckFieldConstraint = SVSFieldConstraint;
 
-  const preset = "svs-check-field";
+  export const _CHECK_FIELD_PRESET = "svs-check-field";
 
   import { type Snippet, untrack, onMount } from "svelte";
   import { type Attachment } from "svelte/attachments";
@@ -83,7 +83,7 @@
   let { options, label, extra, aux, bottom, reserve = false, flip = false, values = $bindable([]), multiple = true, validations = [], constraints = [], name, onchange, oninvalid, attach, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, required = false, ...rest }: CheckFieldProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(_CHECK_FIELD_PRESET, styling));
   const type = $derived(multiple ? "checkbox" : "radio");
   const uid = $props.id();
   const nm = $derived(name?.trim() ? name : `${uid}-name`);

@@ -85,7 +85,7 @@
   export type NumberFieldBindProps = "value" | "variant" | "element";
   export type NumberFieldValidation = SVSFieldValidation<number | undefined>;
 
-  const preset = "svs-number-field";
+  export const _NUMBER_FIELD_PRESET = "svs-number-field";
 
   import { type Snippet, onMount, untrack } from "svelte";
   import { type SvelteSet } from "svelte/reactivity";
@@ -98,7 +98,7 @@
   let { label, extra, aux, left, right, bottom, reserve = false, flip = false, value = $bindable(), min, max, step = 1, integer = false, spin = false, stack = false, options, ariaDecLabel, ariaIncLabel, decrement, increment, validations = [], name, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), children }: NumberFieldProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(_NUMBER_FIELD_PRESET, styling));
   const uid = $props.id();
   const id = $derived(label?.trim() ? `${uid}-ctrl` : undefined);
   const idLabel = $derived(label?.trim() ? `${uid}-label` : undefined);
@@ -126,7 +126,7 @@
       return idMsg;
     },
     get styling() {
-      return `${preset} ${_NUMBER_INPUT_PRESET}`;
+      return `${_NUMBER_FIELD_PRESET} ${_NUMBER_INPUT_PRESET}`;
     },
     get id() {
       return id;

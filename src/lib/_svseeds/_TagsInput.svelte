@@ -78,7 +78,6 @@
   }
 
   export const _TAGS_INPUT_PRESET = "svs-tags-input";
-  const preset = _TAGS_INPUT_PRESET;
   const CONFIRM_KEY = "Enter";
 
   export interface TagsInputContext extends SVSContext {
@@ -109,7 +108,7 @@
   const ctx = _getTagsInputContext();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling ?? ctx?.styling));
+  const cls = $derived(fnClass(_TAGS_INPUT_PRESET, styling ?? ctx?.styling));
   const confirmKeys = $derived(new Set(confirm?.length ? confirm : [CONFIRM_KEY]));
   const effVariant = $derived(ctx ? ctx.variant : variant);
   const effValues = $derived(ctx ? ctx.values : values);

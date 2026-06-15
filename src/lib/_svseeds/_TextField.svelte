@@ -83,7 +83,7 @@
   export type TextFieldBindProps = "value" | "variant" | "element";
   export type TextFieldValidation = SVSFieldValidation<string, HTMLInputElement | HTMLTextAreaElement>;
 
-  const preset = "svs-text-field";
+  export const _TEXT_FIELD_PRESET = "svs-text-field";
 
   import { type Snippet, onMount, untrack } from "svelte";
   import { type Attachment } from "svelte/attachments";
@@ -97,7 +97,7 @@
   let { label, extra, aux, left, right, bottom, reserve = false, flip = false, value = $bindable(""), type = "text", cols, rows, wrap, options, validations = [], id, onchange, oninvalid, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, ...rest }: TextFieldProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(_TEXT_FIELD_PRESET, styling));
   const uid = $props.id();
   const idMain = $derived(id ? id : label?.trim() ? `${uid}-ctrl` : undefined);
   const idLabel = $derived(label?.trim() ? `${uid}-label` : undefined);

@@ -51,7 +51,7 @@
   const DEFAULT_COLOR = "#000000";
   const CHECKERED =
     "background-image: linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%); background-size: 20px 20px; background-position: 0 0,0 10px,10px -10px,-10px 0px;";
-  const preset = "svs-color-picker";
+  export const _COLOR_PICKER_PRESET = "svs-color-picker";
 
   function parseHex(hex: string): RgbColor | undefined {
     const rgb = formatHex(hex)?.filter((x) => x.length === 2);
@@ -86,7 +86,7 @@
   let { value = $bindable(DEFAULT_COLOR), alpha = 1, checkered = true, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: ColorPickerProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(_COLOR_PICKER_PRESET, styling));
   value = normalizeHex(value);
   $effect.pre(() => {
     const n = normalizeHex(value);

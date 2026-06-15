@@ -32,7 +32,7 @@
   export type SortableGroupReqdProps = "children";
   export type SortableGroupBindProps = never;
 
-  const preset = "svs-sortable-group";
+  export const _SORTABLE_GROUP_PRESET = "svs-sortable-group";
 
   import { type Snippet } from "svelte";
   import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass } from "./core";
@@ -43,7 +43,7 @@
   // prettier-ignore
   let { children, group, styling, variant = VARIANT.NEUTRAL }: SortableGroupProps = $props();
 
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(_SORTABLE_GROUP_PRESET, styling));
   const ctxVariant = $derived(variant);
   const ctxStyling = $derived(styling);
   // svelte-ignore state_referenced_locally

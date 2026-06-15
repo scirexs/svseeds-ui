@@ -74,7 +74,7 @@
   export type SelectFieldBindProps = "value" | "variant" | "element";
   export type SelectFieldValidation = SVSFieldValidation<string, HTMLSelectElement>;
 
-  const preset = "svs-select-field";
+  export const _SELECT_FIELD_PRESET = "svs-select-field";
 
   import { type Snippet, untrack, onMount } from "svelte";
   import { type Attachment } from "svelte/attachments";
@@ -88,7 +88,7 @@
   let { options, placeholder, label, extra, aux, left, right, bottom, reserve = false, flip = false, value = $bindable(""), validations = [], id, onchange, oninvalid, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, ...rest }: SelectFieldProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(_SELECT_FIELD_PRESET, styling));
   const uid = $props.id();
   const idMain = $derived(id ? id : label?.trim() ? `${uid}-ctrl` : undefined);
   const idLabel = $derived(label?.trim() ? `${uid}-label` : undefined);

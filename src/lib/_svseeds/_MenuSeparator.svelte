@@ -29,7 +29,7 @@
   export type MenuSeparatorReqdProps = never;
   export type MenuSeparatorBindProps = "element";
 
-  const preset = "svs-menu-separator";
+  export const _MENU_SEPARATOR_PRESET = "svs-menu-separator";
 
   import { type Attachment } from "svelte/attachments";
   import { type HTMLAttributes } from "svelte/elements";
@@ -43,7 +43,7 @@
   const ctx = _getMenuItemContext();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling ?? ctx?.styling));
+  const cls = $derived(fnClass(_MENU_SEPARATOR_PRESET, styling ?? ctx?.styling));
   const effVariant = $derived(ctx ? ctx.variant : variant);
 </script>
 

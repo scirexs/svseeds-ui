@@ -88,7 +88,7 @@
   export type ToggleGroupFieldConstraint = SVSFieldConstraint;
   export type { ToggleOption };
 
-  const preset = "svs-toggle-group-field";
+  export const _TOGGLE_GROUP_FIELD_PRESET = "svs-toggle-group-field";
 
   import { type Snippet, untrack } from "svelte";
   import { type SvelteMap } from "svelte/reactivity";
@@ -109,7 +109,7 @@
   let { options, label, extra, aux, left, right, bottom, reserve = false, flip = false, values = $bindable([]), multiple = true, validations = [], constraints = [], name, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), toggleGroup, children }: ToggleGroupFieldProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(preset, styling));
+  const cls = $derived(fnClass(_TOGGLE_GROUP_FIELD_PRESET, styling));
   const uid = $props.id();
   const idLabel = $derived(label?.trim() ? `${uid}-label` : undefined);
   const idDesc = $derived(bottom?.trim() ? `${uid}-desc` : undefined);
@@ -133,7 +133,7 @@
       return neutral;
     },
     get styling() {
-      return `${preset} ${_TOGGLE_GROUP_PRESET}`;
+      return `${_TOGGLE_GROUP_FIELD_PRESET} ${_TOGGLE_GROUP_PRESET}`;
     },
     get ariaDescId() {
       return idDesc;
