@@ -1,6 +1,7 @@
 <script lang="ts">
   import FileInput, { _setFileInputContext, type FileInputContext, type FileInputEvents, type FileInputProps } from "#svs/_FileInput.svelte";
   import { type SVSClass, type SVSVariant } from "#svs/core";
+  import { createRawSnippet } from "svelte";
 
   interface State {
     files: File[];
@@ -16,13 +17,16 @@
     onchange?: (ev: Event) => void;
     oninvalid?: (ev: Event) => void;
   }
+  type InputProps = Omit<FileInputProps, "children"> & { children?: FileInputProps["children"] };
   interface Props {
     state: State;
     hooks?: Hooks;
-    input?: FileInputProps;
+    input?: InputProps;
   }
 
   let { state, hooks, input = {} }: Props = $props();
+  const children = createRawSnippet(() => ({ render: () => "<span>zone</span>" }));
+  const inputChildren = $derived(input.children ?? children);
   const ctx: FileInputContext = {
     get files() {
       return state.files;
@@ -57,4 +61,4 @@
   _setFileInputContext(ctx);
 </script>
 
-<FileInput {...input} />
+<FileInput {...input} children={inputChildren} />

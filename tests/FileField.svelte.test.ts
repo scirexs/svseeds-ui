@@ -25,10 +25,13 @@ const left = createRawSnippet((files: () => File[], variant: () => string, eleme
 const right = createRawSnippet((files: () => File[], variant: () => string, element: () => HTMLInputElement | undefined) => ({
   render: () => `<span data-testid="right">${files().length}:${variant()}:${element() ? "element" : "none"}</span>`,
 }));
+const content = createRawSnippet((files: () => File[], dragover: () => boolean, variant: () => string) => ({
+  render: () => `<span data-testid="content">${files().length}:${dragover()}:${variant()}</span>`,
+}));
 
 describe("FileField layout and default child", () => {
   test("renders label, extra, group, bottom, side snippets, and native file input", async () => {
-    const { container, getByRole, getByText, getByTestId } = render(FileField, { label, extra, aux, left, right, bottom, files: [mkFile("a.png")] });
+    const { container, getByRole, getByText, getByTestId } = render(FileField, { label, extra, aux, left, right, bottom, files: [mkFile("a.png")], content });
     const group = getByRole("group");
     const lbl = getByText(label);
     const input = container.querySelector("input") as HTMLInputElement;
@@ -48,29 +51,26 @@ describe("FileField layout and default child", () => {
   });
 
   test("reserves and flips bottom, replaces child, and forwards content snippet", () => {
-    const reserved = render(FileField, { reserve: true });
+    const reserved = render(FileField, { reserve: true, content });
     const group = reserved.getByRole("group");
     expect(group.lastElementChild).toHaveClass("svs-file-field", PARTS.BOTTOM);
     expect(group.lastElementChild).toHaveTextContent("");
 
-    reserved.rerender({ bottom, flip: true });
+    reserved.rerender({ bottom, flip: true, content });
     expect(group.firstElementChild).toHaveClass("svs-file-field", PARTS.BOTTOM);
     expect(group.firstElementChild).toHaveTextContent(bottom);
 
     const children = createRawSnippet(() => ({ render: () => "<span data-testid='replacement'>custom</span>" }));
-    const custom = render(FileField, { children });
+    const custom = render(FileField, { children, content });
     expect(custom.getByTestId("replacement")).toBeInTheDocument();
     expect(custom.container.querySelector("input")).toBeNull();
 
-    const content = createRawSnippet((files: () => File[], dragover: () => boolean, variant: () => string) => ({
-      render: () => `<span data-testid="content">${files().length}:${dragover()}:${variant()}</span>`,
-    }));
     const forwarded = render(FileField, { content });
-    expect(forwarded.getByTestId("content")).toHaveTextContent(`0:false:${VARIANT.NEUTRAL}`);
+    expect(within(forwarded.container).getByTestId("content")).toHaveTextContent(`0:false:${VARIANT.NEUTRAL}`);
   });
 
   test("name reaches the file input and no hidden inputs are rendered", () => {
-    const { container } = render(FileField, { name: "docs" });
+    const { container } = render(FileField, { name: "docs", content });
     const input = container.querySelector("input") as HTMLInputElement;
 
     expect(input).toHaveAttribute("name", "docs");
@@ -84,6 +84,7 @@ describe("FileField constraints", () => {
       files: [] as File[],
       variant: VARIANT.NEUTRAL,
       accept: ".png",
+      content,
       element: undefined as HTMLInputElement | undefined,
       constraints: [(({ reason }) => (reason === "accept" ? "type" : null)) as FileFieldConstraint],
     });
@@ -104,6 +105,7 @@ describe("FileField constraints", () => {
       files: [] as File[],
       variant: VARIANT.NEUTRAL,
       maxSize: 5,
+      content,
       element: undefined as HTMLInputElement | undefined,
       constraints: [(({ reason }) => (reason === "maxSize" ? "size" : null)) as FileFieldConstraint],
     });
@@ -119,6 +121,7 @@ describe("FileField constraints", () => {
       variant: VARIANT.NEUTRAL,
       multiple: true,
       maxFiles: 1,
+      content,
       element: undefined as HTMLInputElement | undefined,
       constraints: [(({ reason }) => (reason === "maxFiles" ? "count" : null)) as FileFieldConstraint],
     });
@@ -132,7 +135,7 @@ describe("FileField constraints", () => {
     expect(countProps.variant).toBe(VARIANT.INACTIVE);
     expect(within(countRender.container).getByRole("alert")).toHaveTextContent("count");
 
-    const silentProps = $state({ files: [] as File[], variant: VARIANT.NEUTRAL, accept: ".png", constraints: [] as FileFieldConstraint[] });
+    const silentProps = $state({ files: [] as File[], variant: VARIANT.NEUTRAL, accept: ".png", content, constraints: [] as FileFieldConstraint[] });
     const silentRender = render(FileField, silentProps);
     await tick();
     await fireEvent.change(silentRender.container.querySelector("input") as HTMLInputElement, { target: { files: [mkFile("a.txt", "text/plain")] } });
@@ -148,6 +151,7 @@ describe("FileField constraints", () => {
       variant: VARIANT.NEUTRAL,
       multiple: true,
       accept: "image/*",
+      content,
       element: undefined as HTMLInputElement | undefined,
       constraints: [
         (({ file, reason }) => {
@@ -186,7 +190,7 @@ describe("FileField constraints", () => {
 describe("FileField validations and bindings", () => {
   test("whole-list validations react to add and external removal", async () => {
     const validations: FileFieldValidation[] = [({ value }) => (value.length < 1 ? "required" : null)];
-    const props = $state({ files: [mkFile("seed.png", "image/png")] as File[], variant: VARIANT.NEUTRAL, validations });
+    const props = $state({ files: [mkFile("seed.png", "image/png")] as File[], variant: VARIANT.NEUTRAL, content, validations });
     const { container, getByRole } = render(FileField, props);
     const input = container.querySelector("input") as HTMLInputElement;
 
@@ -212,7 +216,7 @@ describe("FileField validations and bindings", () => {
 
   test("pristine empty field does not show validation error until touched", async () => {
     const validations: FileFieldValidation[] = [({ value }) => (value.length < 1 ? "required" : null)];
-    const props = $state({ files: [] as File[], variant: VARIANT.NEUTRAL, validations });
+    const props = $state({ files: [] as File[], variant: VARIANT.NEUTRAL, content, validations });
     const { container, queryByRole } = render(FileField, props);
     const input = container.querySelector("input") as HTMLInputElement;
     await tick();
@@ -235,6 +239,7 @@ describe("FileField validations and bindings", () => {
     const props = $state({
       files: [] as File[],
       variant: VARIANT.NEUTRAL,
+      content,
       element: undefined as HTMLInputElement | undefined,
       constraints: [(({ file, reason }) => (!reason && file.name.endsWith(".exe") ? "no exe" : null)) as FileFieldConstraint],
     });
@@ -257,7 +262,7 @@ describe("FileField validations and bindings", () => {
   });
 
   test("binds files, variant, and element; invalid event prevents default", async () => {
-    const props = $state({ files: [] as File[], variant: VARIANT.NEUTRAL, element: undefined as HTMLInputElement | undefined });
+    const props = $state({ files: [] as File[], variant: VARIANT.NEUTRAL, content, element: undefined as HTMLInputElement | undefined });
     const { container } = render(FileField, props);
     const input = container.querySelector("input") as HTMLInputElement;
     await tick();
@@ -276,7 +281,7 @@ describe("FileField validations and bindings", () => {
   });
 
   test("variant semantics and styling chain are applied", async () => {
-    const props = $state({ files: [] as File[], variant: VARIANT.NEUTRAL });
+    const props = $state({ files: [] as File[], variant: VARIANT.NEUTRAL, content });
     const { container } = render(FileField, props);
     const input = container.querySelector("input") as HTMLInputElement;
 
@@ -289,6 +294,24 @@ describe("FileField validations and bindings", () => {
 
     props.files = [];
     await tick();
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
+  });
+
+  test("drag-over active display stays local to the nested file input", async () => {
+    const props = $state({ files: [] as File[], variant: VARIANT.NEUTRAL, content, zone: true });
+    const { container, getByRole } = render(FileField, props);
+    const group = getByRole("group");
+    const label = container.querySelector(`label.${PARTS.MIDDLE}`) as HTMLLabelElement;
+
+    await fireEvent.dragEnter(label);
+    await tick();
+    expect(label).toHaveClass(VARIANT.ACTIVE);
+    expect(group).toHaveClass(VARIANT.NEUTRAL);
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
+
+    await fireEvent.dragLeave(label);
+    await tick();
+    expect(label).toHaveClass(VARIANT.NEUTRAL);
     expect(props.variant).toBe(VARIANT.NEUTRAL);
   });
 });

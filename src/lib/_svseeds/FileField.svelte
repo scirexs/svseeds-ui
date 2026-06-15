@@ -4,6 +4,7 @@
   default value: *`(files, variant, element)`*
   ```ts
   interface FileFieldProps {
+    content: Snippet<[File[], boolean, string]>; // Snippet<[files,dragover,variant]>
     label?: string;
     extra?: string;
     aux?: Snippet<[File[], string, HTMLInputElement | undefined]>; // Snippet<[files,variant,element]>
@@ -18,7 +19,6 @@
     maxSize?: number;
     maxFiles?: number;
     zone?: boolean; // (false)
-    content?: Snippet<[File[], boolean, string]>; // Snippet<[files,dragover,variant]>
     constraints?: FileFieldConstraint[];
     validations?: FileFieldValidation[];
     name?: string;
@@ -53,6 +53,7 @@
 -->
 <script module lang="ts">
   export interface FileFieldProps {
+    content: Snippet<[File[], boolean, string]>; // Snippet<[files,dragover,variant]>; zone content, presentational only
     label?: string;
     extra?: string;
     aux?: Snippet<[File[], string, HTMLInputElement | undefined]>; // Snippet<[files,variant,element]>
@@ -67,7 +68,6 @@
     maxSize?: number;
     maxFiles?: number;
     zone?: boolean; // (false)
-    content?: Snippet<[File[], boolean, string]>; // Snippet<[files,dragover,variant]>
     constraints?: FileFieldConstraint[];
     validations?: FileFieldValidation[];
     name?: string;
@@ -76,7 +76,7 @@
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
     children?: Snippet;
   }
-  export type FileFieldReqdProps = never;
+  export type FileFieldReqdProps = "content";
   export type FileFieldBindProps = "files" | "variant" | "element";
   export type FileFieldConstraint = (ctx: {
     file: File;

@@ -4,6 +4,7 @@
   default value: *`(files, dragover, variant)`*
   ```ts
   interface FileInputProps extends Omit<HTMLInputAttributes, "type" | "value" | "files" | "size" | "multiple" | "accept" | "children"> {
+    children: Snippet<[File[], boolean, string]>; // required; Snippet<[files,dragover,variant]>; zone content, presentational only
     files?: File[]; // bindable
     multiple?: boolean; // (false)
     accept?: string;
@@ -11,7 +12,8 @@
     maxFiles?: number;
     zone?: boolean; // (false)
     rejectBy?: ("accept" | "maxSize" | "maxFiles")[]; // bindable
-    children?: Snippet<[File[], boolean, string]>; // Snippet<[files,dragover,variant]>
+    flip?: boolean; // (false) - render aux before the zone instead of after
+    aux?: Snippet<[File[], (file: File) => void, string]>; // Snippet<[files,remove,variant]>; rendered outside the label
     events?: FileInputEvents;
     attach?: Attachment;
     element?: HTMLInputElement; // bindable
@@ -29,13 +31,16 @@
   ```
   ### Anatomy
   ```svelte
-  <div class="whole" data-dragover>
-    <input class="main" {...rest} type="file" style="sr-only" aria-invalid aria-errormessage />
-    <div class="middle">
+  <div class="whole">
+    <div class="aux" if={aux && flip}>{aux}</div>
+    <label class="middle" data-dragover>
+      <input class="main" {...rest} type="file" style="sr-only" aria-invalid aria-errormessage />
       {children}
-    </div>
+    </label>
+    <div class="aux" if={aux && !flip}>{aux}</div>
   </div>
   ```
+  Drag-over renders the local variant as `active`; `children` must be presentational and interactive controls belong in `aux`.
   ### Exports
   ```ts
   const _FILE_INPUT_PRESET: "svs-file-input"
@@ -49,7 +54,11 @@
   Very old Safari versions that cannot assign `input.files` may not submit dropped files programmatically.
 -->
 <script module lang="ts">
-  export interface FileInputProps extends Omit<HTMLInputAttributes, "type" | "value" | "files" | "size" | "multiple" | "accept" | "children"> {
+  export interface FileInputProps extends Omit<
+    HTMLInputAttributes,
+    "type" | "value" | "files" | "size" | "multiple" | "accept" | "children"
+  > {
+    children: Snippet<[File[], boolean, string]>; // Snippet<[files,dragover,variant]>
     files?: File[]; // bindable
     multiple?: boolean; // (false)
     accept?: string;
@@ -57,14 +66,15 @@
     maxFiles?: number;
     zone?: boolean; // (false)
     rejectBy?: FileRejectReason[]; // bindable
-    children?: Snippet<[File[], boolean, string]>; // Snippet<[files,dragover,variant]>
+    flip?: boolean; // (false)
+    aux?: Snippet<[File[], (file: File) => void, string]>; // Snippet<[files,remove,variant]>
     events?: FileInputEvents;
     attach?: Attachment;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
-  export type FileInputReqdProps = never;
+  export type FileInputReqdProps = "children";
   export type FileInputBindProps = "files" | "rejectBy" | "element";
   export type FileRejectReason = "accept" | "maxSize" | "maxFiles";
   export interface FileRejection {
@@ -78,6 +88,8 @@
 
   export const _FILE_INPUT_PRESET = "svs-file-input";
   const preset = _FILE_INPUT_PRESET;
+  const SR_ONLY =
+    "position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0;";
 
   export interface FileInputContext extends SVSContext {
     get files(): File[];
@@ -95,18 +107,27 @@
 
   import { type Snippet, untrack } from "svelte";
   import { type Attachment } from "svelte/attachments";
-  import { type HTMLInputAttributes } from "svelte/elements";
+  import {
+    type HTMLInputAttributes,
+    type MouseEventHandler,
+    type ChangeEventHandler,
+    type DragEventHandler,
+    type EventHandler,
+  } from "svelte/elements";
   import { type SVSClass, type SVSVariant, type SVSContext, VARIANT, PARTS, fnClass, _createContext } from "./core";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { files = $bindable([]), multiple = false, accept, maxSize, maxFiles, zone = false, rejectBy = $bindable([]), children, events, variant = VARIANT.NEUTRAL, element = $bindable(), class: c, id: idProp, "aria-describedby": ariaDescribedbyProp, "aria-invalid": ariaInvalid, onchange: onchangeProp, oninvalid: oninvalidProp, onclick: onclickProp, attach, styling, ...rest }: FileInputProps = $props();
+  let { files = $bindable([]), multiple = false, accept, maxSize, maxFiles, zone = false, rejectBy = $bindable([]), flip = false, children, aux, events, variant = VARIANT.NEUTRAL, element = $bindable(), class: c, id: idProp, "aria-describedby": ariaDescribedbyProp, "aria-invalid": ariaInvalid, onchange: onchangeProp, oninvalid: oninvalidProp, onclick: onclickProp, attach, styling, ...rest }: FileInputProps = $props();
   const ctx = _getFileInputContext();
+
+  // *** States *** //
+  let dragover = $state(false);
 
   // *** Initialize *** //
   const cls = $derived(fnClass(preset, styling ?? ctx?.styling));
-  const effVariant = $derived(ctx ? ctx.variant : variant);
+  const effVariant = $derived(dragover ? VARIANT.ACTIVE : ctx ? ctx.variant : variant);
   const effFiles = $derived(ctx ? ctx.files : files);
   const effId = $derived(ctx ? ctx.id : idProp);
   const effDescribedby = $derived(ctx ? ctx.describedby : ariaDescribedbyProp);
@@ -121,7 +142,10 @@
     if (!accept?.trim()) return true;
     const name = file.name.toLowerCase();
     const type = file.type.toLowerCase();
-    for (const token of accept.split(",").map((x) => x.trim().toLowerCase()).filter(Boolean)) {
+    for (const token of accept
+      .split(",")
+      .map((x) => x.trim().toLowerCase())
+      .filter(Boolean)) {
       if (token === "*") return true;
       if (token.startsWith(".") && name.endsWith(token)) return true;
       if (token.endsWith("/*") && type.startsWith(token.slice(0, -1))) return true;
@@ -139,9 +163,6 @@
   function sameFileArray(a: File[], b: File[]): boolean {
     return a.length === b.length && a.every((file, i) => b[i] === file);
   }
-
-  // *** States *** //
-  let dragover = $state(false);
 
   // *** Reactive Handlers *** //
   $effect(() => {
@@ -161,7 +182,6 @@
 
   // *** Event Handlers *** //
   function addFiles(incoming: File[]) {
-    rejectBy = [];
     const current = multiple ? effFiles : [];
     const accepted: File[] = [];
     const rejected: FileRejection[] = [];
@@ -180,43 +200,39 @@
     if (!sameFileArray(effFiles, next)) setFiles(next);
     rejectBy = [...new Set(rejected.map((r) => r.reason))];
   }
-  const hclick = (ev: Parameters<NonNullable<FileInputProps["onclick"]>>[0]) => {
+  const remove = (file: File) => {
+    const next = effFiles.filter((f) => f !== file);
+    if (!sameFileArray(effFiles, next)) setFiles(next);
+  };
+  const hclick: MouseEventHandler<HTMLInputElement> = (ev) => {
     onclickProp?.(ev);
     if (element) element.value = "";
   };
-  const hsurfaceclick = (ev: MouseEvent) => {
-    if (rest.disabled || ev.target === element) return;
-    element?.click();
-  };
-  const hcancel = () => syncInputFiles();
-  const hchange = (ev: Parameters<NonNullable<FileInputProps["onchange"]>>[0]) => {
+  const hcancel: EventHandler<Event, HTMLInputElement> = () => syncInputFiles();
+  const hchange: ChangeEventHandler<HTMLInputElement> = (ev) => {
     addFiles([...(element?.files ?? [])]);
     onchangeProp?.(ev);
     ctx?.onchange?.(ev);
   };
-  const hinvalid = (ev: Parameters<NonNullable<FileInputProps["oninvalid"]>>[0]) => {
+  const hinvalid: EventHandler<Event, HTMLInputElement> = (ev) => {
     oninvalidProp?.(ev);
     ctx?.oninvalid?.(ev);
   };
-  const hdragenter = (ev: DragEvent) => {
-    if (!zone || rest.disabled) return;
+  const hdragenter: DragEventHandler<HTMLLabelElement> = (ev) => {
+    if (rest.disabled) return;
     ev.preventDefault();
     dragover = true;
   };
-  const hdragover = (ev: DragEvent) => {
-    if (!zone || rest.disabled) return;
-    ev.preventDefault();
-    dragover = true;
-  };
-  const hdragleave = (ev: DragEvent) => {
-    if (!zone || rest.disabled) return;
+  const hdragover: DragEventHandler<HTMLLabelElement> = hdragenter;
+  const hdragleave: DragEventHandler<HTMLLabelElement> = (ev) => {
+    if (rest.disabled) return;
     const target = ev.currentTarget;
     const next = ev.relatedTarget;
     if (target instanceof Node && next instanceof Node && target.contains(next)) return;
     dragover = false;
   };
-  const hdrop = (ev: DragEvent) => {
-    if (!zone || rest.disabled) return;
+  const hdrop: DragEventHandler<HTMLLabelElement> = (ev) => {
+    if (rest.disabled) return;
     ev.preventDefault();
     dragover = false;
     addFiles([...(ev.dataTransfer?.files ?? [])]);
@@ -225,38 +241,39 @@
 
 <!---------------------------------------->
 
-<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-<div
-  class={cls(PARTS.WHOLE, effVariant)}
-  data-dragover={dragover || undefined}
-  onclick={hsurfaceclick}
-  ondragenter={zone ? hdragenter : undefined}
-  ondragover={zone ? hdragover : undefined}
-  ondragleave={zone ? hdragleave : undefined}
-  ondrop={zone ? hdrop : undefined}
->
-  <input
-    bind:this={element}
-    class={[cls(PARTS.MAIN, effVariant), c]}
-    {...rest}
-    type="file"
-    {multiple}
-    {accept}
-    name={rest.name}
-    id={effId}
-    onchange={hchange}
-    oncancel={hcancel}
-    oninvalid={hinvalid}
-    onclick={hclick}
-    aria-describedby={effDescribedby}
-    aria-invalid={ariaInvalid ?? (effAriaErrMsgId ? true : undefined)}
-    aria-errormessage={effAriaErrMsgId}
-    style="position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;"
-    {@attach attach}
-  />
-  <div class={cls(PARTS.MIDDLE, effVariant)}>
-    {#if children}
-      {@render children(effFiles, dragover, effVariant)}
-    {/if}
-  </div>
+<div class={cls(PARTS.WHOLE, effVariant)}>
+  {#if aux && flip}
+    <div class={cls(PARTS.AUX, effVariant)}>{@render aux(effFiles, remove, effVariant)}</div>
+  {/if}
+  <label
+    class={cls(PARTS.MIDDLE, effVariant)}
+    data-dragover={dragover || undefined}
+    ondragenter={zone ? hdragenter : undefined}
+    ondragover={zone ? hdragover : undefined}
+    ondragleave={zone ? hdragleave : undefined}
+    ondrop={zone ? hdrop : undefined}
+  >
+    <input
+      bind:this={element}
+      class={[cls(PARTS.MAIN, effVariant), c]}
+      {...rest}
+      type="file"
+      {multiple}
+      {accept}
+      id={effId}
+      onchange={hchange}
+      oncancel={hcancel}
+      oninvalid={hinvalid}
+      onclick={hclick}
+      aria-describedby={effDescribedby}
+      aria-invalid={ariaInvalid ?? (effAriaErrMsgId ? true : undefined)}
+      aria-errormessage={effAriaErrMsgId}
+      style={SR_ONLY}
+      {@attach attach}
+    />
+    {@render children(effFiles, dragover, effVariant)}
+  </label>
+  {#if aux && !flip}
+    <div class={cls(PARTS.AUX, effVariant)}>{@render aux(effFiles, remove, effVariant)}</div>
+  {/if}
 </div>
