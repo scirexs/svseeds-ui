@@ -88,7 +88,7 @@
   const selected = $derived(tabs.some((tab) => tab.value === current && !tab.disabled) ? current! : firstSelectableValue(tabs));
   const selectedIndex = $derived(tabs.findIndex((tab) => tab.value === selected));
   let focused = $state(0);
-  let elems: HTMLButtonElement[] = [];
+  let elems = $state<HTMLButtonElement[]>([]);
 
   // *** Reactive Handlers *** //
   $effect.pre(() => {
