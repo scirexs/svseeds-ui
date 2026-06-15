@@ -82,7 +82,7 @@ describe("_FileInput rendering", () => {
 
 describe("_FileInput self-validation", () => {
   test("rejects by accept, maxSize, maxFiles, and collects mixed reasons", async () => {
-    const props = $state({ files: [] as File[], rejectBy: [] as FileRejectReason[], multiple: true, accept: ".png,image/*", maxSize: 1_000_000, maxFiles: 2, zone: true, children: zone });
+    const props = $state({ files: [] as File[], rejectBy: [] as FileRejectReason[], multiple: true, accept: ".png,image/*", maxSize: 1_000_000, maxFiles: 2, droppable: true, children: zone });
     const { container } = render(FileInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
     const good = mkFile("a.png", "image/png");
@@ -234,8 +234,32 @@ describe("_FileInput drop zone and a11y", () => {
     expect(props.rejectBy).toEqual(["accept"]);
   });
 
+  test("drag and drop are ignored when droppable is absent or false", async () => {
+    const absent = $state({ files: [] as File[], rejectBy: [] as FileRejectReason[], accept: ".png", multiple: true, children: zone });
+    const absentView = render(FileInput, absent);
+    const absentLabel = absentView.container.querySelector(`label.${PARTS.MIDDLE}`) as HTMLLabelElement;
+
+    await fireEvent.dragEnter(absentLabel);
+    await tick();
+    expect(absentLabel).not.toHaveAttribute("data-dragover");
+    await fireEvent.drop(absentLabel, { dataTransfer: { files: [mkFile("absent.png", "image/png")] } });
+    expect(absent.files).toEqual([]);
+    expect(absent.rejectBy).toEqual([]);
+
+    const explicit = $state({ files: [] as File[], rejectBy: [] as FileRejectReason[], accept: ".png", multiple: true, droppable: false, children: zone });
+    const explicitView = render(FileInput, explicit);
+    const explicitLabel = explicitView.container.querySelector(`label.${PARTS.MIDDLE}`) as HTMLLabelElement;
+
+    await fireEvent.dragEnter(explicitLabel);
+    await tick();
+    expect(explicitLabel).not.toHaveAttribute("data-dragover");
+    await fireEvent.drop(explicitLabel, { dataTransfer: { files: [mkFile("explicit.png", "image/png")] } });
+    expect(explicit.files).toEqual([]);
+    expect(explicit.rejectBy).toEqual([]);
+  });
+
   test("disabled drop is a no-op and visible click opens the picker once", async () => {
-    const props = $state({ files: [] as File[], zone: true, disabled: true, children: zone });
+    const props = $state({ files: [] as File[], droppable: true, disabled: true, children: zone });
     const { container } = render(FileInput, props);
     const label = container.querySelector(`label.${PARTS.MIDDLE}`) as HTMLLabelElement;
     const disabledInput = container.querySelector("input") as HTMLInputElement;
@@ -247,7 +271,7 @@ describe("_FileInput drop zone and a11y", () => {
     await fireEvent.click(label);
     expect(disabledClick).not.toHaveBeenCalled();
 
-    const active = render(FileInput, { zone: true, children: zone });
+    const active = render(FileInput, { droppable: true, children: zone });
     await tick();
     const liveInput = active.container.querySelector("input") as HTMLInputElement;
     const liveMiddle = active.container.querySelector(`label.${PARTS.MIDDLE}`) as HTMLLabelElement;
@@ -269,7 +293,7 @@ describe("_FileInput drop zone and a11y", () => {
         },
       };
     });
-    const { container, getByTestId } = render(FileInput, { zone: true, variant: VARIANT.NEUTRAL, children: probe });
+    const { container, getByTestId } = render(FileInput, { droppable: true, variant: VARIANT.NEUTRAL, children: probe });
     const label = container.querySelector(`label.${PARTS.MIDDLE}`) as HTMLLabelElement;
 
     await fireEvent.dragEnter(label);

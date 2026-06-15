@@ -10,7 +10,7 @@
     accept?: string;
     maxSize?: number; // bytes
     maxFiles?: number;
-    zone?: boolean; // (false)
+    droppable?: boolean; // (false)
     rejectBy?: ("accept" | "maxSize" | "maxFiles")[]; // bindable
     flip?: boolean; // (false) - render aux before the zone instead of after
     aux?: Snippet<[File[], (file: File) => void, string]>; // Snippet<[files,remove,variant]>; rendered outside the label
@@ -57,7 +57,7 @@
     accept?: string;
     maxSize?: number; // bytes
     maxFiles?: number;
-    zone?: boolean; // (false)
+    droppable?: boolean; // (false)
     rejectBy?: FileRejectReason[]; // bindable
     flip?: boolean; // (false)
     aux?: Snippet<[File[], (file: File) => void, string]>; // Snippet<[files,remove,variant]>
@@ -111,7 +111,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { files = $bindable([]), multiple = false, accept, maxSize, maxFiles, zone = false, rejectBy = $bindable([]), flip = false, children, aux, events, variant = VARIANT.NEUTRAL, element = $bindable(), class: c, id: idProp, "aria-describedby": ariaDescribedbyProp, "aria-invalid": ariaInvalid, onchange: onchangeProp, oninvalid: oninvalidProp, onclick: onclickProp, attach, styling, ...rest }: FileInputProps = $props();
+  let { files = $bindable([]), multiple = false, accept, maxSize, maxFiles, droppable = false, rejectBy = $bindable([]), flip = false, children, aux, events, variant = VARIANT.NEUTRAL, element = $bindable(), class: c, id: idProp, "aria-describedby": ariaDescribedbyProp, "aria-invalid": ariaInvalid, onchange: onchangeProp, oninvalid: oninvalidProp, onclick: onclickProp, attach, styling, ...rest }: FileInputProps = $props();
   const ctx = _getFileInputContext();
 
   // *** States *** //
@@ -240,10 +240,10 @@
   <label
     class={cls(PARTS.MIDDLE, effVariant)}
     data-dragover={dragover || undefined}
-    ondragenter={zone ? hdragenter : undefined}
-    ondragover={zone ? hdragover : undefined}
-    ondragleave={zone ? hdragleave : undefined}
-    ondrop={zone ? hdrop : undefined}
+    ondragenter={droppable ? hdragenter : undefined}
+    ondragover={droppable ? hdragover : undefined}
+    ondragleave={droppable ? hdragleave : undefined}
+    ondrop={droppable ? hdrop : undefined}
   >
     <input
       bind:this={element}

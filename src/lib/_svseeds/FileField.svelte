@@ -18,7 +18,7 @@
     accept?: string;
     maxSize?: number;
     maxFiles?: number;
-    zone?: boolean; // (false)
+    droppable?: boolean; // (false)
     constraints?: FileFieldConstraint[];
     validations?: FileFieldValidation[];
     name?: string;
@@ -67,7 +67,7 @@
     accept?: string;
     maxSize?: number;
     maxFiles?: number;
-    zone?: boolean; // (false)
+    droppable?: boolean; // (false)
     constraints?: FileFieldConstraint[];
     validations?: FileFieldValidation[];
     name?: string;
@@ -102,7 +102,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { label, extra, aux, left, right, bottom, reserve = false, flip = false, files = $bindable([]), multiple = false, accept, maxSize, maxFiles, zone = false, content, constraints = [], validations = [], name, element = $bindable(), variant = $bindable(VARIANT.NEUTRAL), styling, children }: FileFieldProps = $props();
+  let { label, extra, aux, left, right, bottom, reserve = false, flip = false, files = $bindable([]), multiple = false, accept, maxSize, maxFiles, droppable = false, content, constraints = [], validations = [], name, element = $bindable(), variant = $bindable(VARIANT.NEUTRAL), styling, children }: FileFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(_FILE_FIELD_PRESET, styling));
@@ -253,7 +253,7 @@
     {#if children}
       {@render children()}
     {:else}
-      <FileInput {multiple} {accept} {maxSize} {maxFiles} {zone} {name} children={content} />
+      <FileInput {multiple} {accept} {maxSize} {maxFiles} {droppable} {name} children={content} />
     {/if}
     {@render side(PARTS.RIGHT, right)}
   </div>

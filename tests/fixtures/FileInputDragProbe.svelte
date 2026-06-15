@@ -11,7 +11,7 @@
   let { files = $bindable([]), rejectBy = $bindable([]), accept, multiple = false }: Props = $props();
 </script>
 
-<FileInput bind:files bind:rejectBy zone {accept} {multiple}>
+<FileInput bind:files bind:rejectBy droppable {accept} {multiple}>
   {#snippet children(_files, dragover)}
     <span data-testid="drag">{dragover}</span>
   {/snippet}

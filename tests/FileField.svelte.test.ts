@@ -298,7 +298,7 @@ describe("FileField validations and bindings", () => {
   });
 
   test("drag-over active display stays local to the nested file input", async () => {
-    const props = $state({ files: [] as File[], variant: VARIANT.NEUTRAL, content, zone: true });
+    const props = $state({ files: [] as File[], variant: VARIANT.NEUTRAL, content, droppable: true });
     const { container, getByRole } = render(FileField, props);
     const group = getByRole("group");
     const label = container.querySelector(`label.${PARTS.MIDDLE}`) as HTMLLabelElement;
