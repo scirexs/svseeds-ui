@@ -204,7 +204,7 @@ describe("Keyboard navigation", () => {
   });
 
   test("vertical arrows move with wrap and ignore horizontal arrows", async () => {
-    const props = $state({ tabs: baseTabs(), current: "a", ariaOrientation: "vertical" as const });
+    const props = $state({ tabs: baseTabs(), current: "a", orientation: "vertical" as const });
     const user = userEvent.setup();
     const { getByRole } = render(Tabs, props);
     const tabs = tabsIn(getByRole("tablist"));
@@ -338,7 +338,7 @@ describe("Accessibility wiring", () => {
     const { getByRole, rerender } = render(Tabs, { tabs: baseTabs() });
     expect(getByRole("tablist")).toHaveAttribute("aria-orientation", "horizontal");
 
-    await rerender({ tabs: baseTabs(), ariaOrientation: "vertical" });
+    await rerender({ tabs: baseTabs(), orientation: "vertical" });
     expect(getByRole("tablist")).toHaveAttribute("aria-orientation", "vertical");
   });
 

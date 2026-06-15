@@ -7,7 +7,7 @@
     tabs: TabItem[];
     current?: string; // bindable (first enabled tab value)
     manual?: boolean; // (false) manual activation: Arrow keys only move focus; Enter/Space selects
-    ariaOrientation?: "horizontal" | "vertical"; // ("horizontal")
+    orientation?: "horizontal" | "vertical"; // ("horizontal")
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
@@ -23,7 +23,7 @@
   ### Anatomy
   ```svelte
   <div class="whole">
-    <div class="top" role="tablist" aria-orientation={ariaOrientation}>
+    <div class="top" role="tablist" aria-orientation={orientation}>
       {#each tabs as tab}
         <button class="label" role="tab">{tab.label}</button>
       {/each}
@@ -44,7 +44,7 @@
     tabs: TabItem[];
     current?: string; // bindable (first enabled tab value)
     manual?: boolean; // (false) manual activation: Arrow keys only move focus; Enter/Space selects
-    ariaOrientation?: "horizontal" | "vertical"; // ("horizontal")
+    orientation?: "horizontal" | "vertical"; // ("horizontal")
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
@@ -80,7 +80,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { tabs, current = $bindable<string | undefined>(undefined), manual = false, ariaOrientation = "horizontal", styling, variant = VARIANT.NEUTRAL }: TabsProps = $props();
+  let { tabs, current = $bindable<string | undefined>(undefined), manual = false, orientation = "horizontal", styling, variant = VARIANT.NEUTRAL }: TabsProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(_TABS_PRESET, styling));
@@ -110,7 +110,7 @@
   const tabId = (index: number) => `${uid}-tab-${index}`;
   const panelId = (index: number) => `${uid}-panel-${index}`;
   const isSelected = (tab: TabItem) => tab.value === selected;
-  const isHorizontal = () => ariaOrientation !== "vertical";
+  const isHorizontal = () => orientation !== "vertical";
   function tabStatus(tab: TabItem): string {
     if (isSelected(tab)) return VARIANT.ACTIVE;
     if (tab.disabled) return VARIANT.INACTIVE;
@@ -173,7 +173,7 @@
 
 {#if tabs.length > 0}
   <div class={cls(PARTS.WHOLE, variant)}>
-    <div class={cls(PARTS.TOP, variant)} role="tablist" aria-orientation={ariaOrientation} onfocusin={hfocusin}>
+    <div class={cls(PARTS.TOP, variant)} role="tablist" aria-orientation={orientation} onfocusin={hfocusin}>
       {#each tabs as tab, i (tab.value)}
         {@const selected = isSelected(tab)}
         <button
