@@ -86,7 +86,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { label, children, open = $bindable(false), hover = false, position = "bottom", align = "start", offset = 0, autoFlip = true, matchWidth = false, ariaRole, manual = false, arrow = false, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, type = "button", class: c, ...rest }: PopoverProps = $props();
+  let { label, children, open = $bindable(false), hover = false, position = "bottom", align = "start", offset = 0, autoFlip = true, matchWidth = false, ariaRole, manual = false, arrow = false, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, type = "button", onpointerenter, onfocusin, onpointerleave, onfocusout, class: c, ...rest }: PopoverProps = $props();
 
   // *** Initialize *** //
   const uid = $props.id();
@@ -134,19 +134,34 @@
   });
 
   // *** Event Handlers *** //
-  function openOnHover() {
-    if (hover) open = true;
-  }
   function maybeClose(ev: PointerEvent | FocusEvent) {
     if (!hover) return;
     const to = ev.relatedTarget as Node | null;
     if (to && (element?.contains(to) || panel?.contains(to))) return;
     open = false;
   }
-  const hpointerenter: PointerEventHandler<HTMLButtonElement> = () => openOnHover();
-  const hfocusin: FocusEventHandler<HTMLButtonElement> = () => openOnHover();
-  const hleave: PointerEventHandler<HTMLButtonElement | HTMLDivElement> = (ev) => maybeClose(ev);
-  const hfocusout: FocusEventHandler<HTMLButtonElement | HTMLDivElement> = (ev) => maybeClose(ev);
+  const triggerenter: PointerEventHandler<HTMLButtonElement> = (ev) => {
+    onpointerenter?.(ev);
+    open = true;
+  };
+  const triggerfocusin: FocusEventHandler<HTMLButtonElement> = (ev) => {
+    onfocusin?.(ev);
+    open = true;
+  };
+  const triggerleave: PointerEventHandler<HTMLButtonElement> = (ev) => {
+    onpointerleave?.(ev);
+    maybeClose(ev);
+  };
+  const triggerfocusout: FocusEventHandler<HTMLButtonElement> = (ev) => {
+    onfocusout?.(ev);
+    maybeClose(ev);
+  };
+  const panelleave: PointerEventHandler<HTMLDivElement> = (ev) => maybeClose(ev);
+  const panelfocusout: FocusEventHandler<HTMLDivElement> = (ev) => maybeClose(ev);
+  const hpointerenter = $derived(hover ? triggerenter : onpointerenter);
+  const hfocusin = $derived(hover ? triggerfocusin : onfocusin);
+  const hpointerleave = $derived(hover ? triggerleave : onpointerleave);
+  const hfocusout = $derived(hover ? triggerfocusout : onfocusout);
   const htoggle: ToggleEventHandler<HTMLDivElement> = (ev) => {
     shown = ev.newState === "open";
     open = shown;
@@ -165,10 +180,10 @@
   aria-expanded={open}
   aria-controls={pid}
   style={triggerStyle}
-  onpointerenter={hover ? hpointerenter : undefined}
-  onfocusin={hover ? hfocusin : undefined}
-  onpointerleave={hover ? hleave : undefined}
-  onfocusout={hover ? hfocusout : undefined}
+  onpointerenter={hpointerenter}
+  onfocusin={hfocusin}
+  onpointerleave={hpointerleave}
+  onfocusout={hfocusout}
   {@attach attach}
 >
   {#if typeof label === "string"}{label}{:else}{@render label(open, variant)}{/if}
@@ -182,8 +197,8 @@
   role={ariaRole}
   style={panelStyle}
   ontoggle={htoggle}
-  onpointerleave={hover ? hleave : undefined}
-  onfocusout={hover ? hfocusout : undefined}
+  onpointerleave={hover ? panelleave : undefined}
+  onfocusout={hover ? panelfocusout : undefined}
 >
   {#if arrow}<div class={cls(PARTS.EXTRA, variant)} aria-hidden="true"></div>{/if}
   {@render children(variant)}

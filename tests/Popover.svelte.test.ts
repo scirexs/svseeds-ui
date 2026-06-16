@@ -131,11 +131,21 @@ describe("Popover structure and a11y", () => {
 
   test("forwards rest event handlers to trigger", async () => {
     const onpointerenter = vi.fn();
-    const { container } = render(Popover, { label: "Open", children, onpointerenter } as any);
+    const onfocusin = vi.fn();
+    const onpointerleave = vi.fn();
+    const onfocusout = vi.fn();
+    const { container } = render(Popover, { label: "Open", children, onpointerenter, onfocusin, onpointerleave, onfocusout } as any);
+    const button = trigger(container);
 
-    await fireEvent.pointerEnter(trigger(container));
+    await fireEvent.pointerEnter(button);
+    await fireEvent.focusIn(button);
+    await fireEvent.pointerLeave(button);
+    await fireEvent.focusOut(button);
 
     expect(onpointerenter).toHaveBeenCalledTimes(1);
+    expect(onfocusin).toHaveBeenCalledTimes(1);
+    expect(onpointerleave).toHaveBeenCalledTimes(1);
+    expect(onfocusout).toHaveBeenCalledTimes(1);
   });
 
   test("defaults trigger type to button", () => {
@@ -356,5 +366,36 @@ describe("Popover hover mode", () => {
 
     expect(show).not.toHaveBeenCalled();
     expect(props.open).toBe(false);
+  });
+
+  test("composes trigger event handlers with hover behavior", async () => {
+    const onpointerenter = vi.fn();
+    const onfocusin = vi.fn();
+    const onpointerleave = vi.fn();
+    const onfocusout = vi.fn();
+    const props = $state({ label: "Open", children, hover: true, open: false, onpointerenter, onfocusin, onpointerleave, onfocusout });
+    const { container } = render(Popover, props as any);
+    const button = trigger(container);
+    const pop = panel(container);
+
+    await fireEvent.pointerEnter(button);
+    await waitFor(() => expect(props.open).toBe(true));
+    expect(onpointerenter).toHaveBeenCalledTimes(1);
+
+    toggle(pop, "open");
+    await flush();
+    await fireEvent.pointerLeave(button, { relatedTarget: document.body });
+    await waitFor(() => expect(props.open).toBe(false));
+    expect(onpointerleave).toHaveBeenCalledTimes(1);
+
+    await fireEvent.focusIn(button);
+    await waitFor(() => expect(props.open).toBe(true));
+    expect(onfocusin).toHaveBeenCalledTimes(1);
+
+    toggle(pop, "open");
+    await flush();
+    await fireEvent.focusOut(button, { relatedTarget: document.body });
+    await waitFor(() => expect(props.open).toBe(false));
+    expect(onfocusout).toHaveBeenCalledTimes(1);
   });
 });
