@@ -260,6 +260,44 @@ describe("Specify attrs & value handling & styling", () => {
     expect(main.style.color).not.toBe("red");
   });
 
+  describe("cssvar custom track variable names", () => {
+    test("cssvar.active overrides active name, inactive falls back", () => {
+      const { container } = render(Slider, { min: 0, max: 100, value: 50, cssvar: { active: "--x" } });
+      const main = container.querySelector('input[type="range"]') as HTMLInputElement;
+      expect(main.style.cssText).toContain("var(--x) 50%");
+      expect(main.style.cssText).toContain("var(--color-inactive) 50%");
+      expect(main.style.cssText).not.toContain("var(--color-active)");
+    });
+
+    test("cssvar.inactive overrides inactive name, active falls back", () => {
+      const { container } = render(Slider, { min: 0, max: 100, value: 50, cssvar: { inactive: "--y" } });
+      const main = container.querySelector('input[type="range"]') as HTMLInputElement;
+      expect(main.style.cssText).toContain("var(--color-active) 50%");
+      expect(main.style.cssText).toContain("var(--y) 50%");
+      expect(main.style.cssText).not.toContain("var(--color-inactive)");
+    });
+
+    test("cssvar with both keys overrides both names", () => {
+      const { container } = render(Slider, { min: 0, max: 100, value: 50, cssvar: { active: "--x", inactive: "--y" } });
+      const main = container.querySelector('input[type="range"]') as HTMLInputElement;
+      expect(main.style.cssText).toContain("var(--x) 50%");
+      expect(main.style.cssText).toContain("var(--y) 50%");
+    });
+
+    test("empty cssvar falls back to default names", () => {
+      const { container } = render(Slider, { min: 0, max: 100, value: 50, cssvar: {} });
+      const main = container.querySelector('input[type="range"]') as HTMLInputElement;
+      expect(main.style.cssText).toContain("var(--color-active) 50%");
+      expect(main.style.cssText).toContain("var(--color-inactive) 50%");
+    });
+
+    test("cssvar is not forwarded to input attributes", () => {
+      const { container } = render(Slider, { min: 0, max: 100, value: 50, cssvar: { active: "--x" } });
+      const main = container.querySelector('input[type="range"]') as HTMLInputElement;
+      expect(main).not.toHaveAttribute("cssvar");
+    });
+  });
+
   test("value change interaction", async () => {
     const props = $state({ min: 0, max: 100, value: 50 });
     const { container } = render(Slider, props);

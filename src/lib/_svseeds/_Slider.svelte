@@ -12,6 +12,7 @@
     step?: number | "any"; // (1)
     options?: SvelteSet<number> | Set<number>;
     fillRange?: Range; // ({ min: 5, max: 95 }); linear-gradient rate limit of slider's track
+    cssvar?: Partial<Record<SliderCssVar, string>>;
     attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
@@ -20,6 +21,7 @@
     // style is component-owned (omitted)
   }
   type Range = { min: number, max: number };
+  type SliderCssVar = "active" | "inactive"; // cssvar values are full --names the gradient reads; default --color-active / --color-inactive
   ```
   ### Anatomy
   ```svelte
@@ -44,6 +46,7 @@
     value?: number; // bindable (min+((max-min)/2))
     options?: SvelteSet<number> | Set<number>;
     fillRange?: Range; // ({ min: 5, max: 95 }); linear-gradient rate limit of slider's track
+    cssvar?: Partial<Record<SliderCssVar, string>>; // custom-property names the track gradient reads; absent key uses default name
     attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
@@ -53,6 +56,7 @@
   export type SliderReqdProps = "min" | "max";
   export type SliderBindProps = "value" | "element";
   export type Range = { min: number; max: number };
+  export type SliderCssVar = "active" | "inactive";
 
   export const _SLIDER_PRESET = "svs-slider";
 
@@ -65,7 +69,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { min, max, left, right, value = $bindable(), options, fillRange = { min: 5, max: 95 }, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: SliderProps = $props();
+  let { min, max, left, right, value = $bindable(), options, fillRange = { min: 5, max: 95 }, cssvar, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: SliderProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(_SLIDER_PRESET, styling));
@@ -85,7 +89,9 @@
   const rate = $derived(
     span === 0 ? Math.trunc(bg.min + (bg.max - bg.min) / 2) : Math.trunc(bg.min + ((value - rmin) / span) * (bg.max - bg.min)),
   );
-  const style = $derived(`background: linear-gradient(to right, var(--color-active) ${rate}%, var(--color-inactive) ${rate}%);`);
+  const activeVar = $derived(cssvar?.active ?? "--color-active");
+  const inactiveVar = $derived(cssvar?.inactive ?? "--color-inactive");
+  const style = $derived(`background: linear-gradient(to right, var(${activeVar}) ${rate}%, var(${inactiveVar}) ${rate}%);`);
 
   $effect.pre(() => {
     if (value !== undefined && (value < rmin || value > rmax)) value = clamp(value);
