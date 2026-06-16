@@ -13,6 +13,8 @@
     reserve?: boolean; // (false)
     flip?: boolean; // (false)
     values?: string[]; // bindable
+    separator?: string | string[]; // ([",", "\n"]) - forwarded to the default <TagsInput/>
+    paste?: boolean; // (true) - forwarded to the default <TagsInput/>
     constraints?: TagsInputFieldConstraint[];
     validations?: TagsInputFieldValidation[];
     name?: string;
@@ -24,6 +26,7 @@
   type TagsInputFieldConstraint = SVSFieldConstraint;
   type TagsInputFieldValidation = SVSFieldValidation<string[]>;
   // Migration: min -> validations fn `({ value }) => value.length < N ? msg : null`; max -> constraints fn `({ values }) => values.length >= N ? msg : null`.
+  // `separator` and `paste` apply only to the default `<TagsInput/>`; when `children` is provided, the child control owns those options.
   ```
   ### Anatomy
   ```svelte
@@ -55,6 +58,8 @@
     reserve?: boolean; // (false)
     flip?: boolean; // (false)
     values?: string[]; // bindable
+    separator?: string | string[]; // ([",", "\n"]) - forwarded to the default <TagsInput/>
+    paste?: boolean; // (true) - forwarded to the default <TagsInput/>
     constraints?: TagsInputFieldConstraint[];
     validations?: TagsInputFieldValidation[];
     name?: string;
@@ -77,7 +82,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { label, extra, aux, left, right, bottom, reserve = false, flip = false, values = $bindable([]), constraints = [], validations = [], name, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), children }: TagsInputFieldProps = $props();
+  let { label, extra, aux, left, right, bottom, reserve = false, flip = false, values = $bindable([]), separator, paste, constraints = [], validations = [], name, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), children }: TagsInputFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(_TAGS_INPUT_FIELD_PRESET, styling));
@@ -87,6 +92,7 @@
   const idDesc = $derived(bottom?.trim() ? `${uid}-desc` : undefined);
   const idErr = $derived(idDesc ?? `${uid}-err`);
   let errmsg = $state("");
+  let addmsg = $state<string | undefined>();
   let value = $state("");
   const message = $derived(variant === VARIANT.INACTIVE ? errmsg || bottom : bottom);
   const idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
@@ -161,21 +167,30 @@
   });
   function validate() {
     verify();
-    shift();
+    const msg = addmsg;
+    addmsg = undefined;
+    shift(false, msg);
   }
 
   // *** Event Handlers *** //
   function onadd(detail: { values: string[]; added: string[] }): string[] | void {
-    const value = detail.added[0];
-    if (!value) return;
+    const accepted: string[] = [];
+    let firstErr: string | undefined;
+    for (const v of detail.added) {
+      if (!v) continue;
+      const msg = check(v, [...values, ...accepted]);
+      if (msg) { firstErr ??= msg; continue; }
+      accepted.push(v);
+    }
     variant = neutral;
-    shift(false, check(value));
-    if (variant === VARIANT.INACTIVE) return [];
+    addmsg = firstErr;
+    shift(false, firstErr);
+    return accepted;
   }
-  function check(value: string): string | undefined {
+  function check(value: string, effValues: string[] = values): string | undefined {
     if (!element) return;
     for (const c of constraints) {
-      const msg = c({ value, values, validity: element.validity, element });
+      const msg = c({ value, values: effValues, validity: element.validity, element });
       if (msg) return msg;
     }
   }
@@ -204,7 +219,7 @@
   <div class={cls(PARTS.MIDDLE, variant)}>
     {@render side(PARTS.LEFT, left)}
     {@render fnForm()}
-    {#if children}{@render children()}{:else}<TagsInput />{/if}
+    {#if children}{@render children()}{:else}<TagsInput {separator} {paste} />{/if}
     {@render side(PARTS.RIGHT, right)}
   </div>
   {@render desc(!flip)}

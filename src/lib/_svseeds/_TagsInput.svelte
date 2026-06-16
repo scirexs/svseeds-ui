@@ -10,7 +10,8 @@
     value?: string; // bindable
     side?: "left" | "right"; // ("left")
     removeAriaLabel?: (text: string) => string; // ((text) => `Remove ${text}`)
-    confirm?: string[]; // (["Enter"])
+    separator?: string | string[]; // ([",", "\n"]) - characters that split input into tags
+    paste?: boolean; // (true) - split pasted text on separators into multiple tags
     trim?: boolean; // (true)
     unique?: boolean; // (true)
     ariaErrMsgId?: string;
@@ -47,6 +48,10 @@
     <input class="main" {...rest} type="text" aria-invalid aria-errormessage />
   </div>
   ```
+  ### Behavior
+  Typing a separator commits the segment before it; Enter commits the current input after splitting on separators; pasting text containing a separator commits every segment of the post-paste value and clears the input. With `paste:false`, pasted text is inserted natively and not split.
+  `trim` and `unique` apply per segment, empty segments are dropped, and `onadd` fires once per commit with the full batch.
+  Default separators are `","` and `"\n"`; Windows `\r\n` pastes keep `\r` only when `trim:false`.
 -->
 <script module lang="ts">
   export interface TagsInputProps extends Omit<HTMLInputAttributes, "type" | "value"> {
@@ -56,7 +61,8 @@
     value?: string; // bindable
     side?: "left" | "right"; // ("left")
     removeAriaLabel?: (text: string) => string; // ((text) => `Remove ${text}`)
-    confirm?: string[]; // (["Enter"])
+    separator?: string | string[]; // ([",", "\n"]) - characters that split input into tags
+    paste?: boolean; // (true) - split pasted text on separators into multiple tags
     trim?: boolean; // (true)
     unique?: boolean; // (true)
     ariaErrMsgId?: string;
@@ -71,7 +77,6 @@
   export interface TagsInputEvents extends CollectionEvents<string> {}
 
   export const _TAGS_INPUT_PRESET = "svs-tags-input";
-  const CONFIRM_KEY = "Enter";
 
   export interface TagsInputContext extends SVSContext {
     get values(): string[];
@@ -91,18 +96,18 @@
 
   import { type Snippet } from "svelte";
   import { type Attachment } from "svelte/attachments";
-  import { type HTMLInputAttributes, type KeyboardEventHandler } from "svelte/elements";
+  import { type HTMLInputAttributes, type KeyboardEventHandler, type FormEventHandler, type ClipboardEventHandler } from "svelte/elements";
   import { type SVSClass, type SVSVariant, type SVSContext, type CollectionEvents, VARIANT, PARTS, fnClass, _createContext } from "./core";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { label, extra, values = $bindable([]), value = $bindable(""), side = "left", removeAriaLabel = (text: string) => `Remove ${text}`, confirm = [CONFIRM_KEY], trim = true, unique = true, ariaErrMsgId, events, onkeydown, onchange: onchangeProp, oninvalid: oninvalidProp, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, id: idProp, "aria-describedby": ariaDescribedbyProp, class: c, "aria-invalid": ariaInvalid, ...rest }: TagsInputProps = $props();
+  let { label, extra, values = $bindable([]), value = $bindable(""), side = "left", removeAriaLabel = (text: string) => `Remove ${text}`, separator = [",", "\n"], paste = true, trim = true, unique = true, ariaErrMsgId, events, onkeydown, oninput: oninputProp, onpaste: onpasteProp, onchange: onchangeProp, oninvalid: oninvalidProp, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, id: idProp, "aria-describedby": ariaDescribedbyProp, class: c, "aria-invalid": ariaInvalid, ...rest }: TagsInputProps = $props();
   const ctx = _getTagsInputContext();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(_TAGS_INPUT_PRESET, styling ?? ctx?.styling));
-  const confirmKeys = $derived(new Set(confirm?.length ? confirm : [CONFIRM_KEY]));
+  const seps = $derived((Array.isArray(separator) ? separator : [separator]).filter((s) => s.length > 0));
   const effVariant = $derived(ctx ? ctx.variant : variant);
   const effValues = $derived(ctx ? ctx.values : values);
   const effValue = $derived(ctx ? ctx.value : value);
@@ -118,6 +123,12 @@
     if (ctx) ctx.values = v;
     else values = v;
   }
+  const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  function splitBySeps(text: string): string[] {
+    if (!seps.length) return [text];
+    return text.split(new RegExp(seps.map(escapeRe).join("|")));
+  }
+  const hasSep = (text: string) => seps.some((s) => text.includes(s));
   $effect(() => {
     if (ctx) ctx.element = element;
   });
@@ -129,12 +140,23 @@
     const b = ctx?.events?.onadd?.({ values, added });  if (b) keep = keep.filter((x) => b.includes(x));
     return keep;
   }
-  function add(v: string) {
-    const added = unique && effValues.includes(v) ? [] : [v];
-    if (!added.length) { setValue(""); return; }
-    if (!commitAdd(effValues, added).includes(v)) return;
-    setValues([...effValues, v]);
-    setValue("");
+  function addMany(cands: string[]) {
+    let batch = cands;
+    if (unique) {
+      const seen = new Set(effValues);
+      batch = batch.filter((v) => !seen.has(v) && (seen.add(v), true));
+    }
+    if (!batch.length) return;
+    const kept = commitAdd(effValues, batch);
+    if (!kept.length) return;
+    setValues([...effValues, ...kept]);
+  }
+  function splitCommit(text: string, commitTrailing: boolean) {
+    const segs = splitBySeps(text);
+    const trailing = commitTrailing ? "" : (segs.pop() ?? "");
+    const cleaned = segs.map((s) => (trim ? s.trim() : s)).filter((s) => s.length > 0);
+    addMany(cleaned);
+    setValue(trailing);
   }
   function commitRemove(values: string[], removed: string[]): string[] {
     let keep = removed;
@@ -149,12 +171,26 @@
   }
   const hkeydown: KeyboardEventHandler<HTMLInputElement> = (ev) => {
     onkeydown?.(ev);
-    if (!confirmKeys.has(ev.key) || ev.isComposing) return;
+    if (ev.key !== "Enter" || ev.isComposing) return;
     ev.preventDefault();
-    const v = trim ? effValue.trim() : effValue;
-    if (trim && v !== effValue) setValue(v);
-    if (!v) return;
-    add(v);
+    splitCommit(effValue, true);
+  };
+  const hinput: FormEventHandler<HTMLInputElement> = (ev) => {
+    oninputProp?.(ev);
+    const input = ev as unknown as InputEvent;
+    if (input.isComposing || input.inputType === "insertFromPaste") return;
+    splitCommit(ev.currentTarget.value, false);
+  };
+  const hpaste: ClipboardEventHandler<HTMLInputElement> = (ev) => {
+    onpasteProp?.(ev);
+    if (ev.defaultPrevented || !paste) return;
+    const clip = ev.clipboardData?.getData("text") ?? "";
+    if (!hasSep(clip)) return;
+    ev.preventDefault();
+    const el = ev.currentTarget;
+    const start = el.selectionStart ?? effValue.length;
+    const end = el.selectionEnd ?? effValue.length;
+    splitCommit(effValue.slice(0, start) + clip + effValue.slice(end), true);
   };
 </script>
 
@@ -170,6 +206,8 @@
     type="text"
     id={effId}
     onkeydown={hkeydown}
+    oninput={hinput}
+    onpaste={hpaste}
     onchange={(e) => {
       onchangeProp?.(e);
       ctx?.onchange?.(e);

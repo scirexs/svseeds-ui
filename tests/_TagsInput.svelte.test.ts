@@ -8,6 +8,7 @@ import { PARTS, VARIANT, fnClass } from "#svs/core";
 
 const preset = "svs-tags-input";
 const mainCls = (variant: string) => `${fnClass(preset)(PARTS.MAIN, variant)}`.split(" ");
+const paste = (input: HTMLInputElement, text: string) => fireEvent.paste(input, { clipboardData: { getData: () => text } });
 const stateDefaults = () => ({
   values: [] as string[],
   value: "",
@@ -171,47 +172,6 @@ describe("Tag addition functionality", () => {
     expect(props.value).toBe("");
   });
 
-  test("adds tag on custom confirm key", async () => {
-    const props = $state({ values: [] as string[], value: "", confirm: ["Tab"] });
-    const user = userEvent.setup();
-    const { container } = render(TagsInput, { props });
-    const input = container.querySelector("input") as HTMLInputElement;
-
-    await user.type(input, "new tag");
-    await user.keyboard("{Tab}");
-
-    expect(props.values).toEqual(["new tag"]);
-    expect(props.value).toBe("");
-  });
-
-  test("confirm overrides default Enter key", async () => {
-    const props = $state({ values: [] as string[], value: "", confirm: ["Tab"] });
-    const user = userEvent.setup();
-    const { container } = render(TagsInput, props);
-    const input = container.querySelector("input") as HTMLInputElement;
-
-    await user.type(input, "x");
-    await user.keyboard("{Enter}");
-
-    expect(props.values).toEqual([]);
-
-    await user.keyboard("{Tab}");
-
-    expect(props.values).toEqual(["x"]);
-  });
-
-  test("empty confirm falls back to Enter key", async () => {
-    const props = $state({ values: [] as string[], value: "", confirm: [] as string[] });
-    const user = userEvent.setup();
-    const { container } = render(TagsInput, props);
-    const input = container.querySelector("input") as HTMLInputElement;
-
-    await user.type(input, "x");
-    await user.keyboard("{Enter}");
-
-    expect(props.values).toEqual(["x"]);
-  });
-
   test("trims whitespace by default", async () => {
     const props = $state({ values: [] as string[], value: "" });
     const user = userEvent.setup();
@@ -323,6 +283,267 @@ describe("Tag addition functionality", () => {
 
     expect(props.values).toEqual([]);
   });
+
+  test("live commit on separator keystroke", async () => {
+    const props = $state({ values: [] as string[], value: "" });
+    const user = userEvent.setup();
+    const { getByRole } = render(TagsInput, props);
+    const input = getByRole("textbox") as HTMLInputElement;
+
+    await user.type(input, "a,");
+
+    expect(props.values).toEqual(["a"]);
+    expect(props.value).toBe("");
+    expect(input).toHaveValue("");
+  });
+
+  test("live commit keeps trailing partial", async () => {
+    const props = $state({ values: [] as string[], value: "" });
+    const user = userEvent.setup();
+    const { getByRole } = render(TagsInput, props);
+    const input = getByRole("textbox") as HTMLInputElement;
+
+    await user.type(input, "a,b");
+
+    expect(props.values).toEqual(["a"]);
+    expect(props.value).toBe("b");
+    expect(input).toHaveValue("b");
+  });
+
+  test("multiple separators in one typed burst", async () => {
+    const props = $state({ values: [] as string[], value: "" });
+    const { getByRole } = render(TagsInput, props);
+    const input = getByRole("textbox") as HTMLInputElement;
+
+    await fireEvent.input(input, { target: { value: "a,b," }, inputType: "insertText" });
+
+    expect(props.values).toEqual(["a", "b"]);
+    expect(props.value).toBe("");
+    expect(input).toHaveValue("");
+  });
+
+  test("custom single-char separator", async () => {
+    const props = $state({ values: [] as string[], value: "", separator: ";" });
+    const user = userEvent.setup();
+    const { getByRole } = render(TagsInput, props);
+    const input = getByRole("textbox") as HTMLInputElement;
+
+    await user.type(input, "a,");
+
+    expect(props.values).toEqual([]);
+    expect(props.value).toBe("a,");
+
+    await user.type(input, ";");
+
+    expect(props.values).toEqual(["a,"]);
+    expect(props.value).toBe("");
+  });
+
+  test("empty separator disables splitting", async () => {
+    const props = $state({ values: [] as string[], value: "", separator: "" });
+    const user = userEvent.setup();
+    const { getByRole } = render(TagsInput, props);
+    const input = getByRole("textbox") as HTMLInputElement;
+
+    await user.type(input, "a,b");
+    await user.keyboard("{Enter}");
+
+    expect(props.values).toEqual(["a,b"]);
+    expect(props.value).toBe("");
+  });
+
+  test("does not commit live input while composing", async () => {
+    const props = $state({ values: [] as string[], value: "" });
+    const { getByRole } = render(TagsInput, props);
+    const input = getByRole("textbox") as HTMLInputElement;
+    input.value = "a,";
+
+    await fireEvent(input, new InputEvent("input", { bubbles: true, inputType: "insertText", isComposing: true }));
+
+    expect(props.values).toEqual([]);
+  });
+
+  test("Enter splits current box on separators", async () => {
+    const props = $state({ values: [] as string[], value: "x,y,z" });
+    const user = userEvent.setup();
+    const { getByRole } = render(TagsInput, props);
+    const input = getByRole("textbox") as HTMLInputElement;
+    input.focus();
+
+    await user.keyboard("{Enter}");
+
+    expect(props.values).toEqual(["x", "y", "z"]);
+    expect(props.value).toBe("");
+  });
+
+  test("paste splits into multiple tags", async () => {
+    const props = $state({ values: [] as string[], value: "" });
+    const { getByRole } = render(TagsInput, props);
+    const input = getByRole("textbox") as HTMLInputElement;
+
+    await paste(input, "a,b,c");
+
+    expect(props.values).toEqual(["a", "b", "c"]);
+    expect(props.value).toBe("");
+  });
+
+  test("paste merges with existing box content", async () => {
+    const props = $state({ values: [] as string[], value: "AAA" });
+    const { getByRole } = render(TagsInput, props);
+    const input = getByRole("textbox") as HTMLInputElement;
+    input.setSelectionRange(3, 3);
+
+    await paste(input, "B,C,D");
+
+    expect(props.values).toEqual(["AAAB", "C", "D"]);
+    expect(props.value).toBe("");
+  });
+
+  test("paste over a full selection overwrites", async () => {
+    const props = $state({ values: [] as string[], value: "AAA" });
+    const { getByRole } = render(TagsInput, props);
+    const input = getByRole("textbox") as HTMLInputElement;
+    input.setSelectionRange(0, 3);
+
+    await paste(input, "B,C,D");
+
+    expect(props.values).toEqual(["B", "C", "D"]);
+    expect(props.value).toBe("");
+  });
+
+  test("paste on newline-delimited text", async () => {
+    const props = $state({ values: [] as string[], value: "" });
+    const { getByRole } = render(TagsInput, props);
+
+    await paste(getByRole("textbox") as HTMLInputElement, "x\ny\nz");
+
+    expect(props.values).toEqual(["x", "y", "z"]);
+  });
+
+  test("Windows CRLF + trim default strips carriage returns", async () => {
+    const props = $state({ values: [] as string[], value: "" });
+    const { getByRole } = render(TagsInput, props);
+
+    await paste(getByRole("textbox") as HTMLInputElement, "x\r\ny\r\nz");
+
+    expect(props.values).toEqual(["x", "y", "z"]);
+  });
+
+  test("Windows CRLF + trim=false keeps carriage returns", async () => {
+    const props = $state({ values: [] as string[], value: "", trim: false });
+    const { getByRole } = render(TagsInput, props);
+
+    await paste(getByRole("textbox") as HTMLInputElement, "x\r\ny");
+
+    expect(props.values).toEqual(["x\r", "y"]);
+  });
+
+  test("paste without separator is native", async () => {
+    const props = $state({ values: [] as string[], value: "" });
+    const { getByRole } = render(TagsInput, props);
+
+    await paste(getByRole("textbox") as HTMLInputElement, "single");
+
+    expect(props.values).toEqual([]);
+  });
+
+  test("paste:false leaves delimited text un-split", async () => {
+    const props = $state({ values: [] as string[], value: "", paste: false });
+    const { getByRole } = render(TagsInput, props);
+
+    await paste(getByRole("textbox") as HTMLInputElement, "a,b");
+
+    expect(props.values).toEqual([]);
+  });
+
+  test("user onpaste runs first and can cancel", async () => {
+    const onpaste = vi.fn((ev: ClipboardEvent) => ev.preventDefault());
+    const props = $state({ values: [] as string[], value: "", onpaste });
+    const { getByRole } = render(TagsInput, props);
+
+    await paste(getByRole("textbox") as HTMLInputElement, "a,b");
+
+    expect(onpaste).toHaveBeenCalledTimes(1);
+    expect(props.values).toEqual([]);
+  });
+
+  test("trim applies per segment", async () => {
+    const props = $state({ values: [] as string[], value: "" });
+    const { getByRole } = render(TagsInput, props);
+
+    await paste(getByRole("textbox") as HTMLInputElement, " a , b ");
+
+    expect(props.values).toEqual(["a", "b"]);
+  });
+
+  test("unique dedupes within a paste batch", async () => {
+    const props = $state({ values: [] as string[], value: "" });
+    const { getByRole } = render(TagsInput, props);
+
+    await paste(getByRole("textbox") as HTMLInputElement, "a,a,b");
+
+    expect(props.values).toEqual(["a", "b"]);
+  });
+
+  test("unique drops already-existing values in batch", async () => {
+    const props = $state({ values: ["a"], value: "" });
+    const { getByRole } = render(TagsInput, props);
+
+    await paste(getByRole("textbox") as HTMLInputElement, "a,b,c");
+
+    expect(props.values).toEqual(["a", "b", "c"]);
+  });
+
+  test("unique=false keeps duplicates", async () => {
+    const props = $state({ values: [] as string[], value: "", unique: false });
+    const { getByRole } = render(TagsInput, props);
+
+    await paste(getByRole("textbox") as HTMLInputElement, "a,a");
+
+    expect(props.values).toEqual(["a", "a"]);
+  });
+
+  test("onadd fires once with the full batch", async () => {
+    const onadd = vi.fn();
+    const props = $state({ values: [] as string[], value: "", events: { onadd } });
+    const { getByRole } = render(TagsInput, { props });
+
+    await paste(getByRole("textbox") as HTMLInputElement, "a,b,c");
+
+    expect(onadd).toHaveBeenCalledTimes(1);
+    expect(onadd).toHaveBeenCalledWith({ values: [], added: ["a", "b", "c"] });
+  });
+
+  test("onadd veto of subset commits only the kept", async () => {
+    const onadd = vi.fn().mockReturnValue(["a", "c"]);
+    const props = $state({ values: [] as string[], value: "", events: { onadd } });
+    const { getByRole } = render(TagsInput, { props });
+
+    await paste(getByRole("textbox") as HTMLInputElement, "a,b,c");
+
+    expect(props.values).toEqual(["a", "c"]);
+  });
+
+  test("onadd returns [] cancels the whole batch", async () => {
+    const onadd = vi.fn().mockReturnValue([]);
+    const props = $state({ values: [] as string[], value: "", events: { onadd } });
+    const { getByRole } = render(TagsInput, { props });
+
+    await paste(getByRole("textbox") as HTMLInputElement, "a,b");
+
+    expect(props.values).toEqual([]);
+  });
+
+  test("onadd not fired for empty post-filter batch", async () => {
+    const onadd = vi.fn();
+    const props = $state({ values: ["a"], value: "", unique: true, events: { onadd } });
+    const { getByRole } = render(TagsInput, { props });
+
+    await paste(getByRole("textbox") as HTMLInputElement, "a,a");
+
+    expect(onadd).not.toHaveBeenCalled();
+    expect(props.values).toEqual(["a"]);
+  });
 });
 
 describe("Tag removal functionality", () => {
@@ -380,7 +601,7 @@ describe("Event handlers", () => {
     expect(props.values).toEqual(["new tag"]);
   });
 
-  test("cancels tag addition when onadd returns [] and keeps input text", async () => {
+  test("cancels tag addition when onadd returns []", async () => {
     const onadd = vi.fn().mockReturnValue([]);
     const props = $state({
       values: [] as string[],
@@ -396,8 +617,8 @@ describe("Event handlers", () => {
 
     expect(onadd).toHaveBeenCalledWith({ values: [], added: ["new tag"] });
     expect(props.values).toEqual([]);
-    expect(props.value).toBe("new tag");
-    expect(input).toHaveValue("new tag");
+    expect(props.value).toBe("");
+    expect(input).toHaveValue("");
   });
 
   test("commits tag addition when onadd returns the added value", async () => {
@@ -675,6 +896,36 @@ describe("Embedded in field context", () => {
     expect(fieldOnadd).toHaveBeenCalledWith({ values: [], added: ["tag1"] });
     expect(userOnadd.mock.invocationCallOrder[0]).toBeLessThan(fieldOnadd.mock.invocationCallOrder[0]);
     expect(state.values).toEqual(["tag1"]);
+  });
+
+  test("paste writes a batch to context values", async () => {
+    const state = $state(stateDefaults());
+    const { getByRole } = render(TagsInputCtxProvider, { state });
+
+    await paste(getByRole("textbox") as HTMLInputElement, "a,b");
+
+    expect(state.values).toEqual(["a", "b"]);
+    expect(state.value).toBe("");
+  });
+
+  test("batch onadd composes user then field hook once", async () => {
+    const state = $state(stateDefaults());
+    const userOnadd = vi.fn();
+    const fieldOnadd = vi.fn();
+    const { getByRole } = render(TagsInputCtxProvider, {
+      state,
+      hooks: { events: { onadd: fieldOnadd } },
+      input: { events: { onadd: userOnadd } },
+    });
+
+    await paste(getByRole("textbox") as HTMLInputElement, "a,b");
+
+    expect(userOnadd).toHaveBeenCalledTimes(1);
+    expect(fieldOnadd).toHaveBeenCalledTimes(1);
+    expect(userOnadd).toHaveBeenCalledWith({ values: [], added: ["a", "b"] });
+    expect(fieldOnadd).toHaveBeenCalledWith({ values: [], added: ["a", "b"] });
+    expect(userOnadd.mock.invocationCallOrder[0]).toBeLessThan(fieldOnadd.mock.invocationCallOrder[0]);
+    expect(state.values).toEqual(["a", "b"]);
   });
 
   test("onadd intersection lets field hook block after user hook allows", async () => {

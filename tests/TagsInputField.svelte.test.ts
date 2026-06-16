@@ -7,6 +7,7 @@ import TagsInputFieldEmbedded from "./fixtures/TagsInputFieldEmbedded.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 
 type TagsInputFieldElement = HTMLInputElement | undefined;
+const paste = (input: HTMLInputElement, text: string) => fireEvent.paste(input, { clipboardData: { getData: () => text } });
 const label = "label_text";
 const extra = "(optional)";
 const bottom = "bottom_text";
@@ -229,6 +230,125 @@ describe("Specify props & state transition & event handlers", () => {
 
     expect(props.variant).toBe(VARIANT.INACTIVE);
     expect(main).toHaveAccessibleErrorMessage("Maximum 2 tags allowed");
+  });
+
+  test("paste commits all values that pass constraints", async () => {
+    const props = $state({
+      values: [] as string[],
+      variant: VARIANT.NEUTRAL,
+      constraints: [({ value }: { value: string }) => (value === "bad" ? "bad value" : null)],
+    });
+    const { getByRole } = render(TagsInputField, props);
+    const main = getByRole("textbox") as HTMLInputElement;
+
+    await paste(main, "ok,bad,ok2");
+    await tick();
+
+    expect(props.values).toEqual(["ok", "ok2"]);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+    expect(main).toHaveAccessibleErrorMessage("bad value");
+  });
+
+  test("paste with all-passing values commits the whole batch", async () => {
+    const props = $state({
+      values: [] as string[],
+      variant: VARIANT.NEUTRAL,
+      constraints: [() => null],
+    });
+    const { getByRole, queryByRole } = render(TagsInputField, props);
+
+    await paste(getByRole("textbox") as HTMLInputElement, "a,b,c");
+    await tick();
+
+    expect(props.values).toEqual(["a", "b", "c"]);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(queryByRole("alert")).toBeNull();
+  });
+
+  test("count constraint caps a single paste", async () => {
+    const props = $state({
+      values: [] as string[],
+      variant: VARIANT.NEUTRAL,
+      constraints: [({ values }: { values: string[] }) => (values.length >= 2 ? "max 2" : null)],
+    });
+    const { getByRole } = render(TagsInputField, props);
+    const main = getByRole("textbox") as HTMLInputElement;
+
+    await paste(main, "a,b,c");
+    await tick();
+
+    expect(props.values).toEqual(["a", "b"]);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+    expect(main).toHaveAccessibleErrorMessage("max 2");
+  });
+
+  test("single add still validates", async () => {
+    const props = $state({
+      values: [] as string[],
+      variant: VARIANT.NEUTRAL,
+      constraints: [({ value }: { value: string }) => (value === "bad" ? "bad value" : null)],
+    });
+    const user = userEvent.setup();
+    const { getByRole } = render(TagsInputField, props);
+    const main = getByRole("textbox") as HTMLInputElement;
+
+    await user.type(main, "bad");
+    await user.keyboard("{Enter}");
+
+    expect(props.values).toEqual([]);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+    expect(main).toHaveAccessibleErrorMessage("bad value");
+  });
+
+  test("failed add message does not persist after external values update", async () => {
+    const props = $state({
+      values: [] as string[],
+      variant: VARIANT.NEUTRAL,
+      constraints: [({ value }: { value: string }) => (value === "bad" ? "bad value" : null)],
+    });
+    const user = userEvent.setup();
+    const { getByRole, queryByRole } = render(TagsInputField, props);
+    const main = getByRole("textbox") as HTMLInputElement;
+
+    await user.type(main, "bad");
+    await user.keyboard("{Enter}");
+    expect(main).toHaveAccessibleErrorMessage("bad value");
+
+    props.values = ["ok"];
+    await tick();
+
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(queryByRole("alert")).toBeNull();
+  });
+
+  test("field separator prop reaches the default control", async () => {
+    const props = $state({
+      values: [] as string[],
+      separator: ";",
+    });
+    const user = userEvent.setup();
+    const { getByRole } = render(TagsInputField, props);
+    const main = getByRole("textbox") as HTMLInputElement;
+
+    await user.type(main, "a,");
+
+    expect(props.values).toEqual([]);
+
+    await user.type(main, ";");
+
+    expect(props.values).toEqual(["a,"]);
+  });
+
+  test("field paste=false disables paste splitting", async () => {
+    const props = $state({
+      values: [] as string[],
+      paste: false,
+    });
+    const { getByRole } = render(TagsInputField, props);
+
+    await paste(getByRole("textbox") as HTMLInputElement, "a,b");
+
+    expect(props.values).toEqual([]);
   });
 
   test("major state transition with constraints", async () => {
@@ -864,6 +984,7 @@ describe("a11y, structure, form & review fixes", () => {
 
     props.constraints = [({ values }: { values: string[] }) => (values.length >= 5 ? "max" : null)];
     await tick();
+    await user.type(main, "t3");
     await user.keyboard("{Enter}");
 
     expect(props.values).toEqual(["t1", "t2", "t3"]);
