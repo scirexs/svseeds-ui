@@ -84,10 +84,12 @@
   const cls = $derived(fnClass(_WHEELPICKER_PRESET, styling));
   const firstEnabled = $derived(options.find((o) => !o.disabled)?.value ?? options[0]?.value ?? "");
   const attrs = $derived.by(() => {
-    const { multiple, size, style, ...a } = rest as Record<string, unknown>;
+    const { multiple, size, style, hidden, "aria-hidden": ariaHidden, ...a } = rest as Record<string, unknown>;
     multiple;
     size;
     style;
+    hidden;
+    ariaHidden;
     return a;
   });
   // svelte-ignore state_referenced_locally
@@ -149,7 +151,10 @@
   });
   $effect(() => {
     whole;
-    untrack(() => observe());
+    return untrack(() => observe());
+  });
+  $effect(() => {
+    return () => cleanup();
   });
   $effect.pre(() => {
     selected;
@@ -169,6 +174,10 @@
     const ro = new ResizeObserver(() => measure());
     ro.observe(whole);
     return () => ro.disconnect();
+  }
+  function cleanup() {
+    if (raf !== undefined && typeof cancelAnimationFrame !== "undefined") cancelAnimationFrame(raf);
+    if (wheelTimer) clearTimeout(wheelTimer);
   }
   function sync() {
     if (selected < 0 || program) return;

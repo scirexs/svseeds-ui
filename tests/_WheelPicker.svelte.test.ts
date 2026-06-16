@@ -38,6 +38,7 @@ class MockResizeObserver {
 }
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -233,6 +234,12 @@ describe("Form and rest passthrough", () => {
     expect(sel(container)).not.toHaveAttribute("aria-hidden");
   });
 
+  test("rest hidden cannot remove the native select from the tree", () => {
+    const { container } = render(WheelPicker, { options: opts, hidden: true } as any);
+
+    expect(sel(container)).not.toHaveAttribute("hidden");
+  });
+
   test("calls the native change handler", async () => {
     const onchange = vi.fn();
     const { container } = render(WheelPicker, { options: opts, onchange });
@@ -280,6 +287,33 @@ describe("Geometry observers", () => {
     rendered.unmount();
 
     expect(seenResizeObservers[0].disconnect).toHaveBeenCalledTimes(1);
+  });
+
+  test("cancels a pending animation frame on unmount", () => {
+    const cancel = vi.spyOn(globalThis, "cancelAnimationFrame");
+    const rendered = render(WheelPicker, { options: opts, value: "apr" });
+
+    rendered.unmount();
+
+    expect(cancel).toHaveBeenCalled();
+  });
+
+  test("clears a pending wheel snap timer on unmount", async () => {
+    vi.useFakeTimers();
+    const set = vi.spyOn(globalThis, "setTimeout");
+    const clear = vi.spyOn(globalThis, "clearTimeout");
+    const rendered = render(WheelPicker, { options: opts });
+    const middle = whole(rendered.container).querySelector(`.${PARTS.MIDDLE}`) as HTMLElement;
+    set.mockClear();
+    clear.mockClear();
+
+    await fireEvent.wheel(middle, { deltaY: 1 });
+    const timer = set.mock.results[set.mock.results.length - 1]?.value;
+
+    rendered.unmount();
+
+    expect(timer).toBeDefined();
+    expect(clear).toHaveBeenCalledWith(timer);
   });
 });
 
