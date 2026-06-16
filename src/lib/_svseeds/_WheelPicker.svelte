@@ -73,7 +73,7 @@
   import { type Snippet, tick, untrack } from "svelte";
   import { type Attachment } from "svelte/attachments";
   import { type HTMLSelectAttributes, type ChangeEventHandler, type PointerEventHandler, type WheelEventHandler } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, shouldReduceMotion } from "./core";
+  import { type SVSClass, type SVSVariant, VARIANT, PARTS, SR_ONLY, fnClass, shouldReduceMotion } from "./core";
 </script>
 
 <script lang="ts">
@@ -291,7 +291,7 @@
     class={cls(PARTS.MAIN, variant)}
     {...(attrs as any)}
     onchange={hchange}
-    style="position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; clip: rect(0 0 0 0); clip-path: inset(50%); overflow: hidden; white-space: nowrap; pointer-events: none;"
+    style={`${SR_ONLY}pointer-events:none;`}
     aria-orientation="vertical"
     {@attach attach}
   >

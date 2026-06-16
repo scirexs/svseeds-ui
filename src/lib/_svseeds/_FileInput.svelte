@@ -80,8 +80,6 @@
   }
 
   export const _FILE_INPUT_PRESET = "svs-file-input";
-  const SR_ONLY =
-    "position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0;";
 
   export interface FileInputContext extends SVSContext {
     get files(): File[];
@@ -106,7 +104,7 @@
     type DragEventHandler,
     type EventHandler,
   } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, type SVSContext, type CollectionEvents, VARIANT, PARTS, fnClass, _createContext } from "./core";
+  import { type SVSClass, type SVSVariant, type SVSContext, type CollectionEvents, VARIANT, PARTS, SR_ONLY, fnClass, _createContext } from "./core";
 </script>
 
 <script lang="ts">

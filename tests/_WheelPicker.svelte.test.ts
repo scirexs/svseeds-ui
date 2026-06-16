@@ -72,6 +72,9 @@ describe("Rendering and options", () => {
     expect(aux).toHaveAttribute("aria-hidden", "true");
     expect(extra).toHaveAttribute("aria-hidden", "true");
     expect(main).not.toHaveAttribute("aria-hidden");
+    expect(main.getAttribute("style")).toContain("clip-path: inset(50%)");
+    expect(main.getAttribute("style")).not.toContain("clip:");
+    expect(main.getAttribute("style")).toContain("pointer-events: none");
   });
 
   test("renders labels and supports a custom label snippet", () => {

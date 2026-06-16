@@ -50,6 +50,7 @@ describe("_FileInput rendering", () => {
     expect(root).toHaveClass("svs-file-input", PARTS.WHOLE);
     expect(middle).toHaveClass("svs-file-input", PARTS.MIDDLE);
     expect(input.getAttribute("style")).toContain("clip-path: inset(50%)");
+    expect(input.getAttribute("style")).not.toContain("pointer-events");
     expect(getByTestId("probe")).toHaveTextContent(`0:false:${VARIANT.NEUTRAL}`);
   });
 
