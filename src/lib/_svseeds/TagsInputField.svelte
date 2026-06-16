@@ -183,7 +183,7 @@
       accepted.push(v);
     }
     variant = neutral;
-    addmsg = firstErr;
+    addmsg = accepted.length ? firstErr : undefined;
     shift(false, firstErr);
     return accepted;
   }
