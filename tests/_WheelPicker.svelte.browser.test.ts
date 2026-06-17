@@ -1,5 +1,6 @@
-import { afterEach, describe, expect, test, vi } from "vitest";
-import { fireEvent, render, waitFor } from "@testing-library/svelte";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { render } from "vitest-browser-svelte";
+import { cdp } from "vitest/browser";
 import { createRawSnippet, tick } from "svelte";
 import WheelPicker, { type WheelOption } from "#svs/_WheelPicker.svelte";
 import { PARTS, VARIANT } from "#svs/core";
@@ -26,7 +27,33 @@ const labelfn = createRawSnippet((option: () => WheelOption, variant: () => stri
 
 const sel = (c: HTMLElement) => c.querySelector("select") as HTMLSelectElement;
 const whole = (c: HTMLElement) => c.querySelector(`.${PARTS.WHOLE}`) as HTMLElement;
+const middle = (c: HTMLElement) => whole(c).querySelector(`.${PARTS.MIDDLE}`) as HTMLElement;
 const labels = (c: HTMLElement) => Array.from(c.querySelectorAll(`.${PARTS.LABEL}`)) as HTMLElement[];
+const has = (el: Element, ...names: string[]) => expect([...el.classList]).toEqual(expect.arrayContaining(names));
+const itemHeightPx = (c: HTMLElement) => labels(c)[0]?.getBoundingClientRect().height ?? 0;
+const waitForMeasure = async (c: HTMLElement) => {
+  await tick();
+  await vi.waitFor(() => expect(itemHeightPx(c)).toBeGreaterThan(0));
+};
+const setWheel = async (select: HTMLSelectElement, value: string) => {
+  select.value = value;
+  select.dispatchEvent(new Event("change", { bubbles: true }));
+  await tick();
+};
+const wheel = (el: HTMLElement, deltaY = 1) => {
+  el.dispatchEvent(new WheelEvent("wheel", { deltaY, bubbles: true, cancelable: true }));
+};
+const point = (el: HTMLElement, type: string, clientY: number) => {
+  el.dispatchEvent(new PointerEvent(type, { clientY, pointerId: 1, bubbles: true }));
+};
+const rotateX = (el: HTMLElement) => Number(el.getAttribute("style")?.match(/rotateX\((-?\d+(?:\.\d+)?)deg\)/)?.[1]);
+const translateYPx = (el: HTMLElement) => {
+  const style = el.getAttribute("style") ?? "";
+  const signed = style.match(/calc\(-50%\s*([+-])\s*(\d+(?:\.\d+)?)px\)/);
+  if (signed) return signed[1] === "-" ? -Number(signed[2]) : Number(signed[2]);
+  return Number(style.match(/\+\s*(-?\d+(?:\.\d+)?)px\)/)?.[1]);
+};
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 let seenResizeObservers: MockResizeObserver[] = [];
 class MockResizeObserver {
   observe = vi.fn();
@@ -37,8 +64,11 @@ class MockResizeObserver {
   }
 }
 
+beforeEach(() => {
+  document.body.innerHTML = "";
+});
+
 afterEach(() => {
-  vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -52,37 +82,37 @@ describe("Rendering and options", () => {
     expect(options).toHaveLength(opts.length);
     expect(options.map((o) => o.value)).toEqual(["jan", "feb", "mar", "apr"]);
     expect(options.map((o) => o.textContent)).toEqual(["January", "February", "March", "April"]);
-    expect(options[2]).toBeDisabled();
+    expect(options[2].disabled).toBe(true);
   });
 
   test("renders default parts and aria ownership", () => {
     const { container } = render(WheelPicker, { options: opts });
     const root = whole(container);
     const main = sel(container);
-    const middle = root.querySelector(`.${PARTS.MIDDLE}`) as HTMLElement;
+    const mid = middle(container);
     const aux = root.querySelector(`.${PARTS.AUX}`) as HTMLElement;
     const extra = root.querySelector(`.${PARTS.EXTRA}`) as HTMLElement;
 
-    expect(root).toHaveClass(seed, PARTS.WHOLE, VARIANT.NEUTRAL);
-    expect(main).toHaveClass(seed, PARTS.MAIN, VARIANT.NEUTRAL);
-    expect(middle).toHaveClass(seed, PARTS.MIDDLE, VARIANT.NEUTRAL);
-    expect(aux).toHaveClass(seed, PARTS.AUX, VARIANT.NEUTRAL);
-    expect(extra).toHaveClass(seed, PARTS.EXTRA, VARIANT.NEUTRAL);
-    expect(middle).toHaveAttribute("aria-hidden", "true");
-    expect(aux).toHaveAttribute("aria-hidden", "true");
-    expect(extra).toHaveAttribute("aria-hidden", "true");
-    expect(main).not.toHaveAttribute("aria-hidden");
+    has(root, seed, PARTS.WHOLE, VARIANT.NEUTRAL);
+    has(main, seed, PARTS.MAIN, VARIANT.NEUTRAL);
+    has(mid, seed, PARTS.MIDDLE, VARIANT.NEUTRAL);
+    has(aux, seed, PARTS.AUX, VARIANT.NEUTRAL);
+    has(extra, seed, PARTS.EXTRA, VARIANT.NEUTRAL);
+    expect(mid.getAttribute("aria-hidden")).toBe("true");
+    expect(aux.getAttribute("aria-hidden")).toBe("true");
+    expect(extra.getAttribute("aria-hidden")).toBe("true");
+    expect(main.hasAttribute("aria-hidden")).toBe(false);
     expect(main.getAttribute("style")).toContain("clip-path: inset(50%)");
     expect(main.getAttribute("style")).not.toContain("clip:");
     expect(main.getAttribute("style")).toContain("pointer-events: none");
   });
 
-  test("renders labels and supports a custom label snippet", () => {
+  test("renders labels and supports a custom label snippet", async () => {
     const label = vi.fn().mockImplementation(labelfn);
     const { container, getByTestId } = render(WheelPicker, { options: opts, value: "feb", label });
 
     expect(labels(container).map((x) => x.textContent)).toEqual(["jan:neutral:0", "feb:active:1", "mar:inactive:2", "apr:neutral:3"]);
-    expect(getByTestId(`${labelid}-1`)).toHaveTextContent("feb:active:1");
+    await expect.element(getByTestId(`${labelid}-1`)).toHaveTextContent("feb:active:1");
     expect(label).toHaveBeenCalled();
   });
 });
@@ -90,23 +120,23 @@ describe("Rendering and options", () => {
 describe("Default value and binding", () => {
   test("defaults to the first enabled option", () => {
     const { container } = render(WheelPicker, { options: opts });
-    expect(sel(container)).toHaveValue("jan");
+    expect(sel(container).value).toBe("jan");
   });
 
   test("skips a disabled first option for the default value", () => {
     const options = [{ ...opts[0], disabled: true }, ...opts.slice(1)];
     const { container } = render(WheelPicker, { options });
-    expect(sel(container)).toHaveValue("feb");
+    expect(sel(container).value).toBe("feb");
   });
 
   test("marks selected and disabled labels with precedence", () => {
     const { container } = render(WheelPicker, { options: opts, value: "apr" });
     const rows = labels(container);
 
-    expect(sel(container)).toHaveValue("apr");
-    expect(rows[3]).toHaveClass(VARIANT.ACTIVE);
-    expect(rows[2]).toHaveClass(VARIANT.INACTIVE);
-    expect(rows[0]).toHaveClass(VARIANT.NEUTRAL);
+    expect(sel(container).value).toBe("apr");
+    has(rows[3], VARIANT.ACTIVE);
+    has(rows[2], VARIANT.INACTIVE);
+    has(rows[0], VARIANT.NEUTRAL);
   });
 
   test("two-way binding follows select changes", async () => {
@@ -114,10 +144,10 @@ describe("Default value and binding", () => {
     const { container } = render(WheelPicker, props);
     const main = sel(container);
 
-    await fireEvent.change(main, { target: { value: "feb" } });
+    await setWheel(main, "feb");
 
-    await waitFor(() => expect(props.value).toBe("feb"));
-    expect(labels(container)[1]).toHaveClass(VARIANT.ACTIVE);
+    await vi.waitFor(() => expect(props.value).toBe("feb"));
+    has(labels(container)[1], VARIANT.ACTIVE);
   });
 
   test("value prop updates select and active label", async () => {
@@ -127,8 +157,8 @@ describe("Default value and binding", () => {
     props.value = "apr";
     await rerender(props);
 
-    expect(sel(container)).toHaveValue("apr");
-    expect(labels(container)[3]).toHaveClass(VARIANT.ACTIVE);
+    expect(sel(container).value).toBe("apr");
+    has(labels(container)[3], VARIANT.ACTIVE);
   });
 
   test("empty options render an empty select", () => {
@@ -145,28 +175,28 @@ describe("Variant and styling", () => {
     const { container } = render(WheelPicker, { options: opts, value: "feb", variant: VARIANT.ACTIVE });
     const root = whole(container);
     const main = sel(container);
-    const middle = root.querySelector(`.${PARTS.MIDDLE}`) as HTMLElement;
+    const mid = middle(container);
     const aux = root.querySelector(`.${PARTS.AUX}`) as HTMLElement;
     const extra = root.querySelector(`.${PARTS.EXTRA}`) as HTMLElement;
     const rows = labels(container);
 
-    expect(root).toHaveClass(VARIANT.ACTIVE);
-    expect(main).toHaveClass(VARIANT.ACTIVE);
-    expect(middle).toHaveClass(VARIANT.ACTIVE);
-    expect(aux).toHaveClass(VARIANT.ACTIVE);
-    expect(extra).toHaveClass(VARIANT.ACTIVE);
-    expect(rows[1]).toHaveClass(VARIANT.ACTIVE);
-    expect(rows[2]).toHaveClass(VARIANT.INACTIVE);
-    expect(rows[0]).toHaveClass(VARIANT.ACTIVE);
+    has(root, VARIANT.ACTIVE);
+    has(main, VARIANT.ACTIVE);
+    has(mid, VARIANT.ACTIVE);
+    has(aux, VARIANT.ACTIVE);
+    has(extra, VARIANT.ACTIVE);
+    has(rows[1], VARIANT.ACTIVE);
+    has(rows[2], VARIANT.INACTIVE);
+    has(rows[0], VARIANT.ACTIVE);
   });
 
   test("styling string replaces the preset on parts", () => {
     const { container } = render(WheelPicker, { options: opts, styling: "x" });
     const root = whole(container);
 
-    expect(root).toHaveClass("x", PARTS.WHOLE, VARIANT.NEUTRAL);
-    expect(root).not.toHaveClass(seed);
-    expect(sel(container)).toHaveClass("x", PARTS.MAIN, VARIANT.NEUTRAL);
+    has(root, "x", PARTS.WHOLE, VARIANT.NEUTRAL);
+    expect(root.classList.contains(seed)).toBe(false);
+    has(sel(container), "x", PARTS.MAIN, VARIANT.NEUTRAL);
   });
 });
 
@@ -198,49 +228,49 @@ describe("cssvar mirror", () => {
 });
 
 describe("Form and rest passthrough", () => {
-  test("name participates in form data and unnamed controls do not", () => {
+  test("name participates in form data and unnamed controls do not", async () => {
     const named = render(WheelPicker, { options: opts, value: "feb", name: "month" });
     const form = document.createElement("form");
     form.append(whole(named.container));
     expect(new FormData(form).get("month")).toBe("feb");
-    named.unmount();
+    await named.unmount();
 
     const unnamed = render(WheelPicker, { options: opts, value: "feb" });
     const form2 = document.createElement("form");
     form2.append(whole(unnamed.container));
     expect(new FormData(form2).get("month")).toBeNull();
-    unnamed.unmount();
+    await unnamed.unmount();
   });
 
   test("passes arbitrary rest attrs to the select", () => {
     const { container } = render(WheelPicker, { options: opts, "data-x": "1", "aria-label": "Month" });
     const main = sel(container);
 
-    expect(main).toHaveAttribute("data-x", "1");
-    expect(main).toHaveAttribute("aria-label", "Month");
+    expect(main.getAttribute("data-x")).toBe("1");
+    expect(main.getAttribute("aria-label")).toBe("Month");
   });
 
   test("component-owned attrs are not overridden by rest", () => {
     const { container } = render(WheelPicker, { options: opts, "aria-orientation": "horizontal", multiple: true, size: 4 } as any);
     const main = sel(container);
-    const middle = whole(container).querySelector(`.${PARTS.MIDDLE}`) as HTMLElement;
+    const mid = middle(container);
 
-    expect(main).toHaveAttribute("aria-orientation", "vertical");
+    expect(main.getAttribute("aria-orientation")).toBe("vertical");
     expect(main.multiple).toBe(false);
-    expect(main).not.toHaveAttribute("size");
-    expect(middle).toHaveAttribute("aria-hidden", "true");
+    expect(main.hasAttribute("size")).toBe(false);
+    expect(mid.getAttribute("aria-hidden")).toBe("true");
   });
 
   test("rest aria-hidden cannot hide the native select source of truth", () => {
     const { container } = render(WheelPicker, { options: opts, "aria-hidden": "true" } as any);
 
-    expect(sel(container)).not.toHaveAttribute("aria-hidden");
+    expect(sel(container).hasAttribute("aria-hidden")).toBe(false);
   });
 
   test("rest hidden cannot remove the native select from the tree", () => {
     const { container } = render(WheelPicker, { options: opts, hidden: true } as any);
 
-    expect(sel(container)).not.toHaveAttribute("hidden");
+    expect(sel(container).hasAttribute("hidden")).toBe(false);
   });
 
   test("calls the native change handler", async () => {
@@ -248,7 +278,7 @@ describe("Form and rest passthrough", () => {
     const { container } = render(WheelPicker, { options: opts, onchange });
     const main = sel(container);
 
-    await fireEvent.change(main, { target: { value: "feb" } });
+    await setWheel(main, "feb");
 
     expect(onchange).toHaveBeenCalledTimes(1);
     expect(onchange.mock.calls[0][0].target).toBe(main);
@@ -287,46 +317,132 @@ describe("Geometry observers", () => {
     expect(seenResizeObservers).toHaveLength(1);
     expect(seenResizeObservers[0].observe).toHaveBeenCalledWith(whole(rendered.container));
 
-    rendered.unmount();
+    await rendered.unmount();
 
     expect(seenResizeObservers[0].disconnect).toHaveBeenCalledTimes(1);
   });
 
-  test("cancels a pending animation frame on unmount", () => {
+  test("cancels a pending animation frame on unmount", async () => {
     const cancel = vi.spyOn(globalThis, "cancelAnimationFrame");
     const rendered = render(WheelPicker, { options: opts, value: "apr" });
 
-    rendered.unmount();
+    await rendered.unmount();
 
     expect(cancel).toHaveBeenCalled();
   });
 
   test("clears a pending wheel snap timer on unmount", async () => {
-    vi.useFakeTimers();
     const set = vi.spyOn(globalThis, "setTimeout");
     const clear = vi.spyOn(globalThis, "clearTimeout");
     const rendered = render(WheelPicker, { options: opts });
-    const middle = whole(rendered.container).querySelector(`.${PARTS.MIDDLE}`) as HTMLElement;
+    const mid = middle(rendered.container);
     set.mockClear();
     clear.mockClear();
 
-    await fireEvent.wheel(middle, { deltaY: 1 });
+    wheel(mid);
     const timer = set.mock.results[set.mock.results.length - 1]?.value;
 
-    rendered.unmount();
+    await rendered.unmount();
 
     expect(timer).toBeDefined();
     expect(clear).toHaveBeenCalledWith(timer);
   });
 });
 
-describe("Out of scope in jsdom", () => {
-  test.skip("pointer-drag to snap requires layout (browser)", () => {});
-  test.skip("wheel spin requires layout (browser)", () => {});
-  test.skip("3D rotateX transforms require layout (browser)", () => {});
-  test.skip("measured item-height value requires layout (browser)", () => {});
-  test.skip("visible-count value requires layout (browser)", () => {});
-  test.skip("momentum requires layout (browser)", () => {});
-  test.skip("reduced-motion jump-vs-animate requires layout (browser)", () => {});
-  test.skip("loop seam-clone visual continuity requires layout (browser)", () => {});
+describe("Drum layout, pointer and animation (browser)", () => {
+  test("pointer-drag to snap", async () => {
+    const props = $state({ options: opts, value: "jan" });
+    const { container } = render(WheelPicker, props);
+    await waitForMeasure(container);
+    const mid = middle(container);
+    const unit = itemHeightPx(container);
+
+    point(mid, "pointerdown", 100);
+    point(mid, "pointermove", 100 - unit);
+    point(mid, "pointerup", 100 - unit);
+
+    await vi.waitFor(() => expect(props.value).toBe("feb"));
+    expect(labels(container)[1].classList.contains(VARIANT.ACTIVE)).toBe(true);
+  });
+
+  test("wheel spin snaps after the timeout", async () => {
+    const props = $state({ options: opts, value: "jan" });
+    const { container } = render(WheelPicker, props);
+    await waitForMeasure(container);
+    await sleep(150);
+
+    wheel(middle(container));
+
+    await vi.waitFor(() => expect(props.value).toBe("feb"), { timeout: 500 });
+  });
+
+  test("3D rotateX transforms", async () => {
+    const { container } = render(WheelPicker, { options: opts, value: "feb", perspective: 600 });
+    await waitForMeasure(container);
+
+    await vi.waitFor(() => expect(rotateX(labels(container)[1])).toBe(0));
+    const rows = labels(container);
+    const selected = rows[1].getAttribute("style") ?? "";
+    const radius = Number(selected.match(/translateZ\((-?\d+(?:\.\d+)?)px\)/)?.[1]);
+
+    expect(radius).toBeGreaterThan(0);
+    expect(Math.abs(rotateX(rows[0]))).toBeGreaterThan(0);
+  });
+
+  test("measured item-height cssvar is a real px value", async () => {
+    const { container } = render(WheelPicker, { options: opts, cssvar: { itemHeight: "--row-h" } });
+    await waitForMeasure(container);
+
+    const v = whole(container).style.getPropertyValue("--row-h");
+    expect(parseFloat(v)).toBeGreaterThan(0);
+  });
+
+  test("visible-count cssvar reflects measured rows", async () => {
+    const style = document.createElement("style");
+    style.textContent = ".wheel-tall { height: 300px; }";
+    document.head.append(style);
+    try {
+      const { container } = render(WheelPicker, { options: opts, class: "wheel-tall", cssvar: { visible: "--n" } });
+      await waitForMeasure(container);
+
+      await vi.waitFor(() => expect(Number(whole(container).style.getPropertyValue("--n"))).toBeGreaterThanOrEqual(2));
+    } finally {
+      style.remove();
+    }
+  });
+
+  test("loop seam clones provide continuity", async () => {
+    const { container } = render(WheelPicker, { options: opts, loop: true });
+    await waitForMeasure(container);
+    const rows = labels(container);
+    const cloneCount = (rows.length - opts.length) / 2;
+    const head = rows[0];
+    const tail = rows[cloneCount + opts.length];
+
+    expect(rows.length).toBeGreaterThan(opts.length);
+    expect(Number.isInteger(cloneCount)).toBe(true);
+    expect(head.textContent).toContain("April");
+    expect(tail.textContent).toContain("January");
+    expect(translateYPx(head)).toBeLessThan(0);
+    expect(translateYPx(tail)).toBeGreaterThan(translateYPx(rows[cloneCount + opts.length - 1]) ?? 0);
+    expect(sel(container).options).toHaveLength(opts.length);
+  });
+
+  test("reduced-motion jumps instead of animating", async () => {
+    await cdp().send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
+    try {
+      const props = $state({ options: opts, value: "jan" });
+      const { container } = render(WheelPicker, props);
+      await waitForMeasure(container);
+
+      await setWheel(sel(container), "apr");
+
+      expect(props.value).toBe("apr");
+      expect(translateYPx(labels(container)[3])).toBe(0);
+    } finally {
+      await cdp().send("Emulation.setEmulatedMedia", { features: [] });
+    }
+  });
+
+  // momentum: not applicable - release snaps directly to nearest (see _WheelPicker.svelte hpointerup); no inertia implemented.
 });
