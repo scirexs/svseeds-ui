@@ -10,29 +10,28 @@ export default defineConfig({
   test: {
     projects: [{
       extends: "./vite.config.ts",
-      plugins: [svelteTesting()],
       test: {
         name: "client",
-        environment: "jsdom",
-        clearMocks: true,
-        include: [
-          "tests/**/*.svelte.test.ts",
-          "tests/**/*.test.ts",
-        ],
-        exclude: ["tests/**/*.browser.test.ts"],
-        setupFiles: ["./tests/setup.ts"],
-      },
-    }, {
-      extends: "./vite.config.ts",
-      test: {
-        name: "browser",
-        include: ["tests/**/*.browser.test.ts"],
+        include: ["tests/**/*.svelte.test.ts"],
         browser: {
           enabled: true,
           provider: playwright(),
           headless: true,
           instances: [{ browser: "chromium" }]
         },
+      },
+    }, {
+      extends: "./vite.config.ts",
+      plugins: [svelteTesting()],
+      test: {
+        name: "simulation",
+        environment: "jsdom",
+        clearMocks: true,
+        include: [
+          "tests/**/*.svelte.sim.test.ts",
+          "tests/core.test.ts",
+        ],
+        setupFiles: ["./tests/sim-setup.ts"],
       },
     }],
   },
