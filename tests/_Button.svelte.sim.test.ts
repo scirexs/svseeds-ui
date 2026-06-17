@@ -24,7 +24,7 @@ const rightfn = createRawSnippet(
   },
 );
 const children = createRawSnippet(() => {
-  return { render: () => "Button Text" };
+  return { render: () => "<span>Button Text</span>" };
 });
 
 describe("Switching existence of elements", () => {
@@ -37,7 +37,8 @@ describe("Switching existence of elements", () => {
     expect(btn).toHaveAttribute("type", "button");
     expect(btn.children).toHaveLength(1);
     expect(btn.firstElementChild?.tagName).toBe("SPAN");
-    expect(btn.firstElementChild?.children).toHaveLength(0);
+    expect(btn.firstElementChild?.children).toHaveLength(1);
+    expect(btn.firstElementChild?.firstElementChild?.tagName).toBe("SPAN");
     expect(btn.firstElementChild?.textContent).toBe("Button Text");
   });
 
