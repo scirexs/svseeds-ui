@@ -1,5 +1,5 @@
-import { describe, expect, test, vi } from "vitest";
-import { fireEvent, render } from "@testing-library/svelte";
+import { beforeEach, describe, expect, test, vi } from "vitest";
+import { render } from "vitest-browser-svelte";
 import { createRawSnippet, tick } from "svelte";
 import FileInput, { type FileRejectReason } from "#svs/_FileInput.svelte";
 import { PARTS, VARIANT } from "#svs/core";
@@ -19,9 +19,31 @@ function expectReasons(actual: string[], expected: string[]) {
 }
 
 const zone = createRawSnippet(() => ({ render: () => "<span>zone</span>" }));
+const dt = (files: File[]) => {
+  const t = new DataTransfer();
+  for (const f of files) t.items.add(f);
+  return t;
+};
+const setFiles = async (input: HTMLInputElement, files: File[]) => {
+  input.files = dt(files).files;
+  input.dispatchEvent(new Event("change", { bubbles: true }));
+  await tick();
+};
+const fireDrag = async (el: HTMLElement, type: "dragenter" | "dragover" | "dragleave", files: File[] = []) => {
+  el.dispatchEvent(new DragEvent(type, { dataTransfer: dt(files), bubbles: true, cancelable: true }));
+  await tick();
+};
+const drop = async (el: HTMLElement, files: File[]) => {
+  el.dispatchEvent(new DragEvent("drop", { dataTransfer: dt(files), bubbles: true, cancelable: true }));
+  await tick();
+};
+
+beforeEach(() => {
+  document.body.innerHTML = "";
+});
 
 describe("_FileInput rendering", () => {
-  test("renders one sr-only file input, root, visible wrapper, attrs, and children args", () => {
+  test("renders one sr-only file input, root, visible wrapper, attrs, and children args", async () => {
     const children = createRawSnippet((files: () => File[], dragover: () => boolean, variant: () => string) => ({
       render: () => `<span data-testid="probe">${files().length}:${dragover()}:${variant()}</span>`,
     }));
@@ -39,26 +61,26 @@ describe("_FileInput rendering", () => {
     const middle = container.querySelector(`label.${PARTS.MIDDLE}`) as HTMLLabelElement;
 
     expect(container.querySelectorAll("input")).toHaveLength(1);
-    expect(middle).toContainElement(input);
-    expect(input).toHaveAttribute("type", "file");
-    expect(input).toHaveClass("svs-file-input", PARTS.MAIN, "x");
-    expect(input).toHaveAttribute("multiple");
-    expect(input).toHaveAttribute("accept", ".png");
-    expect(input).toHaveAttribute("name", "upload");
-    expect(input).toHaveAttribute("aria-label", "Upload");
-    expect(input).toHaveAttribute("data-x", "ok");
-    expect(root).toHaveClass("svs-file-input", PARTS.WHOLE);
-    expect(middle).toHaveClass("svs-file-input", PARTS.MIDDLE);
+    expect(middle.contains(input)).toBe(true);
+    expect(input.getAttribute("type")).toBe("file");
+    expect([...input.classList]).toEqual(expect.arrayContaining(["svs-file-input", PARTS.MAIN, "x"]));
+    expect(input.hasAttribute("multiple")).toBe(true);
+    expect(input.getAttribute("accept")).toBe(".png");
+    expect(input.getAttribute("name")).toBe("upload");
+    expect(input.getAttribute("aria-label")).toBe("Upload");
+    expect(input.getAttribute("data-x")).toBe("ok");
+    expect([...root.classList]).toEqual(expect.arrayContaining(["svs-file-input", PARTS.WHOLE]));
+    expect([...middle.classList]).toEqual(expect.arrayContaining(["svs-file-input", PARTS.MIDDLE]));
     expect(input.getAttribute("style")).toContain("clip-path: inset(50%)");
     expect(input.getAttribute("style")).not.toContain("pointer-events");
-    expect(getByTestId("probe")).toHaveTextContent(`0:false:${VARIANT.NEUTRAL}`);
+    await expect.element(getByTestId("probe")).toHaveTextContent(`0:false:${VARIANT.NEUTRAL}`);
   });
 
   test("root is not exposed as a button (no role/tabindex/keydown control)", () => {
     const { container } = render(FileInput, { children: zone });
     const root = container.firstElementChild as HTMLDivElement;
-    expect(root).not.toHaveAttribute("role");
-    expect(root).not.toHaveAttribute("tabindex");
+    expect(root.hasAttribute("role")).toBe(false);
+    expect(root.hasAttribute("tabindex")).toBe(false);
   });
 
   test("root key presses do not proxy activation to the native input", async () => {
@@ -67,8 +89,10 @@ describe("_FileInput rendering", () => {
     const input = container.querySelector("input") as HTMLInputElement;
     const click = vi.spyOn(input, "click");
 
-    await fireEvent.keyDown(root, { key: "Enter" });
-    await fireEvent.keyDown(root, { key: " " });
+    root.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    await tick();
+    root.dispatchEvent(new KeyboardEvent("keydown", { key: " ", bubbles: true }));
+    await tick();
 
     expect(click).not.toHaveBeenCalled();
   });
@@ -77,7 +101,7 @@ describe("_FileInput rendering", () => {
     const { container } = render(FileInput, { children: zone });
     const input = container.querySelector("input") as HTMLInputElement;
     input.dispatchEvent(new Event("cancel"));
-    expect(input).toBeInTheDocument();
+    expect(input.isConnected).toBe(true);
   });
 });
 
@@ -91,21 +115,21 @@ describe("_FileInput self-validation", () => {
     const big = mkFile("b.png", "image/png", 2_000_000);
     const extra = mkFile("c.png", "image/png");
 
-    await fireEvent.change(input, { target: { files: [txt] } });
+    await setFiles(input, [txt]);
     expect(props.files).toEqual([]);
     expect(props.rejectBy).toEqual(["accept"]);
 
-    await fireEvent.change(input, { target: { files: [big] } });
+    await setFiles(input, [big]);
     expect(props.files).toEqual([]);
     expect(props.rejectBy).toEqual(["maxSize"]);
 
-    await fireEvent.change(input, { target: { files: [good, extra, mkFile("d.png", "image/png")] } });
+    await setFiles(input, [good, extra, mkFile("d.png", "image/png")]);
     expect(names(props.files)).toEqual(["a.png", "c.png"]);
     expect(props.rejectBy).toEqual(["maxFiles"]);
 
     props.files = [];
     await tick();
-    await fireEvent.drop(container.querySelector(`label.${PARTS.MIDDLE}`) as HTMLLabelElement, { dataTransfer: { files: [good, txt, big] } });
+    await drop(container.querySelector(`label.${PARTS.MIDDLE}`) as HTMLLabelElement, [good, txt, big]);
     expect(names(props.files)).toEqual(["a.png"]);
     expectReasons(props.rejectBy, ["accept", "maxSize"]);
   });
@@ -117,14 +141,14 @@ describe("_FileInput self-validation", () => {
     const f1 = mkFile("one.png", "image/png");
     const f2 = mkFile("two.png", "image/png");
 
-    await fireEvent.change(input, { target: { files: [mkFile("bad.txt", "text/plain")] } });
+    await setFiles(input, [mkFile("bad.txt", "text/plain")]);
     expect(props.rejectBy).toEqual(["accept"]);
 
-    await fireEvent.change(input, { target: { files: [f1] } });
+    await setFiles(input, [f1]);
     expect(props.files).toEqual([f1]);
     expect(props.rejectBy).toEqual([]);
 
-    await fireEvent.change(input, { target: { files: [f2] } });
+    await setFiles(input, [f2]);
     expect(props.files).toEqual([f2]);
   });
 });
@@ -139,7 +163,7 @@ describe("_FileInput events and context", () => {
     const { container } = render(FileInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
 
-    await fireEvent.change(input, { target: { files: [keep, veto, rejected] } });
+    await setFiles(input, [keep, veto, rejected]);
 
     expect(names(props.files)).toEqual(["keep.png"]);
     expect(props.rejectBy).toEqual(["accept"]);
@@ -158,7 +182,7 @@ describe("_FileInput events and context", () => {
     const { container } = render(FileInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
 
-    await fireEvent.change(input, { target: { files: [first, second] } });
+    await setFiles(input, [first, second]);
 
     expect(props.files).toEqual([]);
     expect(onadd).toHaveBeenCalledWith({ values: [], added: [first, second], rejected: [] });
@@ -172,7 +196,7 @@ describe("_FileInput events and context", () => {
     const { container } = render(FileInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
 
-    await fireEvent.change(input, { target: { files: [first, second] } });
+    await setFiles(input, [first, second]);
 
     expect(props.files).toEqual([first, second]);
     expect(onadd).toHaveBeenCalledWith({ values: [], added: [first, second], rejected: [] });
@@ -186,7 +210,7 @@ describe("_FileInput events and context", () => {
     const { container } = render(FileInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
 
-    await fireEvent.change(input, { target: { files: [next] } });
+    await setFiles(input, [next]);
 
     expect(props.files).toEqual([next]);
     expect(onadd).toHaveBeenCalledWith({ values: [existing], added: [next], rejected: [] });
@@ -200,7 +224,7 @@ describe("_FileInput events and context", () => {
     const { container } = render(FileInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
 
-    await fireEvent.change(input, { target: { files: [incoming] } });
+    await setFiles(input, [incoming]);
 
     expect(props.files).toEqual([existing]);
     expect(onadd).toHaveBeenCalledWith({ values: [existing], added: [incoming], rejected: [] });
@@ -214,12 +238,12 @@ describe("_FileInput events and context", () => {
     const { container } = render(FileInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
 
-    await fireEvent.change(input, { target: { files: [rejected] } });
+    await setFiles(input, [rejected]);
 
     expect(props.files).toEqual([existing]);
     expect(props.rejectBy).toEqual(["accept"]);
     expect(onadd).toHaveBeenCalledWith({ values: [existing], added: [], rejected: [{ file: rejected, reason: "accept" }] });
-    if (typeof DataTransfer !== "undefined") expect(names([...(input.files ?? [])])).toEqual(["existing.png"]);
+    expect(names([...(input.files ?? [])])).toEqual(["existing.png"]);
   });
 
   test("onadd still runs when every incoming file is rejected by the primitive gate", async () => {
@@ -229,7 +253,7 @@ describe("_FileInput events and context", () => {
     const { container } = render(FileInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
 
-    await fireEvent.change(input, { target: { files: [rejected] } });
+    await setFiles(input, [rejected]);
 
     expect(props.files).toEqual([]);
     expect(props.rejectBy).toEqual(["accept"]);
@@ -271,17 +295,18 @@ describe("_FileInput events and context", () => {
     const input = container.querySelector("input") as HTMLInputElement;
 
     await tick();
-    expect(getByTestId("ctx-probe")).toHaveTextContent("ctx.png:active");
+    await expect.element(getByTestId("ctx-probe")).toHaveTextContent("ctx.png:active");
     expect(state.element).toBe(input);
-    expect(input).toHaveAttribute("id", "ctx-id");
-    expect(input).toHaveAttribute("aria-describedby", "desc");
-    expect(input).toHaveAttribute("aria-errormessage", "err");
+    expect(input.getAttribute("id")).toBe("ctx-id");
+    expect(input.getAttribute("aria-describedby")).toBe("desc");
+    expect(input.getAttribute("aria-errormessage")).toBe("err");
 
-    await fireEvent.change(input, { target: { files: [keep, propVeto, ctxVeto] } });
+    await setFiles(input, [keep, propVeto, ctxVeto]);
     expect(names(state.files)).toEqual(["ctx.png", "keep.png"]);
     expect(order).toEqual(["prop-change", "ctx-change"]);
 
-    await fireEvent.invalid(input);
+    input.dispatchEvent(new Event("invalid", { bubbles: true }));
+    await tick();
     expect(order).toEqual(["prop-change", "ctx-change", "prop-invalid", "ctx-invalid"]);
   });
 
@@ -304,7 +329,7 @@ describe("_FileInput events and context", () => {
     const props = $state({ files: [a, b] as File[], multiple: true, events: { onremove }, children: zone, aux });
     const { getByTestId } = render(FileInput, { props });
 
-    await fireEvent.click(getByTestId("remove"));
+    await getByTestId("remove").click();
 
     expect(onremove).toHaveBeenCalledWith({ values: [a, b], removed: [a] });
     expect(props.files).toEqual([a, b]);
@@ -329,7 +354,7 @@ describe("_FileInput events and context", () => {
     const props = $state({ files: [a, b] as File[], multiple: true, events: { onremove }, children: zone, aux });
     const { getByTestId } = render(FileInput, { props });
 
-    await fireEvent.click(getByTestId("remove"));
+    await getByTestId("remove").click();
 
     expect(onremove).toHaveBeenCalledWith({ values: [a, b], removed: [a] });
     expect(props.files).toEqual([b]);
@@ -354,7 +379,7 @@ describe("_FileInput events and context", () => {
     const props = $state({ files: [a, b] as File[], multiple: true, events: { onremove }, children: zone, aux });
     const { getByTestId } = render(FileInput, { props });
 
-    await fireEvent.click(getByTestId("remove"));
+    await getByTestId("remove").click();
 
     expect(onremove).toHaveBeenCalledWith({ values: [a, b], removed: [a] });
     expect(props.files).toEqual([b]);
@@ -392,7 +417,7 @@ describe("_FileInput events and context", () => {
       input: { multiple: true, events: { onremove: ownOnremove }, children: zone, aux },
     });
 
-    await fireEvent.click(getByTestId("remove"));
+    await getByTestId("remove").click();
 
     expect(ownOnremove).toHaveBeenCalledWith({ values: [a, b], removed: [a] });
     expect(ctxOnremove).toHaveBeenCalledWith({ values: [a, b], removed: [a] });
@@ -406,17 +431,17 @@ describe("_FileInput drop zone and a11y", () => {
     const { container, getByTestId } = render(FileInputDragProbe, props);
     const label = container.querySelector(`label.${PARTS.MIDDLE}`) as HTMLLabelElement;
 
-    await fireEvent.dragEnter(label);
+    await fireDrag(label, "dragenter");
     await tick();
-    expect(label).toHaveAttribute("data-dragover", "true");
-    expect(getByTestId("drag")).toHaveTextContent("true");
+    expect(label.getAttribute("data-dragover")).toBe("true");
+    await expect.element(getByTestId("drag")).toHaveTextContent("true");
 
-    await fireEvent.dragLeave(label);
-    expect(label).not.toHaveAttribute("data-dragover");
+    await fireDrag(label, "dragleave");
+    expect(label.hasAttribute("data-dragover")).toBe(false);
 
-    await fireEvent.dragOver(label);
-    await fireEvent.drop(label, { dataTransfer: { files: [mkFile("good.png", "image/png"), mkFile("bad.txt", "text/plain")] } });
-    expect(label).not.toHaveAttribute("data-dragover");
+    await fireDrag(label, "dragover");
+    await drop(label, [mkFile("good.png", "image/png"), mkFile("bad.txt", "text/plain")]);
+    expect(label.hasAttribute("data-dragover")).toBe(false);
     expect(names(props.files)).toEqual(["good.png"]);
     expect(props.rejectBy).toEqual(["accept"]);
   });
@@ -426,10 +451,10 @@ describe("_FileInput drop zone and a11y", () => {
     const absentView = render(FileInput, absent);
     const absentLabel = absentView.container.querySelector(`label.${PARTS.MIDDLE}`) as HTMLLabelElement;
 
-    await fireEvent.dragEnter(absentLabel);
+    await fireDrag(absentLabel, "dragenter");
     await tick();
-    expect(absentLabel).not.toHaveAttribute("data-dragover");
-    await fireEvent.drop(absentLabel, { dataTransfer: { files: [mkFile("absent.png", "image/png")] } });
+    expect(absentLabel.hasAttribute("data-dragover")).toBe(false);
+    await drop(absentLabel, [mkFile("absent.png", "image/png")]);
     expect(absent.files).toEqual([]);
     expect(absent.rejectBy).toEqual([]);
 
@@ -437,10 +462,10 @@ describe("_FileInput drop zone and a11y", () => {
     const explicitView = render(FileInput, explicit);
     const explicitLabel = explicitView.container.querySelector(`label.${PARTS.MIDDLE}`) as HTMLLabelElement;
 
-    await fireEvent.dragEnter(explicitLabel);
+    await fireDrag(explicitLabel, "dragenter");
     await tick();
-    expect(explicitLabel).not.toHaveAttribute("data-dragover");
-    await fireEvent.drop(explicitLabel, { dataTransfer: { files: [mkFile("explicit.png", "image/png")] } });
+    expect(explicitLabel.hasAttribute("data-dragover")).toBe(false);
+    await drop(explicitLabel, [mkFile("explicit.png", "image/png")]);
     expect(explicit.files).toEqual([]);
     expect(explicit.rejectBy).toEqual([]);
   });
@@ -453,9 +478,10 @@ describe("_FileInput drop zone and a11y", () => {
     const disabledClick = vi.fn();
     disabledInput.addEventListener("click", disabledClick);
 
-    await fireEvent.drop(label, { dataTransfer: { files: [mkFile("a.png", "image/png")] } });
+    await drop(label, [mkFile("a.png", "image/png")]);
     expect(props.files).toEqual([]);
-    await fireEvent.click(label);
+    await label.click();
+    await tick();
     expect(disabledClick).not.toHaveBeenCalled();
 
     const active = render(FileInput, { droppable: true, children: zone });
@@ -464,7 +490,8 @@ describe("_FileInput drop zone and a11y", () => {
     const liveMiddle = active.container.querySelector(`label.${PARTS.MIDDLE}`) as HTMLLabelElement;
     const click = vi.fn();
     liveInput.addEventListener("click", click);
-    await fireEvent.click(liveMiddle);
+    await liveMiddle.click();
+    await tick();
     expect(click).toHaveBeenCalledTimes(1);
   });
 
@@ -483,15 +510,15 @@ describe("_FileInput drop zone and a11y", () => {
     const { container, getByTestId } = render(FileInput, { droppable: true, variant: VARIANT.NEUTRAL, children: probe });
     const label = container.querySelector(`label.${PARTS.MIDDLE}`) as HTMLLabelElement;
 
-    await fireEvent.dragEnter(label);
+    await fireDrag(label, "dragenter");
     await tick();
-    expect(getByTestId("variant")).toHaveTextContent(`0:true:${VARIANT.ACTIVE}`);
-    expect(label).toHaveClass(VARIANT.ACTIVE);
+    await expect.element(getByTestId("variant")).toHaveTextContent(`0:true:${VARIANT.ACTIVE}`);
+    expect([...label.classList]).toEqual(expect.arrayContaining([VARIANT.ACTIVE]));
 
-    await fireEvent.dragLeave(label);
+    await fireDrag(label, "dragleave");
     await tick();
-    expect(getByTestId("variant")).toHaveTextContent(`0:false:${VARIANT.NEUTRAL}`);
-    expect(label).toHaveClass(VARIANT.NEUTRAL);
+    await expect.element(getByTestId("variant")).toHaveTextContent(`0:false:${VARIANT.NEUTRAL}`);
+    expect([...label.classList]).toEqual(expect.arrayContaining([VARIANT.NEUTRAL]));
   });
 
   test("aux renders outside the label and remove syncs bound files", async () => {
@@ -520,32 +547,32 @@ describe("_FileInput drop zone and a11y", () => {
     const input = container.querySelector("input") as HTMLInputElement;
 
     await tick();
-    expect(root.children).toContain(auxEl);
-    expect(label).not.toContainElement(auxEl);
-    await fireEvent.click(getByTestId("remove"));
+    expect([...root.children]).toContain(auxEl);
+    expect(label.contains(auxEl)).toBe(false);
+    await getByTestId("remove").click();
     await tick();
     expect(props.files).toEqual([b]);
-    if (typeof DataTransfer !== "undefined") expect(names([...(input.files ?? [])])).toEqual(["b.png"]);
+    expect(names([...(input.files ?? [])])).toEqual(["b.png"]);
   });
 
   test("flip controls aux and label DOM order", () => {
     const aux = createRawSnippet(() => ({ render: () => "<span>aux</span>" }));
     const normal = render(FileInput, { children: zone, aux });
     let items = [...(normal.container.firstElementChild as HTMLDivElement).children];
-    expect(items[0]).toHaveClass(PARTS.MIDDLE);
-    expect(items[1]).toHaveClass(PARTS.AUX);
+    expect([...items[0].classList]).toEqual(expect.arrayContaining([PARTS.MIDDLE]));
+    expect([...items[1].classList]).toEqual(expect.arrayContaining([PARTS.AUX]));
 
     const flipped = render(FileInput, { children: zone, aux, flip: true });
     items = [...(flipped.container.firstElementChild as HTMLDivElement).children];
-    expect(items[0]).toHaveClass(PARTS.AUX);
-    expect(items[1]).toHaveClass(PARTS.MIDDLE);
+    expect([...items[0].classList]).toEqual(expect.arrayContaining([PARTS.AUX]));
+    expect([...items[1].classList]).toEqual(expect.arrayContaining([PARTS.MIDDLE]));
   });
 
   test("standalone and context a11y attributes are wired", () => {
     const plain = render(FileInput, { "aria-describedby": "desc", "aria-invalid": "true", children: zone });
     const input = plain.container.querySelector("input") as HTMLInputElement;
-    expect(input).toHaveAttribute("aria-describedby", "desc");
-    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(input.getAttribute("aria-describedby")).toBe("desc");
+    expect(input.getAttribute("aria-invalid")).toBe("true");
 
     const state = $state({
       files: [] as File[],
@@ -558,20 +585,23 @@ describe("_FileInput drop zone and a11y", () => {
     });
     const ctx = render(FileInputCtxProvider, { state });
     const ctxInput = ctx.container.querySelector("input") as HTMLInputElement;
-    expect(ctxInput).toHaveAttribute("aria-describedby", "ctx-desc");
-    expect(ctxInput).toHaveAttribute("aria-invalid", "true");
-    expect(ctxInput).toHaveAttribute("aria-errormessage", "ctx-err");
+    expect(ctxInput.getAttribute("aria-describedby")).toBe("ctx-desc");
+    expect(ctxInput.getAttribute("aria-invalid")).toBe("true");
+    expect(ctxInput.getAttribute("aria-errormessage")).toBe("ctx-err");
   });
 
-  test.skipIf(typeof DataTransfer === "undefined")("syncing external files does not throw and input click resets value", async () => {
+  test("syncing external files does not throw and input click resets value", async () => {
     const props = $state({ files: [] as File[], children: zone });
     const { container } = render(FileInput, props);
     const input = container.querySelector("input") as HTMLInputElement;
-    props.files = [mkFile("a.png", "image/png")];
+    const file = mkFile("a.png", "image/png");
+    props.files = [file];
     await tick();
 
     expect(props.files).toHaveLength(1);
-    await fireEvent.click(input);
-    expect(input).toHaveValue("");
+    expect(input.files?.item(0)).toBe(file);
+    await input.click();
+    await tick();
+    expect(input.value).toBe("");
   });
 });
