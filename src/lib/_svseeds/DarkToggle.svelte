@@ -234,8 +234,8 @@
 
   import { untrack } from "svelte";
   import { VARIANT } from "./core";
-  import Toggle, { _TOGGLE_PRESET } from "./_Toggle.svelte";
-  import type { ToggleProps } from "./_Toggle.svelte";
+  import Toggle, { _TOGGLE_PRESET } from "./Toggle.svelte";
+  import type { ToggleProps } from "./Toggle.svelte";
 </script>
 
 <script lang="ts">

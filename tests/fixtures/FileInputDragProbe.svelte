@@ -1,5 +1,5 @@
 <script lang="ts">
-  import FileInput from "#svs/_FileInput.svelte";
+  import FileInput from "#svs/FileInput.svelte";
 
   interface Props {
     files?: File[];

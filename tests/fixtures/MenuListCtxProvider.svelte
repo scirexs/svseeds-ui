@@ -1,10 +1,10 @@
 <script module lang="ts">
-  import { _setMenuContainerContext, type MenuContainerContext } from "#svs/_MenuList.svelte";
+  import { _setMenuContainerContext, type MenuContainerContext } from "#svs/MenuList.svelte";
 </script>
 
 <script lang="ts">
-  import MenuList, { type MenuItemData } from "#svs/_MenuList.svelte";
-  import MenuItem from "#svs/_MenuItem.svelte";
+  import MenuList, { type MenuItemData } from "#svs/MenuList.svelte";
+  import MenuItem from "#svs/MenuItem.svelte";
   import { createRawSnippet } from "svelte";
 
   // prettier-ignore

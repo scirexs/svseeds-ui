@@ -1,6 +1,6 @@
 <script lang="ts">
   import ToggleGroupField, { type ToggleGroupFieldProps } from "#svs/ToggleGroupField.svelte";
-  import ToggleGroup, { type ToggleGroupProps, type ToggleOption } from "#svs/_ToggleGroup.svelte";
+  import ToggleGroup, { type ToggleGroupProps, type ToggleOption } from "#svs/ToggleGroup.svelte";
   import { untrack } from "svelte";
   import { VARIANT } from "#svs/core";
 

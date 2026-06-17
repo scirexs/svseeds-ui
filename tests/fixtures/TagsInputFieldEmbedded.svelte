@@ -1,6 +1,6 @@
 <script lang="ts">
   import TagsInputField, { type TagsInputFieldProps } from "#svs/TagsInputField.svelte";
-  import TagsInput, { type TagsInputProps } from "#svs/_TagsInput.svelte";
+  import TagsInput, { type TagsInputProps } from "#svs/TagsInput.svelte";
   import { untrack } from "svelte";
   import { VARIANT } from "#svs/core";
 

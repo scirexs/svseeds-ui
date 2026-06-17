@@ -1,9 +1,9 @@
 <script module lang="ts">
-  import { _setMenuItemContext, type MenuItemContext } from "#svs/_MenuItem.svelte";
+  import { _setMenuItemContext, type MenuItemContext } from "#svs/MenuItem.svelte";
 </script>
 
 <script lang="ts">
-  import MenuSeparator from "#svs/_MenuSeparator.svelte";
+  import MenuSeparator from "#svs/MenuSeparator.svelte";
 
   // prettier-ignore
   let { variant = $bindable("neutral"), styling = $bindable(undefined), orientation, ariaOrientation }:

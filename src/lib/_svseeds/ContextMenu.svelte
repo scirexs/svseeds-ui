@@ -43,12 +43,12 @@
 
   import { on } from "svelte/events";
   import { VARIANT, PARTS, fnClass } from "./core";
-  import { _setMenuContainerContext } from "./_MenuList.svelte";
+  import { _setMenuContainerContext } from "./MenuList.svelte";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLAttributes, KeyboardEventHandler } from "svelte/elements";
   import type { SVSClass, SVSVariant } from "./core";
-  import type { MenuContainerContext } from "./_MenuList.svelte";
+  import type { MenuContainerContext } from "./MenuList.svelte";
 </script>
 
 <!---------------------------------------->

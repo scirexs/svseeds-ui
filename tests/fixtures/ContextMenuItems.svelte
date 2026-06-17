@@ -1,8 +1,8 @@
 <script lang="ts">
   import ContextMenu from "#svs/ContextMenu.svelte";
-  import MenuList from "#svs/_MenuList.svelte";
-  import MenuItem from "#svs/_MenuItem.svelte";
-  import MenuSeparator from "#svs/_MenuSeparator.svelte";
+  import MenuList from "#svs/MenuList.svelte";
+  import MenuItem from "#svs/MenuItem.svelte";
+  import MenuSeparator from "#svs/MenuSeparator.svelte";
   import { createRawSnippet } from "svelte";
 
   let { onselect, open = $bindable(false), lock = false, styling, variant = "neutral" }: { onselect?: (ev: MouseEvent) => void; open?: boolean; lock?: boolean; styling?: any; variant?: string } = $props();

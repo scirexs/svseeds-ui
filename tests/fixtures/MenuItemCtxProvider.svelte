@@ -1,9 +1,9 @@
 <script module lang="ts">
-  import { _setMenuItemContext, type MenuItemContext } from "#svs/_MenuItem.svelte";
+  import { _setMenuItemContext, type MenuItemContext } from "#svs/MenuItem.svelte";
 </script>
 
 <script lang="ts">
-  import MenuItem from "#svs/_MenuItem.svelte";
+  import MenuItem from "#svs/MenuItem.svelte";
   import { createRawSnippet } from "svelte";
 
   // prettier-ignore

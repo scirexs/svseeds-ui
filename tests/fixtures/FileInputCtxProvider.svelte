@@ -1,5 +1,5 @@
 <script lang="ts">
-  import FileInput, { _setFileInputContext, type FileInputContext, type FileInputEvents, type FileInputProps } from "#svs/_FileInput.svelte";
+  import FileInput, { _setFileInputContext, type FileInputContext, type FileInputEvents, type FileInputProps } from "#svs/FileInput.svelte";
   import { type SVSClass, type SVSVariant } from "#svs/core";
   import { createRawSnippet } from "svelte";
 

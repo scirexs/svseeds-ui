@@ -11,7 +11,7 @@
 
 <script lang="ts">
   import Accordion from "#svs/Accordion.svelte";
-  import Disclosure from "#svs/_Disclosure.svelte";
+  import Disclosure from "#svs/Disclosure.svelte";
   import { VARIANT } from "#svs/core";
 
   let { items, current = $bindable(), variant = VARIANT.NEUTRAL, inactiveB }: AccordionDeclarativeProps = $props();

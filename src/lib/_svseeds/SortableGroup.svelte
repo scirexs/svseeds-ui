@@ -35,10 +35,10 @@
   export const _SORTABLE_GROUP_PRESET = "svs-sortable-group";
 
   import { VARIANT, PARTS, fnClass } from "./core";
-  import { createSortableGroup, _setSortableContext } from "./_Sortable.svelte";
+  import { createSortableGroup, _setSortableContext } from "./Sortable.svelte";
   import type { Snippet } from "svelte";
   import type { SVSClass, SVSVariant } from "./core";
-  import type { SortableGroupController } from "./_Sortable.svelte";
+  import type { SortableGroupController } from "./Sortable.svelte";
 </script>
 
 <script lang="ts">

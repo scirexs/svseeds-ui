@@ -1,7 +1,7 @@
 <script lang="ts">
   import Popover from "#svs/Popover.svelte";
-  import MenuList from "#svs/_MenuList.svelte";
-  import MenuItem from "#svs/_MenuItem.svelte";
+  import MenuList from "#svs/MenuList.svelte";
+  import MenuItem from "#svs/MenuItem.svelte";
   import { createRawSnippet } from "svelte";
 
   let { open = $bindable(false), onselect, hover = false, styling, variant = "neutral" }: { open?: boolean; onselect?: (ev: MouseEvent) => void; hover?: boolean; styling?: any; variant?: string } = $props();

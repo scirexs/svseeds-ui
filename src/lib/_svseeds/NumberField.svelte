@@ -89,11 +89,11 @@
 
   import { onMount, untrack } from "svelte";
   import { VARIANT, PARTS, fnClass, isNeutral } from "./core";
-  import NumberInput, { _NUMBER_INPUT_PRESET, _setNumberInputContext } from "./_NumberInput.svelte";
+  import NumberInput, { _NUMBER_INPUT_PRESET, _setNumberInputContext } from "./NumberInput.svelte";
   import type { Snippet } from "svelte";
   import type { SvelteSet } from "svelte/reactivity";
   import type { SVSClass, SVSVariant, SVSFieldValidation } from "./core";
-  import type { NumberInputContext } from "./_NumberInput.svelte";
+  import type { NumberInputContext } from "./NumberInput.svelte";
 </script>
 
 <script lang="ts">

@@ -1,11 +1,11 @@
 <script module lang="ts">
-  import { _setMenuContainerContext, type MenuContainerContext } from "#svs/_MenuList.svelte";
+  import { _setMenuContainerContext, type MenuContainerContext } from "#svs/MenuList.svelte";
 </script>
 
 <script lang="ts">
-  import MenuList from "#svs/_MenuList.svelte";
-  import MenuGroup from "#svs/_MenuGroup.svelte";
-  import MenuItem from "#svs/_MenuItem.svelte";
+  import MenuList from "#svs/MenuList.svelte";
+  import MenuGroup from "#svs/MenuGroup.svelte";
+  import MenuItem from "#svs/MenuItem.svelte";
   import { createRawSnippet } from "svelte";
 
   let { open = $bindable(false), closed = $bindable(0) }: { open?: boolean; closed?: number } = $props();

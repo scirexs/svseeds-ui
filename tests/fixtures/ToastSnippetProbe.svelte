@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Toast, { type ToastItem, type Toaster } from "#svs/_Toast.svelte";
+  import Toast, { type ToastItem, type Toaster } from "#svs/Toast.svelte";
 
   let { toaster, variant, animation }: { toaster: Toaster; variant?: string; animation?: number } = $props();
 </script>

@@ -1,5 +1,5 @@
 <script module lang="ts">
-  import Calendar, { type CalendarProps } from "#svs/_Calendar.svelte";
+  import Calendar, { type CalendarProps } from "#svs/Calendar.svelte";
 
   interface Props extends Omit<CalendarProps, "value" | "display" | "picking"> {
     value?: Temporal.PlainDate;

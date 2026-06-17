@@ -77,10 +77,10 @@
 
   import { untrack } from "svelte";
   import { VARIANT, PARTS, fnClass, isNeutral } from "./core";
-  import TagsInput, { _TAGS_INPUT_PRESET, _setTagsInputContext } from "./_TagsInput.svelte";
+  import TagsInput, { _TAGS_INPUT_PRESET, _setTagsInputContext } from "./TagsInput.svelte";
   import type { Snippet } from "svelte";
   import type { SVSClass, SVSVariant, SVSFieldValidation, SVSFieldConstraint } from "./core";
-  import type { TagsInputContext } from "./_TagsInput.svelte";
+  import type { TagsInputContext } from "./TagsInput.svelte";
 </script>
 
 <script lang="ts">

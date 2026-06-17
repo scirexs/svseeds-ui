@@ -1,6 +1,6 @@
 <script lang="ts">
   import SortableGroup from "#svs/SortableGroup.svelte";
-  import Sortable, { type SortableGroupController } from "#svs/_Sortable.svelte";
+  import Sortable, { type SortableGroupController } from "#svs/Sortable.svelte";
   import { type Attachment } from "svelte/attachments";
   import { VARIANT, type SVSVariant } from "#svs/core";
 

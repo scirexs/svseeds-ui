@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Disclosure from "#svs/_Disclosure.svelte";
+  import Disclosure from "#svs/Disclosure.svelte";
   import { VARIANT } from "#svs/core";
 
   let inactive = $state<string | undefined>("locked");

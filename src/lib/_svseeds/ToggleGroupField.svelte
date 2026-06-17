@@ -92,7 +92,7 @@
 
   import { untrack } from "svelte";
   import { VARIANT, PARTS, fnClass, isNeutral } from "./core";
-  import ToggleGroup, { _TOGGLE_GROUP_PRESET, _setToggleGroupContext } from "./_ToggleGroup.svelte";
+  import ToggleGroup, { _TOGGLE_GROUP_PRESET, _setToggleGroupContext } from "./ToggleGroup.svelte";
   import type { Snippet } from "svelte";
   import type { SvelteMap } from "svelte/reactivity";
   import type { SVSClass, SVSVariant, SVSFieldValidation, SVSFieldConstraint } from "./core";
@@ -102,7 +102,7 @@
     ToggleGroupProps,
     ToggleGroupReqdProps,
     ToggleGroupBindProps,
-  } from "./_ToggleGroup.svelte";
+  } from "./ToggleGroup.svelte";
 </script>
 
 <script lang="ts">

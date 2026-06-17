@@ -4,7 +4,7 @@ import { tick } from "svelte";
 import SortableGroupBasic from "./fixtures/SortableGroupBasic.svelte";
 import SortableGroupExternal from "./fixtures/SortableGroupExternal.svelte";
 import SortableBasic from "./fixtures/SortableBasic.svelte";
-import { createSortableGroup } from "#svs/_Sortable.svelte";
+import { createSortableGroup } from "#svs/Sortable.svelte";
 import { PARTS, VARIANT, fnClass } from "#svs/core";
 
 async function drag(origin: HTMLElement, over: HTMLElement | null) {

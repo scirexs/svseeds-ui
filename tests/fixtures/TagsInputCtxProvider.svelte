@@ -1,5 +1,5 @@
 <script lang="ts">
-  import TagsInput, { _setTagsInputContext, type TagsInputContext, type TagsInputProps, type TagsInputEvents } from "#svs/_TagsInput.svelte";
+  import TagsInput, { _setTagsInputContext, type TagsInputContext, type TagsInputProps, type TagsInputEvents } from "#svs/TagsInput.svelte";
   import { type SVSClass, type SVSVariant } from "#svs/core";
 
   interface State {

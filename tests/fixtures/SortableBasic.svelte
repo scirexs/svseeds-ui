@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Sortable, { type SortableMode } from "#svs/_Sortable.svelte";
+  import Sortable, { type SortableMode } from "#svs/Sortable.svelte";
   import { type Attachment } from "svelte/attachments";
   import { VARIANT, type SVSClass, type SVSVariant } from "#svs/core";
 

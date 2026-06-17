@@ -5,7 +5,7 @@
     type ToggleGroupEvents,
     type ToggleGroupProps,
     type ToggleOption,
-  } from "#svs/_ToggleGroup.svelte";
+  } from "#svs/ToggleGroup.svelte";
   import { type SVSClass, type SVSVariant } from "#svs/core";
 
   interface State {

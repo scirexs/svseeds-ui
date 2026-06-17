@@ -76,12 +76,12 @@
   const GAP_SIDE = { top: "margin-bottom", right: "margin-left", bottom: "margin-top", left: "margin-right" } as const;
 
   import { VARIANT, PARTS, fnClass } from "./core";
-  import { _setMenuContainerContext } from "./_MenuList.svelte";
+  import { _setMenuContainerContext } from "./MenuList.svelte";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLButtonAttributes, FocusEventHandler, PointerEventHandler, ToggleEventHandler } from "svelte/elements";
   import type { SVSClass, SVSVariant } from "./core";
-  import type { MenuContainerContext } from "./_MenuList.svelte";
+  import type { MenuContainerContext } from "./MenuList.svelte";
 </script>
 
 <!---------------------------------------->

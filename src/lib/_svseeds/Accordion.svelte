@@ -66,10 +66,10 @@
 
   import { untrack } from "svelte";
   import { VARIANT, PARTS, fnClass, omit } from "./core";
-  import Disclosure, { _DISCLOSURE_PRESET, _setDisclosureContext } from "./_Disclosure.svelte";
+  import Disclosure, { _DISCLOSURE_PRESET, _setDisclosureContext } from "./Disclosure.svelte";
   import type { Component, Snippet } from "svelte";
   import type { SVSClass, SVSVariant } from "./core";
-  import type { DisclosureContext, DisclosureProps, DisclosureReqdProps, DisclosureBindProps } from "./_Disclosure.svelte";
+  import type { DisclosureContext, DisclosureProps, DisclosureReqdProps, DisclosureBindProps } from "./Disclosure.svelte";
 </script>
 
 <script lang="ts">

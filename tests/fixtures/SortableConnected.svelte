@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Sortable, { createSortableGroup, type SortableMode } from "#svs/_Sortable.svelte";
+  import Sortable, { createSortableGroup, type SortableMode } from "#svs/Sortable.svelte";
   import { type Attachment } from "svelte/attachments";
 
   interface Props {

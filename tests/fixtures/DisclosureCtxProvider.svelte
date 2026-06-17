@@ -7,7 +7,7 @@
 </script>
 
 <script lang="ts">
-  import Disclosure, { _setDisclosureContext, type DisclosureContext } from "#svs/_Disclosure.svelte";
+  import Disclosure, { _setDisclosureContext, type DisclosureContext } from "#svs/Disclosure.svelte";
   import { VARIANT } from "#svs/core";
 
   let { current = $bindable(), variant = VARIANT.NEUTRAL, inactiveA }: DisclosureCtxProviderProps = $props();

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import Sortable from "#svs/_Sortable.svelte";
-  import { createSortableGroup } from "#svs/_Sortable.svelte";
+  import Sortable from "#svs/Sortable.svelte";
+  import { createSortableGroup } from "#svs/Sortable.svelte";
   import { type Attachment } from "svelte/attachments";
   import type { Card } from "./SortableObjects.svelte";
 

@@ -1,5 +1,5 @@
 <script module lang="ts">
-  import MonthPicker, { type MonthPickerProps } from "#svs/_MonthPicker.svelte";
+  import MonthPicker, { type MonthPickerProps } from "#svs/MonthPicker.svelte";
 
   interface Props extends Omit<MonthPickerProps, "value"> {
     value?: Temporal.PlainYearMonth;
