@@ -66,22 +66,13 @@
     }
   }
 
-  import { type Snippet, untrack, onMount } from "svelte";
-  import { type Attachment } from "svelte/attachments";
-  import { type HTMLDetailsAttributes, type MouseEventHandler, type ToggleEventHandler } from "svelte/elements";
+  import { untrack, onMount } from "svelte";
   import { slide } from "svelte/transition";
-  import {
-    type SVSClass,
-    type SVSVariant,
-    type SVSContext,
-    VARIANT,
-    PARTS,
-    fnClass,
-    isNeutral,
-    isUnsignedInteger,
-    shouldReduceMotion,
-    _createContext,
-  } from "./core";
+  import { VARIANT, PARTS, fnClass, isNeutral, isUnsignedInteger, shouldReduceMotion, _createContext } from "./core";
+  import type { Snippet } from "svelte";
+  import type { Attachment } from "svelte/attachments";
+  import type { HTMLDetailsAttributes, MouseEventHandler, ToggleEventHandler } from "svelte/elements";
+  import type { SVSClass, SVSVariant, SVSContext } from "./core";
 </script>
 
 <script lang="ts">

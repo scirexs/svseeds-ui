@@ -34,9 +34,11 @@
 
   export const _SORTABLE_GROUP_PRESET = "svs-sortable-group";
 
-  import { type Snippet } from "svelte";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass } from "./core";
-  import { createSortableGroup, _setSortableContext, type SortableGroupController } from "./_Sortable.svelte";
+  import { VARIANT, PARTS, fnClass } from "./core";
+  import { createSortableGroup, _setSortableContext } from "./_Sortable.svelte";
+  import type { Snippet } from "svelte";
+  import type { SVSClass, SVSVariant } from "./core";
+  import type { SortableGroupController } from "./_Sortable.svelte";
 </script>
 
 <script lang="ts">
@@ -47,14 +49,16 @@
   const ctxVariant = $derived(variant);
   const ctxStyling = $derived(styling);
   // svelte-ignore state_referenced_locally
-  const controller = group ?? createSortableGroup({
-    get variant() {
-      return ctxVariant;
-    },
-    get styling() {
-      return ctxStyling;
-    },
-  });
+  const controller =
+    group ??
+    createSortableGroup({
+      get variant() {
+        return ctxVariant;
+      },
+      get styling() {
+        return ctxStyling;
+      },
+    });
 
   _setSortableContext(controller);
 </script>

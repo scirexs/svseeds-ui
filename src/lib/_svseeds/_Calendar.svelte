@@ -102,10 +102,13 @@
 
   export const _CALENDAR_PRESET = "svs-calendar";
 
-  import { type Snippet, tick, untrack } from "svelte";
-  import { type KeyboardEventHandler, type MouseEventHandler } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, shouldReduceMotion } from "./core";
-  import MonthPicker, { type MonthPickerProps } from "./_MonthPicker.svelte";
+  import { tick, untrack } from "svelte";
+  import { VARIANT, PARTS, fnClass, shouldReduceMotion } from "./core";
+  import MonthPicker from "./_MonthPicker.svelte";
+  import type { Snippet } from "svelte";
+  import type { KeyboardEventHandler, MouseEventHandler } from "svelte/elements";
+  import type { SVSClass, SVSVariant } from "./core";
+  import type { MonthPickerProps } from "./_MonthPicker.svelte";
 </script>
 
 <script lang="ts">
@@ -298,13 +301,7 @@
           </span>
         {/each}
       </div>
-      <div
-        class={cls(PARTS.MAIN, variant)}
-        role="grid"
-        tabindex="-1"
-        aria-labelledby={idCaption}
-        onkeydown={hkeydown}
-      >
+      <div class={cls(PARTS.MAIN, variant)} role="grid" tabindex="-1" aria-labelledby={idCaption} onkeydown={hkeydown}>
         {#each weeks as week}
           <div role="row">
             {#each week as cell}

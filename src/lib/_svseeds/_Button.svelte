@@ -45,10 +45,11 @@
 
   export const _BUTTON_PRESET = "svs-button";
 
-  import { type Snippet } from "svelte";
-  import { type Attachment } from "svelte/attachments";
-  import { type HTMLButtonAttributes, type MouseEventHandler } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass } from "./core";
+  import { VARIANT, PARTS, fnClass } from "./core";
+  import type { Snippet } from "svelte";
+  import type { Attachment } from "svelte/attachments";
+  import type { HTMLButtonAttributes, MouseEventHandler } from "svelte/elements";
+  import type { SVSClass, SVSVariant } from "./core";
 </script>
 
 <script lang="ts">

@@ -89,15 +89,12 @@
 
   export const _FILE_FIELD_PRESET = "svs-file-field";
 
-  import { type Snippet, untrack } from "svelte";
-  import { type SVSClass, type SVSVariant, type SVSFieldValidation, VARIANT, PARTS, fnClass, isNeutral } from "./core";
-  import FileInput, {
-    _FILE_INPUT_PRESET,
-    _setFileInputContext,
-    type FileInputContext,
-    type FileRejection,
-    type FileRejectReason,
-  } from "./_FileInput.svelte";
+  import { untrack } from "svelte";
+  import { VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import FileInput, { _FILE_INPUT_PRESET, _setFileInputContext } from "./_FileInput.svelte";
+  import type { Snippet } from "svelte";
+  import type { SVSClass, SVSVariant, SVSFieldValidation } from "./core";
+  import type { FileInputContext, FileRejection, FileRejectReason } from "./_FileInput.svelte";
 </script>
 
 <script lang="ts">

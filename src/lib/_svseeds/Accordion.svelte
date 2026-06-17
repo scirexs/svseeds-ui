@@ -64,9 +64,12 @@
     return typeof x === "object" && x !== null && "component" in x;
   }
 
-  import { type Component, type Snippet, untrack } from "svelte";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, omit } from "./core";
-  import Disclosure, { _DISCLOSURE_PRESET, _setDisclosureContext, type DisclosureContext, type DisclosureProps, type DisclosureReqdProps, type DisclosureBindProps } from "./_Disclosure.svelte";
+  import { untrack } from "svelte";
+  import { VARIANT, PARTS, fnClass, omit } from "./core";
+  import Disclosure, { _DISCLOSURE_PRESET, _setDisclosureContext } from "./_Disclosure.svelte";
+  import type { Component, Snippet } from "svelte";
+  import type { SVSClass, SVSVariant } from "./core";
+  import type { DisclosureContext, DisclosureProps, DisclosureReqdProps, DisclosureBindProps } from "./_Disclosure.svelte";
 </script>
 
 <script lang="ts">

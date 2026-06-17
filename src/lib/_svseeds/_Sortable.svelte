@@ -144,9 +144,10 @@
   const emptyAttachment: Attachment = () => {};
   const ondragstart = () => false;
 
-  export function createSortableGroup(
-    presentation?: { get variant(): SVSVariant; get styling(): SVSClass | undefined },
-  ): SortableGroupController {
+  export function createSortableGroup(presentation?: {
+    get variant(): SVSVariant;
+    get styling(): SVSClass | undefined;
+  }): SortableGroupController {
     const [send, receive] = crossfade(tp);
     return new SortableController(Symbol("svs-sortable-group"), send, receive, presentation);
   }
@@ -323,7 +324,11 @@
     #listen() {
       this.#stopListeners();
       this.#listeners = [
-        on(window, "pointermove", throttle(pollingRate, (ev) => this.move(ev))),
+        on(
+          window,
+          "pointermove",
+          throttle(pollingRate, (ev) => this.move(ev)),
+        ),
         on(window, "pointerup", () => this.commit()),
         on(window, "pointercancel", () => this.cancel()),
       ];
@@ -468,9 +473,7 @@
         active.current.touch();
         return;
       }
-      values
-        .toSorted((a, b) => b.index - a.index)
-        .forEach(({ index }) => active.source.items.splice(index, 1));
+      values.toSorted((a, b) => b.index - a.index).forEach(({ index }) => active.source.items.splice(index, 1));
       insertAfter(
         active.current,
         active.activeKey,
@@ -592,14 +595,17 @@
     }
   }
 
-  import { cubicOut } from "svelte/easing";
-  import { type Snippet, onDestroy, untrack } from "svelte";
-  import { type Attachment } from "svelte/attachments";
+  import { onDestroy, untrack } from "svelte";
   import { on } from "svelte/events";
   import { SvelteSet } from "svelte/reactivity";
-  import { crossfade, type EasingFunction } from "svelte/transition";
+  import { crossfade } from "svelte/transition";
+  import { cubicOut } from "svelte/easing";
   import { flip } from "svelte/animate";
-  import { type SVSClass, type SVSVariant, type SVSContext, VARIANT, PARTS, fnClass, throttle, isNeutral, _createContext } from "./core";
+  import { VARIANT, PARTS, fnClass, throttle, isNeutral, _createContext } from "./core";
+  import type { Snippet } from "svelte";
+  import type { Attachment } from "svelte/attachments";
+  import type { EasingFunction } from "svelte/transition";
+  import type { SVSClass, SVSVariant, SVSContext } from "./core";
 </script>
 
 <script lang="ts" generics="T = string">

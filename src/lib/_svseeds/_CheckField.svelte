@@ -71,11 +71,13 @@
 
   export const _CHECK_FIELD_PRESET = "svs-check-field";
 
-  import { type Snippet, untrack, onMount } from "svelte";
-  import { type Attachment } from "svelte/attachments";
-  import { type SvelteMap } from "svelte/reactivity";
-  import { type HTMLInputAttributes, type ChangeEventHandler, type EventHandler } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, type SVSFieldValidation, type SVSFieldConstraint, VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import { untrack, onMount } from "svelte";
+  import { VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import type { Snippet } from "svelte";
+  import type { Attachment } from "svelte/attachments";
+  import type { SvelteMap } from "svelte/reactivity";
+  import type { HTMLInputAttributes, ChangeEventHandler, EventHandler } from "svelte/elements";
+  import type { SVSClass, SVSVariant, SVSFieldValidation, SVSFieldConstraint } from "./core";
 </script>
 
 <script lang="ts">

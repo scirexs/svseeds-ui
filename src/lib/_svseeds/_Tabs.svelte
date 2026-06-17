@@ -74,8 +74,10 @@
     return typeof x === "object" && x !== null && "component" in x;
   }
 
-  import { type Component, type Snippet, untrack } from "svelte";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass } from "./core";
+  import { untrack } from "svelte";
+  import { VARIANT, PARTS, fnClass } from "./core";
+  import type { Component, Snippet } from "svelte";
+  import type { SVSClass, SVSVariant } from "./core";
 </script>
 
 <script lang="ts">

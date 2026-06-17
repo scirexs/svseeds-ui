@@ -41,12 +41,14 @@
 
   export const _CONTEXT_MENU_PRESET = "svs-context-menu";
 
-  import { type Snippet } from "svelte";
-  import { type Attachment } from "svelte/attachments";
-  import { type HTMLAttributes, type KeyboardEventHandler } from "svelte/elements";
   import { on } from "svelte/events";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass } from "./core";
-  import { _setMenuContainerContext, type MenuContainerContext } from "./_MenuList.svelte";
+  import { VARIANT, PARTS, fnClass } from "./core";
+  import { _setMenuContainerContext } from "./_MenuList.svelte";
+  import type { Snippet } from "svelte";
+  import type { Attachment } from "svelte/attachments";
+  import type { HTMLAttributes, KeyboardEventHandler } from "svelte/elements";
+  import type { SVSClass, SVSVariant } from "./core";
+  import type { MenuContainerContext } from "./_MenuList.svelte";
 </script>
 
 <!---------------------------------------->
@@ -115,12 +117,6 @@
 <!---------------------------------------->
 <svelte:document onclick={hide} onkeydown={hkeydown} />
 
-<div
-  class={[cls(PARTS.WHOLE, variant), c]}
-  {...rest}
-  style={dynStyle}
-  bind:this={element}
-  {@attach attach}
->
+<div class={[cls(PARTS.WHOLE, variant), c]} {...rest} style={dynStyle} bind:this={element} {@attach attach}>
   {#if children}{@render children(variant)}{/if}
 </div>

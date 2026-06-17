@@ -95,16 +95,12 @@
 
   export const [_getFileInputContext, _setFileInputContext] = _createContext<FileInputContext>();
 
-  import { type Snippet, untrack } from "svelte";
-  import { type Attachment } from "svelte/attachments";
-  import {
-    type HTMLInputAttributes,
-    type MouseEventHandler,
-    type ChangeEventHandler,
-    type DragEventHandler,
-    type EventHandler,
-  } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, type SVSContext, type CollectionEvents, VARIANT, PARTS, SR_ONLY, fnClass, _createContext } from "./core";
+  import { untrack } from "svelte";
+  import { VARIANT, PARTS, SR_ONLY, fnClass, _createContext } from "./core";
+  import type { Snippet } from "svelte";
+  import type { Attachment } from "svelte/attachments";
+  import type { HTMLInputAttributes, MouseEventHandler, ChangeEventHandler, DragEventHandler, EventHandler } from "svelte/elements";
+  import type { SVSClass, SVSVariant, SVSContext, CollectionEvents } from "./core";
 </script>
 
 <script lang="ts">
@@ -183,9 +179,11 @@
     }
     const detail = { values: effFiles, added: accepted, rejected };
     let committed = accepted;
-    const a = events?.onadd?.(detail);      if (a) committed = committed.filter((f) => a.includes(f));
-    const b = ctx?.events?.onadd?.(detail);  if (b) committed = committed.filter((f) => b.includes(f));
-    const next = multiple ? [...current, ...committed] : (committed.length ? committed : effFiles);
+    const a = events?.onadd?.(detail);
+    if (a) committed = committed.filter((f) => a.includes(f));
+    const b = ctx?.events?.onadd?.(detail);
+    if (b) committed = committed.filter((f) => b.includes(f));
+    const next = multiple ? [...current, ...committed] : committed.length ? committed : effFiles;
     if (!sameFileArray(effFiles, next)) setFiles(next);
     else syncInputFiles();
     rejectBy = [...new Set(rejected.map((r) => r.reason))];
@@ -193,8 +191,10 @@
   const remove = (file: File) => {
     const detail = { values: effFiles, removed: [file] };
     let keep = [file];
-    const a = events?.onremove?.(detail);      if (a) keep = keep.filter((f) => a.includes(f));
-    const b = ctx?.events?.onremove?.(detail);  if (b) keep = keep.filter((f) => b.includes(f));
+    const a = events?.onremove?.(detail);
+    if (a) keep = keep.filter((f) => a.includes(f));
+    const b = ctx?.events?.onremove?.(detail);
+    if (b) keep = keep.filter((f) => b.includes(f));
     if (!keep.length) return;
     const next = effFiles.filter((f) => f !== file);
     if (!sameFileArray(effFiles, next)) setFiles(next);

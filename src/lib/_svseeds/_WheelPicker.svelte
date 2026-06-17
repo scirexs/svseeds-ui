@@ -70,10 +70,12 @@
 
   export const _WHEELPICKER_PRESET = "svs-wheelpicker";
 
-  import { type Snippet, tick, untrack } from "svelte";
-  import { type Attachment } from "svelte/attachments";
-  import { type HTMLSelectAttributes, type ChangeEventHandler, type PointerEventHandler, type WheelEventHandler } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, SR_ONLY, fnClass, shouldReduceMotion } from "./core";
+  import { tick, untrack } from "svelte";
+  import { VARIANT, PARTS, SR_ONLY, fnClass, shouldReduceMotion } from "./core";
+  import type { Snippet } from "svelte";
+  import type { Attachment } from "svelte/attachments";
+  import type { HTMLSelectAttributes, ChangeEventHandler, PointerEventHandler, WheelEventHandler } from "svelte/elements";
+  import type { SVSClass, SVSVariant } from "./core";
 </script>
 
 <script lang="ts">
@@ -141,7 +143,9 @@
       const index = options.length - n + offset;
       return { option, index, virtual: -n + offset, key: `head-${option.value}-${index}` };
     });
-    const tail = options.slice(0, n).map((option, index) => ({ option, index, virtual: options.length + index, key: `tail-${option.value}-${index}` }));
+    const tail = options
+      .slice(0, n)
+      .map((option, index) => ({ option, index, virtual: options.length + index, key: `tail-${option.value}-${index}` }));
     return [...head, ...base, ...tail];
   });
 
@@ -289,7 +293,7 @@
     bind:value
     bind:this={element}
     class={cls(PARTS.MAIN, variant)}
-    {...(attrs as any)}
+    {...attrs as any}
     onchange={hchange}
     style={`${SR_ONLY}pointer-events:none;`}
     aria-orientation="vertical"

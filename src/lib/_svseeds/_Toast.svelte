@@ -174,9 +174,10 @@
     }
   }
 
-  import { type Snippet } from "svelte";
   import { flip } from "svelte/animate";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isUnsignedInteger, shouldReduceMotion } from "./core";
+  import { VARIANT, PARTS, fnClass, isUnsignedInteger, shouldReduceMotion } from "./core";
+  import type { Snippet } from "svelte";
+  import type { SVSClass, SVSVariant } from "./core";
 </script>
 
 <script lang="ts">

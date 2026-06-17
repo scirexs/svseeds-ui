@@ -79,9 +79,10 @@
   }
 
   import { untrack } from "svelte";
-  import { type Attachment } from "svelte/attachments";
-  import { type HTMLInputAttributes, type FocusEventHandler } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import { VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import type { Attachment } from "svelte/attachments";
+  import type { HTMLInputAttributes, FocusEventHandler } from "svelte/elements";
+  import type { SVSClass, SVSVariant } from "./core";
 </script>
 
 <script lang="ts">

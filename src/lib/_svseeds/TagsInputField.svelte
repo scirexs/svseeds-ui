@@ -75,9 +75,12 @@
 
   export const _TAGS_INPUT_FIELD_PRESET = "svs-tags-input-field";
 
-  import { type Snippet, untrack } from "svelte";
-  import { type SVSClass, type SVSVariant, type SVSFieldValidation, type SVSFieldConstraint, VARIANT, PARTS, fnClass, isNeutral } from "./core";
-  import TagsInput, { _TAGS_INPUT_PRESET, _setTagsInputContext, type TagsInputContext } from "./_TagsInput.svelte";
+  import { untrack } from "svelte";
+  import { VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import TagsInput, { _TAGS_INPUT_PRESET, _setTagsInputContext } from "./_TagsInput.svelte";
+  import type { Snippet } from "svelte";
+  import type { SVSClass, SVSVariant, SVSFieldValidation, SVSFieldConstraint } from "./core";
+  import type { TagsInputContext } from "./_TagsInput.svelte";
 </script>
 
 <script lang="ts">
@@ -179,7 +182,10 @@
     for (const v of detail.added) {
       if (!v) continue;
       const msg = check(v, [...values, ...accepted]);
-      if (msg) { firstErr ??= msg; continue; }
+      if (msg) {
+        firstErr ??= msg;
+        continue;
+      }
       accepted.push(v);
     }
     variant = neutral;

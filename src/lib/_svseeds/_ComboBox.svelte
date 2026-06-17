@@ -51,18 +51,19 @@
   export const _COMBO_BOX_PRESET = "svs-combo-box";
   const NA = -1;
 
-  import { type Snippet } from "svelte";
-  import { type Attachment } from "svelte/attachments";
-  import { type SvelteSet } from "svelte/reactivity";
-  import {
-    type HTMLInputAttributes,
-    type EventHandler,
-    type FormEventHandler,
-    type KeyboardEventHandler,
-    type FocusEventHandler,
-    type MouseEventHandler,
+  import { VARIANT, PARTS, fnClass } from "./core";
+  import type { Snippet } from "svelte";
+  import type { Attachment } from "svelte/attachments";
+  import type { SvelteSet } from "svelte/reactivity";
+  import type {
+    HTMLInputAttributes,
+    EventHandler,
+    FormEventHandler,
+    KeyboardEventHandler,
+    FocusEventHandler,
+    MouseEventHandler,
   } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass } from "./core";
+  import type { SVSClass, SVSVariant } from "./core";
 </script>
 
 <script lang="ts">

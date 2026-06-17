@@ -281,11 +281,13 @@
   }
   const core = new TooltipCore();
 
-  import TooltipRoot from "./_Tooltip.svelte";
-  import { type Snippet, mount, untrack } from "svelte";
+  import { mount, untrack } from "svelte";
   import { on } from "svelte/events";
-  import { type Attachment } from "svelte/attachments";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, throttle } from "./core";
+  import { VARIANT, PARTS, fnClass, throttle } from "./core";
+  import TooltipRoot from "./_Tooltip.svelte";
+  import type { Snippet } from "svelte";
+  import type { Attachment } from "svelte/attachments";
+  import type { SVSClass, SVSVariant } from "./core";
 </script>
 
 <script lang="ts">

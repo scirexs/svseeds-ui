@@ -85,11 +85,13 @@
 
   export const _TEXT_FIELD_PRESET = "svs-text-field";
 
-  import { type Snippet, onMount, untrack } from "svelte";
-  import { type Attachment } from "svelte/attachments";
-  import { type SvelteSet } from "svelte/reactivity";
-  import { type HTMLInputAttributes } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, type SVSFieldValidation, VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import { onMount, untrack } from "svelte";
+  import { VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import type { Snippet } from "svelte";
+  import type { Attachment } from "svelte/attachments";
+  import type { SvelteSet } from "svelte/reactivity";
+  import type { HTMLInputAttributes } from "svelte/elements";
+  import type { SVSClass, SVSVariant, SVSFieldValidation } from "./core";
 </script>
 
 <script lang="ts">
@@ -204,8 +206,7 @@
       aria-describedby={idDesc}
       aria-invalid={invalid}
       aria-errormessage={idMsg}
-      {@attach attach}
-    ></textarea>
+      {@attach attach}></textarea>
   {:else}
     <input
       bind:value

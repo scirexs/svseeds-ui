@@ -50,10 +50,12 @@
 
   export const _TOGGLE_PRESET = "svs-toggle";
 
-  import { type Snippet, untrack } from "svelte";
-  import { type Attachment } from "svelte/attachments";
-  import { type HTMLButtonAttributes, type MouseEventHandler } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import { untrack } from "svelte";
+  import { VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import type { Snippet } from "svelte";
+  import type { Attachment } from "svelte/attachments";
+  import type { HTMLButtonAttributes, MouseEventHandler } from "svelte/elements";
+  import type { SVSClass, SVSVariant } from "./core";
 </script>
 
 <script lang="ts">

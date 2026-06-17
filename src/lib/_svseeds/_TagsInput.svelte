@@ -94,10 +94,11 @@
 
   export const [_getTagsInputContext, _setTagsInputContext] = _createContext<TagsInputContext>();
 
-  import { type Snippet } from "svelte";
-  import { type Attachment } from "svelte/attachments";
-  import { type HTMLInputAttributes, type KeyboardEventHandler, type FormEventHandler, type ClipboardEventHandler } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, type SVSContext, type CollectionEvents, VARIANT, PARTS, fnClass, _createContext } from "./core";
+  import { VARIANT, PARTS, fnClass, _createContext } from "./core";
+  import type { Snippet } from "svelte";
+  import type { Attachment } from "svelte/attachments";
+  import type { HTMLInputAttributes, KeyboardEventHandler, FormEventHandler, ClipboardEventHandler } from "svelte/elements";
+  import type { SVSClass, SVSVariant, SVSContext, CollectionEvents } from "./core";
 </script>
 
 <script lang="ts">
@@ -136,8 +137,10 @@
   // *** Event Handlers *** //
   function commitAdd(values: string[], added: string[]): string[] {
     let keep = added;
-    const a = events?.onadd?.({ values, added });      if (a) keep = keep.filter((x) => a.includes(x));
-    const b = ctx?.events?.onadd?.({ values, added });  if (b) keep = keep.filter((x) => b.includes(x));
+    const a = events?.onadd?.({ values, added });
+    if (a) keep = keep.filter((x) => a.includes(x));
+    const b = ctx?.events?.onadd?.({ values, added });
+    if (b) keep = keep.filter((x) => b.includes(x));
     return keep;
   }
   function addMany(cands: string[]) {
@@ -160,8 +163,10 @@
   }
   function commitRemove(values: string[], removed: string[]): string[] {
     let keep = removed;
-    const a = events?.onremove?.({ values, removed });      if (a) keep = keep.filter((x) => a.includes(x));
-    const b = ctx?.events?.onremove?.({ values, removed });  if (b) keep = keep.filter((x) => b.includes(x));
+    const a = events?.onremove?.({ values, removed });
+    if (a) keep = keep.filter((x) => a.includes(x));
+    const b = ctx?.events?.onremove?.({ values, removed });
+    if (b) keep = keep.filter((x) => b.includes(x));
     return keep;
   }
   function remove(index: number) {

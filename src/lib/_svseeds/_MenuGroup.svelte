@@ -38,11 +38,12 @@
 
   export const _MENU_GROUP_PRESET = "svs-menu-group";
 
-  import { type Snippet } from "svelte";
-  import { type Attachment } from "svelte/attachments";
-  import { type HTMLAttributes } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass } from "./core";
+  import { VARIANT, PARTS, fnClass } from "./core";
   import { _getMenuItemContext } from "./_MenuItem.svelte";
+  import type { Snippet } from "svelte";
+  import type { Attachment } from "svelte/attachments";
+  import type { HTMLAttributes } from "svelte/elements";
+  import type { SVSClass, SVSVariant } from "./core";
 </script>
 
 <script lang="ts">
@@ -58,14 +59,7 @@
 
 <!---------------------------------------->
 
-<div
-  bind:this={element}
-  class={[cls(PARTS.WHOLE, effVariant), c]}
-  {...rest}
-  role="group"
-  aria-labelledby={uid}
-  {@attach attach}
->
+<div bind:this={element} class={[cls(PARTS.WHOLE, effVariant), c]} {...rest} role="group" aria-labelledby={uid} {@attach attach}>
   <div id={uid} class={cls(PARTS.LABEL, effVariant)}>
     {#if typeof label === "string"}
       {label}

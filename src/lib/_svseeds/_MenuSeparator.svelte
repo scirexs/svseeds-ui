@@ -33,10 +33,11 @@
 
   export const _MENU_SEPARATOR_PRESET = "svs-menu-separator";
 
-  import { type Attachment } from "svelte/attachments";
-  import { type HTMLAttributes } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass } from "./core";
+  import { VARIANT, PARTS, fnClass } from "./core";
   import { _getMenuItemContext } from "./_MenuItem.svelte";
+  import type { Attachment } from "svelte/attachments";
+  import type { HTMLAttributes } from "svelte/elements";
+  import type { SVSClass, SVSVariant } from "./core";
 </script>
 
 <script lang="ts">

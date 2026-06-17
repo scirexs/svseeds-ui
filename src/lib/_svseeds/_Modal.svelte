@@ -41,9 +41,11 @@
   const noMotion = shouldReduceMotion();
   export const _MODAL_PRESET = "svs-modal";
 
-  import { type Snippet, untrack, onMount } from "svelte";
-  import { type HTMLDialogAttributes, type MouseEventHandler, type KeyboardEventHandler, type ToggleEventHandler } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, VARIANT, PARTS, fnClass, isUnsignedInteger, shouldReduceMotion } from "./core";
+  import { untrack, onMount } from "svelte";
+  import { VARIANT, PARTS, fnClass, isUnsignedInteger, shouldReduceMotion } from "./core";
+  import type { Snippet } from "svelte";
+  import type { HTMLDialogAttributes, MouseEventHandler, KeyboardEventHandler, ToggleEventHandler } from "svelte/elements";
+  import type { SVSClass, SVSVariant } from "./core";
 </script>
 
 <script lang="ts">

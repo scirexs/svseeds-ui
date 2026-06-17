@@ -28,7 +28,10 @@
   ```
 -->
 <script module lang="ts">
-  export interface MenuItemProps extends Omit<HTMLButtonAttributes & HTMLAnchorAttributes, "children" | "type" | "role" | "disabled" | "onselect"> {
+  export interface MenuItemProps extends Omit<
+    HTMLButtonAttributes & HTMLAnchorAttributes,
+    "children" | "type" | "role" | "disabled" | "onselect"
+  > {
     children: Snippet<[string]>; // Snippet<[variant]>
     href?: string; // renders <a> instead of <button>
     onselect?: (ev: MouseEvent) => void;
@@ -49,10 +52,11 @@
 
   export const _MENU_ITEM_PRESET = "svs-menu-item";
 
-  import { type Snippet } from "svelte";
-  import { type Attachment } from "svelte/attachments";
-  import { type HTMLAnchorAttributes, type HTMLButtonAttributes } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, type SVSContext, VARIANT, PARTS, fnClass, _createContext } from "./core";
+  import { VARIANT, PARTS, fnClass, _createContext } from "./core";
+  import type { Snippet } from "svelte";
+  import type { Attachment } from "svelte/attachments";
+  import type { HTMLAnchorAttributes, HTMLButtonAttributes } from "svelte/elements";
+  import type { SVSClass, SVSVariant, SVSContext } from "./core";
 </script>
 
 <script lang="ts">

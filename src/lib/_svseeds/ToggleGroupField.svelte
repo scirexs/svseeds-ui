@@ -90,17 +90,18 @@
 
   export const _TOGGLE_GROUP_FIELD_PRESET = "svs-toggle-group-field";
 
-  import { type Snippet, untrack } from "svelte";
-  import { type SvelteMap } from "svelte/reactivity";
-  import { type SVSClass, type SVSVariant, type SVSFieldValidation, type SVSFieldConstraint, VARIANT, PARTS, fnClass, isNeutral } from "./core";
-  import ToggleGroup, {
-    _TOGGLE_GROUP_PRESET,
-    _setToggleGroupContext,
-    type ToggleGroupContext,
-    type ToggleOption,
-    type ToggleGroupProps,
-    type ToggleGroupReqdProps,
-    type ToggleGroupBindProps,
+  import { untrack } from "svelte";
+  import { VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import ToggleGroup, { _TOGGLE_GROUP_PRESET, _setToggleGroupContext } from "./_ToggleGroup.svelte";
+  import type { Snippet } from "svelte";
+  import type { SvelteMap } from "svelte/reactivity";
+  import type { SVSClass, SVSVariant, SVSFieldValidation, SVSFieldConstraint } from "./core";
+  import type {
+    ToggleGroupContext,
+    ToggleOption,
+    ToggleGroupProps,
+    ToggleGroupReqdProps,
+    ToggleGroupBindProps,
   } from "./_ToggleGroup.svelte";
 </script>
 

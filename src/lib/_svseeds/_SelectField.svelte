@@ -76,11 +76,13 @@
 
   export const _SELECT_FIELD_PRESET = "svs-select-field";
 
-  import { type Snippet, untrack, onMount } from "svelte";
-  import { type Attachment } from "svelte/attachments";
-  import { type SvelteMap } from "svelte/reactivity";
-  import { type HTMLSelectAttributes, type ChangeEventHandler, type EventHandler } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, type SVSFieldValidation, VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import { untrack, onMount } from "svelte";
+  import { VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import type { Snippet } from "svelte";
+  import type { Attachment } from "svelte/attachments";
+  import type { SvelteMap } from "svelte/reactivity";
+  import type { HTMLSelectAttributes, ChangeEventHandler, EventHandler } from "svelte/elements";
+  import type { SVSClass, SVSVariant, SVSFieldValidation } from "./core";
 </script>
 
 <script lang="ts">

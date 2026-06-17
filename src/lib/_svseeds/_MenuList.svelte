@@ -84,12 +84,15 @@
     return "separator" in x;
   }
 
-  import { type Snippet, tick } from "svelte";
-  import { type Attachment } from "svelte/attachments";
-  import { type HTMLAttributes, type KeyboardEventHandler } from "svelte/elements";
-  import { type SVSClass, type SVSVariant, type SVSContext, VARIANT, PARTS, fnClass, _createContext } from "./core";
-  import MenuItem, { _setMenuItemContext, type MenuItemContext } from "./_MenuItem.svelte";
+  import { tick } from "svelte";
+  import { VARIANT, PARTS, fnClass, _createContext } from "./core";
+  import MenuItem, { _setMenuItemContext } from "./_MenuItem.svelte";
   import MenuSeparator from "./_MenuSeparator.svelte";
+  import type { Snippet } from "svelte";
+  import type { Attachment } from "svelte/attachments";
+  import type { HTMLAttributes, KeyboardEventHandler } from "svelte/elements";
+  import type { SVSClass, SVSVariant, SVSContext } from "./core";
+  import type { MenuItemContext } from "./_MenuItem.svelte";
 </script>
 
 <script lang="ts">

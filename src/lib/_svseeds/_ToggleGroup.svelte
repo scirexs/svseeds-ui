@@ -69,11 +69,12 @@
 
   export const [_getToggleGroupContext, _setToggleGroupContext] = _createContext<ToggleGroupContext>();
 
-  import { type Snippet } from "svelte";
-  import { type Attachment } from "svelte/attachments";
-  import { type HTMLButtonAttributes } from "svelte/elements";
-  import { type SvelteMap } from "svelte/reactivity";
-  import { type SVSClass, type SVSVariant, type SVSContext, type CollectionEvents, VARIANT, PARTS, fnClass, _createContext } from "./core";
+  import { VARIANT, PARTS, fnClass, _createContext } from "./core";
+  import type { Snippet } from "svelte";
+  import type { Attachment } from "svelte/attachments";
+  import type { HTMLButtonAttributes } from "svelte/elements";
+  import type { SvelteMap } from "svelte/reactivity";
+  import type { SVSClass, SVSVariant, SVSContext, CollectionEvents } from "./core";
 </script>
 
 <script lang="ts">
@@ -127,14 +128,18 @@
   );
   function commitAdd(values: string[], added: string[]): string[] {
     let keep = added;
-    const a = events?.onadd?.({ values, added });      if (a) keep = keep.filter((x) => a.includes(x));
-    const b = ctx?.events?.onadd?.({ values, added });  if (b) keep = keep.filter((x) => b.includes(x));
+    const a = events?.onadd?.({ values, added });
+    if (a) keep = keep.filter((x) => a.includes(x));
+    const b = ctx?.events?.onadd?.({ values, added });
+    if (b) keep = keep.filter((x) => b.includes(x));
     return keep;
   }
   function commitRemove(values: string[], removed: string[]): string[] {
     let keep = removed;
-    const a = events?.onremove?.({ values, removed });      if (a) keep = keep.filter((x) => a.includes(x));
-    const b = ctx?.events?.onremove?.({ values, removed });  if (b) keep = keep.filter((x) => b.includes(x));
+    const a = events?.onremove?.({ values, removed });
+    if (a) keep = keep.filter((x) => a.includes(x));
+    const b = ctx?.events?.onremove?.({ values, removed });
+    if (b) keep = keep.filter((x) => b.includes(x));
     return keep;
   }
   function updateValues(value: string): () => void {
