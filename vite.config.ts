@@ -1,11 +1,11 @@
-import { sveltekit } from "@sveltejs/kit/vite";
+import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { defineConfig } from "vitest/config";
 import { playwright } from "@vitest/browser-playwright";
 import { svelteTesting } from "@testing-library/svelte/vite";
 
 export default defineConfig({
   plugins: [
-    sveltekit(),
+    svelte(),
   ],
   test: {
     projects: [{

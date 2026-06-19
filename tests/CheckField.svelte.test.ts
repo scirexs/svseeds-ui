@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from "vitest";
-import { fireEvent, render, within } from "@testing-library/svelte";
-import { userEvent } from "@testing-library/user-event";
-import { createRawSnippet } from "svelte";
+import { render as svRender } from "vitest-browser-svelte";
+import { userEvent } from "vitest/browser";
+import { createRawSnippet, tick } from "svelte";
 import CheckField from "#svs/CheckField.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 
@@ -14,15 +14,72 @@ const options = new Map([
   ["option2", "Option 2"],
   ["option3", "Option 3"],
 ]);
-const auxfn = createRawSnippet(
-  (
-    values: () => string[],
-    variant: () => string,
-    elements: () => HTMLInputElement[],
-  ) => {
-    return { render: () => `<span data-testid="${auxid}">${variant()},${values().length},${elements().length}</span>` };
+const auxfn = createRawSnippet((values: () => string[], variant: () => string, elements: () => HTMLInputElement[]) => {
+  return { render: () => `<span data-testid="${auxid}">${variant()},${values().length},${elements().length}</span>` };
+});
+const byRole = (container: HTMLElement, role: string) => Array.from(container.querySelectorAll(`[role="${role}"]`)) as HTMLElement[];
+const inputs = (container: HTMLElement, type: "checkbox" | "radio") =>
+  Array.from(container.querySelectorAll(`input[type="${type}"]`)) as HTMLInputElement[];
+const byTestId = (container: HTMLElement, id: string) => Array.from(container.querySelectorAll(`[data-testid="${id}"]`)) as HTMLElement[];
+const byText = (node: ParentNode, text: string) => {
+  const found = Array.from(node.querySelectorAll("*")).filter((el) => el.textContent?.includes(text));
+  return (found.find((el) => !Array.from(el.children).some((child) => child.textContent?.includes(text))) ?? found[0]) as HTMLElement;
+};
+const render = (component: any, props?: any) => {
+  const result = svRender(component, props);
+  const { container } = result;
+  return {
+    ...result,
+    getAllByRole: (role: string) => (role === "checkbox" || role === "radio" ? inputs(container, role) : byRole(container, role)),
+    getByRole: (role: string) => (role === "checkbox" || role === "radio" ? inputs(container, role)[0] : byRole(container, role)[0]),
+    queryByRole: (role: string) =>
+      (role === "checkbox" || role === "radio" ? inputs(container, role)[0] : byRole(container, role)[0]) ?? null,
+    getByText: (text: string) => byText(container, text),
+    queryByText: (text: string) => byText(container, text) ?? null,
+    getByTestId: (id: string) => byTestId(container, id)[0],
+    getAllByTestId: (id: string) => byTestId(container, id),
+  };
+};
+const within = (node: HTMLElement) => ({
+  getByText: (text: string) => byText(node, text),
+  getByTestId: (id: string) => byTestId(node, id)[0],
+});
+const fireEvent = Object.assign(
+  async (el: Element, ev: Event) => {
+    el.dispatchEvent(ev);
+    await tick();
+  },
+  {
+    invalid: async (el: Element) => {
+      el.dispatchEvent(new Event("invalid", { cancelable: true }));
+      await tick();
+    },
   },
 );
+const has = (el: Element | null | undefined, ...names: string[]) =>
+  expect([...(el?.classList ?? [])]).toEqual(expect.arrayContaining(names));
+const attr = (el: Element, name: string, value?: string) => {
+  if (value === undefined) expect(el.hasAttribute(name)).toBe(true);
+  else expect(el.getAttribute(name)).toBe(value);
+};
+const noattr = (el: Element, name: string, value?: string) => {
+  if (value === undefined) expect(el.hasAttribute(name)).toBe(false);
+  else expect(el.getAttribute(name)).not.toBe(value);
+};
+const txt = (el: Element | null | undefined, value: string) => expect(el?.textContent).toContain(value);
+const checked = (el: HTMLInputElement) => expect(el.checked).toBe(true);
+const notChecked = (el: HTMLInputElement) => expect(el.checked).toBe(false);
+const required = (el: HTMLInputElement) => expect(el.required).toBe(true);
+const notRequired = (el: HTMLInputElement) => expect(el.required).toBe(false);
+const referenced = (el: Element, name: "aria-errormessage" | "aria-describedby") => {
+  const id = el.getAttribute(name);
+  return id ? document.getElementById(id) : null;
+};
+const aerr = (el: Element, value?: string) => {
+  attr(el, "aria-invalid", "true");
+  if (value !== undefined) txt(referenced(el, "aria-errormessage"), value);
+};
+const adesc = (el: Element, value: string) => txt(referenced(el, "aria-describedby"), value);
 
 describe("Switching existence of elements", () => {
   const attachfn = () => {};
@@ -36,7 +93,7 @@ describe("Switching existence of elements", () => {
     expect(whole.firstElementChild?.tagName).toBe("DIV");
     expect(checkboxes).toHaveLength(3);
     checkboxes.forEach((checkbox) => {
-      expect(checkbox).toHaveAttribute("type", "checkbox");
+      attr(checkbox, "type", "checkbox");
     });
   });
 
@@ -49,8 +106,8 @@ describe("Switching existence of elements", () => {
     expect(whole.firstElementChild?.getAttribute("role")).toBe("radiogroup");
     expect(radios).toHaveLength(3);
     radios.forEach((radio) => {
-      expect(radio).toHaveAttribute("type", "radio");
-      expect(radio).toHaveAttribute("name");
+      attr(radio, "type", "radio");
+      attr(radio, "name");
     });
   });
 
@@ -59,7 +116,7 @@ describe("Switching existence of elements", () => {
     const { getAllByRole, getByText } = render(CheckField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
     const lbl = getByText(label);
-    expect(whole).toHaveAttribute("aria-labelledby");
+    attr(whole, "aria-labelledby");
     expect(whole.children).toHaveLength(2);
     expect(whole.firstElementChild).toBe(lbl.parentElement);
     expect(whole.lastElementChild?.tagName).toBe("DIV");
@@ -99,7 +156,7 @@ describe("Switching existence of elements", () => {
     expect(whole.children).toHaveLength(2);
     expect(whole.firstElementChild).toBe(middle);
     expect(whole.lastElementChild).toBe(btm);
-    expect(middle).toHaveAccessibleDescription(bottom);
+    adesc(middle, bottom);
   });
   test("w/ reserved bottom", () => {
     const props = { options, reserve: true };
@@ -107,11 +164,11 @@ describe("Switching existence of elements", () => {
     const whole = getAllByRole("group")[0] as HTMLDivElement;
     const middle = getAllByRole("group")[1] as HTMLDivElement;
     const btm = whole.lastElementChild as HTMLDivElement;
-    expect(btm).toHaveClass("svs-check-field", PARTS.BOTTOM);
-    expect(btm).toHaveTextContent("");
+    has(btm, "svs-check-field", PARTS.BOTTOM);
+    txt(btm, "");
     expect(whole.children).toHaveLength(2);
     expect(whole.firstElementChild).toBe(middle);
-    expect(middle).not.toHaveAttribute("aria-describedby");
+    noattr(middle, "aria-describedby");
   });
 
   test("w/ bottom and multiple=false", () => {
@@ -123,7 +180,7 @@ describe("Switching existence of elements", () => {
     expect(whole.children).toHaveLength(2);
     expect(whole.firstElementChild).toBe(middle);
     expect(whole.lastElementChild).toBe(btm);
-    expect(middle).toHaveAccessibleDescription(bottom);
+    adesc(middle, bottom);
   });
 
   test("w/ bottom of attach input", () => {
@@ -135,7 +192,7 @@ describe("Switching existence of elements", () => {
     expect(whole.children).toHaveLength(2);
     expect(whole.firstElementChild).toBe(middle);
     expect(whole.lastElementChild).toBe(btm);
-    expect(middle).toHaveAccessibleDescription(bottom);
+    adesc(middle, bottom);
   });
 
   test("w/ blank string", () => {
@@ -171,24 +228,23 @@ describe("Specify attrs & state transition & event handlers", () => {
 
   test("reserved bottom stays mounted across error transition", async () => {
     const props = $state({ options, reserve: true, variant: VARIANT.NEUTRAL, validations, values: [] });
-    const user = userEvent.setup();
     const { getAllByRole, getByRole } = render(CheckField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
     const middle = getAllByRole("group")[1] as HTMLDivElement;
     const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
     const btm = whole.lastElementChild as HTMLDivElement;
-    expect(btm).toHaveClass(seed, PARTS.BOTTOM);
-    expect(btm).toHaveTextContent("");
-    expect(middle).not.toHaveAttribute("aria-describedby");
+    has(btm, seed, PARTS.BOTTOM);
+    txt(btm, "");
+    noattr(middle, "aria-describedby");
 
     await fireEvent.invalid(checkboxes[0]);
     expect(getByRole("alert")).toBe(btm);
-    expect(btm).toHaveTextContent(errmsg);
+    txt(btm, errmsg);
 
-    await user.click(checkboxes[0]);
+    await userEvent.click(checkboxes[0]);
     expect(whole.lastElementChild).toBe(btm);
-    expect(btm).not.toHaveAttribute("role");
-    expect(btm).toHaveTextContent("");
+    noattr(btm, "role");
+    txt(btm, "");
   });
 
   test("w/ default values", () => {
@@ -196,9 +252,9 @@ describe("Specify attrs & state transition & event handlers", () => {
     const props = { options, values };
     const { getAllByRole } = render(CheckField, props);
     const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
-    expect(checkboxes[0]).toBeChecked();
-    expect(checkboxes[1]).not.toBeChecked();
-    expect(checkboxes[2]).toBeChecked();
+    checked(checkboxes[0]);
+    notChecked(checkboxes[1]);
+    checked(checkboxes[2]);
   });
 
   test("w/ default values for radio", () => {
@@ -206,9 +262,9 @@ describe("Specify attrs & state transition & event handlers", () => {
     const props = { options, values, multiple: false };
     const { getAllByRole } = render(CheckField, props);
     const radios = getAllByRole("radio") as HTMLInputElement[];
-    expect(radios[0]).not.toBeChecked();
-    expect(radios[1]).toBeChecked();
-    expect(radios[2]).not.toBeChecked();
+    notChecked(radios[0]);
+    checked(radios[1]);
+    notChecked(radios[2]);
   });
 
   test("w/ specify ignored attrs", () => {
@@ -223,10 +279,10 @@ describe("Specify attrs & state transition & event handlers", () => {
     const { getAllByRole } = render(CheckField, props);
     const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
     checkboxes.forEach((checkbox) => {
-      expect(checkbox).not.toHaveAttribute("value", "v"); // per-option value wins
-      expect(checkbox).toHaveClass("c"); // class merged onto each input (same as ...rest)
-      expect(checkbox).not.toHaveAttribute("type", "hidden"); // controlled (checkbox)
-      expect(checkbox).toHaveAttribute("name", "custom_name"); // name prop applied
+      noattr(checkbox, "value", "v"); // per-option value wins
+      has(checkbox, "c"); // class merged onto each input (same as ...rest)
+      noattr(checkbox, "type", "hidden"); // controlled (checkbox)
+      attr(checkbox, "name", "custom_name"); // name prop applied
     });
   });
 
@@ -240,8 +296,8 @@ describe("Specify attrs & state transition & event handlers", () => {
     const { getAllByTestId } = render(CheckField, props);
     const checkboxes = getAllByTestId("test-input") as HTMLInputElement[];
     checkboxes.forEach((checkbox) => {
-      expect(checkbox).toHaveAttribute("required");
-      expect(checkbox).toHaveAttribute("disabled");
+      attr(checkbox, "required");
+      attr(checkbox, "disabled");
     });
   });
 
@@ -253,7 +309,6 @@ describe("Specify attrs & state transition & event handlers", () => {
       validations: [mockValidation],
       values: [],
     });
-    const user = userEvent.setup();
     const { getAllByRole, getByRole } = render(CheckField, props);
     const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
 
@@ -261,7 +316,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(props.variant).toBe(VARIANT.NEUTRAL);
 
     // Check first option
-    await user.click(checkboxes[0]);
+    await userEvent.click(checkboxes[0]);
     expect(props.values).toContain("option1");
     expect(mockValidation).toHaveBeenCalled();
     expect(mockValidation).toHaveBeenLastCalledWith(
@@ -270,7 +325,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(props.variant).toBe(VARIANT.ACTIVE);
 
     // Uncheck to trigger validation error
-    await user.click(checkboxes[0]);
+    await userEvent.click(checkboxes[0]);
     expect(props.values).toHaveLength(0);
     expect(props.variant).toBe(VARIANT.NEUTRAL);
 
@@ -278,8 +333,8 @@ describe("Specify attrs & state transition & event handlers", () => {
     await fireEvent.invalid(checkboxes[0]);
     expect(props.variant).toBe(VARIANT.INACTIVE);
     getByRole("alert") as HTMLDivElement;
-    expect(checkboxes[0]).toHaveAttribute("aria-invalid", "true");
-    expect(checkboxes[0]).toHaveAccessibleErrorMessage(errmsg);
+    attr(checkboxes[0], "aria-invalid", "true");
+    aerr(checkboxes[0], errmsg);
   });
 
   test("checkboxes become inactive immediately with non-empty invalid values", async () => {
@@ -290,28 +345,27 @@ describe("Specify attrs & state transition & event handlers", () => {
       validations: [max1],
       values: [],
     });
-    const user = userEvent.setup();
     const { getAllByRole, getByRole, queryByRole } = render(CheckField, props);
     const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
 
-    await user.click(checkboxes[0]);
+    await userEvent.click(checkboxes[0]);
     expect(props.values).toEqual(["option1"]);
     expect(props.variant).toBe(VARIANT.ACTIVE);
 
-    await user.click(checkboxes[1]);
+    await userEvent.click(checkboxes[1]);
     expect(props.values).toEqual(["option1", "option2"]);
     expect(props.variant).toBe(VARIANT.INACTIVE);
-    expect(getByRole("alert")).toHaveTextContent("too many");
+    txt(getByRole("alert"), "too many");
     checkboxes.forEach((checkbox) => {
-      expect(checkbox).toHaveAccessibleErrorMessage("too many");
+      aerr(checkbox, "too many");
     });
 
-    await user.click(checkboxes[1]);
+    await userEvent.click(checkboxes[1]);
     expect(props.values).toEqual(["option1"]);
     expect(props.variant).toBe(VARIANT.ACTIVE);
     expect(queryByRole("alert")).toBeNull();
 
-    await user.click(checkboxes[0]);
+    await userEvent.click(checkboxes[0]);
     expect(props.values).toEqual([]);
     expect(props.variant).toBe(VARIANT.NEUTRAL);
   });
@@ -325,25 +379,24 @@ describe("Specify attrs & state transition & event handlers", () => {
       validations: [noOption2],
       values: [],
     });
-    const user = userEvent.setup();
     const { getAllByRole, getByRole } = render(CheckField, props);
     const radios = getAllByRole("radio") as HTMLInputElement[];
     const middle = getByRole("radiogroup") as HTMLDivElement;
 
-    await user.click(radios[1]);
+    await userEvent.click(radios[1]);
     expect(props.values).toEqual(["option2"]);
     expect(props.variant).toBe(VARIANT.INACTIVE);
-    expect(middle).toHaveAttribute("aria-invalid", "true");
-    expect(middle).toHaveAccessibleErrorMessage("bad option");
+    attr(middle, "aria-invalid", "true");
+    aerr(middle, "bad option");
     radios.forEach((radio) => {
-      expect(radio).not.toHaveAttribute("aria-invalid");
-      expect(radio).not.toHaveAttribute("aria-errormessage");
+      noattr(radio, "aria-invalid");
+      noattr(radio, "aria-errormessage");
     });
 
-    await user.click(radios[0]);
+    await userEvent.click(radios[0]);
     expect(props.values).toEqual(["option1"]);
     expect(props.variant).toBe(VARIANT.ACTIVE);
-    expect(middle).not.toHaveAttribute("aria-invalid");
+    noattr(middle, "aria-invalid");
   });
 
   test("neutral guard keeps prefilled invalid values neutral until interaction", async () => {
@@ -354,14 +407,13 @@ describe("Specify attrs & state transition & event handlers", () => {
       validations: [max1],
       values: ["option1", "option2"],
     });
-    const user = userEvent.setup();
     const { getAllByRole, queryByRole } = render(CheckField, props);
     const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
 
     expect(props.variant).toBe(VARIANT.NEUTRAL);
     expect(queryByRole("alert")).toBeNull();
 
-    await user.click(checkboxes[0]);
+    await userEvent.click(checkboxes[0]);
     expect(props.values).toEqual(["option2"]);
     expect(props.variant).toBe(VARIANT.ACTIVE);
   });
@@ -375,7 +427,6 @@ describe("Specify attrs & state transition & event handlers", () => {
       validations: [mockValidation],
       values: [],
     });
-    const user = userEvent.setup();
     const { getAllByRole, getByRole } = render(CheckField, props);
     const radios = getAllByRole("radio") as HTMLInputElement[];
     const middle = getByRole("radiogroup") as HTMLDivElement;
@@ -386,10 +437,10 @@ describe("Specify attrs & state transition & event handlers", () => {
     // For radio buttons, aria-invalid is on the group
     await fireEvent.invalid(radios[0]);
     expect(props.variant).toBe(VARIANT.INACTIVE);
-    expect(middle).toHaveAttribute("aria-invalid", "true");
+    attr(middle, "aria-invalid", "true");
 
     // Select first option
-    await user.click(radios[0]);
+    await userEvent.click(radios[0]);
     expect(props.values).toEqual(["option1"]);
     expect(mockValidation).toHaveBeenCalled();
     expect(mockValidation).toHaveBeenLastCalledWith(
@@ -405,23 +456,22 @@ describe("Specify attrs & state transition & event handlers", () => {
       constraints: [({ values }: { values: string[] }) => (values.length >= 1 ? "max" : null)],
       values: [] as string[],
     });
-    const user = userEvent.setup();
     const { getAllByRole, getByRole } = render(CheckField, props);
     const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
 
-    await user.click(checkboxes[0]);
+    await userEvent.click(checkboxes[0]);
     expect(props.values).toEqual(["option1"]);
-    expect(checkboxes[0]).toBeChecked();
+    checked(checkboxes[0]);
 
-    await user.click(checkboxes[1]);
+    await userEvent.click(checkboxes[1]);
     expect(props.values).toEqual(["option1"]);
-    expect(checkboxes[1]).not.toBeChecked();
+    notChecked(checkboxes[1]);
     expect(props.variant).toBe(VARIANT.INACTIVE);
-    expect(getByRole("alert")).toHaveTextContent("max");
+    txt(getByRole("alert"), "max");
 
-    await user.click(checkboxes[0]);
+    await userEvent.click(checkboxes[0]);
     expect(props.values).toEqual([]);
-    expect(checkboxes[0]).not.toBeChecked();
+    notChecked(checkboxes[0]);
   });
 
   test("checkbox constraints can block a specific candidate", async () => {
@@ -431,18 +481,17 @@ describe("Specify attrs & state transition & event handlers", () => {
       constraints: [({ value }: { value: string }) => (value === "option2" ? "no opt2" : null)],
       values: [] as string[],
     });
-    const user = userEvent.setup();
     const { getAllByRole, getByRole } = render(CheckField, props);
     const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
 
-    await user.click(checkboxes[1]);
+    await userEvent.click(checkboxes[1]);
     expect(props.values).toEqual([]);
-    expect(checkboxes[1]).not.toBeChecked();
-    expect(getByRole("alert")).toHaveTextContent("no opt2");
+    notChecked(checkboxes[1]);
+    txt(getByRole("alert"), "no opt2");
 
-    await user.click(checkboxes[0]);
+    await userEvent.click(checkboxes[0]);
     expect(props.values).toEqual(["option1"]);
-    expect(checkboxes[0]).toBeChecked();
+    checked(checkboxes[0]);
   });
 
   test("null validation result is valid", async () => {
@@ -452,11 +501,10 @@ describe("Specify attrs & state transition & event handlers", () => {
       validations: [() => null],
       values: [] as string[],
     });
-    const user = userEvent.setup();
     const { getAllByRole, queryByRole } = render(CheckField, props);
     const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
 
-    await user.click(checkboxes[0]);
+    await userEvent.click(checkboxes[0]);
 
     expect(props.variant).toBe(VARIANT.ACTIVE);
     expect(queryByRole("alert")).toBeNull();
@@ -474,8 +522,8 @@ describe("Specify attrs & state transition & event handlers", () => {
 
     await fireEvent.invalid(checkboxes[0]);
     getByRole("alert") as HTMLDivElement;
-    expect(checkboxes[0]).toHaveAttribute("aria-invalid", "true");
-    expect(checkboxes[0]).toHaveAccessibleErrorMessage();
+    attr(checkboxes[0], "aria-invalid", "true");
+    aerr(checkboxes[0]);
     expect(props.variant).toBe(VARIANT.INACTIVE);
   });
 
@@ -486,21 +534,20 @@ describe("Specify attrs & state transition & event handlers", () => {
       required: true,
       values: [],
     });
-    const user = userEvent.setup();
     const { getAllByRole } = render(CheckField, props);
     const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
 
     checkboxes.forEach((checkbox) => {
-      expect(checkbox).toBeRequired();
+      required(checkbox);
       expect(checkbox.checkValidity()).toBe(false);
     });
 
     await fireEvent.invalid(checkboxes[0]);
     expect(props.variant).toBe(VARIANT.INACTIVE);
 
-    await user.click(checkboxes[0]);
+    await userEvent.click(checkboxes[0]);
     checkboxes.forEach((checkbox) => {
-      expect(checkbox).not.toBeRequired();
+      notRequired(checkbox);
       expect(checkbox.checkValidity()).toBe(true);
     });
   });
@@ -512,17 +559,16 @@ describe("Specify attrs & state transition & event handlers", () => {
       required: true,
       values: [],
     });
-    const user = userEvent.setup();
     const { getAllByRole } = render(CheckField, props);
     const radios = getAllByRole("radio") as HTMLInputElement[];
 
     radios.forEach((radio) => {
-      expect(radio).toBeRequired();
+      required(radio);
     });
 
-    await user.click(radios[1]);
+    await userEvent.click(radios[1]);
     radios.forEach((radio) => {
-      expect(radio).toBeRequired();
+      required(radio);
       expect(radio.checkValidity()).toBe(true);
     });
   });
@@ -537,7 +583,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
 
     checkboxes.forEach((checkbox) => {
-      expect(checkbox).not.toBeRequired();
+      notRequired(checkbox);
     });
   });
 
@@ -555,8 +601,8 @@ describe("Specify attrs & state transition & event handlers", () => {
 
     await fireEvent.invalid(checkboxes[0]);
     getByRole("alert") as HTMLDivElement;
-    expect(checkboxes[0]).toHaveAttribute("aria-invalid", "true");
-    expect(checkboxes[0]).toHaveAccessibleErrorMessage(errmsg);
+    attr(checkboxes[0], "aria-invalid", "true");
+    aerr(checkboxes[0], errmsg);
     expect(props.variant).toBe(VARIANT.INACTIVE);
   });
 
@@ -572,7 +618,6 @@ describe("Specify attrs & state transition & event handlers", () => {
       required: true,
       values: [],
     });
-    const user = userEvent.setup();
     const { getAllByRole } = render(CheckField, props);
     const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
 
@@ -580,7 +625,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(oninvalid).toHaveBeenCalledTimes(1);
     expect(props.variant).toBe(VARIANT.INACTIVE);
 
-    await user.click(checkboxes[0]);
+    await userEvent.click(checkboxes[0]);
     expect(onchange).toHaveBeenCalledTimes(1);
     expect(props.variant).toBe(VARIANT.ACTIVE);
   });
@@ -611,17 +656,16 @@ describe("Specify attrs & state transition & event handlers", () => {
       options,
       values: [],
     });
-    const user = userEvent.setup();
     const { getAllByRole } = render(CheckField, props);
     const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
 
-    await user.click(checkboxes[0]);
+    await userEvent.click(checkboxes[0]);
     expect(props.values).toEqual(["option1"]);
 
-    await user.click(checkboxes[2]);
+    await userEvent.click(checkboxes[2]);
     expect(props.values).toEqual(["option1", "option3"]);
 
-    await user.click(checkboxes[0]);
+    await userEvent.click(checkboxes[0]);
     expect(props.values).toEqual(["option3"]);
   });
 
@@ -645,7 +689,6 @@ describe("Specify attrs & state transition & event handlers", () => {
   });
 
   test("name is shared across the group", async () => {
-    const user = userEvent.setup();
     const defaultProps = $state({ options, values: [] });
     const { getAllByRole, unmount } = render(CheckField, defaultProps);
     const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
@@ -665,10 +708,10 @@ describe("Specify attrs & state transition & event handlers", () => {
       expect(radio.name).toBe("custom_name");
     });
 
-    await user.click(radios[0]);
-    await user.click(radios[1]);
-    expect(radios[0]).not.toBeChecked();
-    expect(radios[1]).toBeChecked();
+    await userEvent.click(radios[0]);
+    await userEvent.click(radios[1]);
+    notChecked(radios[0]);
+    checked(radios[1]);
     expect(radioProps.values).toEqual(["option2"]);
   });
 
@@ -683,7 +726,6 @@ describe("Specify attrs & state transition & event handlers", () => {
       validations,
       values: [],
     });
-    const user = userEvent.setup();
     const { getByTestId, getByText, getAllByRole } = render(CheckField, props);
     const groups = getAllByRole("group");
     const whole = groups[0] as HTMLDivElement;
@@ -696,36 +738,36 @@ describe("Specify attrs & state transition & event handlers", () => {
     const btm = whole.lastElementChild as HTMLDivElement;
 
     expect(props.variant).toBe(VARIANT.NEUTRAL);
-    expect(whole).toHaveClass(seed, PARTS.WHOLE);
-    expect(top).toHaveClass(seed, PARTS.TOP);
-    expect(lbl).toHaveClass(seed, PARTS.LABEL);
-    expect(ext).toHaveClass(seed, PARTS.EXTRA);
-    expect(auxdv).toHaveClass(seed, PARTS.AUX);
-    expect(middle).toHaveClass(seed, PARTS.MIDDLE);
-    expect(btm).toHaveClass(seed, PARTS.BOTTOM);
+    has(whole, seed, PARTS.WHOLE);
+    has(top, seed, PARTS.TOP);
+    has(lbl, seed, PARTS.LABEL);
+    has(ext, seed, PARTS.EXTRA);
+    has(auxdv, seed, PARTS.AUX);
+    has(middle, seed, PARTS.MIDDLE);
+    has(btm, seed, PARTS.BOTTOM);
 
     // Check first checkbox and verify active state
-    await user.click(checkboxes[0]);
+    await userEvent.click(checkboxes[0]);
     expect(props.variant).toBe(VARIANT.ACTIVE);
-    expect(whole).toHaveClass(seed, PARTS.WHOLE, VARIANT.ACTIVE);
-    expect(top).toHaveClass(seed, PARTS.TOP, VARIANT.ACTIVE);
-    expect(lbl).toHaveClass(seed, PARTS.LABEL, VARIANT.ACTIVE);
-    expect(ext).toHaveClass(seed, PARTS.EXTRA, VARIANT.ACTIVE);
-    expect(auxdv).toHaveClass(seed, PARTS.AUX, VARIANT.ACTIVE);
-    expect(middle).toHaveClass(seed, PARTS.MIDDLE, VARIANT.ACTIVE);
-    expect(btm).toHaveClass(seed, PARTS.BOTTOM, VARIANT.ACTIVE);
+    has(whole, seed, PARTS.WHOLE, VARIANT.ACTIVE);
+    has(top, seed, PARTS.TOP, VARIANT.ACTIVE);
+    has(lbl, seed, PARTS.LABEL, VARIANT.ACTIVE);
+    has(ext, seed, PARTS.EXTRA, VARIANT.ACTIVE);
+    has(auxdv, seed, PARTS.AUX, VARIANT.ACTIVE);
+    has(middle, seed, PARTS.MIDDLE, VARIANT.ACTIVE);
+    has(btm, seed, PARTS.BOTTOM, VARIANT.ACTIVE);
 
     // Uncheck and trigger invalid state
-    await user.click(checkboxes[0]);
+    await userEvent.click(checkboxes[0]);
     await fireEvent.invalid(checkboxes[0]);
     expect(props.variant).toBe(VARIANT.INACTIVE);
-    expect(whole).toHaveClass(seed, PARTS.WHOLE, VARIANT.INACTIVE);
-    expect(top).toHaveClass(seed, PARTS.TOP, VARIANT.INACTIVE);
-    expect(lbl).toHaveClass(seed, PARTS.LABEL, VARIANT.INACTIVE);
-    expect(ext).toHaveClass(seed, PARTS.EXTRA, VARIANT.INACTIVE);
-    expect(auxdv).toHaveClass(seed, PARTS.AUX, VARIANT.INACTIVE);
-    expect(middle).toHaveClass(seed, PARTS.MIDDLE, VARIANT.INACTIVE);
-    expect(btm).toHaveClass(seed, PARTS.BOTTOM, VARIANT.INACTIVE);
+    has(whole, seed, PARTS.WHOLE, VARIANT.INACTIVE);
+    has(top, seed, PARTS.TOP, VARIANT.INACTIVE);
+    has(lbl, seed, PARTS.LABEL, VARIANT.INACTIVE);
+    has(ext, seed, PARTS.EXTRA, VARIANT.INACTIVE);
+    has(auxdv, seed, PARTS.AUX, VARIANT.INACTIVE);
+    has(middle, seed, PARTS.MIDDLE, VARIANT.INACTIVE);
+    has(btm, seed, PARTS.BOTTOM, VARIANT.INACTIVE);
   });
 
   test("w/ string styling class of each variant", async () => {
@@ -741,7 +783,6 @@ describe("Specify attrs & state transition & event handlers", () => {
       styling: clsid,
       values: [],
     });
-    const user = userEvent.setup();
     const { getByTestId, getByText, getAllByRole } = render(CheckField, props);
     const groups = getAllByRole("group");
     const whole = groups[0] as HTMLDivElement;
@@ -754,23 +795,23 @@ describe("Specify attrs & state transition & event handlers", () => {
     const btm = whole.lastElementChild as HTMLDivElement;
 
     expect(props.variant).toBe(VARIANT.NEUTRAL);
-    expect(whole).toHaveClass(clsid, PARTS.WHOLE);
-    expect(top).toHaveClass(clsid, PARTS.TOP);
-    expect(lbl).toHaveClass(clsid, PARTS.LABEL);
-    expect(ext).toHaveClass(clsid, PARTS.EXTRA);
-    expect(auxdv).toHaveClass(clsid, PARTS.AUX);
-    expect(middle).toHaveClass(clsid, PARTS.MIDDLE);
-    expect(btm).toHaveClass(clsid, PARTS.BOTTOM);
+    has(whole, clsid, PARTS.WHOLE);
+    has(top, clsid, PARTS.TOP);
+    has(lbl, clsid, PARTS.LABEL);
+    has(ext, clsid, PARTS.EXTRA);
+    has(auxdv, clsid, PARTS.AUX);
+    has(middle, clsid, PARTS.MIDDLE);
+    has(btm, clsid, PARTS.BOTTOM);
 
-    await user.click(checkboxes[0]);
+    await userEvent.click(checkboxes[0]);
     expect(props.variant).toBe(VARIANT.ACTIVE);
-    expect(whole).toHaveClass(clsid, PARTS.WHOLE, VARIANT.ACTIVE);
-    expect(top).toHaveClass(clsid, PARTS.TOP, VARIANT.ACTIVE);
-    expect(lbl).toHaveClass(clsid, PARTS.LABEL, VARIANT.ACTIVE);
-    expect(ext).toHaveClass(clsid, PARTS.EXTRA, VARIANT.ACTIVE);
-    expect(auxdv).toHaveClass(clsid, PARTS.AUX, VARIANT.ACTIVE);
-    expect(middle).toHaveClass(clsid, PARTS.MIDDLE, VARIANT.ACTIVE);
-    expect(btm).toHaveClass(clsid, PARTS.BOTTOM, VARIANT.ACTIVE);
+    has(whole, clsid, PARTS.WHOLE, VARIANT.ACTIVE);
+    has(top, clsid, PARTS.TOP, VARIANT.ACTIVE);
+    has(lbl, clsid, PARTS.LABEL, VARIANT.ACTIVE);
+    has(ext, clsid, PARTS.EXTRA, VARIANT.ACTIVE);
+    has(auxdv, clsid, PARTS.AUX, VARIANT.ACTIVE);
+    has(middle, clsid, PARTS.MIDDLE, VARIANT.ACTIVE);
+    has(btm, clsid, PARTS.BOTTOM, VARIANT.ACTIVE);
   });
 
   test("w/ obj styling of each variant", async () => {
@@ -803,7 +844,6 @@ describe("Specify attrs & state transition & event handlers", () => {
       styling,
       values: [],
     });
-    const user = userEvent.setup();
     const { getByTestId, getByText, getAllByRole } = render(CheckField, props);
     const groups = getAllByRole("group");
     const whole = groups[0] as HTMLDivElement;
@@ -816,34 +856,34 @@ describe("Specify attrs & state transition & event handlers", () => {
     const btm = whole.lastElementChild as HTMLDivElement;
 
     expect(props.variant).toBe(VARIANT.NEUTRAL);
-    expect(whole).toHaveClass(dynObj.base, dynObj.neutral);
-    expect(top).toHaveClass(dynObj.base, dynObj.neutral);
-    expect(lbl).toHaveClass(dynObj.base, dynObj.neutral);
-    expect(ext).toHaveClass(dynObj.base, dynObj.neutral);
-    expect(auxdv).toHaveClass(dynObj.base, dynObj.neutral);
-    expect(middle).toHaveClass(dynObj.base, dynObj.neutral);
-    expect(btm).toHaveClass(dynObj.base, dynObj.neutral);
+    has(whole, dynObj.base, dynObj.neutral);
+    has(top, dynObj.base, dynObj.neutral);
+    has(lbl, dynObj.base, dynObj.neutral);
+    has(ext, dynObj.base, dynObj.neutral);
+    has(auxdv, dynObj.base, dynObj.neutral);
+    has(middle, dynObj.base, dynObj.neutral);
+    has(btm, dynObj.base, dynObj.neutral);
 
-    await user.click(checkboxes[0]);
+    await userEvent.click(checkboxes[0]);
     expect(props.variant).toBe(VARIANT.ACTIVE);
-    expect(whole).toHaveClass(dynObj.base, dynObj.active);
-    expect(top).toHaveClass(dynObj.base, dynObj.active);
-    expect(lbl).toHaveClass(dynObj.base, dynObj.active);
-    expect(ext).toHaveClass(dynObj.base, dynObj.active);
-    expect(auxdv).toHaveClass(dynObj.base, dynObj.active);
-    expect(middle).toHaveClass(dynObj.base, dynObj.active);
-    expect(btm).toHaveClass(dynObj.base, dynObj.active);
+    has(whole, dynObj.base, dynObj.active);
+    has(top, dynObj.base, dynObj.active);
+    has(lbl, dynObj.base, dynObj.active);
+    has(ext, dynObj.base, dynObj.active);
+    has(auxdv, dynObj.base, dynObj.active);
+    has(middle, dynObj.base, dynObj.active);
+    has(btm, dynObj.base, dynObj.active);
 
-    await user.click(checkboxes[0]);
+    await userEvent.click(checkboxes[0]);
     await fireEvent.invalid(checkboxes[0]);
     expect(props.variant).toBe(VARIANT.INACTIVE);
-    expect(whole).toHaveClass(dynObj.base, dynObj.inactive);
-    expect(top).toHaveClass(dynObj.base, dynObj.inactive);
-    expect(lbl).toHaveClass(dynObj.base, dynObj.inactive);
-    expect(ext).toHaveClass(dynObj.base, dynObj.inactive);
-    expect(auxdv).toHaveClass(dynObj.base, dynObj.inactive);
-    expect(middle).toHaveClass(dynObj.base, dynObj.inactive);
-    expect(btm).toHaveClass(dynObj.base, dynObj.inactive);
+    has(whole, dynObj.base, dynObj.inactive);
+    has(top, dynObj.base, dynObj.inactive);
+    has(lbl, dynObj.base, dynObj.inactive);
+    has(ext, dynObj.base, dynObj.inactive);
+    has(auxdv, dynObj.base, dynObj.inactive);
+    has(middle, dynObj.base, dynObj.inactive);
+    has(btm, dynObj.base, dynObj.inactive);
   });
 
   test("individual checkbox label styling", () => {
@@ -853,9 +893,9 @@ describe("Specify attrs & state transition & event handlers", () => {
     const labels = checkboxes.map((cb) => cb.parentElement);
 
     // First checkbox is checked (active), others are neutral
-    expect(labels[0]).toHaveClass(seed, PARTS.MAIN, VARIANT.ACTIVE);
-    expect(labels[1]).toHaveClass(seed, PARTS.MAIN);
-    expect(labels[2]).toHaveClass(seed, PARTS.MAIN);
+    has(labels[0], seed, PARTS.MAIN, VARIANT.ACTIVE);
+    has(labels[1], seed, PARTS.MAIN);
+    has(labels[2], seed, PARTS.MAIN);
 
     // Verify input and span elements within labels
     labels.forEach((label, index) => {
@@ -863,8 +903,8 @@ describe("Specify attrs & state transition & event handlers", () => {
       const span = label?.querySelector("span");
       const expectedState = index === 0 ? VARIANT.ACTIVE : VARIANT.NEUTRAL;
 
-      expect(input).toHaveClass(seed, PARTS.LEFT, expectedState);
-      expect(span).toHaveClass(seed, PARTS.RIGHT, expectedState);
+      has(input, seed, PARTS.LEFT, expectedState);
+      has(span, seed, PARTS.RIGHT, expectedState);
     });
   });
 });

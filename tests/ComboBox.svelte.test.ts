@@ -1,51 +1,89 @@
 import { describe, expect, test, vi } from "vitest";
-import { fireEvent, render, within } from "@testing-library/svelte";
-import { userEvent } from "@testing-library/user-event";
-import { createRawSnippet } from "svelte";
+import { render as svRender } from "vitest-browser-svelte";
+import { userEvent } from "vitest/browser";
+import { createRawSnippet, tick } from "svelte";
 import ComboBox from "#svs/ComboBox.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 
 const attachfn = () => {};
 const mockScrollIntoView = () => {
-  const prev = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollIntoView");
-  if (!prev) {
-    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
-      configurable: true,
-      value() {},
-    });
-  }
   const spy = vi.spyOn(HTMLElement.prototype, "scrollIntoView").mockImplementation(() => {});
+  return { spy, restore: () => spy.mockRestore() };
+};
+const byRole = (container: HTMLElement | ParentNode, role: string) =>
+  Array.from(container.querySelectorAll(`[role="${role}"]`)) as HTMLElement[];
+const byTestId = (container: HTMLElement, id: string) => container.querySelector(`[data-testid="${id}"]`) as HTMLElement;
+const render = (component: any, props?: any) => {
+  const result = svRender(component, props);
+  const { container } = result;
   return {
-    spy,
-    restore() {
-      spy.mockRestore();
-      if (prev) Object.defineProperty(HTMLElement.prototype, "scrollIntoView", prev);
-      else Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
-    },
+    ...result,
+    getByRole: (role: string) => byRole(container, role)[0] ?? null,
+    queryByRole: (role: string) => byRole(container, role)[0] ?? null,
+    getAllByRole: (role: string) => byRole(container, role),
+    getByTestId: (id: string) => byTestId(container, id),
   };
 };
+const within = (node: HTMLElement) => ({
+  getAllByRole: (role: string) => byRole(node, role),
+  queryAllByRole: (role: string) => byRole(node, role),
+});
+const fireEvent = {
+  blur: async (el: HTMLElement) => {
+    el.blur();
+    await tick();
+  },
+  focus: async (el: HTMLElement) => {
+    el.focus();
+    await tick();
+  },
+  keyDown: async (el: HTMLElement, init: KeyboardEventInit) => {
+    el.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, ...init }));
+    await tick();
+  },
+  pointerDown: async (el: HTMLElement) => {
+    el.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    await tick();
+  },
+  scroll: async (target: Document) => {
+    target.dispatchEvent(new Event("scroll"));
+    await tick();
+  },
+};
+const has = (el: Element | null | undefined, ...names: string[]) =>
+  expect([...(el?.classList ?? [])]).toEqual(expect.arrayContaining(names));
+const lacks = (el: Element | null | undefined, name: string) => expect(el?.classList.contains(name)).toBe(false);
+const attr = (el: Element, name: string, value?: string | null) => {
+  if (value === undefined) expect(el.hasAttribute(name)).toBe(true);
+  else expect(el.getAttribute(name)).toBe(value);
+};
+const noattr = (el: Element, name: string) => expect(el.hasAttribute(name)).toBe(false);
+const txt = (el: Element | null | undefined, value: string) => expect(el?.textContent).toContain(value);
+const val = (el: HTMLInputElement, value: string) => expect(el.value).toBe(value);
+const focus = (el: Element) => expect(document.activeElement).toBe(el);
+const inDoc = (el: Element | null | undefined) => expect(!!el?.isConnected).toBe(true);
+const style = (el: Element, name: keyof CSSStyleDeclaration, value: string) => expect(getComputedStyle(el)[name]).toBe(value);
 
 describe("Switching existence of elements", () => {
   const options = new Set(["option1", "option2", "option3"]);
 
   test("basic combobox with options", async () => {
-    const user = userEvent.setup();
     const { getByRole } = render(ComboBox, { options });
     const combobox = getByRole("combobox") as HTMLInputElement;
-    expect(combobox).toHaveAttribute("type", "text");
-    expect(combobox).toHaveAttribute("role", "combobox");
-    expect(combobox).toHaveAttribute("aria-haspopup", "listbox");
-    expect(combobox).toHaveAttribute("aria-autocomplete", "list");
-    expect(combobox).toHaveAttribute("aria-expanded", "false");
+    attr(combobox, "type", "text");
+    attr(combobox, "role", "combobox");
+    attr(combobox, "aria-haspopup", "listbox");
+    attr(combobox, "aria-autocomplete", "list");
+    attr(combobox, "aria-expanded", "false");
 
-    await user.click(combobox);
+    await userEvent.click(combobox);
 
     const listbox = getByRole("listbox") as HTMLUListElement;
     const items = within(listbox).getAllByRole("option");
     expect(items).toHaveLength(3);
-    expect(items[0]).toHaveTextContent("option1");
-    expect(items[1]).toHaveTextContent("option2");
-    expect(items[2]).toHaveTextContent("option3");
+    txt(items[0], "option1");
+    txt(items[1], "option2");
+    txt(items[2], "option3");
   });
 
   test("w/ attach", () => {
@@ -53,7 +91,7 @@ describe("Switching existence of elements", () => {
     const { getByRole } = render(ComboBox, { options, attach });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    expect(combobox).toHaveAttribute("role", "combobox");
+    attr(combobox, "role", "combobox");
     expect(attach).toHaveBeenCalled();
   });
 
@@ -62,7 +100,7 @@ describe("Switching existence of elements", () => {
     const { getByRole } = render(ComboBox, { options, value });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    expect(combobox).toHaveValue(value);
+    val(combobox, value);
   });
 
   test("w/ expanded initially", () => {
@@ -70,15 +108,15 @@ describe("Switching existence of elements", () => {
     const combobox = getByRole("combobox") as HTMLInputElement;
     const listbox = getByRole("listbox") as HTMLUListElement;
 
-    expect(combobox).toHaveAttribute("aria-expanded", "true");
-    expect(listbox).toHaveStyle("visibility: visible");
+    attr(combobox, "aria-expanded", "true");
+    style(listbox, "visibility", "visible");
   });
 
   test("w/ custom variant", () => {
     const { getByRole } = render(ComboBox, { options, variant: VARIANT.ACTIVE });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    expect(combobox).toHaveClass("svs-combo-box", PARTS.MAIN, VARIANT.ACTIVE);
+    has(combobox, "svs-combo-box", PARTS.MAIN, VARIANT.ACTIVE);
   });
 
   test("w/ attributes", () => {
@@ -90,9 +128,9 @@ describe("Switching existence of elements", () => {
     });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    expect(combobox).toHaveAttribute("placeholder", "Select option");
-    expect(combobox).toHaveAttribute("name", "combo");
-    expect(combobox).toHaveAttribute("required");
+    attr(combobox, "placeholder", "Select option");
+    attr(combobox, "name", "combo");
+    attr(combobox, "required");
   });
 
   test("class merged onto control, type/role forced", () => {
@@ -100,10 +138,10 @@ describe("Switching existence of elements", () => {
     const combobox = getByRole("combobox") as HTMLInputElement;
     const root = combobox.parentElement as HTMLElement;
 
-    expect(combobox).toHaveClass("custom-class"); // merged onto the control (same as ...rest)
-    expect(root).not.toHaveClass("custom-class"); // not on the WHOLE root
-    expect(combobox).toHaveAttribute("type", "text"); // forced, not from rest
-    expect(combobox).toHaveAttribute("role", "combobox"); // forced, not from rest
+    has(combobox, "custom-class"); // merged onto the control (same as ...rest)
+    lacks(root, "custom-class"); // not on the WHOLE root
+    attr(combobox, "type", "text"); // forced, not from rest
+    attr(combobox, "role", "combobox"); // forced, not from rest
   });
 });
 
@@ -111,18 +149,17 @@ describe("Focus and blur behavior", () => {
   const options = new Set(["apple", "banana", "cherry"]);
 
   test("opens on focus", async () => {
-    const user = userEvent.setup();
     const { getByRole } = render(ComboBox, { options });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    // expect(listbox).toHaveStyle("visibility: hidden");
-    expect(combobox).toHaveAttribute("aria-expanded", "false");
+    // style(listbox, "visibility", "hidden");
+    attr(combobox, "aria-expanded", "false");
 
-    await user.click(combobox);
+    await userEvent.click(combobox);
 
     const listbox = getByRole("listbox") as HTMLUListElement;
-    expect(listbox).toHaveStyle("visibility: visible");
-    expect(combobox).toHaveAttribute("aria-expanded", "true");
+    style(listbox, "visibility", "visible");
+    attr(combobox, "aria-expanded", "true");
   });
 
   test("closes on blur", async () => {
@@ -130,41 +167,41 @@ describe("Focus and blur behavior", () => {
     const combobox = getByRole("combobox") as HTMLInputElement;
     const listbox = getByRole("listbox") as HTMLUListElement;
 
-    expect(listbox).toHaveStyle("visibility: visible");
-    expect(combobox).toHaveAttribute("aria-expanded", "true");
+    style(listbox, "visibility", "visible");
+    attr(combobox, "aria-expanded", "true");
 
+    combobox.focus();
+    await tick();
     await fireEvent.blur(combobox);
 
-    expect(listbox).toHaveStyle("visibility: hidden");
-    expect(combobox).toHaveAttribute("aria-expanded", "false");
+    style(listbox, "visibility", "hidden");
+    attr(combobox, "aria-expanded", "false");
   });
 
   test("click reopens after Escape while focus remains on input", async () => {
-    const user = userEvent.setup();
     const { getByRole } = render(ComboBox, { options });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
-    await user.keyboard("{Escape}");
-    expect(combobox).toHaveFocus();
-    expect(combobox).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(combobox);
+    await userEvent.keyboard("{Escape}");
+    focus(combobox);
+    attr(combobox, "aria-expanded", "false");
 
-    await user.click(combobox);
+    await userEvent.click(combobox);
 
-    expect(combobox).toHaveAttribute("aria-expanded", "true");
+    attr(combobox, "aria-expanded", "true");
     expect(within(getByRole("listbox")).getAllByRole("option")).toHaveLength(3);
   });
 
   test("focuses and selects existing value", async () => {
-    const user = userEvent.setup();
     const { getByRole, getAllByRole } = render(ComboBox, { options, value: "banana" });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
+    await userEvent.click(combobox);
 
     const items = getAllByRole("option");
-    expect(items[1]).toHaveAttribute("aria-selected", "true");
-    expect(items[1]).toHaveClass("svs-combo-box", PARTS.LABEL, VARIANT.ACTIVE);
+    attr(items[1], "aria-selected", "true");
+    has(items[1], "svs-combo-box", PARTS.LABEL, VARIANT.ACTIVE);
   });
 });
 
@@ -172,145 +209,136 @@ describe("Keyboard navigation", () => {
   const options = new Set(["apple", "banana", "cherry", "date"]);
 
   test("Arrow Down opens and navigates", async () => {
-    const user = userEvent.setup();
     const { getByRole, getAllByRole } = render(ComboBox, { options });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
     combobox.focus();
-    await user.keyboard("{ArrowDown}");
+    await userEvent.keyboard("{ArrowDown}");
 
-    expect(combobox).toHaveAttribute("aria-expanded", "true");
+    attr(combobox, "aria-expanded", "true");
     const items = getAllByRole("option");
-    expect(items[0]).toHaveAttribute("aria-selected", "true");
+    attr(items[0], "aria-selected", "true");
 
-    await user.keyboard("{ArrowDown}");
-    expect(items[0]).toHaveAttribute("aria-selected", "false");
-    expect(items[1]).toHaveAttribute("aria-selected", "true");
+    await userEvent.keyboard("{ArrowDown}");
+    attr(items[0], "aria-selected", "false");
+    attr(items[1], "aria-selected", "true");
   });
 
   test("Arrow Up opens from bottom and navigates", async () => {
-    const user = userEvent.setup();
     const { getByRole, getAllByRole } = render(ComboBox, { options });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
-    expect(combobox).toHaveAttribute("aria-expanded", "true");
+    await userEvent.click(combobox);
+    attr(combobox, "aria-expanded", "true");
 
     const items = getAllByRole("option");
 
-    await user.keyboard("{ArrowUp}");
-    expect(items[3]).toHaveAttribute("aria-selected", "true");
+    await userEvent.keyboard("{ArrowUp}");
+    attr(items[3], "aria-selected", "true");
 
-    await user.keyboard("{ArrowUp}");
-    expect(items[3]).toHaveAttribute("aria-selected", "false");
-    expect(items[2]).toHaveAttribute("aria-selected", "true");
+    await userEvent.keyboard("{ArrowUp}");
+    attr(items[3], "aria-selected", "false");
+    attr(items[2], "aria-selected", "true");
   });
 
   test("Alt+Arrow Down opens without selection", async () => {
-    const user = userEvent.setup();
     const { getByRole, getAllByRole } = render(ComboBox, { options });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
     combobox.focus();
-    await user.keyboard("{Alt>}{ArrowDown}{/Alt}");
+    await userEvent.keyboard("{Alt>}{ArrowDown}{/Alt}");
 
-    expect(combobox).toHaveAttribute("aria-expanded", "true");
+    attr(combobox, "aria-expanded", "true");
     const items = getAllByRole("option");
     items.forEach((item) => {
-      expect(item).toHaveAttribute("aria-selected", "false");
+      attr(item, "aria-selected", "false");
     });
   });
 
   test("Alt+Arrow Up closes when expanded", async () => {
-    const user = userEvent.setup();
     const { getByRole } = render(ComboBox, { options, expanded: true });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
     combobox.focus();
-    await user.keyboard("{Alt>}{ArrowUp}{/Alt}");
+    await userEvent.keyboard("{Alt>}{ArrowUp}{/Alt}");
 
-    expect(combobox).toHaveAttribute("aria-expanded", "false");
+    attr(combobox, "aria-expanded", "false");
   });
 
   test("Enter applies selection", async () => {
-    const user = userEvent.setup();
     const props = $state({ options, value: "" });
     const { getByRole } = render(ComboBox, props);
     const combobox = getByRole("combobox") as HTMLInputElement;
 
     combobox.focus();
-    await user.keyboard("{ArrowDown}");
-    await user.keyboard("{ArrowDown}"); // Select "banana"
-    await user.keyboard("{Enter}");
+    await userEvent.keyboard("{ArrowDown}");
+    await userEvent.keyboard("{ArrowDown}"); // Select "banana"
+    await userEvent.keyboard("{Enter}");
 
     expect(props.value).toBe("banana");
-    expect(combobox).toHaveAttribute("aria-expanded", "false");
+    attr(combobox, "aria-expanded", "false");
   });
 
   test("Escape closes dropdown", async () => {
-    const user = userEvent.setup();
     const { getByRole } = render(ComboBox, { options, expanded: true });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
     combobox.focus();
-    await user.keyboard("{Escape}");
+    await userEvent.keyboard("{Escape}");
 
-    expect(combobox).toHaveAttribute("aria-expanded", "false");
+    attr(combobox, "aria-expanded", "false");
   });
 
   test("ignores keydown when composing", async () => {
-    const user = userEvent.setup();
     const { getByRole } = render(ComboBox, { options });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
-    await user.keyboard("{Escape}");
+    await userEvent.click(combobox);
+    await userEvent.keyboard("{Escape}");
     await fireEvent.keyDown(combobox, {
       key: "ArrowDown",
       isComposing: true,
     });
 
-    expect(combobox).toHaveAttribute("aria-expanded", "false");
+    attr(combobox, "aria-expanded", "false");
   });
 
   test("ignores keydown with modifier keys", async () => {
-    const user = userEvent.setup();
     const { getByRole } = render(ComboBox, { options });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
-    await user.keyboard("{Escape}{Control>}{ArrowDown}{/Control}");
+    await userEvent.click(combobox);
+    await userEvent.keyboard("{Escape}{Control>}{ArrowDown}{/Control}");
 
-    expect(combobox).toHaveAttribute("aria-expanded", "false");
+    attr(combobox, "aria-expanded", "false");
   });
 
   test("boundary navigation", async () => {
-    const user = userEvent.setup();
     const { getByRole, getAllByRole } = render(ComboBox, { options, expanded: true });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
     combobox.focus();
-    await user.keyboard("{ArrowDown}"); // Select first item
+    await userEvent.keyboard("{ArrowDown}"); // Select first item
 
     let items = getAllByRole("option");
-    expect(items[0]).toHaveAttribute("aria-selected", "true");
+    attr(items[0], "aria-selected", "true");
 
     // Try to go beyond first item up
-    await user.keyboard("{ArrowUp}");
+    await userEvent.keyboard("{ArrowUp}");
     items = getAllByRole("option");
-    expect(items[0]).toHaveAttribute("aria-selected", "true"); // Should stay at first
+    attr(items[0], "aria-selected", "true"); // Should stay at first
 
     // Navigate to last item
-    await user.keyboard("{ArrowDown}");
-    await user.keyboard("{ArrowDown}");
-    await user.keyboard("{ArrowDown}");
+    await userEvent.keyboard("{ArrowDown}");
+    await userEvent.keyboard("{ArrowDown}");
+    await userEvent.keyboard("{ArrowDown}");
     items = getAllByRole("option");
-    expect(items[3]).toHaveAttribute("aria-selected", "true");
+    attr(items[3], "aria-selected", "true");
 
     // Try to go beyond last item
-    await user.keyboard("{ArrowDown}");
+    await userEvent.keyboard("{ArrowDown}");
     items = getAllByRole("option");
-    expect(items[3]).toHaveAttribute("aria-selected", "true"); // Should stay at last
+    attr(items[3], "aria-selected", "true"); // Should stay at last
   });
 });
 
@@ -318,28 +346,26 @@ describe("Mouse interactions", () => {
   const options = new Set(["red", "green", "blue"]);
 
   test("hover selects option", async () => {
-    const user = userEvent.setup();
     const { getAllByRole } = render(ComboBox, { options, expanded: true });
     const items = getAllByRole("option");
 
-    await user.hover(items[1]);
+    await userEvent.hover(items[1]);
 
-    expect(items[0]).toHaveAttribute("aria-selected", "false");
-    expect(items[1]).toHaveAttribute("aria-selected", "true");
-    expect(items[2]).toHaveAttribute("aria-selected", "false");
+    attr(items[0], "aria-selected", "false");
+    attr(items[1], "aria-selected", "true");
+    attr(items[2], "aria-selected", "false");
   });
 
   test("click applies selection", async () => {
-    const user = userEvent.setup();
     const props = $state({ options, value: "", expanded: true });
     const { getByRole, getAllByRole } = render(ComboBox, props);
     const combobox = getByRole("combobox") as HTMLInputElement;
     const items = getAllByRole("option");
 
-    await user.click(items[2]);
+    await userEvent.click(items[2]);
 
     expect(props.value).toBe("blue");
-    expect(combobox).toHaveAttribute("aria-expanded", "false");
+    attr(combobox, "aria-expanded", "false");
   });
 });
 
@@ -351,11 +377,11 @@ describe("State management and bindings", () => {
     const { getByRole, rerender } = render(ComboBox, props);
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    expect(combobox).toHaveValue("item1");
+    val(combobox, "item1");
 
     props.value = "item2";
     await rerender(props);
-    expect(combobox).toHaveValue("item2");
+    val(combobox, "item2");
   });
 
   test("expanded binding works", async () => {
@@ -363,14 +389,14 @@ describe("State management and bindings", () => {
     const { getByRole, rerender } = render(ComboBox, props);
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    expect(combobox).toHaveAttribute("aria-expanded", "false");
-    // expect(listbox).toHaveStyle("visibility: hidden");
+    attr(combobox, "aria-expanded", "false");
+    // style(listbox, "visibility", "hidden");
 
     props.expanded = true;
     await rerender(props);
     const listbox = getByRole("listbox") as HTMLUListElement;
-    expect(combobox).toHaveAttribute("aria-expanded", "true");
-    expect(listbox).toHaveStyle("visibility: visible");
+    attr(combobox, "aria-expanded", "true");
+    style(listbox, "visibility", "visible");
   });
 
   test("variant binding works", async () => {
@@ -378,11 +404,11 @@ describe("State management and bindings", () => {
     const { getByRole, rerender } = render(ComboBox, props);
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    expect(combobox).toHaveClass("svs-combo-box", PARTS.MAIN, VARIANT.NEUTRAL);
+    has(combobox, "svs-combo-box", PARTS.MAIN, VARIANT.NEUTRAL);
 
     props.variant = VARIANT.ACTIVE;
     await rerender(props);
-    expect(combobox).toHaveClass("svs-combo-box", PARTS.MAIN, VARIANT.ACTIVE);
+    has(combobox, "svs-combo-box", PARTS.MAIN, VARIANT.ACTIVE);
   });
 
   test("element binding works", () => {
@@ -404,10 +430,10 @@ describe("Style and class handling", () => {
     const listbox = getByRole("listbox") as HTMLUListElement;
     const items = getAllByRole("option");
 
-    expect(whole).toHaveClass("svs-combo-box", PARTS.WHOLE, VARIANT.NEUTRAL);
-    expect(combobox).toHaveClass("svs-combo-box", PARTS.MAIN, VARIANT.NEUTRAL);
-    expect(listbox).toHaveClass("svs-combo-box", PARTS.BOTTOM, VARIANT.ACTIVE);
-    expect(items[0]).toHaveClass("svs-combo-box", PARTS.LABEL, VARIANT.NEUTRAL);
+    has(whole, "svs-combo-box", PARTS.WHOLE, VARIANT.NEUTRAL);
+    has(combobox, "svs-combo-box", PARTS.MAIN, VARIANT.NEUTRAL);
+    has(listbox, "svs-combo-box", PARTS.BOTTOM, VARIANT.ACTIVE);
+    has(items[0], "svs-combo-box", PARTS.LABEL, VARIANT.NEUTRAL);
   });
 
   test("string styling classes", () => {
@@ -418,10 +444,10 @@ describe("Style and class handling", () => {
     const listbox = getByRole("listbox") as HTMLUListElement;
     const items = getAllByRole("option");
 
-    expect(whole).toHaveClass(styling, PARTS.WHOLE, VARIANT.NEUTRAL);
-    expect(combobox).toHaveClass(styling, PARTS.MAIN, VARIANT.NEUTRAL);
-    expect(listbox).toHaveClass(styling, PARTS.BOTTOM, VARIANT.ACTIVE);
-    expect(items[0]).toHaveClass(styling, PARTS.LABEL, VARIANT.NEUTRAL);
+    has(whole, styling, PARTS.WHOLE, VARIANT.NEUTRAL);
+    has(combobox, styling, PARTS.MAIN, VARIANT.NEUTRAL);
+    has(listbox, styling, PARTS.BOTTOM, VARIANT.ACTIVE);
+    has(items[0], styling, PARTS.LABEL, VARIANT.NEUTRAL);
   });
 
   test("object styling classes", () => {
@@ -449,10 +475,10 @@ describe("Style and class handling", () => {
     const listbox = getByRole("listbox") as HTMLUListElement;
     const items = getAllByRole("option");
 
-    expect(whole).toHaveClass(dynObj.base, dynObj.active);
-    expect(combobox).toHaveClass(dynObj.base, dynObj.active);
-    expect(listbox).toHaveClass(dynObj.base, dynObj.active);
-    expect(items[0]).toHaveClass(dynObj.base, dynObj.active);
+    has(whole, dynObj.base, dynObj.active);
+    has(combobox, dynObj.base, dynObj.active);
+    has(listbox, dynObj.base, dynObj.active);
+    has(items[0], dynObj.base, dynObj.active);
   });
 });
 
@@ -465,56 +491,54 @@ describe("ARIA and accessibility", () => {
     const listbox = getByRole("listbox") as HTMLUListElement;
     const items = getAllByRole("option");
 
-    expect(combobox).toHaveAttribute("aria-haspopup", "listbox");
-    expect(combobox).toHaveAttribute("aria-autocomplete", "list");
-    expect(combobox).toHaveAttribute("aria-expanded", "true");
+    attr(combobox, "aria-haspopup", "listbox");
+    attr(combobox, "aria-autocomplete", "list");
+    attr(combobox, "aria-expanded", "true");
 
     const controlsId = combobox.getAttribute("aria-controls");
-    expect(listbox).toHaveAttribute("id", controlsId);
+    attr(listbox, "id", controlsId);
 
     items.forEach((item) => {
-      expect(item).toHaveAttribute("role", "option");
-      expect(item).toHaveAttribute("aria-selected", "false");
+      attr(item, "role", "option");
+      attr(item, "aria-selected", "false");
     });
   });
 
   test("selected item has proper ARIA state", async () => {
-    const user = userEvent.setup();
     const { getByRole, getAllByRole } = render(ComboBox, { options, expanded: true });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
     combobox.focus();
-    await user.keyboard("{ArrowDown}");
+    await userEvent.keyboard("{ArrowDown}");
 
     const items = getAllByRole("option");
-    expect(items[0]).toHaveAttribute("aria-selected", "true");
-    expect(items[1]).toHaveAttribute("aria-selected", "false");
+    attr(items[0], "aria-selected", "true");
+    attr(items[1], "aria-selected", "false");
   });
 
   test("aria-activedescendant follows selection", async () => {
-    const user = userEvent.setup();
     const { getByRole, getAllByRole } = render(ComboBox, { options, expanded: true });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
     combobox.focus();
-    await user.keyboard("{ArrowDown}");
+    await userEvent.keyboard("{ArrowDown}");
 
     let items = getAllByRole("option");
     const ids = items.map((item) => item.id);
     expect(ids.every(Boolean)).toBe(true);
     expect(new Set(ids).size).toBe(items.length);
-    expect(combobox).toHaveAttribute("aria-activedescendant", items[0].id);
+    attr(combobox, "aria-activedescendant", items[0].id);
 
-    await user.keyboard("{ArrowDown}");
+    await userEvent.keyboard("{ArrowDown}");
     items = getAllByRole("option");
-    expect(combobox).toHaveAttribute("aria-activedescendant", items[1].id);
+    attr(combobox, "aria-activedescendant", items[1].id);
   });
 
   test("aria-activedescendant is absent when nothing is selected", () => {
     const { getByRole } = render(ComboBox, { options, expanded: true });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    expect(combobox).not.toHaveAttribute("aria-activedescendant");
+    noattr(combobox, "aria-activedescendant");
   });
 });
 
@@ -526,33 +550,30 @@ describe("Filtering", () => {
       .map((item) => item.textContent);
 
   test("focus shows the full list before typing", async () => {
-    const user = userEvent.setup();
     const { getByRole } = render(ComboBox, { options, value: "C" });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
+    await userEvent.click(combobox);
 
     expect(optionTexts(getByRole("listbox"))).toEqual(["HTML", "CSS", "JavaScript", "TypeScript"]);
   });
 
   test("typing narrows the list", async () => {
-    const user = userEvent.setup();
     const { getByRole } = render(ComboBox, { options });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
-    await user.keyboard("Ty");
+    await userEvent.click(combobox);
+    await userEvent.keyboard("Ty");
 
     expect(optionTexts(getByRole("listbox"))).toEqual(["TypeScript"]);
   });
 
   test("matching is case-insensitive", async () => {
-    const user = userEvent.setup();
     const { getByRole, rerender } = render(ComboBox, { options });
     let combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
-    await user.keyboard("ty");
+    await userEvent.click(combobox);
+    await userEvent.keyboard("ty");
 
     expect(optionTexts(getByRole("listbox"))).toEqual(["TypeScript"]);
 
@@ -560,47 +581,44 @@ describe("Filtering", () => {
     await rerender({ options, value: "", expanded: false });
     combobox = getByRole("combobox") as HTMLInputElement;
     await fireEvent.focus(combobox);
-    await user.keyboard("ht");
+    await userEvent.keyboard("ht");
 
     expect(optionTexts(getByRole("listbox"))).toEqual(["HTML"]);
   });
 
   test("clearing input restores the full list", async () => {
-    const user = userEvent.setup();
     const { getByRole } = render(ComboBox, { options });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
-    await user.keyboard("Ty");
+    await userEvent.click(combobox);
+    await userEvent.keyboard("Ty");
     expect(optionTexts(getByRole("listbox"))).toEqual(["TypeScript"]);
 
-    await user.clear(combobox);
+    await userEvent.clear(combobox);
 
     expect(optionTexts(getByRole("listbox"))).toEqual(["HTML", "CSS", "JavaScript", "TypeScript"]);
   });
 
   test("zero matches stay open with an empty list", async () => {
-    const user = userEvent.setup();
     const { getByRole } = render(ComboBox, { options });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
-    await user.keyboard("zzz");
+    await userEvent.click(combobox);
+    await userEvent.keyboard("zzz");
 
-    expect(combobox).toHaveAttribute("aria-expanded", "true");
+    attr(combobox, "aria-expanded", "true");
     expect(within(getByRole("listbox")).queryAllByRole("option")).toHaveLength(0);
   });
 
   test("re-open resets the filter", async () => {
-    const user = userEvent.setup();
     const { getByRole } = render(ComboBox, { options });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
-    await user.keyboard("Ty");
+    await userEvent.click(combobox);
+    await userEvent.keyboard("Ty");
     expect(optionTexts(getByRole("listbox"))).toEqual(["TypeScript"]);
 
-    await user.keyboard("{Escape}");
+    await userEvent.keyboard("{Escape}");
     await fireEvent.blur(combobox);
     await fireEvent.focus(combobox);
 
@@ -608,13 +626,12 @@ describe("Filtering", () => {
   });
 
   test("external close resets the filter", async () => {
-    const user = userEvent.setup();
     const props = $state({ options, value: "", expanded: true });
     const { getByRole, rerender } = render(ComboBox, props);
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
-    await user.keyboard("Ty");
+    await userEvent.click(combobox);
+    await userEvent.keyboard("Ty");
     expect(optionTexts(getByRole("listbox"))).toEqual(["TypeScript"]);
 
     props.expanded = false;
@@ -626,57 +643,54 @@ describe("Filtering", () => {
   });
 
   test("search false disables filtering but exact matches still highlight", async () => {
-    const user = userEvent.setup();
     const { getByRole } = render(ComboBox, { options, search: false });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
-    await user.keyboard("Ty");
+    await userEvent.click(combobox);
+    await userEvent.keyboard("Ty");
 
     expect(optionTexts(getByRole("listbox"))).toEqual(["HTML", "CSS", "JavaScript", "TypeScript"]);
 
-    await user.clear(combobox);
-    await user.keyboard("CSS");
+    await userEvent.clear(combobox);
+    await userEvent.keyboard("CSS");
 
     const items = within(getByRole("listbox")).getAllByRole("option");
     expect(items.map((item) => item.getAttribute("aria-selected"))).toEqual(["false", "true", "false", "false"]);
   });
 
   test("exact matches highlight with search enabled", async () => {
-    const user = userEvent.setup();
     const { getByRole } = render(ComboBox, { options });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
-    await user.keyboard("CSS");
+    await userEvent.click(combobox);
+    await userEvent.keyboard("CSS");
 
     const items = within(getByRole("listbox")).getAllByRole("option");
     expect(items).toHaveLength(1);
-    expect(items[0]).toHaveTextContent("CSS");
-    expect(items[0]).toHaveAttribute("aria-selected", "true");
+    txt(items[0], "CSS");
+    attr(items[0], "aria-selected", "true");
   });
 });
 
 describe("Edge cases and error handling", () => {
   test("single option", async () => {
-    const user = userEvent.setup();
     const singleOption = new Set(["only"]);
     const { getByRole, getAllByRole } = render(ComboBox, { options: singleOption });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
-    await user.keyboard("{ArrowDown}");
+    await userEvent.click(combobox);
+    await userEvent.keyboard("{ArrowDown}");
 
     const items = getAllByRole("option");
     expect(items).toHaveLength(1);
-    expect(items[0]).toHaveAttribute("aria-selected", "true");
+    attr(items[0], "aria-selected", "true");
 
     // Try navigating beyond bounds
-    await user.keyboard("{ArrowDown}");
-    expect(items[0]).toHaveAttribute("aria-selected", "true");
+    await userEvent.keyboard("{ArrowDown}");
+    attr(items[0], "aria-selected", "true");
 
-    await user.keyboard("{ArrowUp}");
-    expect(items[0]).toHaveAttribute("aria-selected", "true");
+    await userEvent.keyboard("{ArrowUp}");
+    attr(items[0], "aria-selected", "true");
   });
 
   test("value not in options", () => {
@@ -684,40 +698,37 @@ describe("Edge cases and error handling", () => {
     const { getByRole } = render(ComboBox, { options, value: "invalid" });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    expect(combobox).toHaveValue("invalid");
+    val(combobox, "invalid");
   });
 
   test("selection cursor position after apply", async () => {
-    const user = userEvent.setup();
     const options = new Set(["short", "verylongtext"]);
     const props = $state({ options, value: "", element: undefined as HTMLInputElement | undefined });
     const { getByRole } = render(ComboBox, props);
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
-    await user.keyboard("{ArrowDown}");
-    await user.keyboard("{ArrowDown}"); // Select "verylongtext"
-    await user.keyboard("{Enter}");
+    await userEvent.click(combobox);
+    await userEvent.keyboard("{ArrowDown}");
+    await userEvent.keyboard("{ArrowDown}"); // Select "verylongtext"
+    await userEvent.keyboard("{Enter}");
 
     expect(props.value).toBe("verylongtext");
     // Note: selectionStart check would require more complex setup in test environment
   });
 
   test("Enter with no selection does not corrupt value", async () => {
-    const user = userEvent.setup();
     const props = $state({ options: new Set(["a", "b", "c"]), value: "typed" });
     const { getByRole } = render(ComboBox, props);
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
-    await user.keyboard("{Enter}");
+    await userEvent.click(combobox);
+    await userEvent.keyboard("{Enter}");
 
     expect(props.value).toBe("typed");
-    expect(combobox).toBeInTheDocument();
+    inDoc(combobox);
   });
 
   test("pointerdown without hover does not produce an undefined value", async () => {
-    const user = userEvent.setup();
     const props = $state({ options: new Set(["red", "green", "blue"]), value: "", expanded: true });
     const { getByRole, getAllByRole } = render(ComboBox, props);
     const items = getAllByRole("option");
@@ -725,9 +736,9 @@ describe("Edge cases and error handling", () => {
     await fireEvent.pointerDown(items[1]);
 
     expect(props.value).toBe("");
-    expect(getByRole("combobox")).toHaveValue("");
+    val(getByRole("combobox") as HTMLInputElement, "");
 
-    await user.click(items[2]);
+    await userEvent.click(items[2]);
 
     expect(props.value).toBe("blue");
     expect(typeof props.value).toBe("string");
@@ -740,7 +751,6 @@ describe("Edge cases and error handling", () => {
   });
 
   test("user callbacks fire alongside internal handlers", async () => {
-    const user = userEvent.setup();
     const oninput = vi.fn();
     const onkeydown = vi.fn();
     const onfocus = vi.fn();
@@ -756,8 +766,8 @@ describe("Edge cases and error handling", () => {
     });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
-    await user.keyboard("a");
+    await userEvent.click(combobox);
+    await userEvent.keyboard("a");
     await fireEvent.blur(combobox);
 
     expect(onfocus).toHaveBeenCalled();
@@ -765,7 +775,7 @@ describe("Edge cases and error handling", () => {
     expect(oninput).toHaveBeenCalled();
     expect(onkeydown).toHaveBeenCalled();
     expect(onblur).toHaveBeenCalled();
-    expect(combobox).toHaveAttribute("aria-expanded", "false");
+    attr(combobox, "aria-expanded", "false");
   });
 
   test("document scroll closes the listbox", async () => {
@@ -774,13 +784,12 @@ describe("Edge cases and error handling", () => {
 
     await fireEvent.scroll(document);
 
-    expect(combobox).toHaveAttribute("aria-expanded", "false");
+    attr(combobox, "aria-expanded", "false");
   });
 });
 
 describe("Form behavior", () => {
   test("selecting with Enter does not submit a wrapping form", async () => {
-    const user = userEvent.setup();
     const props = $state({ options: new Set(["apple", "banana"]), value: "" });
     const form = document.createElement("form");
     const onsubmit = vi.fn((ev: SubmitEvent) => ev.preventDefault());
@@ -792,8 +801,8 @@ describe("Form behavior", () => {
     form.append(container);
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
-    await user.keyboard("{ArrowDown}{Enter}");
+    await userEvent.click(combobox);
+    await userEvent.keyboard("{ArrowDown}{Enter}");
 
     expect(props.value).toBe("apple");
     expect(onsubmit).not.toHaveBeenCalled();
@@ -804,17 +813,17 @@ describe("Form behavior", () => {
   });
 
   test("Enter with no active selection is not prevented", async () => {
-    const user = userEvent.setup();
     const form = document.createElement("form");
     const keydowns: KeyboardEvent[] = [];
+    form.addEventListener("submit", (ev) => ev.preventDefault());
     form.addEventListener("keydown", (ev) => keydowns.push(ev as KeyboardEvent));
     document.body.append(form);
     const { container, getByRole, unmount } = render(ComboBox, { options: new Set(["apple", "banana"]) });
     form.append(container);
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
-    await user.keyboard("{Enter}");
+    await userEvent.click(combobox);
+    await userEvent.keyboard("{Enter}");
 
     expect(keydowns.at(-1)?.defaultPrevented).toBe(false);
 
@@ -825,7 +834,6 @@ describe("Form behavior", () => {
 
 describe("Extra snippet", () => {
   test("renders and receives expanded and variant args", async () => {
-    const user = userEvent.setup();
     const extrafn = createRawSnippet((expanded: () => boolean, variant: () => string) => {
       return { render: () => `<span data-testid="combo-extra">${expanded()}:${variant()}</span>` };
     });
@@ -837,10 +845,10 @@ describe("Extra snippet", () => {
     });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    expect(combobox.parentElement?.querySelector(`.${PARTS.EXTRA}`)).toBeInTheDocument();
-    expect(getByTestId("combo-extra")).toHaveTextContent(`false:${VARIANT.ACTIVE}`);
+    inDoc(combobox.parentElement?.querySelector(`.${PARTS.EXTRA}`));
+    txt(getByTestId("combo-extra"), `false:${VARIANT.ACTIVE}`);
 
-    await user.click(combobox);
+    await userEvent.click(combobox);
 
     const expanded = extra.mock.calls[0]?.[1] as (() => boolean) | undefined;
     const variant = extra.mock.calls[0]?.[2] as (() => string) | undefined;
@@ -853,15 +861,14 @@ describe("Active option visibility", () => {
   const options = new Set(["apple", "banana", "cherry", "date"]);
 
   test("scrollIntoView is called for the active option on keyboard navigation", async () => {
-    const user = userEvent.setup();
     const scroll = mockScrollIntoView();
     try {
       const { getByRole } = render(ComboBox, { options });
       const combobox = getByRole("combobox") as HTMLInputElement;
 
       combobox.focus();
-      await user.keyboard("{ArrowDown}");
-      await user.keyboard("{ArrowDown}");
+      await userEvent.keyboard("{ArrowDown}");
+      await userEvent.keyboard("{ArrowDown}");
 
       const items = within(getByRole("listbox")).getAllByRole("option");
       const active = items.find((item) => item.getAttribute("aria-selected") === "true");
@@ -884,15 +891,14 @@ describe("Active option visibility", () => {
   });
 
   test("hover updates active option and keeps it visible", async () => {
-    const user = userEvent.setup();
     const scroll = mockScrollIntoView();
     try {
       const { getAllByRole } = render(ComboBox, { options, expanded: true });
       const items = getAllByRole("option");
 
-      await user.hover(items[2]);
+      await userEvent.hover(items[2]);
 
-      expect(items[2]).toHaveAttribute("aria-selected", "true");
+      attr(items[2], "aria-selected", "true");
       expect(scroll.spy).toHaveBeenCalled();
     } finally {
       scroll.restore();
@@ -900,16 +906,15 @@ describe("Active option visibility", () => {
   });
 
   test("opening with an existing value scrolls the active option into view", async () => {
-    const user = userEvent.setup();
     const scroll = mockScrollIntoView();
     try {
       const { getByRole, getAllByRole } = render(ComboBox, { options, value: "cherry" });
       const combobox = getByRole("combobox") as HTMLInputElement;
 
-      await user.click(combobox);
+      await userEvent.click(combobox);
 
       const items = getAllByRole("option");
-      expect(items[2]).toHaveAttribute("aria-selected", "true");
+      attr(items[2], "aria-selected", "true");
       expect(scroll.spy).toHaveBeenCalledWith({ block: "nearest" });
       expect(scroll.spy.mock.contexts.at(-1)).toBe(items[2]);
     } finally {
@@ -922,31 +927,29 @@ describe("Overflow detection on open", () => {
   const options = new Set(["apple", "banana", "cherry"]);
 
   test("opening still renders the listbox and does not throw with reset overflow", async () => {
-    const user = userEvent.setup();
     const { getByRole } = render(ComboBox, { options });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
+    await userEvent.click(combobox);
 
     const listbox = getByRole("listbox") as HTMLUListElement;
-    expect(combobox).toHaveAttribute("aria-expanded", "true");
-    expect(listbox).toHaveStyle("visibility: visible");
+    attr(combobox, "aria-expanded", "true");
+    style(listbox, "visibility", "visible");
     expect(within(listbox).getAllByRole("option")).toHaveLength(3);
   });
 
   test("re-open after close still opens cleanly", async () => {
-    const user = userEvent.setup();
     const { getByRole } = render(ComboBox, { options });
     const combobox = getByRole("combobox") as HTMLInputElement;
 
-    await user.click(combobox);
-    expect(combobox).toHaveAttribute("aria-expanded", "true");
+    await userEvent.click(combobox);
+    attr(combobox, "aria-expanded", "true");
     expect(within(getByRole("listbox")).getAllByRole("option")).toHaveLength(3);
 
     await fireEvent.blur(combobox);
-    await user.click(combobox);
+    await userEvent.click(combobox);
 
-    expect(combobox).toHaveAttribute("aria-expanded", "true");
+    attr(combobox, "aria-expanded", "true");
     expect(within(getByRole("listbox")).getAllByRole("option")).toHaveLength(3);
   });
 });

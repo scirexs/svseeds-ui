@@ -1,12 +1,13 @@
 import { describe, expect, test, vi } from "vitest";
-import { fireEvent, render } from "@testing-library/svelte";
+import { render } from "vitest-browser-svelte";
+import { tick } from "svelte";
 import ColorPicker, { getHex } from "#svs/ColorPicker.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 
 describe("Switching existence of elements and basic functionality", () => {
   const attachfn = () => {};
 
-  test("no props", () => {
+  test("no props", async () => {
     const { container } = render(ColorPicker);
     const label = container.querySelector("label") as HTMLLabelElement;
     const input = container.querySelector("input") as HTMLInputElement;
@@ -14,32 +15,32 @@ describe("Switching existence of elements and basic functionality", () => {
 
     expect(label).toBeTruthy();
     expect(input).toBeTruthy();
-    expect(input).toHaveAttribute("type", "color");
-    expect(input).toHaveValue("#000000");
-    expect(input).toHaveStyle("opacity: 0");
+    await expect.element(input).toHaveAttribute("type", "color");
+    await expect.element(input).toHaveValue("#000000");
+    await expect.element(input).toHaveStyle({ opacity: "0" });
     expect(colorDiv).toBeTruthy();
-    expect(colorDiv).toHaveStyle("background-color: rgba(0,0,0,1)");
+    await expect.element(colorDiv).toHaveStyle({ backgroundColor: "rgb(0, 0, 0)" });
   });
 
-  test("w/ default value", () => {
+  test("w/ default value", async () => {
     const value = "#ff0000";
     const props = { value };
     const { container } = render(ColorPicker, props);
     const input = container.querySelector("input") as HTMLInputElement;
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
-    expect(input).toHaveValue(value);
-    expect(colorDiv).toHaveStyle("background-color: rgba(255,0,0,1)");
+    await expect.element(input).toHaveValue(value);
+    await expect.element(colorDiv).toHaveStyle({ backgroundColor: "rgb(255, 0, 0)" });
   });
 
-  test("w/ alpha value", () => {
+  test("w/ alpha value", async () => {
     const value = "#ff0000";
     const alpha = 0.5;
     const props = { value, alpha };
     const { container } = render(ColorPicker, props);
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
-    expect(colorDiv).toHaveStyle("background-color: rgba(255,0,0,0.5)");
+    await expect.element(colorDiv).toHaveStyle({ backgroundColor: "rgba(255, 0, 0, 0.5)" });
   });
 
   test("w/ attach", () => {
@@ -52,54 +53,55 @@ describe("Switching existence of elements and basic functionality", () => {
     expect(attach).toHaveBeenCalled();
   });
 
-  test("w/ attributes", () => {
+  test("w/ attributes", async () => {
     const props = { name: "test-color", id: "color-input", disabled: true };
     const { container } = render(ColorPicker, props);
     const input = container.querySelector("input") as HTMLInputElement;
 
-    expect(input).toHaveAttribute("name", "test-color");
-    expect(input).toHaveAttribute("id", "color-input");
-    expect(input).toHaveAttribute("disabled");
-    expect(input).not.toHaveAttribute("type", "text"); // type should remain "color"
+    await expect.element(input).toHaveAttribute("name", "test-color");
+    await expect.element(input).toHaveAttribute("id", "color-input");
+    await expect.element(input).toHaveAttribute("disabled");
+    expect(input.hasAttribute("type")).toBe(true);
+    expect(input.getAttribute("type")).not.toBe("text");
   });
 
-  test("w/ invalid hex value defaults to #000", () => {
+  test("w/ invalid hex value defaults to #000", async () => {
     const value = "invalid-color";
     const props = { value };
     const { container } = render(ColorPicker, props);
     const input = container.querySelector("input") as HTMLInputElement;
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
-    expect(input).toHaveValue("#000000");
-    expect(colorDiv).toHaveStyle("background-color: rgba(0,0,0,1)");
+    await expect.element(input).toHaveValue("#000000");
+    await expect.element(colorDiv).toHaveStyle({ backgroundColor: "rgb(0, 0, 0)" });
   });
 
-  test("w/ 3-digit hex value expands correctly", () => {
+  test("w/ 3-digit hex value expands correctly", async () => {
     const value = "#f0a";
     const props = { value };
     const { container } = render(ColorPicker, props);
     const input = container.querySelector("input") as HTMLInputElement;
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
-    expect(input).toHaveValue("#ff00aa");
-    expect(colorDiv).toHaveStyle("background-color: rgba(255,0,170,1)");
+    await expect.element(input).toHaveValue("#ff00aa");
+    await expect.element(colorDiv).toHaveStyle({ backgroundColor: "rgb(255, 0, 170)" });
   });
 
-  test("w/ hex value without # prefix", () => {
+  test("w/ hex value without # prefix", async () => {
     const value = "ff0000";
     const props = { value };
     const { container } = render(ColorPicker, props);
     const input = container.querySelector("input") as HTMLInputElement;
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
-    expect(input).toHaveValue(`#${value}`);
-    expect(colorDiv).toHaveStyle("background-color: rgba(255,0,0,1)");
+    await expect.element(input).toHaveValue(`#${value}`);
+    await expect.element(colorDiv).toHaveStyle({ backgroundColor: "rgb(255, 0, 0)" });
   });
 
   test("invalid value normalizes bound value to default", async () => {
     const props = $state({ value: "invalid-color" });
     render(ColorPicker, props);
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await tick();
 
     expect(props.value).toBe("#000000");
   });
@@ -109,10 +111,10 @@ describe("Switching existence of elements and basic functionality", () => {
     const { container } = render(ColorPicker, props);
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await tick();
 
     expect(props.value).toBe("#000000");
-    expect(colorDiv).toHaveStyle("background-color: rgba(0,0,0,0.5)");
+    await expect.element(colorDiv).toHaveStyle({ backgroundColor: "rgba(0, 0, 0, 0.5)" });
   });
 
   test.each([
@@ -121,99 +123,99 @@ describe("Switching existence of elements and basic functionality", () => {
   ])("hex value %s normalizes bound value to %s", async (value, expected) => {
     const props = $state({ value });
     render(ColorPicker, props);
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await tick();
 
     expect(props.value).toBe(expected);
   });
 });
 
 describe("Alpha value correction and edge cases", () => {
-  test("alpha below 0 corrects to 0", () => {
+  test("alpha below 0 corrects to 0", async () => {
     const value = "#ff0000";
     const alpha = -0.5;
     const props = { value, alpha };
     const { container } = render(ColorPicker, props);
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
-    expect(colorDiv).toHaveStyle("background-color: rgba(255,0,0,0)");
+    await expect.element(colorDiv).toHaveStyle({ backgroundColor: "rgba(255, 0, 0, 0)" });
   });
 
-  test("alpha above 1 corrects to 1", () => {
+  test("alpha above 1 corrects to 1", async () => {
     const value = "#ff0000";
     const alpha = 1.5;
     const props = { value, alpha };
     const { container } = render(ColorPicker, props);
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
-    expect(colorDiv).toHaveStyle("background-color: rgba(255,0,0,1)");
+    await expect.element(colorDiv).toHaveStyle({ backgroundColor: "rgb(255, 0, 0)" });
   });
 
-  test("alpha exactly 0", () => {
+  test("alpha exactly 0", async () => {
     const value = "#ff0000";
     const alpha = 0;
     const props = { value, alpha };
     const { container } = render(ColorPicker, props);
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
-    expect(colorDiv).toHaveStyle("background-color: rgba(255,0,0,0)");
+    await expect.element(colorDiv).toHaveStyle({ backgroundColor: "rgba(255, 0, 0, 0)" });
   });
 
-  test("alpha exactly 1", () => {
+  test("alpha exactly 1", async () => {
     const value = "#ff0000";
     const alpha = 1;
     const props = { value, alpha };
     const { container } = render(ColorPicker, props);
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
-    expect(colorDiv).toHaveStyle("background-color: rgba(255,0,0,1)");
+    await expect.element(colorDiv).toHaveStyle({ backgroundColor: "rgb(255, 0, 0)" });
   });
 });
 
 describe("Status and styling", () => {
   const seed = "svs-color-picker";
 
-  test("default variant is neutral", () => {
+  test("default variant is neutral", async () => {
     const props = {};
     const { container } = render(ColorPicker, props);
     const label = container.querySelector("label") as HTMLLabelElement;
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
-    expect(label).toHaveClass(seed, PARTS.WHOLE, VARIANT.NEUTRAL);
-    expect(colorDiv).toHaveClass(seed, PARTS.MAIN, VARIANT.NEUTRAL);
+    await expect.element(label).toHaveClass(seed, PARTS.WHOLE, VARIANT.NEUTRAL);
+    await expect.element(colorDiv).toHaveClass(seed, PARTS.MAIN, VARIANT.NEUTRAL);
   });
 
-  test("w/ active variant", () => {
+  test("w/ active variant", async () => {
     const props = { variant: VARIANT.ACTIVE };
     const { container } = render(ColorPicker, props);
     const label = container.querySelector("label") as HTMLLabelElement;
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
-    expect(label).toHaveClass(seed, PARTS.WHOLE, VARIANT.ACTIVE);
-    expect(colorDiv).toHaveClass(seed, PARTS.MAIN, VARIANT.ACTIVE);
+    await expect.element(label).toHaveClass(seed, PARTS.WHOLE, VARIANT.ACTIVE);
+    await expect.element(colorDiv).toHaveClass(seed, PARTS.MAIN, VARIANT.ACTIVE);
   });
 
-  test("w/ inactive variant", () => {
+  test("w/ inactive variant", async () => {
     const props = { variant: VARIANT.INACTIVE };
     const { container } = render(ColorPicker, props);
     const label = container.querySelector("label") as HTMLLabelElement;
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
-    expect(label).toHaveClass(seed, PARTS.WHOLE, VARIANT.INACTIVE);
-    expect(colorDiv).toHaveClass(seed, PARTS.MAIN, VARIANT.INACTIVE);
+    await expect.element(label).toHaveClass(seed, PARTS.WHOLE, VARIANT.INACTIVE);
+    await expect.element(colorDiv).toHaveClass(seed, PARTS.MAIN, VARIANT.INACTIVE);
   });
 
-  test("w/ string style class", () => {
+  test("w/ string style class", async () => {
     const clsid = "custom-style";
     const props = { styling: clsid };
     const { container } = render(ColorPicker, props);
     const label = container.querySelector("label") as HTMLLabelElement;
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
-    expect(label).toHaveClass(clsid, PARTS.WHOLE, VARIANT.NEUTRAL);
-    expect(colorDiv).toHaveClass(clsid, PARTS.MAIN, VARIANT.NEUTRAL);
+    await expect.element(label).toHaveClass(clsid, PARTS.WHOLE, VARIANT.NEUTRAL);
+    await expect.element(colorDiv).toHaveClass(clsid, PARTS.MAIN, VARIANT.NEUTRAL);
   });
 
-  test("w/ object style", () => {
+  test("w/ object style", async () => {
     const dynObj = {
       base: "base-class",
       neutral: "neutral-class",
@@ -229,8 +231,8 @@ describe("Status and styling", () => {
     const label = container.querySelector("label") as HTMLLabelElement;
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
-    expect(label).toHaveClass(dynObj.base, dynObj.active);
-    expect(colorDiv).toHaveClass(dynObj.base, dynObj.active);
+    await expect.element(label).toHaveClass(dynObj.base, dynObj.active);
+    await expect.element(colorDiv).toHaveClass(dynObj.base, dynObj.active);
   });
 });
 
@@ -241,11 +243,12 @@ describe("User interaction and binding", () => {
     const input = container.querySelector("input") as HTMLInputElement;
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
-    await fireEvent.input(input, { target: { value: "#ff0000" } });
-    await new Promise((resolve) => setTimeout(resolve, 0)); // wait reactive update
+    input.value = "#ff0000";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    await tick();
 
     expect(props.value).toBe("#ff0000");
-    expect(colorDiv).toHaveStyle("background-color: rgba(255,0,0,1)");
+    await expect.element(colorDiv).toHaveStyle({ backgroundColor: "rgb(255, 0, 0)" });
   });
 
   test("external value update is re-normalized reactively", async () => {
@@ -254,10 +257,10 @@ describe("User interaction and binding", () => {
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
     props.value = "#0f0";
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await tick();
 
     expect(props.value).toBe("#00ff00");
-    expect(colorDiv).toHaveStyle("background-color: rgba(0,255,0,1)");
+    await expect.element(colorDiv).toHaveStyle({ backgroundColor: "rgb(0, 255, 0)" });
   });
 
   test("external invalid value update normalizes to default", async () => {
@@ -266,20 +269,20 @@ describe("User interaction and binding", () => {
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
     props.value = "nope";
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await tick();
 
     expect(props.value).toBe("#000000");
-    expect(colorDiv).toHaveStyle("background-color: rgba(0,0,0,1)");
+    await expect.element(colorDiv).toHaveStyle({ backgroundColor: "rgb(0, 0, 0)" });
   });
 
-  test("native input is focusable", () => {
+  test("native input is focusable", async () => {
     const { container } = render(ColorPicker);
     const input = container.querySelector("input") as HTMLInputElement;
 
     input.focus();
 
     expect(document.activeElement).toBe(input);
-    expect(input).not.toHaveStyle("visibility: hidden");
+    expect(input.style.visibility).not.toBe("hidden");
   });
 
   test("element binding works", () => {
@@ -295,12 +298,12 @@ describe("User interaction and binding", () => {
     const { container } = render(ColorPicker, props);
     const label = container.querySelector("label") as HTMLLabelElement;
 
-    expect(label).toHaveClass("svs-color-picker", PARTS.WHOLE, VARIANT.NEUTRAL);
+    await expect.element(label).toHaveClass("svs-color-picker", PARTS.WHOLE, VARIANT.NEUTRAL);
 
     props.variant = VARIANT.ACTIVE;
-    await new Promise((resolve) => setTimeout(resolve, 0)); // wait reactive update
+    await tick();
 
-    expect(label).toHaveClass("svs-color-picker", PARTS.WHOLE, VARIANT.ACTIVE);
+    await expect.element(label).toHaveClass("svs-color-picker", PARTS.WHOLE, VARIANT.ACTIVE);
   });
 
   test("alpha binding works", async () => {
@@ -308,11 +311,11 @@ describe("User interaction and binding", () => {
     const { container } = render(ColorPicker, props);
     const colorDiv = container.querySelector("div[style*='background-color']") as HTMLDivElement;
 
-    expect(colorDiv).toHaveStyle("background-color: rgba(255,0,0,0.8)");
+    await expect.element(colorDiv).toHaveStyle({ backgroundColor: "rgba(255, 0, 0, 0.8)" });
 
     props.alpha = 0.3;
-    await new Promise((resolve) => setTimeout(resolve, 0)); // wait reactive update
-    expect(colorDiv).toHaveStyle("background-color: rgba(255,0,0,0.3)");
+    await tick();
+    await expect.element(colorDiv).toHaveStyle({ backgroundColor: "rgba(255, 0, 0, 0.3)" });
   });
 });
 
@@ -343,11 +346,11 @@ describe("Transparency background pattern", () => {
     expect(patternDiv.style.backgroundSize).toBe("20px 20px");
   });
 
-  test("checkered=false removes the transparency background", () => {
+  test("checkered=false removes the transparency background", async () => {
     const { container } = render(ColorPicker, { checkered: false });
     const middle = container.querySelector("label > div") as HTMLDivElement;
 
-    expect(middle).toHaveStyle("display: inline-block");
+    await expect.element(middle).toHaveStyle({ display: "inline-block" });
     expect(middle.style.backgroundImage).toBe("");
   });
 });
