@@ -1,5 +1,10 @@
 <!--
   @component
+  ### Usage
+  Use standalone.
+  ```svelte
+  <Slider {...props} />
+  ```
   ### Types
   default value: *`(value)`*
   ```ts

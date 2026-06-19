@@ -1,5 +1,14 @@
 <!--
   @component
+  ### Usage
+  Use standalone, or wrap `TagsInput` to share state.
+  ```svelte
+  <TagsInputField {...props} />
+
+  <TagsInputField {...props}>
+    <TagsInput {...props} />
+  </TagsInputField>
+  ```
   ### Types
   default value: *`(value)`*
   ```ts

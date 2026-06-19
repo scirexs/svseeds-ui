@@ -27,8 +27,6 @@
   type PopoverAlign = "start" | "center" | "end";
   type PopoverRole = "menu" | "listbox" | "dialog";
   ```
-  ### Behavior
-  Button trigger plus a `[popover]` panel, using the native Popover API and CSS Anchor Positioning only, with no JavaScript positioning fallback. `open` syncs both ways between programmatic state and native toggle events. `position`, `align`, `offset`, `matchWidth`, and `autoFlip` derive the native placement style; `hover` adds pointer/focus opening. The component always provides `MenuContainerContext` so a nested `MenuList` can focus its first enabled item and close through the container. `manual` switches the panel to `popover="manual"` and disables native light-dismiss behavior.
   ### Anatomy
   ```svelte
   <button class="label" popovertarget aria-haspopup aria-expanded aria-controls>
@@ -39,6 +37,8 @@
     {children}
   </div>
   ```
+  ### Behavior
+  Button trigger plus a `[popover]` panel, using the native Popover API and CSS Anchor Positioning only, with no JavaScript positioning fallback. `open` syncs both ways between programmatic state and native toggle events. `position`, `align`, `offset`, `matchWidth`, and `autoFlip` derive the native placement style; `hover` adds pointer/focus opening. The component always provides `MenuContainerContext` so a nested `MenuList` can focus its first enabled item and close through the container. `manual` switches the panel to `popover="manual"` and disables native light-dismiss behavior.
 -->
 <script module lang="ts">
   export interface PopoverProps extends Omit<HTMLButtonAttributes, "children" | "style" | "popovertarget" | "popovertargetaction"> {

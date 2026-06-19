@@ -26,8 +26,6 @@
   };
   type MenuItemData = MenuItemEntry | MenuSeparatorData;
   ```
-  ### Behavior
-  Reusable `role="menu"` body. It reads an optional `MenuContainerContext` for `open`, `close`, `variant`, and `styling`; standalone usage still renders and navigates, while `close()` is a no-op without a container. When the container opens, the first enabled item is focused after `tick()`.
   ### Anatomy
   ```svelte
   <div class="whole" {...rest} role="menu" tabindex="-1" aria-orientation={orientation}>
@@ -50,6 +48,8 @@
   // Styling preset.
   const _MENU_LIST_PRESET
   ```
+  ### Behavior
+  Reusable `role="menu"` body. It reads an optional `MenuContainerContext` for `open`, `close`, `variant`, and `styling`; standalone usage still renders and navigates, while `close()` is a no-op without a container. When the container opens, the first enabled item is focused after `tick()`.
 -->
 <script module lang="ts">
   export interface MenuListProps extends Omit<HTMLAttributes<HTMLDivElement>, "children" | "role"> {

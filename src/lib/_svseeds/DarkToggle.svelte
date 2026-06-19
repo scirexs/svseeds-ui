@@ -1,10 +1,24 @@
 <!--
   @component
+  ### Usage
+  Use standalone. (flat pass-through over `Toggle`)
+  ```svelte
+  <DarkToggle {...props} />
+  ```
   ### Types
   default value: *`(value)`*
   ```ts
-  interface DarkToggleProps extends Omit<ToggleProps, "value"> {
+  interface DarkToggleProps extends Omit<HTMLButtonAttributes, "children" | "value" | "type" | "role" | "aria-pressed" | "aria-checked" | "aria-label"> {
     dark?: boolean; // bindable (prefers-color-scheme)
+    children?: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
+    left?: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
+    right?: Snippet<[boolean, string, HTMLButtonElement | undefined]>; // Snippet<[value,variant,element]>
+    role?: "button" | "switch"; // ("button")
+    ariaLabel?: string;
+    attach?: Attachment<HTMLButtonElement>;
+    element?: HTMLButtonElement; // bindable
+    styling?: SVSClass;
+    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
   }
   // children, styling, and ariaLabel use DarkToggle defaults when omitted.
   ```

@@ -1,5 +1,12 @@
 <!--
   @component
+  ### Usage
+  Use inside `MenuList`.
+  ```svelte
+  <MenuList>
+    <MenuItem {...props}>Item</MenuItem>
+  </MenuList>
+  ```
   ### Types
   default value: *`(value)`*
   ```ts
@@ -16,8 +23,6 @@
     // type, href, role, tabindex, aria-disabled, and onclick are component-owned
   }
   ```
-  ### Embedded
-  Placed inside a `MenuList`, `variant` defaults to the menu's and `styling` falls back to it; activating the item closes the menu after `onselect`. The context can also carry the menu `orientation` for related descendants. Disabled anchor items are non-navigable.
   ### Anatomy
   ```svelte
   {#if href}
@@ -26,6 +31,8 @@
     <button class="whole" {...rest} type="button" role="menuitem" tabindex="-1" aria-disabled>{children}</button>
   {/if}
   ```
+  ### Behavior
+  When embedded in `MenuList`, `variant` defaults to the menu's and `styling` falls back to it; activating the item closes the menu after `onselect`. The context can also carry the menu `orientation` for related descendants. Disabled anchor items are non-navigable.
 -->
 <script module lang="ts">
   export interface MenuItemProps extends Omit<

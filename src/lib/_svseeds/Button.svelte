@@ -1,5 +1,10 @@
 <!--
   @component
+  ### Usage
+  Use standalone.
+  ```svelte
+  <Button {...props}>Label</Button>
+  ```
   ### Types
   default value: *`(value)`*
   ```ts

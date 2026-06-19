@@ -1,5 +1,14 @@
 <!--
   @component
+  ### Usage
+  Use inside `MenuList`, grouping `MenuItem`s.
+  ```svelte
+  <MenuList>
+    <MenuGroup label="Group" {...props}>
+      <MenuItem {...props}>Item</MenuItem>
+    </MenuGroup>
+  </MenuList>
+  ```
   ### Types
   default value: *`(value)`*
   ```ts
@@ -14,8 +23,6 @@
     // role and aria-labelledby are component-owned
   }
   ```
-  ### Embedded
-  Place between `MenuItem`s inside a `MenuList`. `variant` defaults to the menu's and `styling` falls back to it; local `styling` wins.
   ### Anatomy
   ```svelte
   <div class="whole" {...rest} role="group" aria-labelledby={uid}>
@@ -23,6 +30,8 @@
     {children}
   </div>
   ```
+  ### Behavior
+  When embedded in `MenuList`, `variant` defaults to the menu's and `styling` falls back to it; local `styling` wins.
 -->
 <script module lang="ts">
   export interface MenuGroupProps extends Omit<HTMLAttributes<HTMLDivElement>, "children" | "role"> {

@@ -1,5 +1,13 @@
 <!--
   @component
+  ### Usage
+  Wrap one or more `Disclosure` children.
+  ```svelte
+  <Accordion {...props}>
+    <Disclosure label="Section 1" {...props}>Content</Disclosure>
+    <Disclosure label="Section 2" {...props}>Content</Disclosure>
+  </Accordion>
+  ```
   ### Types
   default value: *`(value)`*
   ```ts
@@ -21,8 +29,6 @@
   ```
   `value`s must be unique within `items`. Accordion is exclusive: at most one item is open at a time.
   Provide `items` for data mode or `children` for declarative mode; `children` wins when both are present.
-  ### Behavior
-  Declarative `<Disclosure id=...>` children automatically coordinate exclusive open state through `current` and inherit the base `variant`/`styling`.
   ### Anatomy
   ```svelte
   <div class="whole" role="group">
@@ -38,6 +44,8 @@
   </div>
   ```
   Data-mode child styling defaults to the combined parent/child preset and can be customized via `disclosure`.
+  ### Behavior
+  Declarative `<Disclosure id=...>` children automatically coordinate exclusive open state through `current` and inherit the base `variant`/`styling`.
 -->
 <script module lang="ts">
   export interface AccordionProps {

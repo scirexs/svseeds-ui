@@ -16,14 +16,14 @@
     // style is component-owned
   }
   ```
-  ### Behavior
-  Container for a descendant `MenuList`. ContextMenu provides `MenuContainerContext` and owns the contextmenu trigger, fixed positioning, visibility, focus restore, Escape dismissal, and outside-click dismissal. Menu semantics, navigation, typeahead, data-mode, and item context live in `MenuList`.
   ### Anatomy
   ```svelte
   <div class="whole" {...rest} style={positioning}>
     {children}
   </div>
   ```
+  ### Behavior
+  Container for a descendant `MenuList`. ContextMenu provides `MenuContainerContext` and owns the contextmenu trigger, fixed positioning, visibility, focus restore, Escape dismissal, and outside-click dismissal. Menu semantics, navigation, typeahead, data-mode, and item context live in `MenuList`.
 -->
 <script module lang="ts">
   export interface ContextMenuProps extends Omit<HTMLAttributes<HTMLDivElement>, "children" | "style"> {

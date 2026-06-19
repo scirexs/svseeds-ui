@@ -1,5 +1,12 @@
 <!--
   @component
+  ### Usage
+  Use inside `MenuList`.
+  ```svelte
+  <MenuList>
+    <MenuSeparator {...props} />
+  </MenuList>
+  ```
   ### Types
   default value: *`(value)`*
   ```ts
@@ -13,12 +20,12 @@
     // role and aria-orientation are component-owned
   }
   ```
-  ### Embedded
-  Placed inside a `MenuList`, `variant` defaults to the menu's and `styling` falls back to it. `ariaOrientation` is ARIA-only: by default a vertical menu renders a horizontal separator, and a horizontal menu renders a vertical separator.
   ### Anatomy
   ```svelte
   <div class="whole" {...rest} role="separator" aria-orientation={ariaOrientation}></div>
   ```
+  ### Behavior
+  When embedded in `MenuList`, `variant` defaults to the menu's and `styling` falls back to it. `ariaOrientation` is ARIA-only: by default a vertical menu renders a horizontal separator, and a horizontal menu renders a vertical separator.
 -->
 <script module lang="ts">
   export interface MenuSeparatorProps extends Omit<HTMLAttributes<HTMLDivElement>, "children" | "role" | "aria-orientation"> {
