@@ -22,6 +22,7 @@ export {
   isNeutral,
   isUnsignedInteger,
   shouldReduceMotion,
+  canHover,
   omit,
   debounce,
   throttle,
@@ -203,6 +204,18 @@ function isUnsignedInteger(num: number): boolean {
 function shouldReduceMotion(): boolean {
   if (typeof window === "undefined") return false;
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+/**
+ * Whether the primary pointer can hover (mouse/trackpad) via the `(hover: hover)` media query.
+ *
+ * Returns `true` in non-browser environments (e.g. SSR) where `window` is unavailable, so that
+ * hover-based behavior is treated as available by default during server-side rendering.
+ *
+ * @returns True if the primary pointer can hover, false otherwise (e.g. touch); true under SSR
+ */
+function canHover(): boolean {
+  if (typeof window === "undefined") return true;
+  return window.matchMedia("(hover: hover)").matches;
 }
 function _resolveDuration(duration?: number, fallback: number = DEFAULT_DURATION): number {
   if (shouldReduceMotion()) return 0;

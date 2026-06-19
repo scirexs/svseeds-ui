@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, waitFor, within } from "@testing-library/svelte";
 import { createRawSnippet, tick } from "svelte";
 import Popover from "#svs/Popover.svelte";
@@ -17,6 +17,17 @@ HTMLElement.prototype.hidePopover = vi.fn();
 beforeEach(() => {
   vi.clearAllMocks();
 });
+
+function setHover(can: boolean) {
+  vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({
+    matches: can,
+    media: "",
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
+}
 
 function trigger(container: HTMLElement) {
   return container.querySelector("button") as HTMLButtonElement;
@@ -317,6 +328,9 @@ describe("Popover MenuContainerContext integration", () => {
 });
 
 describe("Popover hover mode", () => {
+  beforeEach(() => setHover(true));
+  afterEach(() => vi.unstubAllGlobals());
+
   test("opens on pointerenter and focusin", async () => {
     const pointer = $state({ open: false, hover: true });
     const pointerRender = render(PopoverMenu, pointer);
@@ -397,5 +411,101 @@ describe("Popover hover mode", () => {
     await fireEvent.focusOut(button, { relatedTarget: document.body });
     await waitFor(() => expect(props.open).toBe(false));
     expect(onfocusout).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("Popover hover on touch", () => {
+  beforeEach(() => setHover(false));
+  afterEach(() => vi.unstubAllGlobals());
+
+  test("hover:true does not open on pointerenter when the pointer cannot hover", async () => {
+    const props = $state({ open: false, hover: true });
+    const { container } = render(PopoverMenu, props);
+    const show = vi.spyOn(panel(container), "showPopover");
+
+    await fireEvent.pointerEnter(trigger(container));
+    await flush();
+
+    expect(show).not.toHaveBeenCalled();
+    expect(props.open).toBe(false);
+  });
+
+  test("hover:true does not open on focusin when the pointer cannot hover", async () => {
+    const props = $state({ open: false, hover: true });
+    const { container } = render(PopoverMenu, props);
+    const show = vi.spyOn(panel(container), "showPopover");
+
+    await fireEvent.focusIn(trigger(container));
+    await flush();
+
+    expect(show).not.toHaveBeenCalled();
+    expect(props.open).toBe(false);
+  });
+
+  test("hover:true does not bind the panel hover-close listeners on touch", async () => {
+    const props = $state({ open: false, hover: true });
+    const { container } = render(PopoverMenu, props);
+    const pop = panel(container);
+
+    toggle(pop, "open");
+    await flush();
+    expect(props.open).toBe(true);
+
+    const hide = vi.spyOn(pop, "hidePopover");
+    pop.dispatchEvent(new MouseEvent("pointerleave", { bubbles: true, relatedTarget: document.body }));
+    await flush();
+
+    expect(hide).not.toHaveBeenCalled();
+    expect(props.open).toBe(true);
+
+    await fireEvent.focusOut(pop, { relatedTarget: document.body });
+    await flush();
+
+    expect(hide).not.toHaveBeenCalled();
+    expect(props.open).toBe(true);
+  });
+
+  test("native toggle still works for hover:true on touch", async () => {
+    const props = $state({ open: false, hover: true });
+    const { container } = render(PopoverMenu, props);
+    const pop = panel(container);
+
+    toggle(pop, "open");
+    await flush();
+    expect(props.open).toBe(true);
+
+    toggle(pop, "closed");
+    await flush();
+    expect(props.open).toBe(false);
+  });
+
+  test("user pointer/focus handlers pass through unwrapped on touch", async () => {
+    const onpointerenter = vi.fn();
+    const onfocusin = vi.fn();
+    const onpointerleave = vi.fn();
+    const onfocusout = vi.fn();
+    const props = $state({ label: "Open", children, hover: true, open: false, onpointerenter, onfocusin, onpointerleave, onfocusout });
+    const { container } = render(Popover, props as any);
+    const button = trigger(container);
+
+    await fireEvent.pointerEnter(button);
+    await flush();
+    expect(onpointerenter).toHaveBeenCalledTimes(1);
+    expect(props.open).toBe(false);
+
+    await fireEvent.focusIn(button);
+    await flush();
+    expect(onfocusin).toHaveBeenCalledTimes(1);
+    expect(props.open).toBe(false);
+
+    await fireEvent.pointerLeave(button, { relatedTarget: document.body });
+    await flush();
+    expect(onpointerleave).toHaveBeenCalledTimes(1);
+    expect(props.open).toBe(false);
+
+    await fireEvent.focusOut(button, { relatedTarget: document.body });
+    await flush();
+    expect(onfocusout).toHaveBeenCalledTimes(1);
+    expect(props.open).toBe(false);
   });
 });

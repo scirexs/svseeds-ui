@@ -30,6 +30,16 @@ function resetTooltipDefaults() {
     styling: undefined,
   });
 }
+function setHover(can: boolean) {
+  vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({
+    matches: can,
+    media: "",
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
+}
 
 const STD_RECT = { x: 50, y: 50, width: 100, height: 30, top: 50, left: 50, right: 150, bottom: 80 };
 function mockRect(rect: Partial<DOMRect>) {
@@ -55,6 +65,11 @@ async function enter(trigger: HTMLElement, pointer: Record<string, number> = {})
   await fireEvent.pointerEnter(trigger, pointer);
   await tick();
 }
+async function press(trigger: HTMLElement, pointer: Record<string, number> = {}) {
+  await tick();
+  await fireEvent.pointerDown(trigger, pointer);
+  await tick();
+}
 async function advance(ms: number) {
   vi.advanceTimersByTime(ms);
   await tick();
@@ -64,6 +79,7 @@ const queryTip = () => screen.queryByRole("tooltip", { hidden: true });
 
 beforeEach(() => {
   vi.useFakeTimers();
+  setHover(true);
   mockRect({});
 });
 
@@ -125,6 +141,129 @@ describe("Basic rendering", () => {
 
     await fireEvent.pointerCancel(trigger);
     await tick();
+    expect(queryTip()).toBeNull();
+  });
+});
+
+describe("Touch long-press fallback", () => {
+  test("pointerdown shows after the delay on touch; pointerenter does nothing", async () => {
+    setHover(false);
+    const trigger = makeTrigger();
+    attach(trigger, { text: "Touch", delay: 100 });
+
+    await enter(trigger);
+    await advance(200);
+    expect(queryTip()).toBeNull();
+
+    await press(trigger, { clientX: 100, clientY: 100 });
+    expect(getTip().style.visibility).toBe("hidden");
+    expect(getTip()).toHaveTextContent("Touch");
+
+    await advance(99);
+    expect(getTip().style.visibility).toBe("hidden");
+    await advance(1);
+    expect(getTip().style.visibility).toBe("visible");
+  });
+
+  test("pointerup hides after shown", async () => {
+    setHover(false);
+    const trigger = makeTrigger();
+    attach(trigger, { text: "Up", delay: 10 });
+
+    await press(trigger, { clientX: 0, clientY: 0 });
+    await advance(10);
+    expect(queryTip()).not.toBeNull();
+
+    await fireEvent.pointerUp(trigger);
+    await tick();
+    expect(queryTip()).toBeNull();
+  });
+
+  test("pointerup before the delay cancels the pending show", async () => {
+    setHover(false);
+    const trigger = makeTrigger();
+    attach(trigger, { text: "Cancel-up", delay: 100 });
+
+    await press(trigger, { clientX: 0, clientY: 0 });
+    await advance(50);
+    expect(getTip().style.visibility).toBe("hidden");
+
+    await fireEvent.pointerUp(trigger);
+    await tick();
+    await advance(100);
+    expect(queryTip()).toBeNull();
+  });
+
+  test("pointercancel and pointerleave hide on the touch path", async () => {
+    for (const fire of [fireEvent.pointerCancel, fireEvent.pointerLeave]) {
+      setHover(false);
+      const trigger = makeTrigger();
+      attach(trigger, { text: "Hide", delay: 10 });
+
+      await press(trigger, { clientX: 0, clientY: 0 });
+      await advance(10);
+      expect(getTip().style.visibility).toBe("visible");
+
+      await fire(trigger);
+      await tick();
+      expect(queryTip()).toBeNull();
+    }
+  });
+
+  test("pointermove beyond the threshold cancels/hides", async () => {
+    setHover(false);
+    const trigger = makeTrigger();
+    attach(trigger, { text: "Move", delay: 100 });
+
+    await press(trigger, { clientX: 100, clientY: 100 });
+    await fireEvent.pointerMove(trigger, { clientX: 100, clientY: 120 });
+    await tick();
+    await advance(100);
+
+    expect(queryTip()).toBeNull();
+  });
+
+  test("small pointermove within the threshold keeps the tooltip", async () => {
+    setHover(false);
+    const trigger = makeTrigger();
+    attach(trigger, { text: "Stay", delay: 50 });
+
+    await press(trigger, { clientX: 100, clientY: 100 });
+    await fireEvent.pointerMove(trigger, { clientX: 104, clientY: 103 });
+    await tick();
+    await advance(50);
+
+    expect(queryTip()).not.toBeNull();
+    expect(getTip().style.visibility).toBe("visible");
+  });
+
+  test("anchors to the press point on touch even when cursor is false", async () => {
+    setHover(false);
+    vi.stubGlobal("innerWidth", 800);
+    vi.stubGlobal("innerHeight", 600);
+    mockTooltipSize(60, 30);
+    mockRect({ x: 300, y: 300, width: 100, height: 40 });
+    const trigger = makeTrigger();
+    attach(trigger, { text: "Press", delay: 10, cursor: false });
+
+    await press(trigger, { clientX: 100, clientY: 100 });
+    await advance(10);
+
+    const el = getTip();
+    expect(el.style.left).toBe("70px");
+    expect(el.style.top).toBe("70px");
+  });
+
+  test("cursor:true does not enable cursor tracking on touch", async () => {
+    setHover(false);
+    const trigger = makeTrigger();
+    attach(trigger, { text: "Cur", delay: 50, cursor: true });
+
+    await press(trigger, { clientX: 100, clientY: 100 });
+    await fireEvent.pointerMove(trigger, { clientX: 100, clientY: 130 });
+    await tick();
+    await advance(50);
+
     expect(queryTip()).toBeNull();
   });
 });

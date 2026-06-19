@@ -25,7 +25,8 @@
   type Align = "start" | "center" | "end";
   ```
   ### Anatomy
-  The internal renderer auto-mounts to `document.body` on first hover. Do not place it manually.
+  The internal renderer auto-mounts to `document.body` on first hover or touch long-press. Do not place it manually.
+  Pointer devices show on hover; touch devices show after holding for `delay` ms and hide on release or scroll.
   ```svelte
   <div class="whole" role="tooltip">
     {#if content}
@@ -67,9 +68,10 @@
       const p = resolve(params);
       const text = params.text;
       if (typeof text === "string" && text.length > 0) node.ariaDescription = text;
-      const unlisten = on(node, "pointerenter", (ev) => {
+      const hoverable = canHover();
+      const unlisten = on(node, hoverable ? "pointerenter" : "pointerdown", (ev) => {
         ensureMounted();
-        core.beginShow(node, ev, p);
+        core.beginShow(node, ev, p, hoverable);
       });
       return () => {
         unlisten();
@@ -91,6 +93,7 @@
   export const _TOOLTIP_PRESET = "svs-tooltip";
   const INIT_VEC = { x: 0, y: 0 };
   const DEFAULT_DELAY = 1000;
+  const TOUCH_MOVE_CANCEL = 10;
   const VISIBLE = {
     NONE: 0,
     HIDDEN: 1,
@@ -128,6 +131,9 @@
     mount(TooltipRoot, { target: document.body });
     mounted = true;
   }
+  function exceedsMoveThreshold(origin: Vector, ev: PointerEvent): boolean {
+    return Math.hypot(ev.clientX - origin.x, ev.clientY - origin.y) > TOUCH_MOVE_CANCEL;
+  }
 
   class TooltipCore {
     static #INTERVAL = 20;
@@ -144,15 +150,23 @@
     #storedAlign: Align = "center";
     #storedOffset: Vector = { ...INIT_VEC };
 
-    beginShow(node: HTMLElement, ev: PointerEvent, p: ResolvedTooltipParams) {
-      this.#position.setAnchor(ev, node, p.cursor);
+    beginShow(node: HTMLElement, ev: PointerEvent, p: ResolvedTooltipParams, hoverable: boolean) {
+      this.#position.setAnchor(ev, node, hoverable ? p.cursor : true);
       this.#storedPosition = p.position;
       this.#storedAlign = p.align;
       this.#storedOffset = { ...p.offset };
       this.#show(p);
       this.#listeners.push(on(node, "pointercancel", () => this.hide()));
       this.#listeners.push(on(node, "pointerleave", () => this.hide()));
-      if (p.cursor) this.#listeners.push(on(node, "pointermove", this.#setMove()));
+      if (hoverable) {
+        if (p.cursor) this.#listeners.push(on(node, "pointermove", this.#setMove()));
+      } else {
+        const origin = { x: ev.clientX, y: ev.clientY };
+        this.#listeners.push(on(node, "pointerup", () => this.hide()));
+        this.#listeners.push(on(node, "pointermove", (mv) => {
+          if (exceedsMoveThreshold(origin, mv)) this.hide();
+        }));
+      }
     }
     computePoint(size: Vector): Vector {
       this.#position.setPoint(this.#storedPosition, this.#storedAlign, size, this.#storedOffset);
@@ -288,7 +302,7 @@
 
   import { mount, untrack } from "svelte";
   import { on } from "svelte/events";
-  import { VARIANT, PARTS, fnClass, throttle } from "./_core";
+  import { VARIANT, PARTS, fnClass, throttle, canHover } from "./_core";
   import TooltipRoot from "./Tooltip.svelte";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";

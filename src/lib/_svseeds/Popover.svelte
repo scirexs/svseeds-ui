@@ -14,7 +14,7 @@
     label: string | Snippet<[boolean, string]>; // trigger; Snippet<[open, variant]>
     children: Snippet<[string]>; // panel content; Snippet<[variant]>; usually renders a MenuList
     open?: boolean; // bindable (false); observe + control
-    hover?: boolean; // (false); open on pointerenter / focusin
+    hover?: boolean; // (false); open on pointerenter / focusin where the primary pointer can hover
     position?: PopoverPosition; // ("bottom")
     align?: PopoverAlign; // ("start")
     offset?: number; // (0); gap from the anchor edge, px
@@ -45,14 +45,14 @@
   </div>
   ```
   ### Behavior
-  Button trigger plus a `[popover]` panel, using the native Popover API and CSS Anchor Positioning only, with no JavaScript positioning fallback. `open` syncs both ways between programmatic state and native toggle events. `position`, `align`, `offset`, `matchWidth`, and `autoFlip` derive the native placement style; `hover` adds pointer/focus opening. The component always provides `MenuContainerContext` so a nested `MenuList` can focus its first enabled item and close through the container. `manual` switches the panel to `popover="manual"` and disables native light-dismiss behavior.
+  Button trigger plus a `[popover]` panel, using the native Popover API and CSS Anchor Positioning only, with no JavaScript positioning fallback. `open` syncs both ways between programmatic state and native toggle events. `position`, `align`, `offset`, `matchWidth`, and `autoFlip` derive the native placement style; `hover` adds pointer/focus opening only where the primary pointer can hover, otherwise it behaves like native click/focus opening. The component always provides `MenuContainerContext` so a nested `MenuList` can focus its first enabled item and close through the container. `manual` switches the panel to `popover="manual"` and disables native light-dismiss behavior.
 -->
 <script module lang="ts">
   export interface PopoverProps extends Omit<HTMLButtonAttributes, "children" | "style" | "popovertarget" | "popovertargetaction"> {
     label: string | Snippet<[boolean, string]>; // trigger; Snippet<[open, variant]>
     children: Snippet<[string]>; // panel content; Snippet<[variant]>; usually renders a MenuList
     open?: boolean; // bindable (false); observe + control
-    hover?: boolean; // (false)
+    hover?: boolean; // (false); hover-capable pointers only
     position?: PopoverPosition; // ("bottom")
     align?: PopoverAlign; // ("start")
     offset?: number; // (0)
@@ -82,7 +82,7 @@
   } as const;
   const GAP_SIDE = { top: "margin-bottom", right: "margin-left", bottom: "margin-top", left: "margin-right" } as const;
 
-  import { VARIANT, PARTS, fnClass } from "./_core";
+  import { VARIANT, PARTS, fnClass, canHover } from "./_core";
   import { _setMenuContainerContext } from "./MenuList.svelte";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
@@ -103,6 +103,7 @@
   const anchor = `--svs-popover-${uid}`;
   const triggerStyle = `anchor-name:${anchor}`;
   const cls = $derived(fnClass(_POPOVER_PRESET, styling));
+  const hoverEnabled = $derived(hover && canHover());
   const ctx: MenuContainerContext = {
     get variant() {
       return variant;
@@ -144,7 +145,7 @@
 
   // *** Event Handlers *** //
   function maybeClose(ev: PointerEvent | FocusEvent) {
-    if (!hover) return;
+    if (!hoverEnabled) return;
     const to = ev.relatedTarget as Node | null;
     if (to && (element?.contains(to) || panel?.contains(to))) return;
     open = false;
@@ -167,10 +168,10 @@
   };
   const panelleave: PointerEventHandler<HTMLDivElement> = (ev) => maybeClose(ev);
   const panelfocusout: FocusEventHandler<HTMLDivElement> = (ev) => maybeClose(ev);
-  const hpointerenter = $derived(hover ? triggerenter : onpointerenter);
-  const hfocusin = $derived(hover ? triggerfocusin : onfocusin);
-  const hpointerleave = $derived(hover ? triggerleave : onpointerleave);
-  const hfocusout = $derived(hover ? triggerfocusout : onfocusout);
+  const hpointerenter = $derived(hoverEnabled ? triggerenter : onpointerenter);
+  const hfocusin = $derived(hoverEnabled ? triggerfocusin : onfocusin);
+  const hpointerleave = $derived(hoverEnabled ? triggerleave : onpointerleave);
+  const hfocusout = $derived(hoverEnabled ? triggerfocusout : onfocusout);
   const htoggle: ToggleEventHandler<HTMLDivElement> = (ev) => {
     shown = ev.newState === "open";
     open = shown;
@@ -206,8 +207,8 @@
   role={ariaRole}
   style={panelStyle}
   ontoggle={htoggle}
-  onpointerleave={hover ? panelleave : undefined}
-  onfocusout={hover ? panelfocusout : undefined}
+  onpointerleave={hoverEnabled ? panelleave : undefined}
+  onfocusout={hoverEnabled ? panelfocusout : undefined}
 >
   {#if arrow}<div class={cls(PARTS.EXTRA, variant)} aria-hidden="true"></div>{/if}
   {@render children(variant)}

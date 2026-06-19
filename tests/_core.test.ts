@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { getContext, setContext } from "svelte";
 import {
   BASE,
+  canHover,
   DEFAULT_DURATION,
   debounce,
   fnClass,
@@ -874,6 +875,36 @@ describe("shouldReduceMotion", () => {
   test("returns false when window is unavailable", () => {
     vi.stubGlobal("window", undefined);
     expect(shouldReduceMotion()).toBe(false);
+  });
+});
+
+describe("canHover", () => {
+  const original = window.matchMedia;
+  afterEach(() => {
+    if (typeof window !== "undefined") window.matchMedia = original;
+    vi.unstubAllGlobals();
+  });
+
+  test("returns true when the primary pointer can hover", () => {
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true }) as unknown as typeof window.matchMedia;
+    expect(canHover()).toBe(true);
+  });
+
+  test("returns false when the primary pointer cannot hover", () => {
+    window.matchMedia = vi.fn().mockReturnValue({ matches: false }) as unknown as typeof window.matchMedia;
+    expect(canHover()).toBe(false);
+  });
+
+  test("queries the hover media feature", () => {
+    const mock = vi.fn().mockReturnValue({ matches: false });
+    window.matchMedia = mock as unknown as typeof window.matchMedia;
+    canHover();
+    expect(mock).toHaveBeenCalledWith("(hover: hover)");
+  });
+
+  test("returns true when window is unavailable", () => {
+    vi.stubGlobal("window", undefined);
+    expect(canHover()).toBe(true);
   });
 });
 
