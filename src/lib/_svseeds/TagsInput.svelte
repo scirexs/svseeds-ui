@@ -1,5 +1,10 @@
 <!--
   @component
+  ### Usage
+  Use standalone, or inside `TagsInputField`.
+  ```svelte
+  <TagsInput {...props} />
+  ```
   ### Types
   default value: *`(value)`*
   ```ts

@@ -1,5 +1,10 @@
 <!--
   @component
+  ### Usage
+  Apply via the `tooltip` attachment; the renderer auto-mounts (never place manually).
+  ```svelte
+  <button {@attach tooltip({ text: "Hint" })}>Hover</button>
+  ```
   ### Types
   default value: *`(value)`*
   ```ts

@@ -1,5 +1,10 @@
 <!--
   @component
+  ### Usage
+  Use standalone.
+  ```svelte
+  <WheelPicker {...props} />
+  ```
   ### Types
   default value: *`(value)`*
   ```ts

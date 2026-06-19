@@ -1,5 +1,14 @@
 <!--
   @component
+  ### Usage
+  Use standalone, or wrap `NumberInput` to share state.
+  ```svelte
+  <NumberField {...props} />
+
+  <NumberField {...props}>
+    <NumberInput {...props} />
+  </NumberField>
+  ```
   ### Types
   default value: *`(value)`*
   ```ts

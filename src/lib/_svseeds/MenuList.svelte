@@ -1,5 +1,12 @@
 <!--
   @component
+  ### Usage
+  Use inside `Popover` / `ContextMenu`, or standalone; fill with `MenuItem` / `MenuGroup` / `MenuSeparator`.
+  ```svelte
+  <MenuList {...props}>
+    <MenuItem {...props}>Item</MenuItem>
+  </MenuList>
+  ```
   ### Types
   default value: *`(value)`*
   ```ts

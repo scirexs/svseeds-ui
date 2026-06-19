@@ -1,5 +1,10 @@
 <!--
   @component
+  ### Usage
+  Use standalone, or inside `FileField`.
+  ```svelte
+  <FileInput {...props}>Drop files</FileInput>
+  ```
   ### Types
   default value: *`(files, dragover, variant)`*
   ```ts

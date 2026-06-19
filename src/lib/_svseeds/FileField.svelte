@@ -1,5 +1,14 @@
 <!--
   @component
+  ### Usage
+  Use standalone, or wrap `FileInput` to share state.
+  ```svelte
+  <FileField {...props} />
+
+  <FileField {...props}>
+    <FileInput {...props} />
+  </FileField>
+  ```
   ### Types
   default value: *`(files, variant, element)`*
   ```ts

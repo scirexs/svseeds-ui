@@ -1,5 +1,10 @@
 <!--
   @component
+  ### Usage
+  Use standalone, or inside `Accordion`.
+  ```svelte
+  <Disclosure label="Section" {...props}>Content</Disclosure>
+  ```
   ### Types
   default value: *`(value)`*
   ```ts

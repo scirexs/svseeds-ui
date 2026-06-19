@@ -1,5 +1,10 @@
 <!--
   @component
+  ### Usage
+  Use standalone, or inside `ToggleGroupField`.
+  ```svelte
+  <ToggleGroup {...props} />
+  ```
   ### Types
   default value: *`(value)`*
   ```ts

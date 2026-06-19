@@ -1,5 +1,10 @@
 <!--
   @component
+  ### Usage
+  Use standalone.
+  ```svelte
+  <Toggle {...props} />
+  ```
   ### Types
   default value: *`(value)`*
   ```ts

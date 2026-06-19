@@ -1,5 +1,10 @@
 <!--
   @component
+  ### Usage
+  Use standalone.
+  ```svelte
+  <Tabs {...props} />
+  ```
   ### Types
   default value: *`(value)`*
   ```ts

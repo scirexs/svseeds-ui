@@ -1,5 +1,12 @@
 <!--
   @component
+  ### Usage
+  Wrap a `MenuList`.
+  ```svelte
+  <ContextMenu {...props}>
+    <MenuList {...props} />
+  </ContextMenu>
+  ```
   ### Types
   default value: *`(value)`*
   ```ts

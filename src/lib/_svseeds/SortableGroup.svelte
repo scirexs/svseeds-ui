@@ -1,5 +1,13 @@
 <!--
   @component
+  ### Usage
+  Wrap two or more `Sortable` children to connect them.
+  ```svelte
+  <SortableGroup {...props}>
+    <Sortable {...props} />
+    <Sortable {...props} />
+  </SortableGroup>
+  ```
   ### Types
   default value: *`(value)`*
   ```ts

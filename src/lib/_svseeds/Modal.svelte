@@ -1,5 +1,10 @@
 <!--
   @component
+  ### Usage
+  Use standalone.
+  ```svelte
+  <Modal {...props}>Content</Modal>
+  ```
   ### Types
   default value: *`(value)`*
   ```ts

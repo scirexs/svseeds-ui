@@ -1,5 +1,10 @@
 <!--
   @component
+  ### Usage
+  Use standalone, or inside `SortableGroup` to connect lists.
+  ```svelte
+  <Sortable {...props} />
+  ```
   ### Types
   default value: *`(value)`*
   ```ts

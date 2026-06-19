@@ -1,5 +1,10 @@
 <!--
   @component
+  ### Usage
+  Use standalone.
+  ```svelte
+  <Drawer {...props}>Content</Drawer>
+  ```
   ### Types
   default value: *`(value)`*
   ```ts

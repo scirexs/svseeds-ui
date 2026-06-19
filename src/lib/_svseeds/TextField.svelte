@@ -1,5 +1,10 @@
 <!--
   @component
+  ### Usage
+  Use standalone.
+  ```svelte
+  <TextField {...props} />
+  ```
   ### Types
   default value: *`(value)`*
   ```ts

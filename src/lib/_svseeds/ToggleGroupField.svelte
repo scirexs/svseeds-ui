@@ -1,5 +1,14 @@
 <!--
   @component
+  ### Usage
+  Use standalone, or wrap `ToggleGroup` to share state.
+  ```svelte
+  <ToggleGroupField {...props} />
+
+  <ToggleGroupField {...props}>
+    <ToggleGroup {...props} />
+  </ToggleGroupField>
+  ```
   ### Types
   default value: *`(value)`*
   ```ts

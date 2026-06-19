@@ -1,5 +1,12 @@
 <!--
   @component
+  ### Usage
+  Use standalone, driven by a `Toaster` from `createToaster()`.
+  ```svelte
+  <Toast {toaster} {...props}>
+    {#snippet children(item)}{item.message}{/snippet}
+  </Toast>
+  ```
   ### Types
   default value: *`(value)`*
   ```ts

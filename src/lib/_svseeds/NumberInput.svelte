@@ -1,5 +1,10 @@
 <!--
   @component
+  ### Usage
+  Use standalone, or inside `NumberField`.
+  ```svelte
+  <NumberInput {...props} />
+  ```
   ### Types
   default value: *`(value)`*
   ```ts

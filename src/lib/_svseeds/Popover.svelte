@@ -1,5 +1,12 @@
 <!--
   @component
+  ### Usage
+  Use standalone; the panel usually wraps `MenuList`.
+  ```svelte
+  <Popover label="Menu" {...props}>
+    <MenuList {...props} />
+  </Popover>
+  ```
   ### Types
   default value: *`(value)`*
   ```ts
