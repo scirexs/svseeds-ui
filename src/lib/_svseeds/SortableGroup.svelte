@@ -47,11 +47,11 @@
 
   export const _SORTABLE_GROUP_PRESET = "svs-sortable-group";
 
-  import { VARIANT, PARTS, fnClass } from "./core";
+  import { VARIANT, PARTS, fnClass } from "./_core";
   import { createSortableGroup, _setSortableContext } from "./Sortable.svelte";
   import type { Snippet } from "svelte";
   import type { EasingFunction } from "svelte/transition";
-  import type { SVSClass, SVSVariant } from "./core";
+  import type { SVSClass, SVSVariant } from "./_core";
   import type { SortableGroupController } from "./Sortable.svelte";
 </script>
 

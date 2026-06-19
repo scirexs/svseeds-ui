@@ -92,13 +92,13 @@
   }
 
   import { tick } from "svelte";
-  import { VARIANT, PARTS, fnClass, _createContext } from "./core";
+  import { VARIANT, PARTS, fnClass, _createContext } from "./_core";
   import MenuItem, { _setMenuItemContext } from "./MenuItem.svelte";
   import MenuSeparator from "./MenuSeparator.svelte";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLAttributes, KeyboardEventHandler } from "svelte/elements";
-  import type { SVSClass, SVSVariant, SVSContext } from "./core";
+  import type { SVSClass, SVSVariant, SVSContext } from "./_core";
   import type { MenuItemContext } from "./MenuItem.svelte";
 </script>
 

@@ -74,12 +74,12 @@
 
   export const [_getToggleGroupContext, _setToggleGroupContext] = _createContext<ToggleGroupContext>();
 
-  import { VARIANT, PARTS, fnClass, _createContext } from "./core";
+  import { VARIANT, PARTS, fnClass, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLButtonAttributes } from "svelte/elements";
   import type { SvelteMap } from "svelte/reactivity";
-  import type { SVSClass, SVSVariant, SVSContext, CollectionEvents } from "./core";
+  import type { SVSClass, SVSVariant, SVSContext, CollectionEvents } from "./_core";
 </script>
 
 <script lang="ts">

@@ -80,9 +80,9 @@
   }
 
   import { untrack } from "svelte";
-  import { VARIANT, PARTS, fnClass } from "./core";
+  import { VARIANT, PARTS, fnClass } from "./_core";
   import type { Component, Snippet } from "svelte";
-  import type { SVSClass, SVSVariant } from "./core";
+  import type { SVSClass, SVSVariant } from "./_core";
 </script>
 
 <script lang="ts">

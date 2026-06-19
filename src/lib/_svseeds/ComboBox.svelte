@@ -57,7 +57,7 @@
   const NA = -1;
 
   import { tick } from "svelte";
-  import { VARIANT, PARTS, fnClass } from "./core";
+  import { VARIANT, PARTS, fnClass } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { SvelteSet } from "svelte/reactivity";
@@ -69,7 +69,7 @@
     FocusEventHandler,
     MouseEventHandler,
   } from "svelte/elements";
-  import type { SVSClass, SVSVariant } from "./core";
+  import type { SVSClass, SVSVariant } from "./_core";
 </script>
 
 <script lang="ts">

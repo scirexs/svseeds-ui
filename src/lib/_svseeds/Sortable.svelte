@@ -620,11 +620,11 @@
   import { crossfade } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import { flip } from "svelte/animate";
-  import { VARIANT, PARTS, fnClass, throttle, isNeutral, _resolveDuration, _createContext } from "./core";
+  import { VARIANT, PARTS, fnClass, throttle, isNeutral, _resolveDuration, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { EasingFunction } from "svelte/transition";
-  import type { SVSClass, SVSVariant, SVSContext } from "./core";
+  import type { SVSClass, SVSVariant, SVSContext } from "./_core";
 </script>
 
 <script lang="ts" generics="T = string">

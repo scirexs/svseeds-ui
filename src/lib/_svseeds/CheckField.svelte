@@ -75,12 +75,12 @@
   export const _CHECK_FIELD_PRESET = "svs-check-field";
 
   import { untrack, onMount } from "svelte";
-  import { VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import { VARIANT, PARTS, fnClass, isNeutral } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { SvelteMap } from "svelte/reactivity";
   import type { HTMLInputAttributes, ChangeEventHandler, EventHandler } from "svelte/elements";
-  import type { SVSClass, SVSVariant, SVSFieldValidation, SVSFieldConstraint } from "./core";
+  import type { SVSClass, SVSVariant, SVSFieldValidation, SVSFieldConstraint } from "./_core";
 </script>
 
 <script lang="ts">

@@ -29,7 +29,7 @@ export default defineConfig({
         clearMocks: true,
         include: [
           "tests/**/*.svelte.sim.test.ts",
-          "tests/core.test.ts",
+          "tests/_core.test.ts",
         ],
         setupFiles: ["./tests/sim-setup.ts"],
       },

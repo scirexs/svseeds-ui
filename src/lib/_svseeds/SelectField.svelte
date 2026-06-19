@@ -80,12 +80,12 @@
   export const _SELECT_FIELD_PRESET = "svs-select-field";
 
   import { untrack, onMount } from "svelte";
-  import { VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import { VARIANT, PARTS, fnClass, isNeutral } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { SvelteMap } from "svelte/reactivity";
   import type { HTMLSelectAttributes, ChangeEventHandler, EventHandler } from "svelte/elements";
-  import type { SVSClass, SVSVariant, SVSFieldValidation } from "./core";
+  import type { SVSClass, SVSVariant, SVSFieldValidation } from "./_core";
 </script>
 
 <script lang="ts">

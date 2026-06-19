@@ -101,11 +101,11 @@
   export const [_getFileInputContext, _setFileInputContext] = _createContext<FileInputContext>();
 
   import { untrack } from "svelte";
-  import { VARIANT, PARTS, SR_ONLY, fnClass, _createContext } from "./core";
+  import { VARIANT, PARTS, SR_ONLY, fnClass, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLInputAttributes, MouseEventHandler, ChangeEventHandler, DragEventHandler, EventHandler } from "svelte/elements";
-  import type { SVSClass, SVSVariant, SVSContext, CollectionEvents } from "./core";
+  import type { SVSClass, SVSVariant, SVSContext, CollectionEvents } from "./_core";
 </script>
 
 <script lang="ts">

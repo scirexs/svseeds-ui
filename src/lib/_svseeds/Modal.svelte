@@ -51,10 +51,10 @@
   export const _MODAL_PRESET = "svs-modal";
 
   import { untrack, onMount } from "svelte";
-  import { VARIANT, PARTS, fnClass, _resolveDuration } from "./core";
+  import { VARIANT, PARTS, fnClass, _resolveDuration } from "./_core";
   import type { Snippet } from "svelte";
   import type { HTMLDialogAttributes, MouseEventHandler, KeyboardEventHandler, ToggleEventHandler } from "svelte/elements";
-  import type { SVSClass, SVSVariant } from "./core";
+  import type { SVSClass, SVSVariant } from "./_core";
 </script>
 
 <script lang="ts">

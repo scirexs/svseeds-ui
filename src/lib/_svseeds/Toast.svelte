@@ -180,9 +180,9 @@
   }
 
   import { flip } from "svelte/animate";
-  import { VARIANT, PARTS, fnClass, isUnsignedInteger, _resolveDuration } from "./core";
+  import { VARIANT, PARTS, fnClass, isUnsignedInteger, _resolveDuration } from "./_core";
   import type { Snippet } from "svelte";
-  import type { SVSClass, SVSVariant } from "./core";
+  import type { SVSClass, SVSVariant } from "./_core";
 </script>
 
 <script lang="ts">

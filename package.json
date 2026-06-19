@@ -14,12 +14,12 @@
   },
   "svelte": "./index.js",
   "imports": {
-    "#svs/core": "./src/lib/_svseeds/core.ts",
+    "#svs/core": "./src/lib/_svseeds/_core.ts",
     "#svs/*": "./src/lib/_svseeds/*"
   },
   "files": [
     "_svseeds",
-    "!_svseeds/core.ts",
+    "!_svseeds/_core.ts",
     "!_svseeds/dep.json",
     "index.js",
     "index.d.ts",
@@ -43,7 +43,7 @@
   },
   "scripts": {
     "build": "bun run ./src/script/prep.ts && bunx @sveltejs/package && bun run post",
-    "post": "mv ./dist/* ./ && cp ./src/lib/_svseeds/core.ts ./_svseeds && bunx terser --module -m -c -o ./_svseeds/core.js -- ./_svseeds/core.js",
+    "post": "mv ./dist/* ./ && cp ./src/lib/_svseeds/_core.ts ./_svseeds && bunx terser --module -m -c -o ./_svseeds/_core.js -- ./_svseeds/_core.js",
     "check": "bunx svelte-kit sync && bunx svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "bunx svelte-kit sync && bunx svelte-check --tsconfig ./tsconfig.json --watch",
     "fmt": "bunx prettier --write ./src/lib",

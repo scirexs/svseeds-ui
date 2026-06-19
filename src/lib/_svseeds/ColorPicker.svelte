@@ -81,10 +81,10 @@
     return alpha;
   }
 
-  import { VARIANT, PARTS, fnClass } from "./core";
+  import { VARIANT, PARTS, fnClass } from "./_core";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLInputAttributes } from "svelte/elements";
-  import type { SVSClass, SVSVariant } from "./core";
+  import type { SVSClass, SVSVariant } from "./_core";
 </script>
 
 <script lang="ts">

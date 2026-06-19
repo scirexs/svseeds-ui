@@ -81,11 +81,11 @@
 
   import { untrack, onMount } from "svelte";
   import { slide } from "svelte/transition";
-  import { VARIANT, PARTS, fnClass, isNeutral, shouldReduceMotion, _resolveDuration, _createContext } from "./core";
+  import { VARIANT, PARTS, fnClass, isNeutral, shouldReduceMotion, _resolveDuration, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLDetailsAttributes, MouseEventHandler, ToggleEventHandler } from "svelte/elements";
-  import type { SVSClass, SVSVariant, SVSContext } from "./core";
+  import type { SVSClass, SVSVariant, SVSContext } from "./_core";
 </script>
 
 <script lang="ts">

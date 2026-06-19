@@ -108,11 +108,11 @@
   export const _CALENDAR_PRESET = "svs-calendar";
 
   import { tick, untrack } from "svelte";
-  import { VARIANT, PARTS, fnClass, shouldReduceMotion } from "./core";
+  import { VARIANT, PARTS, fnClass, shouldReduceMotion } from "./_core";
   import MonthPicker from "./MonthPicker.svelte";
   import type { Snippet } from "svelte";
   import type { KeyboardEventHandler, MouseEventHandler } from "svelte/elements";
-  import type { SVSClass, SVSVariant } from "./core";
+  import type { SVSClass, SVSVariant } from "./_core";
   import type { MonthPickerProps } from "./MonthPicker.svelte";
 </script>
 

@@ -54,11 +54,11 @@
 
   export const _PROGRESS_TRACKER_PRESET = "svs-progress-tracker";
 
-  import { VARIANT, PARTS, fnClass, isUnsignedInteger } from "./core";
+  import { VARIANT, PARTS, fnClass, isUnsignedInteger } from "./_core";
   import type { Snippet } from "svelte";
   import type { SvelteMap } from "svelte/reactivity";
   import type { HTMLOlAttributes } from "svelte/elements";
-  import type { SVSClass, SVSVariant } from "./core";
+  import type { SVSClass, SVSVariant } from "./_core";
 </script>
 
 <script lang="ts">

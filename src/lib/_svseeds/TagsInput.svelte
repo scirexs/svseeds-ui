@@ -99,11 +99,11 @@
 
   export const [_getTagsInputContext, _setTagsInputContext] = _createContext<TagsInputContext>();
 
-  import { VARIANT, PARTS, fnClass, _createContext } from "./core";
+  import { VARIANT, PARTS, fnClass, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLInputAttributes, KeyboardEventHandler, FormEventHandler, ClipboardEventHandler } from "svelte/elements";
-  import type { SVSClass, SVSVariant, SVSContext, CollectionEvents } from "./core";
+  import type { SVSClass, SVSVariant, SVSContext, CollectionEvents } from "./_core";
 </script>
 
 <script lang="ts">

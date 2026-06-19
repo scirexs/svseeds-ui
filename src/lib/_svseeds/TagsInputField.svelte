@@ -81,10 +81,10 @@
   export const _TAGS_INPUT_FIELD_PRESET = "svs-tags-input-field";
 
   import { untrack } from "svelte";
-  import { VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import { VARIANT, PARTS, fnClass, isNeutral } from "./_core";
   import TagsInput, { _TAGS_INPUT_PRESET, _setTagsInputContext } from "./TagsInput.svelte";
   import type { Snippet } from "svelte";
-  import type { SVSClass, SVSVariant, SVSFieldValidation, SVSFieldConstraint } from "./core";
+  import type { SVSClass, SVSVariant, SVSFieldValidation, SVSFieldConstraint } from "./_core";
   import type { TagsInputContext, TagsInputProps, TagsInputReqdProps, TagsInputBindProps } from "./TagsInput.svelte";
 </script>
 

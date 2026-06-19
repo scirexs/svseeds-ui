@@ -247,7 +247,7 @@
   const theme = new Theme();
 
   import { untrack } from "svelte";
-  import { VARIANT } from "./core";
+  import { VARIANT } from "./_core";
   import Toggle, { _TOGGLE_PRESET } from "./Toggle.svelte";
   import type { ToggleProps } from "./Toggle.svelte";
 </script>

@@ -49,12 +49,12 @@
   export const _CONTEXT_MENU_PRESET = "svs-context-menu";
 
   import { on } from "svelte/events";
-  import { VARIANT, PARTS, fnClass } from "./core";
+  import { VARIANT, PARTS, fnClass } from "./_core";
   import { _setMenuContainerContext } from "./MenuList.svelte";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLAttributes, KeyboardEventHandler } from "svelte/elements";
-  import type { SVSClass, SVSVariant } from "./core";
+  import type { SVSClass, SVSVariant } from "./_core";
   import type { MenuContainerContext } from "./MenuList.svelte";
 </script>
 

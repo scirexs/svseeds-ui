@@ -94,12 +94,12 @@
   export const [_getNumberInputContext, _setNumberInputContext] = _createContext<NumberInputContext>();
 
   import { untrack } from "svelte";
-  import { VARIANT, PARTS, fnClass, _createContext } from "./core";
+  import { VARIANT, PARTS, fnClass, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { SvelteSet } from "svelte/reactivity";
   import type { HTMLInputAttributes, KeyboardEventHandler, FormEventHandler, EventHandler } from "svelte/elements";
-  import type { SVSClass, SVSVariant, SVSContext } from "./core";
+  import type { SVSClass, SVSVariant, SVSContext } from "./_core";
 </script>
 
 <script lang="ts">

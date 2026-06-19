@@ -76,10 +76,10 @@
   export const _NUMBER_FIELD_PRESET = "svs-number-field";
 
   import { onMount, untrack } from "svelte";
-  import { VARIANT, PARTS, fnClass, isNeutral } from "./core";
+  import { VARIANT, PARTS, fnClass, isNeutral } from "./_core";
   import NumberInput, { _NUMBER_INPUT_PRESET, _setNumberInputContext } from "./NumberInput.svelte";
   import type { Snippet } from "svelte";
-  import type { SVSClass, SVSVariant, SVSFieldValidation } from "./core";
+  import type { SVSClass, SVSVariant, SVSFieldValidation } from "./_core";
   import type { NumberInputContext, NumberInputProps, NumberInputReqdProps, NumberInputBindProps } from "./NumberInput.svelte";
 </script>
 

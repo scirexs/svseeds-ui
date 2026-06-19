@@ -288,11 +288,11 @@
 
   import { mount, untrack } from "svelte";
   import { on } from "svelte/events";
-  import { VARIANT, PARTS, fnClass, throttle } from "./core";
+  import { VARIANT, PARTS, fnClass, throttle } from "./_core";
   import TooltipRoot from "./Tooltip.svelte";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
-  import type { SVSClass, SVSVariant } from "./core";
+  import type { SVSClass, SVSVariant } from "./_core";
 </script>
 
 <script lang="ts">

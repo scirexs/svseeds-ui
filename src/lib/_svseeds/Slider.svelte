@@ -67,12 +67,12 @@
 
   export const _SLIDER_PRESET = "svs-slider";
 
-  import { VARIANT, PARTS, fnClass, _cssVar } from "./core";
+  import { VARIANT, PARTS, fnClass, _cssVar } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { SvelteSet } from "svelte/reactivity";
   import type { HTMLInputAttributes } from "svelte/elements";
-  import type { SVSClass, SVSVariant } from "./core";
+  import type { SVSClass, SVSVariant } from "./_core";
 </script>
 
 <script lang="ts">

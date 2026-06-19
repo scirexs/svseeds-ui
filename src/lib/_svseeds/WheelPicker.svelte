@@ -76,11 +76,11 @@
   export const _WHEELPICKER_PRESET = "svs-wheelpicker";
 
   import { tick, untrack } from "svelte";
-  import { VARIANT, PARTS, SR_ONLY, fnClass, shouldReduceMotion, _cssVarStyle } from "./core";
+  import { VARIANT, PARTS, SR_ONLY, fnClass, shouldReduceMotion, _cssVarStyle } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLSelectAttributes, ChangeEventHandler, PointerEventHandler, WheelEventHandler } from "svelte/elements";
-  import type { SVSClass, SVSVariant } from "./core";
+  import type { SVSClass, SVSVariant } from "./_core";
 </script>
 
 <script lang="ts">

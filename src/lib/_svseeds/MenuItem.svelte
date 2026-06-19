@@ -59,11 +59,11 @@
 
   export const _MENU_ITEM_PRESET = "svs-menu-item";
 
-  import { VARIANT, PARTS, fnClass, _createContext } from "./core";
+  import { VARIANT, PARTS, fnClass, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLAnchorAttributes, HTMLButtonAttributes } from "svelte/elements";
-  import type { SVSClass, SVSVariant, SVSContext } from "./core";
+  import type { SVSClass, SVSVariant, SVSContext } from "./_core";
 </script>
 
 <script lang="ts">

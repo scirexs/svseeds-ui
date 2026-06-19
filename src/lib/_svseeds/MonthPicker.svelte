@@ -63,10 +63,10 @@
   export const _MONTHPICKER_PRESET = "svs-monthpicker";
 
   import { untrack } from "svelte";
-  import { VARIANT, PARTS, fnClass } from "./core";
+  import { VARIANT, PARTS, fnClass } from "./_core";
   import WheelPicker from "./WheelPicker.svelte";
   import type { Snippet } from "svelte";
-  import type { SVSClass, SVSVariant } from "./core";
+  import type { SVSClass, SVSVariant } from "./_core";
   import type { WheelPickerProps, WheelOption } from "./WheelPicker.svelte";
 </script>
 
