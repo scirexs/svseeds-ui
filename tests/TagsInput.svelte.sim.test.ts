@@ -4,10 +4,10 @@ import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet } from "svelte";
 import TagsInput from "#svs/TagsInput.svelte";
 import TagsInputCtxProvider from "./fixtures/TagsInputCtxProvider.svelte";
-import { PARTS, VARIANT, fnClass } from "#svs/core";
+import { PARTS, VARIANT, _fnClass } from "#svs/core";
 
 const preset = "svs-tags-input";
-const mainCls = (variant: string) => `${fnClass(preset)(PARTS.MAIN, variant)}`.split(" ");
+const mainCls = (variant: string) => `${_fnClass(preset)(PARTS.MAIN, variant)}`.split(" ");
 const paste = (input: HTMLInputElement, text: string) => fireEvent.paste(input, { clipboardData: { getData: () => text } });
 const stateDefaults = () => ({
   values: [] as string[],

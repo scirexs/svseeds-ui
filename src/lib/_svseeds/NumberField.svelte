@@ -76,7 +76,7 @@
   export const _NUMBER_FIELD_PRESET = "svs-number-field";
 
   import { onMount, untrack } from "svelte";
-  import { VARIANT, PARTS, fnClass, isNeutral } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _isNeutral } from "./_core";
   import NumberInput, { _NUMBER_INPUT_PRESET, _setNumberInputContext } from "./NumberInput.svelte";
   import type { Snippet } from "svelte";
   import type { SVSClass, SVSVariant, SVSFieldValidation } from "./_core";
@@ -88,7 +88,7 @@
   let { label, extra, aux, left, right, bottom, reserve = false, value = $bindable(), validations = [], name, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), numberInput, children }: NumberFieldProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_NUMBER_FIELD_PRESET, styling));
+  const cls = $derived(_fnClass(_NUMBER_FIELD_PRESET, styling));
   const uid = $props.id();
   const id = $derived(label?.trim() ? `${uid}-ctrl` : undefined);
   const idLabel = $derived(label?.trim() ? `${uid}-label` : undefined);
@@ -130,9 +130,9 @@
   _setNumberInputContext(ctx);
 
   // *** States *** //
-  let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
+  let neutral = _isNeutral(variant) ? variant : VARIANT.NEUTRAL;
   $effect(() => {
-    neutral = isNeutral(variant) ? variant : neutral;
+    neutral = _isNeutral(variant) ? variant : neutral;
   });
   const live = $derived(variant === VARIANT.INACTIVE ? "alert" : undefined);
   function shift(oninvalid?: boolean) {
@@ -155,7 +155,7 @@
     untrack(() => validate(true));
   });
   function validate(effect?: boolean) {
-    if (effect && isNeutral(variant)) return;
+    if (effect && _isNeutral(variant)) return;
     verify();
     shift();
   }

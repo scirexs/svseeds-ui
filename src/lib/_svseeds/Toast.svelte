@@ -81,7 +81,7 @@
 
   function resolveDuration(value: number | undefined, fallback: number): number {
     if (value !== undefined && !Number.isFinite(value)) return Infinity;
-    return value !== undefined && isUnsignedInteger(value) ? value : fallback;
+    return value !== undefined && _isUnsignedInteger(value) ? value : fallback;
   }
   function label(item: ToastItem): string {
     return item.type ? `${item.type} message` : "message";
@@ -180,7 +180,7 @@
   }
 
   import { flip } from "svelte/animate";
-  import { VARIANT, PARTS, fnClass, isUnsignedInteger, _resolveDuration } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _isUnsignedInteger, _resolveDuration } from "./_core";
   import type { Snippet } from "svelte";
   import type { SVSClass, SVSVariant } from "./_core";
 </script>
@@ -190,7 +190,7 @@
   let { toaster, children, motion = -1, styling, variant = VARIANT.NEUTRAL }: ToastProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_TOAST_PRESET, styling));
+  const cls = $derived(_fnClass(_TOAST_PRESET, styling));
   const dur = $derived(_resolveDuration(motion));
   const style = "position:fixed;background-color:transparent;pointer-events:none;";
   let region = $state<HTMLDivElement>();

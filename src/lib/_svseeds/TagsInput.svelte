@@ -99,7 +99,7 @@
 
   export const [_getTagsInputContext, _setTagsInputContext] = _createContext<TagsInputContext>();
 
-  import { VARIANT, PARTS, fnClass, _createContext } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLInputAttributes, KeyboardEventHandler, FormEventHandler, ClipboardEventHandler } from "svelte/elements";
@@ -112,7 +112,7 @@
   const ctx = _getTagsInputContext();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_TAGS_INPUT_PRESET, styling ?? ctx?.styling));
+  const cls = $derived(_fnClass(_TAGS_INPUT_PRESET, styling ?? ctx?.styling));
   const seps = $derived((Array.isArray(separator) ? separator : [separator]).filter((s) => s.length > 0));
   const effVariant = $derived(ctx ? ctx.variant : variant);
   const effValues = $derived(ctx ? ctx.values : values);

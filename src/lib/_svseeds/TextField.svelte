@@ -89,7 +89,7 @@
   export const _TEXT_FIELD_PRESET = "svs-text-field";
 
   import { onMount, untrack } from "svelte";
-  import { VARIANT, PARTS, fnClass, isNeutral } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _isNeutral } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { SvelteSet } from "svelte/reactivity";
@@ -102,7 +102,7 @@
   let { label, extra, aux, left, right, bottom, reserve = false, value = $bindable(""), type = "text", cols, rows, wrap, options, validations = [], id, onchange, oninvalid, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, ...rest }: TextFieldProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_TEXT_FIELD_PRESET, styling));
+  const cls = $derived(_fnClass(_TEXT_FIELD_PRESET, styling));
   const uid = $props.id();
   const idMain = $derived(id ? id : label?.trim() ? `${uid}-ctrl` : undefined);
   const idLabel = $derived(label?.trim() ? `${uid}-label` : undefined);
@@ -113,9 +113,9 @@
   const message = $derived(variant === VARIANT.INACTIVE ? errmsg || bottom : bottom);
 
   // *** States *** //
-  let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
+  let neutral = _isNeutral(variant) ? variant : VARIANT.NEUTRAL;
   $effect(() => {
-    neutral = isNeutral(variant) ? variant : neutral;
+    neutral = _isNeutral(variant) ? variant : neutral;
   });
   const live = $derived(variant === VARIANT.INACTIVE ? "alert" : undefined);
   const invalid = $derived(variant === VARIANT.INACTIVE ? true : undefined);
@@ -140,7 +140,7 @@
     untrack(() => validate(true));
   });
   function validate(effect?: boolean) {
-    if (effect && isNeutral(variant)) return;
+    if (effect && _isNeutral(variant)) return;
     verify();
     shift();
   }

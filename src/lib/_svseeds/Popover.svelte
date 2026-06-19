@@ -82,7 +82,7 @@
   } as const;
   const GAP_SIDE = { top: "margin-bottom", right: "margin-left", bottom: "margin-top", left: "margin-right" } as const;
 
-  import { VARIANT, PARTS, fnClass, canHover } from "./_core";
+  import { VARIANT, PARTS, _fnClass, canHover } from "./_core";
   import { _setMenuContainerContext } from "./MenuList.svelte";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
@@ -102,7 +102,7 @@
   const pid = `${uid}-popover`;
   const anchor = `--svs-popover-${uid}`;
   const triggerStyle = `anchor-name:${anchor}`;
-  const cls = $derived(fnClass(_POPOVER_PRESET, styling));
+  const cls = $derived(_fnClass(_POPOVER_PRESET, styling));
   const hoverEnabled = $derived(hover && canHover());
   const ctx: MenuContainerContext = {
     get variant() {

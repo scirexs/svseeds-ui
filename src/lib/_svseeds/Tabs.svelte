@@ -80,7 +80,7 @@
   }
 
   import { untrack } from "svelte";
-  import { VARIANT, PARTS, fnClass } from "./_core";
+  import { VARIANT, PARTS, _fnClass } from "./_core";
   import type { Component, Snippet } from "svelte";
   import type { SVSClass, SVSVariant } from "./_core";
 </script>
@@ -90,7 +90,7 @@
   let { tabs, current = $bindable<string | undefined>(undefined), manual = false, orientation = "horizontal", styling, variant = VARIANT.NEUTRAL }: TabsProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_TABS_PRESET, styling));
+  const cls = $derived(_fnClass(_TABS_PRESET, styling));
   const uid = $props.id();
   const selected = $derived(tabs.some((tab) => tab.value === current && !tab.disabled) ? current! : firstSelectableValue(tabs));
   const selectedIndex = $derived(tabs.findIndex((tab) => tab.value === selected));

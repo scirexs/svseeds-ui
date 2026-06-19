@@ -92,7 +92,7 @@
   }
 
   import { tick } from "svelte";
-  import { VARIANT, PARTS, fnClass, _createContext } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _createContext } from "./_core";
   import MenuItem, { _setMenuItemContext } from "./MenuItem.svelte";
   import MenuSeparator from "./MenuSeparator.svelte";
   import type { Snippet } from "svelte";
@@ -110,7 +110,7 @@
   // *** Initialize *** //
   const effVariant = $derived(ctx ? ctx.variant : variant);
   const effStyling = $derived(styling ?? ctx?.styling);
-  const cls = $derived(fnClass(_MENU_LIST_PRESET, effStyling));
+  const cls = $derived(_fnClass(_MENU_LIST_PRESET, effStyling));
   const itemCtx: MenuItemContext = {
     get variant() {
       return effVariant;

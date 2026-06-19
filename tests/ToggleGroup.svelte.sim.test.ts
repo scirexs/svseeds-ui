@@ -3,7 +3,7 @@ import { render, waitFor } from "@testing-library/svelte";
 import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet, tick } from "svelte";
 import ToggleGroup, { type ToggleOption } from "#svs/ToggleGroup.svelte";
-import { PARTS, VARIANT, fnClass } from "#svs/core";
+import { PARTS, VARIANT, _fnClass } from "#svs/core";
 import ToggleGroupCtxProvider from "./fixtures/ToggleGroupCtxProvider.svelte";
 
 const options = new Map([
@@ -551,7 +551,7 @@ describe("User interactions", () => {
 
 describe("Embedded in field context", () => {
   const preset = "svs-toggle-group";
-  const cls = fnClass(preset);
+  const cls = _fnClass(preset);
 
   test("variant comes from context", () => {
     const state = $state({ values: [] as string[], variant: VARIANT.ACTIVE, elements: [] as HTMLButtonElement[] });
@@ -564,12 +564,12 @@ describe("Embedded in field context", () => {
   test("styling comes from context unless own styling is present", () => {
     const state = $state({ values: [] as string[], variant: VARIANT.NEUTRAL, styling: "ctx-style", elements: [] as HTMLButtonElement[] });
     const ctxOnly = render(ToggleGroupCtxProvider, { state, input: { options } });
-    expect(ctxOnly.getByRole("group")).toHaveClass(...`${fnClass(preset, "ctx-style")(PARTS.WHOLE, VARIANT.NEUTRAL)}`.split(" "));
+    expect(ctxOnly.getByRole("group")).toHaveClass(...`${_fnClass(preset, "ctx-style")(PARTS.WHOLE, VARIANT.NEUTRAL)}`.split(" "));
     ctxOnly.unmount();
 
     const ownWins = render(ToggleGroupCtxProvider, { state, input: { options, styling: "own-style" } });
     const group = ownWins.getByRole("group") as HTMLSpanElement;
-    expect(group).toHaveClass(...`${fnClass(preset, "own-style")(PARTS.WHOLE, VARIANT.NEUTRAL)}`.split(" "));
+    expect(group).toHaveClass(...`${_fnClass(preset, "own-style")(PARTS.WHOLE, VARIANT.NEUTRAL)}`.split(" "));
     expect(group).not.toHaveClass("ctx-style");
   });
 

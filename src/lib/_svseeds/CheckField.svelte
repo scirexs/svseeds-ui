@@ -75,7 +75,7 @@
   export const _CHECK_FIELD_PRESET = "svs-check-field";
 
   import { untrack, onMount } from "svelte";
-  import { VARIANT, PARTS, fnClass, isNeutral } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _isNeutral } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { SvelteMap } from "svelte/reactivity";
@@ -88,7 +88,7 @@
   let { options, label, extra, aux, bottom, reserve = false, values = $bindable([]), multiple = true, validations = [], constraints = [], name, onchange, oninvalid, attach, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, required = false, ...rest }: CheckFieldProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_CHECK_FIELD_PRESET, styling));
+  const cls = $derived(_fnClass(_CHECK_FIELD_PRESET, styling));
   const type = $derived(multiple ? "checkbox" : "radio");
   const uid = $props.id();
   const nm = $derived(name?.trim() ? name : `${uid}-name`);
@@ -100,9 +100,9 @@
   const message = $derived(variant === VARIANT.INACTIVE ? errmsg || bottom : bottom);
 
   // *** States *** //
-  let neutral = $state(isNeutral(variant) ? variant : VARIANT.NEUTRAL);
+  let neutral = $state(_isNeutral(variant) ? variant : VARIANT.NEUTRAL);
   $effect(() => {
-    neutral = isNeutral(variant) ? variant : neutral;
+    neutral = _isNeutral(variant) ? variant : neutral;
   });
   const live = $derived(variant === VARIANT.INACTIVE ? "alert" : undefined);
   const invalid = $derived(variant === VARIANT.INACTIVE ? true : undefined);
@@ -137,7 +137,7 @@
     untrack(() => validate(true));
   });
   function validate(effect?: boolean) {
-    if (effect && isNeutral(variant)) return;
+    if (effect && _isNeutral(variant)) return;
     verify();
     shift();
   }

@@ -63,7 +63,7 @@
   export const _MONTHPICKER_PRESET = "svs-monthpicker";
 
   import { untrack } from "svelte";
-  import { VARIANT, PARTS, fnClass } from "./_core";
+  import { VARIANT, PARTS, _fnClass } from "./_core";
   import WheelPicker from "./WheelPicker.svelte";
   import type { Snippet } from "svelte";
   import type { SVSClass, SVSVariant } from "./_core";
@@ -75,7 +75,7 @@
   let { value = $bindable(), min, max, order = ["year", "month"], locale, monthLabel, yearLabel, left, middle, right, year, month, styling, variant = VARIANT.NEUTRAL }: MonthPickerProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_MONTHPICKER_PRESET, styling));
+  const cls = $derived(_fnClass(_MONTHPICKER_PRESET, styling));
   // svelte-ignore state_referenced_locally
   if (value === undefined) value = Temporal.Now.plainDateISO().toPlainYearMonth();
   const initial = value as Temporal.PlainYearMonth;

@@ -76,7 +76,7 @@
   export const _WHEELPICKER_PRESET = "svs-wheelpicker";
 
   import { tick, untrack } from "svelte";
-  import { VARIANT, PARTS, SR_ONLY, debounce, fnClass, shouldReduceMotion, throttle, _cssVarStyle } from "./_core";
+  import { VARIANT, PARTS, SR_ONLY, _debounce, _fnClass, shouldReduceMotion, _throttle, _cssVarStyle } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLSelectAttributes, ChangeEventHandler, PointerEventHandler, WheelEventHandler } from "svelte/elements";
@@ -88,7 +88,7 @@
   let { options, value = $bindable(), loop = false, perspective, maxAngle = 60, label, cssvar, onchange, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: WheelPickerProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_WHEELPICKER_PRESET, styling));
+  const cls = $derived(_fnClass(_WHEELPICKER_PRESET, styling));
   const firstEnabled = $derived(options.find((o) => !o.disabled)?.value ?? options[0]?.value ?? "");
   const attrs = $derived.by(() => {
     const { multiple, size, style, hidden, "aria-hidden": ariaHidden, ...a } = rest as Record<string, unknown>;
@@ -104,7 +104,7 @@
 
   const selected = $derived(options.findIndex((o) => o.value === value));
   const itemVariant = (i: number): string => (i === selected ? VARIANT.ACTIVE : options[i]?.disabled ? VARIANT.INACTIVE : variant);
-  const snapSoon = debounce(120, () => snap());
+  const snapSoon = _debounce(120, () => snap());
   const POINTER_RATE = 15;
 
   // *** States *** //
@@ -201,7 +201,7 @@
     startPos = pos;
     ev.currentTarget.setPointerCapture?.(ev.pointerId);
   };
-  const hpointermove: PointerEventHandler<HTMLDivElement> = throttle(POINTER_RATE, (ev: Parameters<PointerEventHandler<HTMLDivElement>>[0]) => {
+  const hpointermove: PointerEventHandler<HTMLDivElement> = _throttle(POINTER_RATE, (ev: Parameters<PointerEventHandler<HTMLDivElement>>[0]) => {
     if (!dragging) return;
     const unit = itemH || 1;
     pos = normalize(startPos - (ev.clientY - startY) / unit);

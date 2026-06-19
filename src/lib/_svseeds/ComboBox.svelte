@@ -57,7 +57,7 @@
   const NA = -1;
 
   import { tick } from "svelte";
-  import { VARIANT, PARTS, fnClass } from "./_core";
+  import { VARIANT, PARTS, _fnClass } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { SvelteSet } from "svelte/reactivity";
@@ -77,7 +77,7 @@
   let { options, extra, value = $bindable(""), expanded = $bindable(false), search = true, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, onclick, onkeydown, oninput, onfocus, onblur, ...rest }: ComboBoxProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_COMBO_BOX_PRESET, styling));
+  const cls = $derived(_fnClass(_COMBO_BOX_PRESET, styling));
   const uid = $props.id();
   const idList = `${uid}-list`;
   let selected = $state(NA);

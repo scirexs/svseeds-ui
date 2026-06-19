@@ -193,7 +193,7 @@
       this.visible = VISIBLE.HIDDEN;
     }
     #setMove(): (ev: PointerEvent) => void {
-      return throttle(TooltipCore.#INTERVAL, (ev) => {
+      return _throttle(TooltipCore.#INTERVAL, (ev) => {
         if (this.visible === VISIBLE.VISIBLE) return;
         this.#position.trackCursor(ev);
       });
@@ -302,7 +302,7 @@
 
   import { mount, untrack } from "svelte";
   import { on } from "svelte/events";
-  import { VARIANT, PARTS, fnClass, throttle, canHover } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _throttle, canHover } from "./_core";
   import TooltipRoot from "./Tooltip.svelte";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
@@ -311,7 +311,7 @@
 
 <script lang="ts">
   // *** Initialize *** //
-  const cls = $derived(fnClass(_TOOLTIP_PRESET, core.styling));
+  const cls = $derived(_fnClass(_TOOLTIP_PRESET, core.styling));
   let el: HTMLDivElement | undefined = $state();
   let point: Vector = $state.raw(INIT_VEC);
 

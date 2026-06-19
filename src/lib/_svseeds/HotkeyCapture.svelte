@@ -84,7 +84,7 @@
   }
 
   import { untrack } from "svelte";
-  import { VARIANT, PARTS, fnClass, isNeutral } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _isNeutral } from "./_core";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLInputAttributes, FocusEventHandler } from "svelte/elements";
   import type { SVSClass, SVSVariant } from "./_core";
@@ -95,12 +95,12 @@
   let { value = $bindable(""), active = $bindable(false), disabled = false, oncapture, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, onfocus, onblur, ...rest }: HotkeyCaptureProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_HOTKEY_CAPTURE_PRESET, styling));
-  let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
+  const cls = $derived(_fnClass(_HOTKEY_CAPTURE_PRESET, styling));
+  let neutral = _isNeutral(variant) ? variant : VARIANT.NEUTRAL;
 
   // *** Reactive Handlers *** //
   $effect(() => {
-    neutral = isNeutral(variant) ? variant : neutral;
+    neutral = _isNeutral(variant) ? variant : neutral;
   });
   $effect.pre(() => {
     active;

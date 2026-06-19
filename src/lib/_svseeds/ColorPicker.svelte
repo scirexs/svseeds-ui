@@ -81,7 +81,7 @@
     return alpha;
   }
 
-  import { VARIANT, PARTS, fnClass } from "./_core";
+  import { VARIANT, PARTS, _fnClass } from "./_core";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLInputAttributes } from "svelte/elements";
   import type { SVSClass, SVSVariant } from "./_core";
@@ -92,7 +92,7 @@
   let { value = $bindable(DEFAULT_COLOR), alpha = 1, checkered = true, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: ColorPickerProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_COLOR_PICKER_PRESET, styling));
+  const cls = $derived(_fnClass(_COLOR_PICKER_PRESET, styling));
   value = normalizeHex(value);
   $effect.pre(() => {
     const n = normalizeHex(value);

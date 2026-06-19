@@ -98,7 +98,7 @@
   export const _TOGGLE_GROUP_FIELD_PRESET = "svs-toggle-group-field";
 
   import { untrack } from "svelte";
-  import { VARIANT, PARTS, fnClass, isNeutral } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _isNeutral } from "./_core";
   import ToggleGroup, { _TOGGLE_GROUP_PRESET, _setToggleGroupContext } from "./ToggleGroup.svelte";
   import type { Snippet } from "svelte";
   import type { SvelteMap } from "svelte/reactivity";
@@ -117,7 +117,7 @@
   let { options, label, extra, aux, left, right, bottom, reserve = false, values = $bindable([]), multiple = true, validations = [], constraints = [], name, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), toggleGroup, children }: ToggleGroupFieldProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_TOGGLE_GROUP_FIELD_PRESET, styling));
+  const cls = $derived(_fnClass(_TOGGLE_GROUP_FIELD_PRESET, styling));
   const uid = $props.id();
   const idLabel = $derived(label?.trim() ? `${uid}-label` : undefined);
   const idDesc = $derived(bottom?.trim() ? `${uid}-desc` : undefined);
@@ -154,9 +154,9 @@
   _setToggleGroupContext(ctx);
 
   // *** States *** //
-  let neutral = $state(isNeutral(variant) ? variant : VARIANT.NEUTRAL);
+  let neutral = $state(_isNeutral(variant) ? variant : VARIANT.NEUTRAL);
   $effect(() => {
-    neutral = isNeutral(variant) ? variant : neutral;
+    neutral = _isNeutral(variant) ? variant : neutral;
   });
   const live = $derived(variant === VARIANT.INACTIVE ? "alert" : undefined);
   const idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);

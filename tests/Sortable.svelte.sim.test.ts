@@ -8,7 +8,7 @@ import SortableConnected from "./fixtures/SortableConnected.svelte";
 import SortableConnectedObjects from "./fixtures/SortableConnectedObjects.svelte";
 import SortableGhost from "./fixtures/SortableGhost.svelte";
 import { createSortableGroup } from "#svs/Sortable.svelte";
-import { PARTS, VARIANT, fnClass } from "#svs/core";
+import { PARTS, VARIANT, _fnClass } from "#svs/core";
 
 async function drag(origin: HTMLElement, over: HTMLElement | null, opts?: { up?: boolean }) {
   await fireEvent.pointerDown(origin, { button: 0, buttons: 1, clientX: 0, clientY: 0 });
@@ -73,9 +73,9 @@ describe("_Sortable rendering and API", () => {
     expect(getByTestId("item-a")).toHaveTextContent("a");
   });
 
-  test("variant and styling use fnClass-compatible classes", () => {
+  test("variant and styling use _fnClass-compatible classes", () => {
     const styling = "custom-sortable";
-    const cls = fnClass("svs-sortable", styling);
+    const cls = _fnClass("svs-sortable", styling);
     const { container } = render(SortableBasic, { items: ["a"], styling, variant: VARIANT.ACTIVE });
     const list = container.querySelector("ul");
     const item = container.querySelector("li");

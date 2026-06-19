@@ -67,7 +67,7 @@
 
   export const _SLIDER_PRESET = "svs-slider";
 
-  import { VARIANT, PARTS, fnClass, _cssVar } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _cssVar } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { SvelteSet } from "svelte/reactivity";
@@ -80,7 +80,7 @@
   let { min, max, left, right, value = $bindable(), options, fillRange = { min: 5, max: 95 }, cssvar, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: SliderProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_SLIDER_PRESET, styling));
+  const cls = $derived(_fnClass(_SLIDER_PRESET, styling));
   const uid = $props.id();
   const idList = $derived(options?.size ? `${uid}-list` : undefined);
   const rmin = $derived(min > max ? max : min);

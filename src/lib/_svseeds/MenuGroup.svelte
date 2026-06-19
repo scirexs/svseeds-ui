@@ -47,7 +47,7 @@
 
   export const _MENU_GROUP_PRESET = "svs-menu-group";
 
-  import { VARIANT, PARTS, fnClass } from "./_core";
+  import { VARIANT, PARTS, _fnClass } from "./_core";
   import { _getMenuItemContext } from "./MenuItem.svelte";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
@@ -62,7 +62,7 @@
   const uid = $props.id();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_MENU_GROUP_PRESET, styling ?? ctx?.styling));
+  const cls = $derived(_fnClass(_MENU_GROUP_PRESET, styling ?? ctx?.styling));
   const effVariant = $derived(ctx ? ctx.variant : variant);
 </script>
 

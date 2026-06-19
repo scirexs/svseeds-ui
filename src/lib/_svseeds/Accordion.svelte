@@ -73,7 +73,7 @@
   }
 
   import { untrack } from "svelte";
-  import { VARIANT, PARTS, fnClass, omit } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _omit } from "./_core";
   import Disclosure, { _DISCLOSURE_PRESET, _setDisclosureContext } from "./Disclosure.svelte";
   import type { Component, Snippet } from "svelte";
   import type { SVSClass, SVSVariant } from "./_core";
@@ -85,7 +85,7 @@
   let { items, children, current = $bindable<string | undefined>(), styling, variant = VARIANT.NEUTRAL, disclosure }: AccordionProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_ACCORDION_PRESET, styling));
+  const cls = $derived(_fnClass(_ACCORDION_PRESET, styling));
   const ctxCurrent = $derived(current);
   const ctxVariant = $derived(variant);
   const ctxStyling = $derived(styling);
@@ -108,7 +108,7 @@
 
   // *** Initialize Child Props *** //
   const childProps = $derived({
-    ...omit(disclosure, "styling"),
+    ..._omit(disclosure, "styling"),
     styling: disclosure?.styling ?? `${_ACCORDION_PRESET} ${_DISCLOSURE_PRESET}`,
   });
 

@@ -47,7 +47,7 @@
 
   export const _SORTABLE_GROUP_PRESET = "svs-sortable-group";
 
-  import { VARIANT, PARTS, fnClass } from "./_core";
+  import { VARIANT, PARTS, _fnClass } from "./_core";
   import { createSortableGroup, _setSortableContext } from "./Sortable.svelte";
   import type { Snippet } from "svelte";
   import type { EasingFunction } from "svelte/transition";
@@ -59,7 +59,7 @@
   // prettier-ignore
   let { children, group, duration, easing, styling, variant = VARIANT.NEUTRAL }: SortableGroupProps = $props();
 
-  const cls = $derived(fnClass(_SORTABLE_GROUP_PRESET, styling));
+  const cls = $derived(_fnClass(_SORTABLE_GROUP_PRESET, styling));
   const ctxVariant = $derived(variant);
   const ctxStyling = $derived(styling);
   // svelte-ignore state_referenced_locally

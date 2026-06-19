@@ -50,7 +50,7 @@
 
   export const _BUTTON_PRESET = "svs-button";
 
-  import { VARIANT, PARTS, fnClass } from "./_core";
+  import { VARIANT, PARTS, _fnClass } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLButtonAttributes, MouseEventHandler } from "svelte/elements";
@@ -62,7 +62,7 @@
   let { children, left, right, type = "button", onclick, form, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), inactive, class: c, ...rest }: ButtonProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_BUTTON_PRESET, styling));
+  const cls = $derived(_fnClass(_BUTTON_PRESET, styling));
   const idForm = $derived(form?.id || undefined);
   const reason = $derived(inactive?.trim() ? inactive : undefined);
   const inactiveAttrs = $derived(reason ? { "aria-disabled": true, "aria-description": reason } : {});

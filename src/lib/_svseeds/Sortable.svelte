@@ -346,7 +346,7 @@
         on(
           window,
           "pointermove",
-          throttle(pollingRate, (ev) => this.move(ev)),
+          _throttle(pollingRate, (ev) => this.move(ev)),
         ),
         on(window, "pointerup", () => this.commit()),
         on(window, "pointercancel", () => this.cancel()),
@@ -620,7 +620,7 @@
   import { crossfade } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import { flip } from "svelte/animate";
-  import { VARIANT, PARTS, fnClass, throttle, isNeutral, _resolveDuration, _createContext } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _throttle, _isNeutral, _resolveDuration, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { EasingFunction } from "svelte/transition";
@@ -639,8 +639,8 @@
   const listId = id ?? autoId;
   const itemKey = $derived(key ?? ((x: T) => x as PropertyKey));
   const itemClone = $derived(clone ?? ((x: T) => x));
-  const cls = $derived(fnClass(_SORTABLE_PRESET, styling ?? controller.styling));
-  const effVariant = $derived(!isNeutral(variant) ? variant : controller.variant);
+  const cls = $derived(_fnClass(_SORTABLE_PRESET, styling ?? controller.styling));
+  const effVariant = $derived(!_isNeutral(variant) ? variant : controller.variant);
   const selected = new SvelteSet<string>();
   let pendingSelect = $state("");
   let pendingDeselect = $state(false);

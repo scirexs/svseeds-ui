@@ -59,7 +59,7 @@
 
   export const _MENU_ITEM_PRESET = "svs-menu-item";
 
-  import { VARIANT, PARTS, fnClass, _createContext } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLAnchorAttributes, HTMLButtonAttributes } from "svelte/elements";
@@ -72,7 +72,7 @@
   const ctx = _getMenuItemContext();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_MENU_ITEM_PRESET, styling ?? ctx?.styling));
+  const cls = $derived(_fnClass(_MENU_ITEM_PRESET, styling ?? ctx?.styling));
   const effVariant = $derived(ctx ? ctx.variant : variant);
 
   // *** Event Handlers *** //

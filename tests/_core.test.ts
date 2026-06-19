@@ -3,16 +3,16 @@ import { getContext, setContext } from "svelte";
 import {
   BASE,
   canHover,
-  DEFAULT_DURATION,
-  debounce,
-  fnClass,
-  isNeutral,
-  isUnsignedInteger,
-  omit,
+  _DEFAULT_DURATION,
+  _debounce,
+  _fnClass,
+  _isNeutral,
+  _isUnsignedInteger,
+  _omit,
   PARTS,
   SR_ONLY,
   shouldReduceMotion,
-  throttle,
+  _throttle,
   VARIANT,
   _cssVar,
   _cssVarStyle,
@@ -112,25 +112,25 @@ describe("class rule helpers", () => {
 });
 
 describe("variant and number helpers", () => {
-  test("isNeutral returns false only for active and inactive variants", () => {
-    expect(isNeutral(VARIANT.NEUTRAL)).toBe(true);
-    expect(isNeutral("custom")).toBe(true);
-    expect(isNeutral("")).toBe(true);
-    expect(isNeutral(VARIANT.ACTIVE)).toBe(false);
-    expect(isNeutral(VARIANT.INACTIVE)).toBe(false);
+  test("_isNeutral returns false only for active and inactive variants", () => {
+    expect(_isNeutral(VARIANT.NEUTRAL)).toBe(true);
+    expect(_isNeutral("custom")).toBe(true);
+    expect(_isNeutral("")).toBe(true);
+    expect(_isNeutral(VARIANT.ACTIVE)).toBe(false);
+    expect(_isNeutral(VARIANT.INACTIVE)).toBe(false);
   });
 
-  test("isUnsignedInteger accepts zero and positive integers", () => {
-    expect(isUnsignedInteger(0)).toBe(true);
-    expect(isUnsignedInteger(1)).toBe(true);
-    expect(isUnsignedInteger(Number.MAX_SAFE_INTEGER)).toBe(true);
+  test("_isUnsignedInteger accepts zero and positive integers", () => {
+    expect(_isUnsignedInteger(0)).toBe(true);
+    expect(_isUnsignedInteger(1)).toBe(true);
+    expect(_isUnsignedInteger(Number.MAX_SAFE_INTEGER)).toBe(true);
   });
 
-  test("isUnsignedInteger rejects negative, fractional, and non-finite numbers", () => {
-    expect(isUnsignedInteger(-1)).toBe(false);
-    expect(isUnsignedInteger(1.1)).toBe(false);
-    expect(isUnsignedInteger(NaN)).toBe(false);
-    expect(isUnsignedInteger(Infinity)).toBe(false);
+  test("_isUnsignedInteger rejects negative, fractional, and non-finite numbers", () => {
+    expect(_isUnsignedInteger(-1)).toBe(false);
+    expect(_isUnsignedInteger(1.1)).toBe(false);
+    expect(_isUnsignedInteger(NaN)).toBe(false);
+    expect(_isUnsignedInteger(Infinity)).toBe(false);
   });
 });
 
@@ -160,7 +160,7 @@ describe("_createContext", () => {
   });
 });
 
-describe("fnClass", () => {
+describe("_fnClass", () => {
   const pstr = "preset-str";
   const sstr = "style-str";
   const prule = {
@@ -200,37 +200,37 @@ describe("fnClass", () => {
   };
 
   // preset_style
-  const str_str = fnClass(pstr, sstr);
-  const str_rule = fnClass(pstr, srule);
-  const str_rulex = fnClass(pstr, srulex);
-  const str_rules = fnClass(pstr, srules);
-  const str_blank = fnClass(pstr, "");
-  const str_empty = fnClass(pstr, {});
-  const str_undef = fnClass(pstr, undefined);
-  const rule_str = fnClass(prule, sstr);
-  const rule_rule = fnClass(prule, srule);
-  const rule_rules = fnClass(prule, srules);
-  const rule_blank = fnClass(prule, "");
-  const rule_empty = fnClass(prule, {});
-  const rule_undef = fnClass(prule, undefined);
-  const rules_str = fnClass(prules, sstr);
-  const rules_rule = fnClass(prules, srule);
-  const rules_rules = fnClass(prules, srules);
-  const rules_blank = fnClass(prules, "");
-  const rules_empty = fnClass(prules, {});
-  const rules_undef = fnClass(prules, undefined);
-  const blank_str = fnClass("", sstr);
-  const blank_rule = fnClass("", srule);
-  const blank_rules = fnClass("", srules);
-  const blank_blank = fnClass("", "");
-  const blank_empty = fnClass("", {});
-  const blank_undef = fnClass("", undefined);
-  const empty_str = fnClass({}, sstr);
-  const empty_rule = fnClass({}, srule);
-  const empty_rules = fnClass({}, srules);
-  const empty_blank = fnClass({}, "");
-  const empty_empty = fnClass({}, {});
-  const empty_undef = fnClass({}, undefined);
+  const str_str = _fnClass(pstr, sstr);
+  const str_rule = _fnClass(pstr, srule);
+  const str_rulex = _fnClass(pstr, srulex);
+  const str_rules = _fnClass(pstr, srules);
+  const str_blank = _fnClass(pstr, "");
+  const str_empty = _fnClass(pstr, {});
+  const str_undef = _fnClass(pstr, undefined);
+  const rule_str = _fnClass(prule, sstr);
+  const rule_rule = _fnClass(prule, srule);
+  const rule_rules = _fnClass(prule, srules);
+  const rule_blank = _fnClass(prule, "");
+  const rule_empty = _fnClass(prule, {});
+  const rule_undef = _fnClass(prule, undefined);
+  const rules_str = _fnClass(prules, sstr);
+  const rules_rule = _fnClass(prules, srule);
+  const rules_rules = _fnClass(prules, srules);
+  const rules_blank = _fnClass(prules, "");
+  const rules_empty = _fnClass(prules, {});
+  const rules_undef = _fnClass(prules, undefined);
+  const blank_str = _fnClass("", sstr);
+  const blank_rule = _fnClass("", srule);
+  const blank_rules = _fnClass("", srules);
+  const blank_blank = _fnClass("", "");
+  const blank_empty = _fnClass("", {});
+  const blank_undef = _fnClass("", undefined);
+  const empty_str = _fnClass({}, sstr);
+  const empty_rule = _fnClass({}, srule);
+  const empty_rules = _fnClass({}, srules);
+  const empty_blank = _fnClass({}, "");
+  const empty_empty = _fnClass({}, {});
+  const empty_undef = _fnClass({}, undefined);
 
   test("str_str", () => {
     const wholeNeutral = str_str(PARTS.WHOLE, VARIANT.NEUTRAL);
@@ -691,30 +691,30 @@ describe("fnClass", () => {
   // });
 });
 
-describe("omit", () => {
+describe("_omit", () => {
   test("return empty object", () => {
-    const result = omit(undefined);
+    const result = _omit(undefined);
     expect(result).toStrictEqual({});
   });
   test("return empty object for null at runtime", () => {
-    const result = omit(null as never);
+    const result = _omit(null as never);
     expect(result).toStrictEqual({});
   });
   test("return shallow copied object", () => {
     const obj = { a: 1, b: 2, c: 3 };
-    const result = omit(obj, "a", "c");
+    const result = _omit(obj, "a", "c");
     expect(result).toStrictEqual({ b: 2 });
     expect(obj).toStrictEqual({ a: 1, b: 2, c: 3 });
   });
   test("return a new shallow copy when no keys are omitted", () => {
     const obj = { a: 1 };
-    const result = omit(obj);
+    const result = _omit(obj);
     expect(result).toStrictEqual(obj);
     expect(result).not.toBe(obj);
   });
 });
 
-describe("debounce", () => {
+describe("_debounce", () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -724,7 +724,7 @@ describe("debounce", () => {
 
   test("call once", () => {
     const mockFn = vi.fn();
-    const debouncedFn = debounce(100, mockFn);
+    const debouncedFn = _debounce(100, mockFn);
 
     debouncedFn();
     expect(mockFn).not.toHaveBeenCalled();
@@ -737,7 +737,7 @@ describe("debounce", () => {
   });
   test("call several times", () => {
     const mockFn = vi.fn();
-    const debouncedFn = debounce(100, mockFn);
+    const debouncedFn = _debounce(100, mockFn);
 
     debouncedFn();
     vi.advanceTimersByTime(50);
@@ -750,7 +750,7 @@ describe("debounce", () => {
   });
   test("pass thru args", () => {
     const mockFn = vi.fn();
-    const debouncedFn = debounce(100, mockFn);
+    const debouncedFn = _debounce(100, mockFn);
 
     debouncedFn("test", 123);
     vi.advanceTimersByTime(100);
@@ -758,7 +758,7 @@ describe("debounce", () => {
   });
   test("uses the latest args after repeated calls", () => {
     const mockFn = vi.fn();
-    const debouncedFn = debounce(100, mockFn);
+    const debouncedFn = _debounce(100, mockFn);
 
     debouncedFn("first");
     vi.advanceTimersByTime(50);
@@ -770,7 +770,7 @@ describe("debounce", () => {
   });
   test("cancel prevents a pending call and remains reusable", () => {
     const mockFn = vi.fn();
-    const debouncedFn = debounce(100, mockFn);
+    const debouncedFn = _debounce(100, mockFn);
 
     // WP-CORE
     debouncedFn();
@@ -785,7 +785,7 @@ describe("debounce", () => {
   });
 });
 
-describe("throttle", () => {
+describe("_throttle", () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -795,7 +795,7 @@ describe("throttle", () => {
 
   test("immediately run by first time call", () => {
     const mockFn = vi.fn();
-    const throttledFn = throttle(100, mockFn);
+    const throttledFn = _throttle(100, mockFn);
 
     throttledFn("test");
     expect(mockFn).toHaveBeenCalledTimes(1);
@@ -803,7 +803,7 @@ describe("throttle", () => {
   });
   test("prevent run within interval", () => {
     const mockFn = vi.fn();
-    const throttledFn = throttle(100, mockFn);
+    const throttledFn = _throttle(100, mockFn);
 
     throttledFn();
     mockFn.mockClear(); // reset first call
@@ -817,7 +817,7 @@ describe("throttle", () => {
   });
   test("used latest args after interval", () => {
     const mockFn = vi.fn();
-    const throttledFn = throttle(100, mockFn);
+    const throttledFn = _throttle(100, mockFn);
 
     throttledFn("first");
     mockFn.mockClear(); // reset first call
@@ -832,7 +832,7 @@ describe("throttle", () => {
   });
   test("runs queued calls when the interval has elapsed", () => {
     const mockFn = vi.fn();
-    const throttledFn = throttle(100, mockFn);
+    const throttledFn = _throttle(100, mockFn);
 
     throttledFn("first");
     vi.advanceTimersByTime(100);
@@ -844,20 +844,20 @@ describe("throttle", () => {
   });
 });
 
-describe("fnClass styling object heuristic", () => {
+describe("_fnClass styling object heuristic", () => {
   test("clsx condition object (boolean values) is treated as a class value, not a variant map", () => {
-    const cls = fnClass("preset", { [PARTS.WHOLE]: { foo: true, bar: false } });
+    const cls = _fnClass("preset", { [PARTS.WHOLE]: { foo: true, bar: false } });
     // detected as clsx dict -> wrapped as { base: {...} }, so same value for any variant
     expect(cls(PARTS.WHOLE, VARIANT.NEUTRAL)).toEqual({ foo: true, bar: false });
     expect(cls(PARTS.WHOLE, VARIANT.ACTIVE)).toEqual({ foo: true, bar: false });
   });
   test("plain object with class values is treated as a variant map", () => {
-    const cls = fnClass("preset", { [PARTS.WHOLE]: { [BASE]: "b", [VARIANT.ACTIVE]: "a" } });
+    const cls = _fnClass("preset", { [PARTS.WHOLE]: { [BASE]: "b", [VARIANT.ACTIVE]: "a" } });
     expect(cls(PARTS.WHOLE, VARIANT.NEUTRAL)).toBe("b");
     expect(cls(PARTS.WHOLE, VARIANT.ACTIVE)).toEqual(["b", "a"]);
   });
   test("array-wrapped clsx object still works (backward compatible)", () => {
-    const cls = fnClass("preset", { [PARTS.WHOLE]: [{ foo: true, bar: false }] });
+    const cls = _fnClass("preset", { [PARTS.WHOLE]: [{ foo: true, bar: false }] });
     expect(cls(PARTS.WHOLE, VARIANT.NEUTRAL)).toEqual([{ foo: true, bar: false }]);
     expect(cls(PARTS.WHOLE, VARIANT.ACTIVE)).toEqual([{ foo: true, bar: false }]);
   });
@@ -935,11 +935,11 @@ describe("motion helpers", () => {
 
   test("_resolveDuration preserves valid durations and falls back otherwise", () => {
     stubMotion(false);
-    expect(_resolveDuration(-1)).toBe(DEFAULT_DURATION);
+    expect(_resolveDuration(-1)).toBe(_DEFAULT_DURATION);
     expect(_resolveDuration(0)).toBe(0);
     expect(_resolveDuration(350)).toBe(350);
-    expect(_resolveDuration(undefined)).toBe(DEFAULT_DURATION);
-    expect(_resolveDuration(3.5)).toBe(DEFAULT_DURATION);
+    expect(_resolveDuration(undefined)).toBe(_DEFAULT_DURATION);
+    expect(_resolveDuration(3.5)).toBe(_DEFAULT_DURATION);
     expect(_resolveDuration(-1, 300)).toBe(300);
   });
 

@@ -6,7 +6,7 @@ import SortableGroupExternal from "./fixtures/SortableGroupExternal.svelte";
 import SortableGroupMotionProbe from "./fixtures/SortableGroupMotionProbe.svelte";
 import SortableBasic from "./fixtures/SortableBasic.svelte";
 import { createSortableGroup } from "#svs/Sortable.svelte";
-import { PARTS, VARIANT, fnClass } from "#svs/core";
+import { PARTS, VARIANT, _fnClass } from "#svs/core";
 
 async function drag(origin: HTMLElement, over: HTMLElement | null) {
   await fireEvent.pointerDown(origin, { button: 0, buttons: 1, clientX: 0, clientY: 0 });
@@ -35,7 +35,7 @@ describe("SortableGroup structure", () => {
 
   test("custom styling applies to the wrapper whole", () => {
     const styling = "custom-group";
-    const cls = fnClass("svs-sortable-group", styling);
+    const cls = _fnClass("svs-sortable-group", styling);
     const { getByRole } = render(SortableGroupBasic, { styling });
 
     expect(getByRole("group").className).toBe(cls(PARTS.WHOLE, VARIANT.NEUTRAL));

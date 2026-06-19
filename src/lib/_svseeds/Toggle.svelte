@@ -56,7 +56,7 @@
   export const _TOGGLE_PRESET = "svs-toggle";
 
   import { untrack } from "svelte";
-  import { VARIANT, PARTS, fnClass, isNeutral } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _isNeutral } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLButtonAttributes, MouseEventHandler } from "svelte/elements";
@@ -68,9 +68,9 @@
   let { children, left, right, value = $bindable(false), role = "button", ariaLabel, onclick, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, ...rest }: ToggleProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_TOGGLE_PRESET, styling));
+  const cls = $derived(_fnClass(_TOGGLE_PRESET, styling));
   // Remembers the latest neutral (off-state) variant so OFF restores a caller custom neutral.
-  let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
+  let neutral = _isNeutral(variant) ? variant : VARIANT.NEUTRAL;
   let state = $derived(
     role === "button" ? { "aria-pressed": value, "aria-checked": undefined } : { "aria-checked": value, "aria-pressed": undefined },
   );
@@ -78,7 +78,7 @@
   // *** Reactive Handlers *** //
   // Track runtime changes to a custom neutral variant (ignore ACTIVE/INACTIVE).
   $effect(() => {
-    neutral = isNeutral(variant) ? variant : neutral;
+    neutral = _isNeutral(variant) ? variant : neutral;
   });
   // Drive variant from value: ON -> ACTIVE, OFF -> remembered neutral.
   $effect.pre(() => {

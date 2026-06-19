@@ -101,7 +101,7 @@
   export const [_getFileInputContext, _setFileInputContext] = _createContext<FileInputContext>();
 
   import { untrack } from "svelte";
-  import { VARIANT, PARTS, SR_ONLY, fnClass, _createContext } from "./_core";
+  import { VARIANT, PARTS, SR_ONLY, _fnClass, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLInputAttributes, MouseEventHandler, ChangeEventHandler, DragEventHandler, EventHandler } from "svelte/elements";
@@ -117,7 +117,7 @@
   let dragover = $state(false);
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_FILE_INPUT_PRESET, styling ?? ctx?.styling));
+  const cls = $derived(_fnClass(_FILE_INPUT_PRESET, styling ?? ctx?.styling));
   const effVariant = $derived(dragover ? VARIANT.ACTIVE : ctx ? ctx.variant : variant);
   const effFiles = $derived(ctx ? ctx.files : files);
   const effId = $derived(ctx ? ctx.id : idProp);

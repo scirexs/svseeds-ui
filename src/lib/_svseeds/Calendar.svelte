@@ -108,7 +108,7 @@
   export const _CALENDAR_PRESET = "svs-calendar";
 
   import { tick, untrack } from "svelte";
-  import { VARIANT, PARTS, fnClass, shouldReduceMotion } from "./_core";
+  import { VARIANT, PARTS, _fnClass, shouldReduceMotion } from "./_core";
   import MonthPicker from "./MonthPicker.svelte";
   import type { Snippet } from "svelte";
   import type { KeyboardEventHandler, MouseEventHandler } from "svelte/elements";
@@ -121,7 +121,7 @@
   let { value = $bindable(), display = $bindable(), picking = $bindable(false), min, max, isDisabled, outsideDays = false, fixedWeeks = false, firstDayOfWeek = 0, locale, label, prev, next, weekday, day, bottom, monthPicker, transition, styling, variant = VARIANT.NEUTRAL }: CalendarProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_CALENDAR_PRESET, styling));
+  const cls = $derived(_fnClass(_CALENDAR_PRESET, styling));
   const uid = $props.id();
   const idCaption = `${uid}-caption`;
   // svelte-ignore state_referenced_locally

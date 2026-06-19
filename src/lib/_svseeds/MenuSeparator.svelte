@@ -40,7 +40,7 @@
 
   export const _MENU_SEPARATOR_PRESET = "svs-menu-separator";
 
-  import { VARIANT, PARTS, fnClass } from "./_core";
+  import { VARIANT, PARTS, _fnClass } from "./_core";
   import { _getMenuItemContext } from "./MenuItem.svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLAttributes } from "svelte/elements";
@@ -53,7 +53,7 @@
   const ctx = _getMenuItemContext();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_MENU_SEPARATOR_PRESET, styling ?? ctx?.styling));
+  const cls = $derived(_fnClass(_MENU_SEPARATOR_PRESET, styling ?? ctx?.styling));
   const effVariant = $derived(ctx ? ctx.variant : variant);
   const effAriaOrientation = $derived(ariaOrientation ?? (ctx?.orientation === "horizontal" ? "vertical" : "horizontal"));
 </script>

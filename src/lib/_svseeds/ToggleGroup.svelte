@@ -74,7 +74,7 @@
 
   export const [_getToggleGroupContext, _setToggleGroupContext] = _createContext<ToggleGroupContext>();
 
-  import { VARIANT, PARTS, fnClass, _createContext } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLButtonAttributes } from "svelte/elements";
@@ -88,7 +88,7 @@
   const ctx = _getToggleGroupContext();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_TOGGLE_GROUP_PRESET, styling ?? ctx?.styling));
+  const cls = $derived(_fnClass(_TOGGLE_GROUP_PRESET, styling ?? ctx?.styling));
   const role = $derived(multiple ? "checkbox" : "radio");
   const roleGroup = $derived(multiple ? "group" : "radiogroup");
   const effVariant = $derived(ctx ? ctx.variant : variant);

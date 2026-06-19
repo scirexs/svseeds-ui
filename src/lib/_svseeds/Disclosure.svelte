@@ -81,7 +81,7 @@
 
   import { untrack, onMount } from "svelte";
   import { slide } from "svelte/transition";
-  import { VARIANT, PARTS, fnClass, isNeutral, shouldReduceMotion, _resolveDuration, _createContext } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _isNeutral, shouldReduceMotion, _resolveDuration, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLDetailsAttributes, MouseEventHandler, ToggleEventHandler } from "svelte/elements";
@@ -94,7 +94,7 @@
   const ctx = _getDisclosureContext();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_DISCLOSURE_PRESET, styling ?? ctx?.styling));
+  const cls = $derived(_fnClass(_DISCLOSURE_PRESET, styling ?? ctx?.styling));
   const reduced = $derived(typeof window !== "undefined" && shouldReduceMotion());
   const dur = $derived(_resolveDuration(duration));
   const tfn = $derived(reduced ? noop : (transition?.fn ?? slide));
@@ -103,7 +103,7 @@
   const reason = $derived(typeof inactive === "string" && inactive.trim() ? inactive : undefined);
   const inactiveAttrs = $derived(isInactive ? { "aria-disabled": true, ...(reason ? { "aria-description": reason } : {}) } : {});
   const guard = new ToggleGuard();
-  let neutral = $state(isNeutral(variant) ? variant : VARIANT.NEUTRAL);
+  let neutral = $state(_isNeutral(variant) ? variant : VARIANT.NEUTRAL);
   const base = $derived(ctx ? ctx.variant : neutral);
   const effOpen = $derived(ctx ? id != null && ctx.current === id : open);
   let hidden = $state(!initialOpen());
@@ -124,14 +124,14 @@
   // *** Reactive Handlers *** //
   // External variant writes are styling-only; preserve the neutral fallback without changing open state.
   $effect(() => {
-    neutral = ctx ? (isNeutral(ctx.variant) ? ctx.variant : VARIANT.NEUTRAL) : isNeutral(variant) ? variant : neutral;
+    neutral = ctx ? (_isNeutral(ctx.variant) ? ctx.variant : VARIANT.NEUTRAL) : _isNeutral(variant) ? variant : neutral;
   });
   $effect(() => {
     if (ctx && !effOpen && !isInactive && prevVariant === undefined) variant = base;
   });
   $effect(() => {
     variant;
-    untrack(() => (isInactive && isNeutral(variant) ? storeVariant() : undefined));
+    untrack(() => (isInactive && _isNeutral(variant) ? storeVariant() : undefined));
   });
   $effect.pre(() => {
     effOpen;
@@ -160,7 +160,7 @@
   }
   function storeVariant(collapse?: boolean) {
     if (collapse && variant === VARIANT.INACTIVE && prevVariant !== undefined) return;
-    prevVariant = isNeutral(variant) ? variant : base;
+    prevVariant = _isNeutral(variant) ? variant : base;
     variant = VARIANT.INACTIVE;
   }
   function restoreVariant() {

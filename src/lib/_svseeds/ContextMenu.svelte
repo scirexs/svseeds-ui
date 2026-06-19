@@ -49,7 +49,7 @@
   export const _CONTEXT_MENU_PRESET = "svs-context-menu";
 
   import { on } from "svelte/events";
-  import { VARIANT, PARTS, fnClass } from "./_core";
+  import { VARIANT, PARTS, _fnClass } from "./_core";
   import { _setMenuContainerContext } from "./MenuList.svelte";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
@@ -65,7 +65,7 @@
   let { children, open = $bindable(false), lock = false, target, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: ContextMenuProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_CONTEXT_MENU_PRESET, styling));
+  const cls = $derived(_fnClass(_CONTEXT_MENU_PRESET, styling));
   const ctx: MenuContainerContext = {
     get variant() {
       return variant;

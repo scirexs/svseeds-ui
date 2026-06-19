@@ -94,7 +94,7 @@
   export const [_getNumberInputContext, _setNumberInputContext] = _createContext<NumberInputContext>();
 
   import { untrack } from "svelte";
-  import { VARIANT, PARTS, fnClass, _createContext } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { SvelteSet } from "svelte/reactivity";
@@ -108,7 +108,7 @@
   const ctx = _getNumberInputContext();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_NUMBER_INPUT_PRESET, styling ?? ctx?.styling));
+  const cls = $derived(_fnClass(_NUMBER_INPUT_PRESET, styling ?? ctx?.styling));
   const uid = $props.id();
   const idList = $derived(options?.size ? `${uid}-list` : undefined);
   const effVariant = $derived(ctx ? ctx.variant : variant);

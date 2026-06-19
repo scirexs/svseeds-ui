@@ -4,7 +4,7 @@ import { userEvent } from "@testing-library/user-event";
 import { createRawSnippet, tick } from "svelte";
 import { SvelteMap } from "svelte/reactivity";
 import ToggleGroupField, { type ToggleGroupFieldProps, type ToggleOption } from "#svs/ToggleGroupField.svelte";
-import { PARTS, VARIANT, fnClass } from "#svs/core";
+import { PARTS, VARIANT, _fnClass } from "#svs/core";
 import ToggleGroupFieldEmbedded from "./fixtures/ToggleGroupFieldEmbedded.svelte";
 
 const label = "label_text";
@@ -910,7 +910,7 @@ describe("Compound / children", () => {
     const whole = getAllByRole("group")[0] as HTMLDivElement;
     const innerGroup = innerToggleGroupOf(whole);
 
-    expect(innerGroup).toHaveClass(...`${fnClass("svs-toggle-group", "own-group")(PARTS.WHOLE, VARIANT.NEUTRAL)}`.split(" "));
+    expect(innerGroup).toHaveClass(...`${_fnClass("svs-toggle-group", "own-group")(PARTS.WHOLE, VARIANT.NEUTRAL)}`.split(" "));
     expect(innerGroup).not.toHaveClass(seed);
   });
 

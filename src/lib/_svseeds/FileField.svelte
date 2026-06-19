@@ -92,7 +92,7 @@
   export const _FILE_FIELD_PRESET = "svs-file-field";
 
   import { untrack } from "svelte";
-  import { VARIANT, PARTS, fnClass, isNeutral } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _isNeutral } from "./_core";
   import FileInput, { _FILE_INPUT_PRESET, _setFileInputContext } from "./FileInput.svelte";
   import type { Snippet } from "svelte";
   import type { SVSClass, SVSVariant, SVSFieldValidation } from "./_core";
@@ -104,7 +104,7 @@
   let { label, extra, aux, left, right, bottom, reserve = false, files = $bindable([]), multiple = false, content, constraints = [], validations = [], name, element = $bindable(), variant = $bindable(VARIANT.NEUTRAL), styling, fileInput, children }: FileFieldProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_FILE_FIELD_PRESET, styling));
+  const cls = $derived(_fnClass(_FILE_FIELD_PRESET, styling));
   const uid = $props.id();
   const id = $derived(label?.trim() ? `${uid}-ctrl` : undefined);
   const idLabel = $derived(label?.trim() ? `${uid}-label` : undefined);
@@ -147,12 +147,12 @@
   _setFileInputContext(ctx);
 
   // *** States *** //
-  let neutral = isNeutral(variant) ? variant : VARIANT.NEUTRAL;
+  let neutral = _isNeutral(variant) ? variant : VARIANT.NEUTRAL;
   let adding = false;
   let addError = false;
   let touched = false;
   $effect(() => {
-    neutral = isNeutral(variant) ? variant : neutral;
+    neutral = _isNeutral(variant) ? variant : neutral;
   });
   const live = $derived(variant === VARIANT.INACTIVE ? "alert" : undefined);
   function shift(oninvalid: boolean = false, msg?: string) {
@@ -225,7 +225,7 @@
       adding = false;
       return;
     }
-    if (!isNeutral(variant)) shift();
+    if (!_isNeutral(variant)) shift();
   }
   function oninvalid(ev: Event) {
     ev.preventDefault();

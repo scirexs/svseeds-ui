@@ -8,7 +8,7 @@ export {
   type CollectionEvents,
   BASE,
   SR_ONLY,
-  DEFAULT_DURATION,
+  _DEFAULT_DURATION,
   VARIANT,
   PARTS,
   _createContext,
@@ -18,14 +18,14 @@ export {
   _resolveDuration,
   _cssVar,
   _cssVarStyle,
-  fnClass,
-  isNeutral,
-  isUnsignedInteger,
+  _fnClass,
+  _isNeutral,
+  _isUnsignedInteger,
   shouldReduceMotion,
   canHover,
-  omit,
-  debounce,
-  throttle,
+  _omit,
+  _debounce,
+  _throttle,
 };
 
 import { getContext, setContext } from "svelte";
@@ -65,7 +65,7 @@ interface CollectionEvents<T> {
 const BASE = "base";
 const SR_ONLY =
   "position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0;";
-const DEFAULT_DURATION = 200;
+const _DEFAULT_DURATION = 200;
 const VARIANT = Object.freeze({ NEUTRAL: "neutral", ACTIVE: "active", INACTIVE: "inactive" } as const);
 const PARTS = Object.freeze({
   WHOLE: "whole",
@@ -95,7 +95,7 @@ type SVSPart = (typeof PARTS)[keyof typeof PARTS] | (string & {});
  *
  * @example
  * // String preset case
- * const classFn = fnClass("my-preset");
+ * const classFn = _fnClass("my-preset");
  * classFn("whole", "active"); // "my-preset whole active"
  *
  * @example
@@ -109,7 +109,7 @@ type SVSPart = (typeof PARTS)[keyof typeof PARTS] | (string & {});
  *     base: "main-content"
  *   }
  * };
- * const classFn = fnClass(rules);
+ * const classFn = _fnClass(rules);
  * classFn("whole", "neutral"); // "container"
  * classFn("whole", "active");  // ["container", "container-active"]
  * classFn("main", "neutral");  // "main-content"
@@ -124,10 +124,10 @@ type SVSPart = (typeof PARTS)[keyof typeof PARTS] | (string & {});
  *     active: "btn-active"
  *   }
  * };
- * const classFn = fnClass(preset, customStyle);
+ * const classFn = _fnClass(preset, customStyle);
  * classFn("button", "active"); // ["btn", "btn-active"]
  */
-function fnClass(preset: SVSClass, style?: SVSClass): ClassFn {
+function _fnClass(preset: SVSClass, style?: SVSClass): ClassFn {
   const rule = _prepRule(style) ?? _prepRule(preset);
   if (rule == null) return (_, __) => undefined;
   if (typeof rule === "string") return (part, variant) => `${rule} ${part} ${variant}`;
@@ -160,13 +160,13 @@ function _ruleClass(rule: ClassRuleSet, part: string, variant: string): ClassVal
  *
  * @example
  * ```typescript
- * isNeutral(VARIANT.NEUTRAL); // true
- * isNeutral("custom variant"); // true
- * isNeutral(VARIANT.ACTIVE); // false
- * isNeutral(VARIANT.INACTIVE); // false
+ * _isNeutral(VARIANT.NEUTRAL); // true
+ * _isNeutral("custom variant"); // true
+ * _isNeutral(VARIANT.ACTIVE); // false
+ * _isNeutral(VARIANT.INACTIVE); // false
  * ```
  */
-function isNeutral(variant: string): boolean {
+function _isNeutral(variant: string): boolean {
   return variant !== VARIANT.ACTIVE && variant !== VARIANT.INACTIVE;
 }
 /**
@@ -177,15 +177,15 @@ function isNeutral(variant: string): boolean {
  *
  * @example
  * ```typescript
- * isUnsignedInteger(5);        // true
- * isUnsignedInteger(0);        // true
- * isUnsignedInteger(-1);       // false
- * isUnsignedInteger(3.14);     // false
- * isUnsignedInteger(NaN);      // false
- * isUnsignedInteger(Infinity); // false
+ * _isUnsignedInteger(5);        // true
+ * _isUnsignedInteger(0);        // true
+ * _isUnsignedInteger(-1);       // false
+ * _isUnsignedInteger(3.14);     // false
+ * _isUnsignedInteger(NaN);      // false
+ * _isUnsignedInteger(Infinity); // false
  * ```
  */
-function isUnsignedInteger(num: number): boolean {
+function _isUnsignedInteger(num: number): boolean {
   return Number.isInteger(num) && num >= 0;
 }
 /**
@@ -217,9 +217,9 @@ function canHover(): boolean {
   if (typeof window === "undefined") return true;
   return window.matchMedia("(hover: hover)").matches;
 }
-function _resolveDuration(duration?: number, fallback: number = DEFAULT_DURATION): number {
+function _resolveDuration(duration?: number, fallback: number = _DEFAULT_DURATION): number {
   if (shouldReduceMotion()) return 0;
-  return isUnsignedInteger(duration as number) ? (duration as number) : fallback;
+  return _isUnsignedInteger(duration as number) ? (duration as number) : fallback;
 }
 function _cssVar(map: Partial<Record<string, string>> | undefined, key: string, fallback: string): string {
   return map?.[key] ?? fallback;
@@ -235,18 +235,18 @@ function _cssVarStyle(entries: { name?: string; value?: string }[]): string | un
  * Creates a new object with specified keys omitted from the original object.
  * Returns an empty object if the input object is undefined or null.
  *
- * @param obj - The source object to omit keys from
- * @param keys - The keys to omit from the object
+ * @param obj - The source object to _omit keys from
+ * @param keys - The keys to _omit from the object
  * @returns A new object with the specified keys removed, or an empty object if input is falsy
  *
  * @example
  * ```typescript
  * const user = { id: 1, name: "John", email: "john@example.com" };
- * const publicUser = omit(user, "email"); // { id: 1, name: "John" }
- * const empty = omit(undefined, "key"); // {}
+ * const publicUser = _omit(user, "email"); // { id: 1, name: "John" }
+ * const empty = _omit(undefined, "key"); // {}
  * ```
  */
-function omit<T extends object, K extends keyof T>(obj?: T, ...keys: K[]): Omit<T, K> | Record<string, never> {
+function _omit<T extends object, K extends keyof T>(obj?: T, ...keys: K[]): Omit<T, K> | Record<string, never> {
   if (!obj) return {};
   const ret = { ...obj };
   keys.forEach((key) => delete ret[key]);
@@ -274,12 +274,12 @@ function _createContext<T>(): [() => T | undefined, (context: T) => T] {
  * the specified delay has elapsed since the last time it was invoked.
  *
  * @param delay - The number of milliseconds to delay
- * @param fn - The function to debounce
+ * @param fn - The function to _debounce
  * @returns A debounced version of the function with a cancel method
  *
  * @example
  * ```typescript
- * const debouncedSearch = debounce(300, (query: string) => {
+ * const debouncedSearch = _debounce(300, (query: string) => {
  *   console.log("Searching for:", query);
  * });
  *
@@ -287,7 +287,7 @@ function _createContext<T>(): [() => T | undefined, (context: T) => T] {
  * debouncedSearch("hello world"); // Cancels previous call, waits another 300ms
  * ```
  */
-function debounce<Args extends unknown[], R>(delay: number, fn: (...args: Args) => R): { (...args: Args): void; cancel(): void } {
+function _debounce<Args extends unknown[], R>(delay: number, fn: (...args: Args) => R): { (...args: Args): void; cancel(): void } {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const debounced = (...args: Args) => {
     if (timer) clearTimeout(timer);
@@ -307,13 +307,13 @@ function debounce<Args extends unknown[], R>(delay: number, fn: (...args: Args) 
  * per specified interval. Subsequent calls within the interval are queued and executed
  * at the next available interval boundary.
  *
- * @param interval - The number of milliseconds to throttle invocations to
- * @param fn - The function to throttle
+ * @param interval - The number of milliseconds to _throttle invocations to
+ * @param fn - The function to _throttle
  * @returns A throttled version of the function
  *
  * @example
  * ```typescript
- * const throttledScroll = throttle(100, (event: Event) => {
+ * const throttledScroll = _throttle(100, (event: Event) => {
  *   console.log("Scroll event handled");
  * });
  *
@@ -321,7 +321,7 @@ function debounce<Args extends unknown[], R>(delay: number, fn: (...args: Args) 
  * // Will execute at most once every 100ms, even if scroll events fire more frequently
  * ```
  */
-function throttle<Args extends unknown[], R>(interval: number, fn: (...args: Args) => R): (...args: Args) => void {
+function _throttle<Args extends unknown[], R>(interval: number, fn: (...args: Args) => R): (...args: Args) => void {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let last: number = 0;
   const elapsed = () => Date.now() - last;

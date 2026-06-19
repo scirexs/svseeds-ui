@@ -77,7 +77,7 @@
   }
 
   import { untrack, onMount } from "svelte";
-  import { VARIANT, PARTS, fnClass, _resolveDuration } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _resolveDuration } from "./_core";
   import type { Snippet } from "svelte";
   import type { HTMLDialogAttributes, MouseEventHandler, KeyboardEventHandler, ToggleEventHandler } from "svelte/elements";
   import type { SVSClass, SVSVariant } from "./_core";
@@ -88,7 +88,7 @@
   let { children, open = $bindable(false), position = "left", size = "auto", duration = -1, cssvar, closable = true, ariaLabel, onclick, onkeydown, ontoggle, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: DrawerProps = $props();
 
   // *** Initialize *** //
-  const cls = $derived(fnClass(_DRAWER_PRESET, styling));
+  const cls = $derived(_fnClass(_DRAWER_PRESET, styling));
   const dur = $derived(_resolveDuration(duration));
   const durValue = $derived(cssvar?.duration ? `var(${cssvar.duration}, ${dur}ms)` : `${dur}ms`);
   const baseStyle = $derived(`${getPositionProp(position)}${getSizeProp(position, size)}--svs-duration:${durValue};`);
