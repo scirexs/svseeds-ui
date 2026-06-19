@@ -768,6 +768,21 @@ describe("debounce", () => {
     expect(mockFn).toHaveBeenCalledTimes(1);
     expect(mockFn).toHaveBeenCalledWith("second");
   });
+  test("cancel prevents a pending call and remains reusable", () => {
+    const mockFn = vi.fn();
+    const debouncedFn = debounce(100, mockFn);
+
+    // WP-CORE
+    debouncedFn();
+    vi.advanceTimersByTime(50);
+    debouncedFn.cancel();
+    vi.advanceTimersByTime(100);
+    expect(mockFn).not.toHaveBeenCalled();
+
+    debouncedFn();
+    vi.advanceTimersByTime(100);
+    expect(mockFn).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("throttle", () => {

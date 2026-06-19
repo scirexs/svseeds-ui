@@ -76,7 +76,7 @@
   export const _WHEELPICKER_PRESET = "svs-wheelpicker";
 
   import { tick, untrack } from "svelte";
-  import { VARIANT, PARTS, SR_ONLY, fnClass, shouldReduceMotion, _cssVarStyle } from "./_core";
+  import { VARIANT, PARTS, SR_ONLY, debounce, fnClass, shouldReduceMotion, throttle, _cssVarStyle } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLSelectAttributes, ChangeEventHandler, PointerEventHandler, WheelEventHandler } from "svelte/elements";
@@ -104,6 +104,8 @@
 
   const selected = $derived(options.findIndex((o) => o.value === value));
   const itemVariant = (i: number): string => (i === selected ? VARIANT.ACTIVE : options[i]?.disabled ? VARIANT.INACTIVE : variant);
+  const snapSoon = debounce(120, () => snap());
+  const POINTER_RATE = 15;
 
   // *** States *** //
   let whole: HTMLDivElement | undefined = $state();
@@ -116,7 +118,6 @@
   let dragging = false;
   let program = false;
   let raf: number | undefined;
-  let wheelTimer: ReturnType<typeof setTimeout> | undefined;
 
   // *** Reactive Handlers *** //
   const visible = $derived(Math.max(1, itemH > 0 && wholeH > 0 ? Math.round(wholeH / itemH) : 1));
@@ -180,7 +181,7 @@
   }
   function cleanup() {
     if (raf !== undefined && typeof cancelAnimationFrame !== "undefined") cancelAnimationFrame(raf);
-    if (wheelTimer) clearTimeout(wheelTimer);
+    snapSoon.cancel();
   }
   function sync() {
     if (selected < 0 || program) return;
@@ -200,11 +201,11 @@
     startPos = pos;
     ev.currentTarget.setPointerCapture?.(ev.pointerId);
   };
-  const hpointermove: PointerEventHandler<HTMLDivElement> = (ev) => {
+  const hpointermove: PointerEventHandler<HTMLDivElement> = throttle(POINTER_RATE, (ev: Parameters<PointerEventHandler<HTMLDivElement>>[0]) => {
     if (!dragging) return;
     const unit = itemH || 1;
     pos = normalize(startPos - (ev.clientY - startY) / unit);
-  };
+  });
   const hpointerup: PointerEventHandler<HTMLDivElement> = (ev) => {
     if (!dragging) return;
     dragging = false;
@@ -216,8 +217,7 @@
     ev.preventDefault();
     element?.focus();
     pos = normalize(pos + Math.sign(ev.deltaY || 0));
-    if (wheelTimer) clearTimeout(wheelTimer);
-    wheelTimer = setTimeout(() => snap(), 120);
+    snapSoon();
   };
 
   function animate(to: number) {

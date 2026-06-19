@@ -376,6 +376,42 @@ describe("Drum layout, pointer and animation (browser)", () => {
     await vi.waitFor(() => expect(props.value).toBe("feb"), { timeout: 500 });
   });
 
+  test("rapid wheel notches snap once", async () => {
+    const onchange = vi.fn();
+    const props = $state({ options: opts, value: "jan", onchange });
+    const { container } = render(WheelPicker, props);
+    await waitForMeasure(container);
+    await sleep(150);
+    const mid = middle(container);
+
+    // WP-1
+    wheel(mid);
+    wheel(mid);
+    wheel(mid);
+
+    await vi.waitFor(() => expect(props.value).toBe("apr"), { timeout: 500 });
+    expect(onchange).toHaveBeenCalledTimes(1);
+  });
+
+  test("late pointer-move after pointerup does not move past the snap", async () => {
+    const props = $state({ options: opts, value: "jan" });
+    const { container } = render(WheelPicker, props);
+    await waitForMeasure(container);
+    const mid = middle(container);
+    const unit = itemHeightPx(container);
+
+    // WP-2
+    point(mid, "pointerdown", 100);
+    point(mid, "pointermove", 100 - unit);
+    point(mid, "pointermove", 100 - unit * 3);
+    point(mid, "pointerup", 100 - unit);
+    await sleep(30);
+
+    await vi.waitFor(() => expect(props.value).toBe("feb"));
+    expect(labels(container)[1].classList.contains(VARIANT.ACTIVE)).toBe(true);
+    expect(translateYPx(labels(container)[1])).toBe(0);
+  });
+
   test("3D rotateX transforms", async () => {
     const { container } = render(WheelPicker, { options: opts, value: "feb", perspective: 600 });
     await waitForMeasure(container);

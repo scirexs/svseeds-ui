@@ -275,7 +275,7 @@ function _createContext<T>(): [() => T | undefined, (context: T) => T] {
  *
  * @param delay - The number of milliseconds to delay
  * @param fn - The function to debounce
- * @returns A debounced version of the function
+ * @returns A debounced version of the function with a cancel method
  *
  * @example
  * ```typescript
@@ -287,14 +287,20 @@ function _createContext<T>(): [() => T | undefined, (context: T) => T] {
  * debouncedSearch("hello world"); // Cancels previous call, waits another 300ms
  * ```
  */
-function debounce<Args extends unknown[], R>(delay: number, fn: (...args: Args) => R): (...args: Args) => void {
+function debounce<Args extends unknown[], R>(delay: number, fn: (...args: Args) => R): { (...args: Args): void; cancel(): void } {
   let timer: ReturnType<typeof setTimeout> | undefined;
-  return (...args: Args) => {
+  const debounced = (...args: Args) => {
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => {
+      timer = undefined;
       fn.call(null, ...args);
     }, delay);
   };
+  debounced.cancel = () => {
+    if (timer) clearTimeout(timer);
+    timer = undefined;
+  };
+  return debounced;
 }
 /**
  * Creates a throttled function that only invokes the provided function at most once
