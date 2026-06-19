@@ -76,7 +76,7 @@
   export const _WHEELPICKER_PRESET = "svs-wheelpicker";
 
   import { tick, untrack } from "svelte";
-  import { VARIANT, PARTS, SR_ONLY, fnClass, shouldReduceMotion } from "./core";
+  import { VARIANT, PARTS, SR_ONLY, fnClass, shouldReduceMotion, _cssVarStyle } from "./core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLSelectAttributes, ChangeEventHandler, PointerEventHandler, WheelEventHandler } from "svelte/elements";
@@ -126,19 +126,13 @@
     return `${base} perspective: ${perspective}px;`;
   });
   const mirror = $derived.by(() => {
-    if (!cssvar) return undefined;
     const px = (n?: number) => (n == null ? undefined : `${n}px`);
-    const pairs: [string | undefined, string | undefined][] = [
-      [cssvar.itemHeight, px(itemH)],
-      [cssvar.visible, visible == null ? undefined : `${visible}`],
-      [cssvar.perspective, px(perspective)],
-      [cssvar.maxAngle, maxAngle == null ? undefined : `${maxAngle}deg`],
-    ];
-    const css = pairs
-      .filter(([n, v]) => n && v != null)
-      .map(([n, v]) => `${n}: ${v}`)
-      .join("; ");
-    return css || undefined;
+    return _cssVarStyle([
+      { name: cssvar?.itemHeight, value: px(itemH) },
+      { name: cssvar?.visible, value: visible == null ? undefined : `${visible}` },
+      { name: cssvar?.perspective, value: px(perspective) },
+      { name: cssvar?.maxAngle, value: maxAngle == null ? undefined : `${maxAngle}deg` },
+    ]);
   });
   const shown = $derived.by(() => {
     const base = options.map((option, index) => ({ option, index, virtual: index, key: `main-${option.value}-${index}` }));

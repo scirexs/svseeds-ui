@@ -8,12 +8,16 @@ export {
   type CollectionEvents,
   BASE,
   SR_ONLY,
+  DEFAULT_DURATION,
   VARIANT,
   PARTS,
   _createContext,
   _isVariantMap,
   _prepRule,
   _ruleClass,
+  _resolveDuration,
+  _cssVar,
+  _cssVarStyle,
   fnClass,
   isNeutral,
   isUnsignedInteger,
@@ -55,10 +59,12 @@ interface CollectionEvents<T> {
   // Return the subset to commit: undefined => all, [] => none.
   onadd?: (detail: { values: T[]; added: T[] }) => T[] | void;
   onremove?: (detail: { values: T[]; removed: T[] }) => T[] | void;
-};
+}
 
 const BASE = "base";
-const SR_ONLY = "position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0;";
+const SR_ONLY =
+  "position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0;";
+const DEFAULT_DURATION = 200;
 const VARIANT = Object.freeze({ NEUTRAL: "neutral", ACTIVE: "active", INACTIVE: "inactive" } as const);
 const PARTS = Object.freeze({
   WHOLE: "whole",
@@ -197,6 +203,20 @@ function isUnsignedInteger(num: number): boolean {
 function shouldReduceMotion(): boolean {
   if (typeof window === "undefined") return false;
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+function _resolveDuration(duration?: number, fallback: number = DEFAULT_DURATION): number {
+  if (shouldReduceMotion()) return 0;
+  return isUnsignedInteger(duration as number) ? (duration as number) : fallback;
+}
+function _cssVar(map: Partial<Record<string, string>> | undefined, key: string, fallback: string): string {
+  return map?.[key] ?? fallback;
+}
+function _cssVarStyle(entries: { name?: string; value?: string }[]): string | undefined {
+  const css = entries
+    .filter((e) => e.name && e.value != null)
+    .map((e) => `${e.name}: ${e.value}`)
+    .join("; ");
+  return css || undefined;
 }
 /**
  * Creates a new object with specified keys omitted from the original object.

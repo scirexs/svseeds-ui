@@ -8,6 +8,7 @@ afterEach(() => {
   document.querySelectorAll("dialog[open]").forEach((dialog) => {
     (dialog as HTMLDialogElement).remove();
   });
+  vi.unstubAllGlobals();
   vi.clearAllMocks();
 });
 
@@ -183,7 +184,7 @@ describe("Drawer position and size", () => {
       children: childrenSnippet,
     });
     const drawer = container.querySelector("dialog") as HTMLDialogElement;
-    expect(drawer.style.cssText).toContain("--duration: 200ms;");
+    expect(drawer.style.cssText).toContain("--svs-duration: 200ms;");
   });
 
   test.each([-5, 3.14, NaN])("invalid duration %s falls back to default", (duration) => {
@@ -192,7 +193,7 @@ describe("Drawer position and size", () => {
       duration,
     });
     const drawer = container.querySelector("dialog") as HTMLDialogElement;
-    expect(drawer.style.cssText).toContain("--duration: 200ms;");
+    expect(drawer.style.cssText).toContain("--svs-duration: 200ms;");
   });
 
   test("zero duration is applied", () => {
@@ -201,7 +202,7 @@ describe("Drawer position and size", () => {
       duration: 0,
     });
     const drawer = container.querySelector("dialog") as HTMLDialogElement;
-    expect(drawer.style.cssText).toContain("--duration: 0ms;");
+    expect(drawer.style.cssText).toContain("--svs-duration: 0ms;");
   });
 
   test("custom duration is applied", () => {
@@ -211,7 +212,34 @@ describe("Drawer position and size", () => {
       duration: customDuration,
     });
     const drawer = container.querySelector("dialog") as HTMLDialogElement;
-    expect(drawer.style.cssText).toContain(`--duration: ${customDuration}ms;`);
+    expect(drawer.style.cssText).toContain(`--svs-duration: ${customDuration}ms;`);
+  });
+
+  test("reduced motion emits zero duration fallback", () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: true,
+      media: query,
+      onchange: null,
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+      dispatchEvent: () => false,
+    }));
+    const { container } = render(Drawer, {
+      children: childrenSnippet,
+    });
+    const drawer = container.querySelector("dialog") as HTMLDialogElement;
+    expect(drawer.style.getPropertyValue("--svs-duration")).toBe("0ms");
+  });
+
+  test("cssvar duration renames the fallback token", () => {
+    const { container } = render(Drawer, {
+      children: childrenSnippet,
+      cssvar: { duration: "--x" },
+    });
+    const drawer = container.querySelector("dialog") as HTMLDialogElement;
+    expect(drawer.style.getPropertyValue("--svs-duration")).toBe("var(--x, 200ms)");
   });
 
   test("changing position updates the position custom props", async () => {
@@ -237,12 +265,12 @@ describe("Drawer position and size", () => {
     });
     const { container } = render(Drawer, props);
     const drawer = container.querySelector("dialog") as HTMLDialogElement;
-    expect(drawer.style.cssText).toContain("--duration: 200ms;");
+    expect(drawer.style.cssText).toContain("--svs-duration: 200ms;");
 
     props.duration = 350;
     await tick();
 
-    expect(drawer.style.cssText).toContain("--duration: 350ms;");
+    expect(drawer.style.cssText).toContain("--svs-duration: 350ms;");
   });
 });
 
@@ -553,7 +581,7 @@ describe("Drawer attributes", () => {
     const drawer = container.querySelector("dialog") as HTMLDialogElement;
 
     expect(drawer.style.cssText).not.toContain("color: red");
-    expect(drawer.style.cssText).toContain("--duration");
+    expect(drawer.style.cssText).toContain("--svs-duration");
     expect(drawer).toHaveAttribute("data-test", "should-be-applied");
   });
 
@@ -566,7 +594,7 @@ describe("Drawer attributes", () => {
 
     expect(rawStyle).not.toContain("margin");
     expect(rawStyle).not.toContain("padding");
-    expect(rawStyle).toContain("--duration");
+    expect(rawStyle).toContain("--svs-duration");
   });
 
   test("custom ontoggle handler is called", async () => {

@@ -324,6 +324,40 @@ describe("Interactions and state transitions", () => {
     await waitFor(() => expect(details.open).toBe(false));
   });
 
+  test("custom transition fn is used for open content", async () => {
+    const fn = vi.fn(() => ({}));
+    const props = $state({ label, children: childrenSnippet, open: false, duration: 0, transition: { fn } });
+    const user = userEvent.setup();
+    const { getByText } = render(Disclosure, props);
+
+    await user.click(getByText(label));
+    await tick();
+
+    expect(fn).toHaveBeenCalled();
+  });
+
+  test("reduced motion suppresses custom transition fn", async () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: true,
+      media: query,
+      onchange: null,
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+      dispatchEvent: () => false,
+    }));
+    const fn = vi.fn(() => ({}));
+    const props = $state({ label, children: childrenSnippet, open: false, duration: 0, transition: { fn } });
+    const user = userEvent.setup();
+    const { getByText } = render(Disclosure, props);
+
+    await user.click(getByText(label));
+    await tick();
+
+    expect(fn).not.toHaveBeenCalled();
+  });
+
   test("external close of <details> syncs open back to false", async () => {
     const props = $state({ label, children: childrenSnippet, open: true, duration: 0 });
     const { getByRole } = render(Disclosure, props);
@@ -505,7 +539,14 @@ describe("Soft-disable (inactive)", () => {
   });
 
   test("initial open=true is collapsed while inactive", async () => {
-    const props = $state({ label, children: childrenSnippet, open: true, inactive: "locked", variant: VARIANT.NEUTRAL as string, duration: 0 });
+    const props = $state({
+      label,
+      children: childrenSnippet,
+      open: true,
+      inactive: "locked",
+      variant: VARIANT.NEUTRAL as string,
+      duration: 0,
+    });
     const { getByRole, getByText } = render(Disclosure, props);
     const details = getByRole("group") as HTMLDetailsElement;
     const summary = getByText(label);
@@ -519,7 +560,14 @@ describe("Soft-disable (inactive)", () => {
   });
 
   test("setting inactive while open collapses", async () => {
-    const props = $state({ label, children: childrenSnippet, open: true, inactive: undefined as string | undefined, variant: VARIANT.NEUTRAL as string, duration: 0 });
+    const props = $state({
+      label,
+      children: childrenSnippet,
+      open: true,
+      inactive: undefined as string | undefined,
+      variant: VARIANT.NEUTRAL as string,
+      duration: 0,
+    });
     const { getByRole, getByText, rerender } = render(Disclosure, props);
     const details = getByRole("group") as HTMLDetailsElement;
     const summary = getByText(label);
@@ -541,7 +589,14 @@ describe("Soft-disable (inactive)", () => {
   });
 
   test("clearing inactive after collapsing from open restores neutral variant", async () => {
-    const props = $state({ label, children: childrenSnippet, open: true, inactive: undefined as string | undefined, variant: VARIANT.NEUTRAL as string, duration: 0 });
+    const props = $state({
+      label,
+      children: childrenSnippet,
+      open: true,
+      inactive: undefined as string | undefined,
+      variant: VARIANT.NEUTRAL as string,
+      duration: 0,
+    });
     const { getByRole, getByText, rerender } = render(Disclosure, props);
     const details = getByRole("group") as HTMLDetailsElement;
     const summary = getByText(label);
@@ -622,7 +677,14 @@ describe("Soft-disable (inactive)", () => {
   });
 
   test("inactive={true} soft-disables without a reason", async () => {
-    const props = $state({ label, children: childrenSnippet, open: false, inactive: true as string | boolean | undefined, variant: VARIANT.NEUTRAL as string, duration: 0 });
+    const props = $state({
+      label,
+      children: childrenSnippet,
+      open: false,
+      inactive: true as string | boolean | undefined,
+      variant: VARIANT.NEUTRAL as string,
+      duration: 0,
+    });
     const user = userEvent.setup();
     const { getByRole, getByText } = render(Disclosure, props);
     const details = getByRole("group") as HTMLDetailsElement;
@@ -641,7 +703,14 @@ describe("Soft-disable (inactive)", () => {
   });
 
   test("inactive={true} collapses an initially open disclosure", async () => {
-    const props = $state({ label, children: childrenSnippet, open: true, inactive: true as string | boolean | undefined, variant: VARIANT.NEUTRAL as string, duration: 0 });
+    const props = $state({
+      label,
+      children: childrenSnippet,
+      open: true,
+      inactive: true as string | boolean | undefined,
+      variant: VARIANT.NEUTRAL as string,
+      duration: 0,
+    });
     const { getByRole, getByText } = render(Disclosure, props);
     const details = getByRole("group") as HTMLDetailsElement;
     const summary = getByText(label);
@@ -656,7 +725,14 @@ describe("Soft-disable (inactive)", () => {
   });
 
   test("inactive={false} is fully active", async () => {
-    const props = $state({ label, children: childrenSnippet, open: false, inactive: false as string | boolean | undefined, variant: VARIANT.NEUTRAL as string, duration: 0 });
+    const props = $state({
+      label,
+      children: childrenSnippet,
+      open: false,
+      inactive: false as string | boolean | undefined,
+      variant: VARIANT.NEUTRAL as string,
+      duration: 0,
+    });
     const user = userEvent.setup();
     const { getByRole, getByText } = render(Disclosure, props);
     const details = getByRole("group") as HTMLDetailsElement;
@@ -767,7 +843,11 @@ describe("Accordion context", () => {
   });
 
   test("provider base variant wins for collapsed children and active/inactive still derive locally", async () => {
-    const props = $state({ current: undefined as string | undefined, variant: "accordion-base", inactiveA: "locked" as string | undefined });
+    const props = $state({
+      current: undefined as string | undefined,
+      variant: "accordion-base",
+      inactiveA: "locked" as string | undefined,
+    });
     const { container, rerender } = render(DisclosureCtxProvider, props);
     const detailsA = detailsByLabel(container, "Section A");
     const detailsB = detailsByLabel(container, "Section B");

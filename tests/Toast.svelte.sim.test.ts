@@ -6,16 +6,15 @@ import { PARTS, VARIANT } from "#svs/core";
 import ToastSnippetProbe from "./fixtures/ToastSnippetProbe.svelte";
 
 const testid = "test-toast";
-const DEFAULT_ANIMATION = 200;
+const DEFAULT_MOTION = 200;
 const DEFAULT_DISMISS = 30000;
 const children = createRawSnippet<[ToastItem, string]>((item, variant) => ({
   render: () => `<div data-testid="${testid}">${item().message}-${item().type}-${item().id}-${variant()}</div>`,
 }));
 
-Object.defineProperty(window, "matchMedia", {
-  writable: true,
-  value: vi.fn().mockImplementation((query) => ({
-    matches: false,
+function matchMediaMock(matches: boolean) {
+  return vi.fn().mockImplementation((query) => ({
+    matches,
     media: query,
     onchange: null,
     addListener: vi.fn(),
@@ -23,7 +22,12 @@ Object.defineProperty(window, "matchMedia", {
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
-  })),
+  }));
+}
+
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: matchMediaMock(false),
 });
 
 HTMLElement.prototype.showPopover = vi.fn();
@@ -31,6 +35,7 @@ HTMLElement.prototype.hidePopover = vi.fn();
 
 beforeEach(() => {
   vi.useFakeTimers();
+  window.matchMedia = matchMediaMock(false) as unknown as typeof window.matchMedia;
   configure({ defaultHidden: true });
 });
 
@@ -84,13 +89,16 @@ describe("Toast component initialization", () => {
   });
 
   test("handles prefers-reduced-motion", async () => {
-    vi.resetModules();
-    const mockMatchMedia = vi.fn().mockReturnValue({ matches: true });
-    window.matchMedia = mockMatchMedia;
+    window.matchMedia = matchMediaMock(true) as unknown as typeof window.matchMedia;
+    const { toaster, getByRole } = setup({ duration: Infinity });
+    const region = getByRole("region");
 
-    await import("#svs/Toast.svelte");
+    const id = toaster.add("Reduced motion");
+    await waitFor(() => expect(region).toHaveAttribute("aria-label", "1 notifications"));
+    toaster.dismiss(id);
+    await advance(0);
 
-    expect(mockMatchMedia).toHaveBeenCalledWith("(prefers-reduced-motion: reduce)");
+    await waitFor(() => expect(region).toHaveAttribute("aria-label", "0 notifications"));
   });
 });
 
@@ -112,7 +120,7 @@ describe("Toaster management", () => {
     const id = toaster.add("Test message");
     await waitFor(() => expect(region).toHaveAttribute("aria-label", "1 notifications"));
     toaster.dismiss(id);
-    await advance(DEFAULT_ANIMATION);
+    await advance(DEFAULT_MOTION);
 
     await waitFor(() => expect(region).toHaveAttribute("aria-label", "0 notifications"));
   });
@@ -126,7 +134,7 @@ describe("Toaster management", () => {
     toaster.add("Message 3", { type: "error" });
     await waitFor(() => expect(region).toHaveAttribute("aria-label", "3 notifications"));
     toaster.dismiss(id2);
-    await advance(DEFAULT_ANIMATION);
+    await advance(DEFAULT_MOTION);
 
     await waitFor(() => expect(region).toHaveAttribute("aria-label", "2 notifications"));
   });
@@ -150,7 +158,7 @@ describe("Toaster management", () => {
     expect(() => toaster.dismiss("nope")).not.toThrow();
     const id = toaster.add("Message");
     toaster.dismiss(id);
-    await advance(DEFAULT_ANIMATION);
+    await advance(DEFAULT_MOTION);
 
     await waitFor(() => expect(region).toHaveAttribute("aria-label", "0 notifications"));
   });
@@ -175,7 +183,7 @@ describe("Toaster management", () => {
     toaster.add("Message 3");
     await waitFor(() => expect(region).toHaveAttribute("aria-label", "3 notifications"));
     toaster.clear();
-    await advance(DEFAULT_ANIMATION);
+    await advance(DEFAULT_MOTION);
 
     await waitFor(() => expect(region).toHaveAttribute("aria-label", "0 notifications"));
   });
@@ -198,7 +206,7 @@ describe("Duration behavior", () => {
     await flush();
     await advance(timeout);
     expect(getByRole("dialog")).toHaveClass(PARTS.MAIN, VARIANT.INACTIVE);
-    await advance(DEFAULT_ANIMATION);
+    await advance(DEFAULT_MOTION);
 
     await waitFor(() => expect(region).toHaveAttribute("aria-label", "0 notifications"));
   });
@@ -211,7 +219,7 @@ describe("Duration behavior", () => {
     await waitFor(() => expect(region).toHaveAttribute("aria-label", "1 notifications"));
     await advance(DEFAULT_DISMISS - 1);
     expect(region).toHaveAttribute("aria-label", "1 notifications");
-    await advance(1 + DEFAULT_ANIMATION);
+    await advance(1 + DEFAULT_MOTION);
 
     await waitFor(() => expect(region).toHaveAttribute("aria-label", "0 notifications"));
   });
@@ -226,7 +234,7 @@ describe("Duration behavior", () => {
     finite.toaster.add("One off", { duration: Infinity });
     await waitFor(() => expect(persistentRegion).toHaveAttribute("aria-label", "1 notifications"));
     await waitFor(() => expect(finiteRegion).toHaveAttribute("aria-label", "1 notifications"));
-    await advance(DEFAULT_DISMISS + DEFAULT_ANIMATION + 1000);
+    await advance(DEFAULT_DISMISS + DEFAULT_MOTION + 1000);
 
     expect(persistentRegion).toHaveAttribute("aria-label", "1 notifications");
     expect(finiteRegion).toHaveAttribute("aria-label", "1 notifications");
@@ -238,7 +246,7 @@ describe("Duration behavior", () => {
 
     toaster.add("Override", { duration: 100 });
     await waitFor(() => expect(region).toHaveAttribute("aria-label", "1 notifications"));
-    await advance(100 + DEFAULT_ANIMATION);
+    await advance(100 + DEFAULT_MOTION);
 
     await waitFor(() => expect(region).toHaveAttribute("aria-label", "0 notifications"));
   });
@@ -275,9 +283,7 @@ describe("Toast display and interaction", () => {
     await tick();
 
     expect(getByRole("dialog")).toHaveClass(PARTS.MAIN, VARIANT.INACTIVE);
-    expect(getByTestId("toast-snippet-probe")).toHaveTextContent(
-      `Compiled snippet-success-${id}-${VARIANT.INACTIVE}`,
-    );
+    expect(getByTestId("toast-snippet-probe")).toHaveTextContent(`Compiled snippet-success-${id}-${VARIANT.INACTIVE}`);
   });
 
   test("type feeds dialog aria-label", async () => {
@@ -300,7 +306,7 @@ describe("Toast display and interaction", () => {
     toaster.add("Hover message");
     await flush();
     await fireEvent.pointerEnter(getByRole("dialog"));
-    await advance(timeout + DEFAULT_ANIMATION + 100);
+    await advance(timeout + DEFAULT_MOTION + 100);
 
     expect(region).toHaveAttribute("aria-label", "1 notifications");
   });
@@ -318,7 +324,7 @@ describe("Toast display and interaction", () => {
     await advance(timeout + 10);
     expect(region).toHaveAttribute("aria-label", "1 notifications");
     expect(getByRole("dialog")).toHaveClass(PARTS.MAIN, VARIANT.NEUTRAL);
-    await advance(timeout * 0.5 - 10 + DEFAULT_ANIMATION);
+    await advance(timeout * 0.5 - 10 + DEFAULT_MOTION);
 
     await waitFor(() => expect(region).toHaveAttribute("aria-label", "0 notifications"));
   });
@@ -333,11 +339,11 @@ describe("Toast display and interaction", () => {
     const dialog = getByRole("dialog");
     await advance(timeout - 50);
     await fireEvent.pointerCancel(dialog, { pointerType: "mouse" });
-    await advance(50 + DEFAULT_ANIMATION);
+    await advance(50 + DEFAULT_MOTION);
 
     expect(region).toHaveAttribute("aria-label", "1 notifications");
     expect(dialog).toHaveClass(PARTS.MAIN, VARIANT.NEUTRAL);
-    await advance(50 + DEFAULT_ANIMATION);
+    await advance(50 + DEFAULT_MOTION);
 
     await waitFor(() => expect(region).toHaveAttribute("aria-label", "0 notifications"));
   });
@@ -432,13 +438,13 @@ describe("Styling and lifecycle", () => {
     const id = toaster.add("Popover message");
     await waitFor(() => expect(showPopoverSpy).toHaveBeenCalled());
     toaster.dismiss(id);
-    await advance(DEFAULT_ANIMATION);
+    await advance(DEFAULT_MOTION);
 
     await waitFor(() => expect(hidePopoverSpy).toHaveBeenCalled());
   });
 
-  test("flip duration from animation prop", async () => {
-    const { toaster, getAllByRole } = setup(undefined, { animation: 300 });
+  test("flip duration from motion prop", async () => {
+    const { toaster, getAllByRole } = setup(undefined, { motion: 300 });
 
     toaster.add("First message");
     toaster.add("Second message");
@@ -447,15 +453,15 @@ describe("Styling and lifecycle", () => {
     expect(getAllByRole("dialog")).toHaveLength(2);
   });
 
-  test("animation prop controls leave removal delay", async () => {
-    const animation = 350;
-    const { toaster, getByRole } = setup({ duration: Infinity }, { animation });
+  test("motion prop controls leave removal delay", async () => {
+    const motion = 350;
+    const { toaster, getByRole } = setup({ duration: Infinity }, { motion });
     const region = getByRole("region");
 
     const id = toaster.add("Animated removal");
     await waitFor(() => expect(region).toHaveAttribute("aria-label", "1 notifications"));
     toaster.dismiss(id);
-    await advance(animation - 1);
+    await advance(motion - 1);
 
     expect(region).toHaveAttribute("aria-label", "1 notifications");
     expect(getByRole("dialog")).toHaveClass(PARTS.MAIN, VARIANT.INACTIVE);

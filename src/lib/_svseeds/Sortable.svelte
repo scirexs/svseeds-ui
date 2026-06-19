@@ -30,8 +30,9 @@
   ```
   Generic `T` is the item value type. Use `bind:items` with a plain array; mutations happen in place.
   For object items, provide `key={(item) => item.id}`. For `mode="clone"` with objects, also provide `clone`.
-  Connect lists by passing the same `group={createSortableGroup()}` or by wrapping them in `<SortableGroup>`.
+  Connect lists by passing the same `group={createSortableGroup(undefined, { duration: 300, easing: cubicOut })}` or by wrapping them in `<SortableGroup>`.
   The third `item` snippet argument is an attachment for a custom drag handle: `{@attach handle}`.
+  Group motion defaults to `300ms` / `cubicOut`; reduced motion resolves duration to `0`.
 
   ### Anatomy
   ```svelte
@@ -48,7 +49,7 @@
   ### Exports
   ```ts
   // Creates an isolated drag controller; pass it as `group` to connect multiple lists, or wrap them in <SortableGroup>.
-  function createSortableGroup(): SortableGroupController
+  function createSortableGroup(presentation?: { get variant(): SVSVariant; get styling(): SVSClass | undefined }, motion?: { duration?: number; easing?: EasingFunction }): SortableGroupController
   ```
 -->
 <script module lang="ts">
@@ -83,6 +84,7 @@
     readonly shadow: SortableShadowState;
     readonly send: TransitionFn;
     readonly receive: TransitionFn;
+    readonly tp: TransitionParams;
     register<T>(member: SortableMember<T>): () => void;
     prepare<T>(member: SortableMember<T>, key: string, ev: PointerEvent, el: HTMLElement, followers: string[]): boolean;
     setGhost(ghost: boolean, ev?: PointerEvent): void;
@@ -139,7 +141,6 @@
 
   export const [_getSortableContext, _setSortableContext] = _createContext<SortableGroupController>();
 
-  const tp: TransitionParams = { duration: 300, easing: cubicOut };
   const minDistance = 10;
   const pollingRate = 15;
   const confirmTime = 500;
@@ -149,18 +150,29 @@
   const emptyAttachment: Attachment = () => {};
   const ondragstart = () => false;
 
-  export function createSortableGroup(presentation?: {
-    get variant(): SVSVariant;
-    get styling(): SVSClass | undefined;
-  }): SortableGroupController {
+  export function createSortableGroup(
+    presentation?: {
+      get variant(): SVSVariant;
+      get styling(): SVSClass | undefined;
+    },
+    motion?: {
+      duration?: number;
+      easing?: EasingFunction;
+    },
+  ): SortableGroupController {
+    const tp: TransitionParams = {
+      duration: _resolveDuration(motion?.duration, 300),
+      easing: motion?.easing ?? cubicOut,
+    };
     const [send, receive] = crossfade(tp);
-    return new SortableController(Symbol("svs-sortable-group"), send, receive, presentation);
+    return new SortableController(Symbol("svs-sortable-group"), send, receive, presentation, tp);
   }
 
   class SortableController implements SortableGroupController {
     readonly identity;
     readonly send;
     readonly receive;
+    readonly tp;
     #presentation;
     #members = new Map<string, SortableMember>();
     #listeners: VoidFn[] = [];
@@ -196,11 +208,13 @@
       identity: symbol,
       send: TransitionFn,
       receive: TransitionFn,
-      presentation?: { get variant(): SVSVariant; get styling(): SVSClass | undefined },
+      presentation: { get variant(): SVSVariant; get styling(): SVSClass | undefined } | undefined,
+      tp: TransitionParams,
     ) {
       this.identity = identity;
       this.send = send;
       this.receive = receive;
+      this.tp = tp;
       this.#presentation = presentation;
     }
     get variant(): SVSVariant {
@@ -606,7 +620,7 @@
   import { crossfade } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import { flip } from "svelte/animate";
-  import { VARIANT, PARTS, fnClass, throttle, isNeutral, _createContext } from "./core";
+  import { VARIANT, PARTS, fnClass, throttle, isNeutral, _resolveDuration, _createContext } from "./core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { EasingFunction } from "svelte/transition";
@@ -765,7 +779,7 @@
       data-svs-key={k}
       in:controller.receive={{ key: k }}
       out:controller.send={{ key: k }}
-      animate:flip={tp}
+      animate:flip={controller.tp}
       style="touch-action:none;"
       {ondragstart}
     >

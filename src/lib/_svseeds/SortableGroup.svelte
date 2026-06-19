@@ -14,6 +14,8 @@
   interface SortableGroupProps {
     children: Snippet;
     group?: SortableGroupController; // reuse an externally created controller
+    duration?: number; // (300) group motion duration
+    easing?: EasingFunction; // (cubicOut) group motion easing
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
@@ -22,6 +24,7 @@
   Descendant Sortables without a `group` prop resolve the shared controller from context.
   When `group` is omitted, `variant` and `styling` are inherited by neutral descendants.
   When `group` is provided, that external controller's own presentation is used.
+  Group motion defaults to `300ms` / `cubicOut`; reduced motion resolves duration to `0`.
 
   ### Anatomy
   ```svelte
@@ -34,6 +37,8 @@
   export interface SortableGroupProps {
     children: Snippet;
     group?: SortableGroupController;
+    duration?: number;
+    easing?: EasingFunction;
     styling?: SVSClass;
     variant?: SVSVariant;
   }
@@ -45,13 +50,14 @@
   import { VARIANT, PARTS, fnClass } from "./core";
   import { createSortableGroup, _setSortableContext } from "./Sortable.svelte";
   import type { Snippet } from "svelte";
+  import type { EasingFunction } from "svelte/transition";
   import type { SVSClass, SVSVariant } from "./core";
   import type { SortableGroupController } from "./Sortable.svelte";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { children, group, styling, variant = VARIANT.NEUTRAL }: SortableGroupProps = $props();
+  let { children, group, duration, easing, styling, variant = VARIANT.NEUTRAL }: SortableGroupProps = $props();
 
   const cls = $derived(fnClass(_SORTABLE_GROUP_PRESET, styling));
   const ctxVariant = $derived(variant);
@@ -59,14 +65,17 @@
   // svelte-ignore state_referenced_locally
   const controller =
     group ??
-    createSortableGroup({
-      get variant() {
-        return ctxVariant;
+    createSortableGroup(
+      {
+        get variant() {
+          return ctxVariant;
+        },
+        get styling() {
+          return ctxStyling;
+        },
       },
-      get styling() {
-        return ctxStyling;
-      },
-    });
+      { duration, easing },
+    );
 
   _setSortableContext(controller);
 </script>

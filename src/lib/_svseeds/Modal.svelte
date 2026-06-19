@@ -13,6 +13,7 @@
     open?: boolean; // bindable (false)
     closable?: boolean; // (true)
     duration?: number; // (200)
+    cssvar?: Partial<Record<ModalCssVar, string>>;
     ariaLabel?: string;
     element?: HTMLDialogElement; // bindable
     styling?: SVSClass;
@@ -20,6 +21,7 @@
     // other HTMLDialogAttributes are passed to <dialog> via ...rest; `class` is merged onto root
     // style is component-owned (omitted)
   }
+  export type ModalCssVar = "duration";
   ```
   ### Anatomy
   ```svelte
@@ -27,6 +29,8 @@
     {children}
   </dialog>
   ```
+  ### Behavior
+  Open/close animation timing is published as `--svs-duration` for caller CSS; `cssvar.duration` renames it (caller then owns reduced-motion for that token).
 -->
 <script module lang="ts">
   export interface ModalProps extends Omit<HTMLDialogAttributes, "children" | "style" | "aria-label"> {
@@ -34,6 +38,7 @@
     open?: boolean; // bindable (false)
     closable?: boolean; // (true)
     duration?: number; // (200)
+    cssvar?: Partial<Record<ModalCssVar, string>>;
     ariaLabel?: string;
     element?: HTMLDialogElement; // bindable
     styling?: SVSClass;
@@ -41,13 +46,12 @@
   }
   export type ModalReqdProps = "children";
   export type ModalBindProps = "open" | "element";
+  export type ModalCssVar = "duration";
 
-  const DEFAULT_DURATION = 200;
-  const noMotion = shouldReduceMotion();
   export const _MODAL_PRESET = "svs-modal";
 
   import { untrack, onMount } from "svelte";
-  import { VARIANT, PARTS, fnClass, isUnsignedInteger, shouldReduceMotion } from "./core";
+  import { VARIANT, PARTS, fnClass, _resolveDuration } from "./core";
   import type { Snippet } from "svelte";
   import type { HTMLDialogAttributes, MouseEventHandler, KeyboardEventHandler, ToggleEventHandler } from "svelte/elements";
   import type { SVSClass, SVSVariant } from "./core";
@@ -55,11 +59,12 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { children, open = $bindable(false), closable = true, duration = -1, ariaLabel, onclick, onkeydown, ontoggle, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: ModalProps = $props();
+  let { children, open = $bindable(false), closable = true, duration = -1, cssvar, ariaLabel, onclick, onkeydown, ontoggle, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: ModalProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(_MODAL_PRESET, styling));
-  const dur = $derived(noMotion ? 0 : !isUnsignedInteger(duration) ? DEFAULT_DURATION : duration);
+  const dur = $derived(_resolveDuration(duration));
+  const durValue = $derived(cssvar?.duration ? `var(${cssvar.duration}, ${dur}ms)` : `${dur}ms`);
 
   // *** Reactive Handlers *** //
   $effect.pre(() => {
@@ -98,7 +103,7 @@
   class={[cls(PARTS.WHOLE, variant), c]}
   aria-label={ariaLabel}
   {...rest}
-  style={`--duration:${dur}ms;`}
+  style={`--svs-duration:${durValue};`}
   onclick={hclick}
   onkeydown={hkeydown}
   ontoggle={htoggle}

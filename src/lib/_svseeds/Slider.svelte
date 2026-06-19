@@ -41,6 +41,8 @@
     <span class="right" conditional>{right}</span>
   </span>
   ```
+  ### Behavior
+  `--color-active` / `--color-inactive` are intentionally not `--svs-`-prefixed so a Tailwind theme color named `active`/`inactive` is picked up with no extra wiring.
 -->
 <script module lang="ts">
   export interface SliderProps extends Omit<HTMLInputAttributes, "type" | "value" | "min" | "max" | "list" | "style"> {
@@ -65,7 +67,7 @@
 
   export const _SLIDER_PRESET = "svs-slider";
 
-  import { VARIANT, PARTS, fnClass } from "./core";
+  import { VARIANT, PARTS, fnClass, _cssVar } from "./core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { SvelteSet } from "svelte/reactivity";
@@ -95,8 +97,8 @@
   const rate = $derived(
     span === 0 ? Math.trunc(bg.min + (bg.max - bg.min) / 2) : Math.trunc(bg.min + ((value - rmin) / span) * (bg.max - bg.min)),
   );
-  const activeVar = $derived(cssvar?.active ?? "--color-active");
-  const inactiveVar = $derived(cssvar?.inactive ?? "--color-inactive");
+  const activeVar = $derived(_cssVar(cssvar, "active", "--color-active"));
+  const inactiveVar = $derived(_cssVar(cssvar, "inactive", "--color-inactive"));
   const style = $derived(`background: linear-gradient(to right, var(${activeVar}) ${rate}%, var(${inactiveVar}) ${rate}%);`);
 
   $effect.pre(() => {

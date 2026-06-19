@@ -7,6 +7,7 @@ import SortableObjects, { type Card } from "./fixtures/SortableObjects.svelte";
 import SortableConnected from "./fixtures/SortableConnected.svelte";
 import SortableConnectedObjects from "./fixtures/SortableConnectedObjects.svelte";
 import SortableGhost from "./fixtures/SortableGhost.svelte";
+import { createSortableGroup } from "#svs/Sortable.svelte";
 import { PARTS, VARIANT, fnClass } from "#svs/core";
 
 async function drag(origin: HTMLElement, over: HTMLElement | null, opts?: { up?: boolean }) {
@@ -22,10 +23,35 @@ async function drag(origin: HTMLElement, over: HTMLElement | null, opts?: { up?:
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllGlobals();
   cleanup();
 });
 
 describe("_Sortable rendering and API", () => {
+  test("createSortableGroup exposes shared motion params", () => {
+    const easing = (t: number) => t;
+    const controller = createSortableGroup(undefined, { duration: 120, easing });
+
+    expect(controller.tp.duration).toBe(120);
+    expect(controller.tp.easing).toBe(easing);
+  });
+
+  test("createSortableGroup resolves reduced motion duration", () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: true,
+      media: query,
+      onchange: null,
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+      dispatchEvent: () => false,
+    }));
+    const controller = createSortableGroup(undefined, { duration: 120 });
+
+    expect(controller.tp.duration).toBe(0);
+  });
+
   test("empty items render an empty list", () => {
     const { container, getByTestId } = render(SortableBasic, { items: [] });
     const list = container.querySelector("ul");

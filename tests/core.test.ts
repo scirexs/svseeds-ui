@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { getContext, setContext } from "svelte";
 import {
   BASE,
+  DEFAULT_DURATION,
   debounce,
   fnClass,
   isNeutral,
@@ -12,9 +13,12 @@ import {
   shouldReduceMotion,
   throttle,
   VARIANT,
+  _cssVar,
+  _cssVarStyle,
   _createContext,
   _isVariantMap,
   _prepRule,
+  _resolveDuration,
   _ruleClass,
 } from "#svs/core";
 
@@ -870,5 +874,59 @@ describe("shouldReduceMotion", () => {
   test("returns false when window is unavailable", () => {
     vi.stubGlobal("window", undefined);
     expect(shouldReduceMotion()).toBe(false);
+  });
+});
+
+describe("motion helpers", () => {
+  const original = window.matchMedia;
+  afterEach(() => {
+    if (typeof window !== "undefined") window.matchMedia = original;
+    vi.unstubAllGlobals();
+  });
+  const stubMotion = (matches: boolean) => {
+    window.matchMedia = vi.fn().mockReturnValue({ matches }) as unknown as typeof window.matchMedia;
+  };
+
+  test("_resolveDuration preserves valid durations and falls back otherwise", () => {
+    stubMotion(false);
+    expect(_resolveDuration(-1)).toBe(DEFAULT_DURATION);
+    expect(_resolveDuration(0)).toBe(0);
+    expect(_resolveDuration(350)).toBe(350);
+    expect(_resolveDuration(undefined)).toBe(DEFAULT_DURATION);
+    expect(_resolveDuration(3.5)).toBe(DEFAULT_DURATION);
+    expect(_resolveDuration(-1, 300)).toBe(300);
+  });
+
+  test("_resolveDuration returns 0 under reduced motion", () => {
+    stubMotion(true);
+    expect(_resolveDuration(350)).toBe(0);
+    expect(_resolveDuration(0)).toBe(0);
+    expect(_resolveDuration(-1)).toBe(0);
+  });
+
+  test("_cssVar resolves mapped custom-property names", () => {
+    expect(_cssVar({ active: "--x" }, "active", "--y")).toBe("--x");
+    expect(_cssVar(undefined, "active", "--y")).toBe("--y");
+    expect(_cssVar({ inactive: "--z" }, "active", "--y")).toBe("--y");
+  });
+
+  test("_cssVarStyle joins defined entries in order", () => {
+    expect(
+      _cssVarStyle([
+        { name: "--a", value: "1px" },
+        { name: undefined, value: "2px" },
+        { name: "--b", value: undefined },
+        { name: "--c", value: null as any },
+        { name: "", value: "3px" },
+        { name: "--zero", value: 0 as any },
+        { name: "--d", value: "0ms" },
+      ]),
+    ).toBe("--a: 1px; --zero: 0; --d: 0ms");
+    expect(
+      _cssVarStyle([
+        { name: undefined, value: "1px" },
+        { name: "--x", value: undefined },
+      ]),
+    ).toBeUndefined();
   });
 });

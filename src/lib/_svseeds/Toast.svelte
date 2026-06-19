@@ -13,7 +13,7 @@
   interface ToastProps {
     toaster: Toaster;
     children: Snippet<[ToastItem, string]>; // Snippet<[item,variant]>
-    animation?: number; // (200)
+    motion?: number; // (200) flip animation duration
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
@@ -22,7 +22,7 @@
   ```svelte
   <div class="whole" popover="manual">
     {#each toaster.toasts as item (item.id)}
-      <div class="middle" animate:flip={{ duration: animation }}>
+      <div class="middle" animate:flip={{ duration: motion }}>
         <div class="main">
           {children(item, variant)}
         </div>
@@ -50,7 +50,7 @@
   export interface ToastProps {
     toaster: Toaster;
     children: Snippet<[ToastItem, string]>; // Snippet<[item,variant]>
-    animation?: number; // (200)
+    motion?: number; // (200) flip animation duration
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
@@ -75,9 +75,7 @@
     return new Toaster(options);
   }
 
-  const DEFAULT_DURATION = 200;
   const DEFAULT_DISMISS = 30000;
-  const noMotion = shouldReduceMotion();
   export const _TOAST_PRESET = "svs-toast";
   let idSeq = 0;
 
@@ -182,18 +180,18 @@
   }
 
   import { flip } from "svelte/animate";
-  import { VARIANT, PARTS, fnClass, isUnsignedInteger, shouldReduceMotion } from "./core";
+  import { VARIANT, PARTS, fnClass, isUnsignedInteger, _resolveDuration } from "./core";
   import type { Snippet } from "svelte";
   import type { SVSClass, SVSVariant } from "./core";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { toaster, children, animation = -1, styling, variant = VARIANT.NEUTRAL }: ToastProps = $props();
+  let { toaster, children, motion = -1, styling, variant = VARIANT.NEUTRAL }: ToastProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(_TOAST_PRESET, styling));
-  const dur = $derived(noMotion ? 0 : !isUnsignedInteger(animation) ? DEFAULT_DURATION : animation);
+  const dur = $derived(_resolveDuration(motion));
   const style = "position:fixed;background-color:transparent;pointer-events:none;";
   let region = $state<HTMLDivElement>();
   let open = $state(false);

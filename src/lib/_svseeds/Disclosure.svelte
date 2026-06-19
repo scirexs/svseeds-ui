@@ -13,6 +13,7 @@
     children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false)
     duration?: number; // (200)
+    transition?: DisclosureTransition;
     inactive?: string | boolean; // reason string (aria-description) OR true for reason-less soft-disable
     attach?: Attachment<HTMLDetailsElement>;
     element?: HTMLDetailsElement; // bindable
@@ -20,6 +21,10 @@
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
     // other HTMLDetailsAttributes except `name` are passed to <details> via ...rest; `class` is merged onto root
   }
+  type DisclosureTransition = {
+    fn?: (node: HTMLElement, params: any, options: { direction: "in" | "out" | "both" }) => import("svelte/transition").TransitionConfig;
+    params?: unknown;
+  };
   ```
   ### Anatomy
   ```svelte
@@ -27,12 +32,12 @@
     <summary class="label" aria-disabled aria-description>
       {label}
     </summary>
-    <div class="main" transition:slide conditional>
+    <div class="main" transition:(default slide) conditional>
       {children}
     </div>
   </details>
   ```
-  `main` is rendered only while open, with a slide transition of `duration` ms.
+  `main` is rendered only while open. `transition` overrides the open/close animation (default `slide`); `duration` feeds the default slide's params.
 -->
 <script module lang="ts">
   export interface DisclosureProps extends Omit<HTMLDetailsAttributes, "children" | "name"> {
@@ -40,6 +45,7 @@
     children: Snippet<[string]>; // Snippet<[variant]>
     open?: boolean; // bindable (false)
     duration?: number; // (200)
+    transition?: DisclosureTransition;
     inactive?: string | boolean; // reason string (aria-description) OR true for reason-less soft-disable
     attach?: Attachment<HTMLDetailsElement>;
     element?: HTMLDetailsElement; // bindable
@@ -48,6 +54,10 @@
   }
   export type DisclosureReqdProps = "label" | "children";
   export type DisclosureBindProps = "open" | "variant" | "element";
+  export type DisclosureTransition = {
+    fn?: (node: HTMLElement, params: any, options: { direction: "in" | "out" | "both" }) => import("svelte/transition").TransitionConfig;
+    params?: unknown;
+  };
 
   export interface DisclosureContext extends SVSContext {
     get current(): string | undefined;
@@ -56,8 +66,6 @@
 
   export const [_getDisclosureContext, _setDisclosureContext] = _createContext<DisclosureContext>();
 
-  const DEFAULT_DURATION = 200;
-  const noMotion = shouldReduceMotion();
   export const _DISCLOSURE_PRESET = "svs-disclosure";
 
   class ToggleGuard {
@@ -73,7 +81,7 @@
 
   import { untrack, onMount } from "svelte";
   import { slide } from "svelte/transition";
-  import { VARIANT, PARTS, fnClass, isNeutral, isUnsignedInteger, shouldReduceMotion, _createContext } from "./core";
+  import { VARIANT, PARTS, fnClass, isNeutral, shouldReduceMotion, _resolveDuration, _createContext } from "./core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLDetailsAttributes, MouseEventHandler, ToggleEventHandler } from "svelte/elements";
@@ -82,12 +90,15 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { label, children, open = $bindable(false), duration = -1, ontoggle, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), inactive, id, name, class: c, onclick, ...rest }: DisclosureProps & { name?: string } = $props();
+  let { label, children, open = $bindable(false), duration = -1, transition, ontoggle, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), inactive, id, name, class: c, onclick, ...rest }: DisclosureProps & { name?: string } = $props();
   const ctx = _getDisclosureContext();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(_DISCLOSURE_PRESET, styling ?? ctx?.styling));
-  const dur = $derived(noMotion ? 0 : !isUnsignedInteger(duration) ? DEFAULT_DURATION : duration);
+  const reduced = $derived(typeof window !== "undefined" && shouldReduceMotion());
+  const dur = $derived(_resolveDuration(duration));
+  const tfn = $derived(reduced ? noop : (transition?.fn ?? slide));
+  const tparams = $derived(transition?.params ?? { duration: dur });
   const isInactive = $derived(inactive === true || (typeof inactive === "string" && inactive.trim().length > 0));
   const reason = $derived(typeof inactive === "string" && inactive.trim() ? inactive : undefined);
   const inactiveAttrs = $derived(isInactive ? { "aria-disabled": true, ...(reason ? { "aria-description": reason } : {}) } : {});
@@ -105,6 +116,9 @@
   function setOpen(v: boolean) {
     if (ctx) ctx.current = v && id != null ? id : undefined;
     else open = v;
+  }
+  function noop() {
+    return {};
   }
 
   // *** Reactive Handlers *** //
@@ -206,7 +220,7 @@
     {/if}
   </summary>
   {#if effOpen}
-    <div class={cls(PARTS.MAIN, variant)} transition:slide={{ duration: dur }}>
+    <div class={cls(PARTS.MAIN, variant)} transition:tfn|local={tparams}>
       {@render children(variant)}
     </div>
   {/if}

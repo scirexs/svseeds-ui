@@ -10,6 +10,7 @@ afterEach(() => {
   document.querySelectorAll("dialog[open]").forEach((dialog) => {
     (dialog as HTMLDialogElement).remove();
   });
+  vi.unstubAllGlobals();
 });
 
 if (typeof HTMLDialogElement === "undefined") {
@@ -342,13 +343,13 @@ describe("Modal structure and classes", () => {
 });
 
 describe("Modal duration", () => {
-  test("default duration emits --duration:200ms", () => {
+  test("default duration emits --svs-duration:200ms", () => {
     const { getByRole } = render(Modal, {
       children: childrenSnippet,
       open: true,
     });
     const dialog = getByRole("dialog") as HTMLDialogElement;
-    expect(dialog.style.getPropertyValue("--duration")).toBe("200ms");
+    expect(dialog.style.getPropertyValue("--svs-duration")).toBe("200ms");
   });
 
   test("custom duration is emitted", () => {
@@ -358,7 +359,36 @@ describe("Modal duration", () => {
       duration: 500,
     });
     const dialog = getByRole("dialog") as HTMLDialogElement;
-    expect(dialog.style.getPropertyValue("--duration")).toBe("500ms");
+    expect(dialog.style.getPropertyValue("--svs-duration")).toBe("500ms");
+  });
+
+  test("reduced motion emits zero duration fallback", () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: true,
+      media: query,
+      onchange: null,
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+      dispatchEvent: () => false,
+    }));
+    const { getByRole } = render(Modal, {
+      children: childrenSnippet,
+      open: true,
+    });
+    const dialog = getByRole("dialog") as HTMLDialogElement;
+    expect(dialog.style.getPropertyValue("--svs-duration")).toBe("0ms");
+  });
+
+  test("cssvar duration renames the fallback token", () => {
+    const { getByRole } = render(Modal, {
+      children: childrenSnippet,
+      open: true,
+      cssvar: { duration: "--x" },
+    });
+    const dialog = getByRole("dialog") as HTMLDialogElement;
+    expect(dialog.style.getPropertyValue("--svs-duration")).toBe("var(--x, 200ms)");
   });
 
   test("invalid duration falls back to default", async () => {
@@ -370,15 +400,15 @@ describe("Modal duration", () => {
     const { getByRole } = render(Modal, props);
 
     const dialog = getByRole("dialog") as HTMLDialogElement;
-    expect(dialog.style.getPropertyValue("--duration")).toBe("200ms");
+    expect(dialog.style.getPropertyValue("--svs-duration")).toBe("200ms");
 
     props.duration = NaN;
     await tick();
-    expect(dialog.style.getPropertyValue("--duration")).toBe("200ms");
+    expect(dialog.style.getPropertyValue("--svs-duration")).toBe("200ms");
 
     props.duration = 1.5;
     await tick();
-    expect(dialog.style.getPropertyValue("--duration")).toBe("200ms");
+    expect(dialog.style.getPropertyValue("--svs-duration")).toBe("200ms");
   });
 });
 

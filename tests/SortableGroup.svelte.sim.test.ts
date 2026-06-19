@@ -1,8 +1,9 @@
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, render, within } from "@testing-library/svelte";
 import { tick } from "svelte";
 import SortableGroupBasic from "./fixtures/SortableGroupBasic.svelte";
 import SortableGroupExternal from "./fixtures/SortableGroupExternal.svelte";
+import SortableGroupMotionProbe from "./fixtures/SortableGroupMotionProbe.svelte";
 import SortableBasic from "./fixtures/SortableBasic.svelte";
 import { createSortableGroup } from "#svs/Sortable.svelte";
 import { PARTS, VARIANT, fnClass } from "#svs/core";
@@ -18,7 +19,10 @@ async function drag(origin: HTMLElement, over: HTMLElement | null) {
   await tick();
 }
 
-afterEach(() => cleanup());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  cleanup();
+});
 
 describe("SortableGroup structure", () => {
   test("renders a role=group container with children", () => {
@@ -35,6 +39,38 @@ describe("SortableGroup structure", () => {
     const { getByRole } = render(SortableGroupBasic, { styling });
 
     expect(getByRole("group").className).toBe(cls(PARTS.WHOLE, VARIANT.NEUTRAL));
+  });
+});
+
+describe("SortableGroup motion", () => {
+  test("defaults group motion to 300ms", () => {
+    const { getByTestId } = render(SortableGroupMotionProbe);
+
+    expect(getByTestId("motion-duration")).toHaveTextContent("300");
+  });
+
+  test("forwards duration and easing to the created controller", () => {
+    const easing = () => 0.75;
+    const { getByTestId } = render(SortableGroupMotionProbe, { duration: 120, easing });
+
+    expect(getByTestId("motion-duration")).toHaveTextContent("120");
+    expect(getByTestId("motion-easing")).toHaveTextContent("0.75");
+  });
+
+  test("resolves duration to 0 under reduced motion", () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: true,
+      media: query,
+      onchange: null,
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+      dispatchEvent: () => false,
+    }));
+    const { getByTestId } = render(SortableGroupMotionProbe, { duration: 120 });
+
+    expect(getByTestId("motion-duration")).toHaveTextContent("0");
   });
 });
 

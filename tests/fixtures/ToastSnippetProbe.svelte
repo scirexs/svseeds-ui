@@ -1,7 +1,7 @@
 <script lang="ts">
   import Toast, { type ToastItem, type Toaster } from "#svs/Toast.svelte";
 
-  let { toaster, variant, animation }: { toaster: Toaster; variant?: string; animation?: number } = $props();
+  let { toaster, variant, motion }: { toaster: Toaster; variant?: string; motion?: number } = $props();
 </script>
 
 {#snippet children(item: ToastItem, effectiveVariant: string)}
@@ -10,4 +10,4 @@
   </div>
 {/snippet}
 
-<Toast {toaster} {children} {variant} {animation} />
+<Toast {toaster} {children} {variant} {motion} />

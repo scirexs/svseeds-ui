@@ -14,6 +14,7 @@
     position?: Position; // ("left")
     size?: string; // ("auto")
     duration?: number; // (200)
+    cssvar?: Partial<Record<DrawerCssVar, string>>;
     closable?: boolean; // (true)
     ariaLabel?: string;
     element?: HTMLDialogElement; // bindable
@@ -23,15 +24,18 @@
     // style is component-owned (omitted)
   }
   type Position = "top" | "right" | "bottom" | "left";
+  type DrawerCssVar = "duration";
   ```
-  Drawer is modal: focus is trapped and background siblings are inert while open by native dialog behavior.
-  `closable=false` creates a forced-action modal (no light-dismiss/Escape).
   ### Anatomy
   ```svelte
   <dialog class="whole" {...rest} {style}>
     {children}
   </dialog>
   ```
+  ### Behavior
+  Drawer is modal: focus is trapped and background siblings are inert while open by native dialog behavior.
+  `closable=false` creates a forced-action modal (no light-dismiss/Escape).
+  Open/close animation timing is published as `--svs-duration` for caller CSS; `cssvar.duration` renames it (caller then owns reduced-motion for that token).
 -->
 <script module lang="ts">
   export interface DrawerProps extends Omit<HTMLDialogAttributes, "children" | "style" | "aria-label"> {
@@ -40,6 +44,7 @@
     position?: Position; // ("left")
     size?: string; // ("auto")
     duration?: number; // (200)
+    cssvar?: Partial<Record<DrawerCssVar, string>>;
     closable?: boolean; // (true)
     ariaLabel?: string;
     element?: HTMLDialogElement; // bindable
@@ -47,11 +52,10 @@
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
   export type Position = "top" | "right" | "bottom" | "left";
+  export type DrawerCssVar = "duration";
   export type DrawerReqdProps = "children";
   export type DrawerBindProps = "open" | "element";
 
-  const DEFAULT_DURATION = 200;
-  const noMotion = shouldReduceMotion();
   export const _DRAWER_PRESET = "svs-drawer";
 
   function getPositionProp(position: Position): string {
@@ -73,7 +77,7 @@
   }
 
   import { untrack, onMount } from "svelte";
-  import { VARIANT, PARTS, fnClass, isUnsignedInteger, shouldReduceMotion } from "./core";
+  import { VARIANT, PARTS, fnClass, _resolveDuration } from "./core";
   import type { Snippet } from "svelte";
   import type { HTMLDialogAttributes, MouseEventHandler, KeyboardEventHandler, ToggleEventHandler } from "svelte/elements";
   import type { SVSClass, SVSVariant } from "./core";
@@ -81,12 +85,13 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { children, open = $bindable(false), position = "left", size = "auto", duration = -1, closable = true, ariaLabel, onclick, onkeydown, ontoggle, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: DrawerProps = $props();
+  let { children, open = $bindable(false), position = "left", size = "auto", duration = -1, cssvar, closable = true, ariaLabel, onclick, onkeydown, ontoggle, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: DrawerProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(_DRAWER_PRESET, styling));
-  const dur = $derived(noMotion ? 0 : !isUnsignedInteger(duration) ? DEFAULT_DURATION : duration);
-  const baseStyle = $derived(`${getPositionProp(position)}${getSizeProp(position, size)}--duration:${dur}ms;`);
+  const dur = $derived(_resolveDuration(duration));
+  const durValue = $derived(cssvar?.duration ? `var(${cssvar.duration}, ${dur}ms)` : `${dur}ms`);
+  const baseStyle = $derived(`${getPositionProp(position)}${getSizeProp(position, size)}--svs-duration:${durValue};`);
   let style = $derived(baseStyle);
   let ofTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -161,7 +166,7 @@
     height: var(--height-from);
     transition-property: display, overlay, width, height;
     transition-behavior: allow-discrete;
-    transition-duration: var(--duration);
+    transition-duration: var(--svs-duration);
   }
   dialog[open] {
     width: var(--width-to);
