@@ -146,15 +146,15 @@ describe("Switching existence of elements", () => {
     expect(whole.firstElementChild?.tagName).toBe("DIV");
   });
 
-  test("w/ flip=true", () => {
-    const props = { options, bottom, flip: true };
+  test("w/ bottom below middle", () => {
+    const props = { options, bottom };
     const { getAllByRole } = render(CheckField, props);
     const whole = getAllByRole("group")[0] as HTMLDivElement;
-    const btm = whole.firstElementChild as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
     const middle = whole.querySelector(`[role="group"]`) as HTMLDivElement;
     expect(whole.children).toHaveLength(2);
-    expect(whole.firstElementChild).toBe(btm);
-    expect(whole.lastElementChild).toBe(middle);
+    expect(whole.firstElementChild).toBe(middle);
+    expect(whole.lastElementChild).toBe(btm);
   });
 
   test("w/ empty options", () => {

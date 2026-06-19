@@ -18,7 +18,6 @@
     right?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[value,variant,element]>
     bottom?: string;
     reserve?: boolean; // (false)
-    flip?: boolean; // (false)
     value?: string; // bindable
     validations?: SelectFieldValidation[];
     attach?: Attachment<HTMLSelectElement>;
@@ -67,7 +66,6 @@
     right?: Snippet<[string, string, HTMLSelectElement | undefined]>; // Snippet<[value,variant,element]>
     bottom?: string;
     reserve?: boolean; // (false)
-    flip?: boolean; // (false)
     value?: string; // bindable
     validations?: SelectFieldValidation[];
     attach?: Attachment<HTMLSelectElement>;
@@ -92,7 +90,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { options, placeholder, label, extra, aux, left, right, bottom, reserve = false, flip = false, value = $bindable(""), validations = [], id, onchange, oninvalid, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, ...rest }: SelectFieldProps = $props();
+  let { options, placeholder, label, extra, aux, left, right, bottom, reserve = false, value = $bindable(""), validations = [], id, onchange, oninvalid, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, ...rest }: SelectFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(_SELECT_FIELD_PRESET, styling));
@@ -166,13 +164,14 @@
       {/if}
     </div>
   {/if}
-  {@render desc(flip)}
   <div class={cls(PARTS.MIDDLE, variant)}>
     {@render side(PARTS.LEFT, left)}
     {@render main()}
     {@render side(PARTS.RIGHT, right)}
   </div>
-  {@render desc(!flip)}
+  {#if reserve || message?.trim()}
+    <div class={cls(PARTS.BOTTOM, variant)} id={idErr} role={live}>{message}</div>
+  {/if}
 </div>
 
 {#snippet lbl()}
@@ -211,9 +210,4 @@
   {#each opts as { val, text, selected } (val)}
     <option value={val} {selected}>{text}</option>
   {/each}
-{/snippet}
-{#snippet desc(show: boolean)}
-  {#if show && (reserve || message?.trim())}
-    <div class={cls(PARTS.BOTTOM, variant)} id={idErr} role={live}>{message}</div>
-  {/if}
 {/snippet}

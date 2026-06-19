@@ -201,15 +201,15 @@ describe("Switching existence of elements", () => {
     expect(whole.children).toHaveLength(1);
     expect(whole.firstElementChild).toBe(main.parentElement);
   });
-  test("w/ flip", () => {
-    const props = { options, bottom, flip: true };
+  test("w/ bottom", () => {
+    const props = { options, bottom };
     const { getByRole } = render(SelectField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("combobox") as HTMLSelectElement;
-    const btm = whole.firstElementChild as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
     expect(whole.children).toHaveLength(2);
-    expect(whole.firstElementChild).toBe(btm);
-    expect(whole.lastElementChild).toBe(main.parentElement);
+    expect(whole.firstElementChild).toBe(main.parentElement);
+    expect(whole.lastElementChild).toBe(btm);
     expect(main).toHaveAccessibleDescription(bottom);
   });
 });

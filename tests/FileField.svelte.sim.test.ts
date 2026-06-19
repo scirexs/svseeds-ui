@@ -50,15 +50,15 @@ describe("FileField layout and default child", () => {
     expect(getByTestId("right")).toHaveTextContent("1:active:");
   });
 
-  test("reserves and flips bottom, replaces child, and forwards content snippet", () => {
+  test("reserves bottom, replaces child, and forwards content snippet", () => {
     const reserved = render(FileField, { reserve: true, content });
     const group = reserved.getByRole("group");
     expect(group.lastElementChild).toHaveClass("svs-file-field", PARTS.BOTTOM);
     expect(group.lastElementChild).toHaveTextContent("");
 
-    reserved.rerender({ bottom, flip: true, content });
-    expect(group.firstElementChild).toHaveClass("svs-file-field", PARTS.BOTTOM);
-    expect(group.firstElementChild).toHaveTextContent(bottom);
+    reserved.rerender({ bottom, content });
+    expect(group.lastElementChild).toHaveClass("svs-file-field", PARTS.BOTTOM);
+    expect(group.lastElementChild).toHaveTextContent(bottom);
 
     const children = createRawSnippet(() => ({ render: () => "<span data-testid='replacement'>custom</span>" }));
     const custom = render(FileField, { children, content });

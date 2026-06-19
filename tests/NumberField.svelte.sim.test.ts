@@ -56,16 +56,16 @@ describe("NumberField chrome", () => {
     expect(right).toHaveBeenCalled();
   });
 
-  test("reserves and flips bottom message", () => {
+  test("reserves bottom message", () => {
     const { getByRole, rerender } = render(NumberField, { reserve: true });
     const group = getByRole("group") as HTMLDivElement;
 
     expect(group.lastElementChild).toHaveClass("svs-number-field", PARTS.BOTTOM);
     expect(group.lastElementChild).toHaveTextContent("");
 
-    rerender({ bottom, flip: true });
-    expect(group.firstElementChild).toHaveClass("svs-number-field", PARTS.BOTTOM);
-    expect(group.firstElementChild).toHaveTextContent(bottom);
+    rerender({ bottom });
+    expect(group.lastElementChild).toHaveClass("svs-number-field", PARTS.BOTTOM);
+    expect(group.lastElementChild).toHaveTextContent(bottom);
   });
 });
 

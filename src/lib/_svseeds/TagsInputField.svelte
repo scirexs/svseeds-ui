@@ -20,7 +20,6 @@
     right?: Snippet<[string[], string, HTMLInputElement | undefined]>; // Snippet<[values,variant,element]>
     bottom?: string;
     reserve?: boolean; // (false)
-    flip?: boolean; // (false)
     values?: string[]; // bindable
     constraints?: TagsInputFieldConstraint[];
     validations?: TagsInputFieldValidation[];
@@ -64,7 +63,6 @@
     right?: Snippet<[string[], string, HTMLInputElement | undefined]>; // Snippet<[values,variant,element]>
     bottom?: string;
     reserve?: boolean; // (false)
-    flip?: boolean; // (false)
     values?: string[]; // bindable
     constraints?: TagsInputFieldConstraint[];
     validations?: TagsInputFieldValidation[];
@@ -92,7 +90,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { label, extra, aux, left, right, bottom, reserve = false, flip = false, values = $bindable([]), constraints = [], validations = [], name, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), tagsInput, children }: TagsInputFieldProps = $props();
+  let { label, extra, aux, left, right, bottom, reserve = false, values = $bindable([]), constraints = [], validations = [], name, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), tagsInput, children }: TagsInputFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(_TAGS_INPUT_FIELD_PRESET, styling));
@@ -228,14 +226,15 @@
       {/if}
     </div>
   {/if}
-  {@render desc(flip)}
   <div class={cls(PARTS.MIDDLE, variant)}>
     {@render side(PARTS.LEFT, left)}
     {@render fnForm()}
     {#if children}{@render children()}{:else}<TagsInput {...tagsInput} />{/if}
     {@render side(PARTS.RIGHT, right)}
   </div>
-  {@render desc(!flip)}
+  {#if reserve || message?.trim()}
+    <div class={cls(PARTS.BOTTOM, variant)} id={idDesc ?? idErr} role={live}>{message}</div>
+  {/if}
 </div>
 
 {#snippet lbl()}
@@ -251,11 +250,6 @@
 {#snippet side(area: string, body?: Snippet<[string[], string, HTMLInputElement | undefined]>)}
   {#if body}
     <span class={cls(area, variant)}>{@render body(values, variant, element)}</span>
-  {/if}
-{/snippet}
-{#snippet desc(show: boolean)}
-  {#if show && (reserve || message?.trim())}
-    <div class={cls(PARTS.BOTTOM, variant)} id={idDesc ?? idErr} role={live}>{message}</div>
   {/if}
 {/snippet}
 {#snippet fnForm()}

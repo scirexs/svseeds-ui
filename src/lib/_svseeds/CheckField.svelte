@@ -15,7 +15,6 @@
     aux?: Snippet<[string[], string, HTMLInputElement[]]>; // Snippet<[values,variant,elements]>
     bottom?: string;
     reserve?: boolean; // (false)
-    flip?: boolean; // (false)
     values?: string[]; // bindable
     multiple?: boolean; // (true)
     validations?: CheckFieldValidation[];
@@ -59,7 +58,6 @@
     aux?: Snippet<[string[], string, HTMLInputElement[]]>; // Snippet<[values,variant,elements]>
     bottom?: string;
     reserve?: boolean; // (false)
-    flip?: boolean; // (false)
     values?: string[]; // bindable
     multiple?: boolean; // (true)
     validations?: CheckFieldValidation[];
@@ -87,7 +85,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { options, label, extra, aux, bottom, reserve = false, flip = false, values = $bindable([]), multiple = true, validations = [], constraints = [], name, onchange, oninvalid, attach, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, required = false, ...rest }: CheckFieldProps = $props();
+  let { options, label, extra, aux, bottom, reserve = false, values = $bindable([]), multiple = true, validations = [], constraints = [], name, onchange, oninvalid, attach, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, required = false, ...rest }: CheckFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(_CHECK_FIELD_PRESET, styling));
@@ -179,9 +177,10 @@
         {/if}
       </div>
     {/if}
-    {@render desc(flip)}
     {@render main()}
-    {@render desc(!flip)}
+    {#if reserve || message?.trim()}
+      <div class={cls(PARTS.BOTTOM, variant)} id={idDesc ?? idErr} role={live}>{message}</div>
+    {/if}
   </div>
 {/if}
 
@@ -226,9 +225,4 @@
       </label>
     {/each}
   </div>
-{/snippet}
-{#snippet desc(show: boolean)}
-  {#if show && (reserve || message?.trim())}
-    <div class={cls(PARTS.BOTTOM, variant)} id={idDesc ?? idErr} role={live}>{message}</div>
-  {/if}
 {/snippet}

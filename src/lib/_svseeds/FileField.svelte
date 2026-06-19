@@ -21,7 +21,6 @@
     right?: Snippet<[File[], string, HTMLInputElement | undefined]>; // Snippet<[files,variant,element]>
     bottom?: string;
     reserve?: boolean; // (false)
-    flip?: boolean; // (false)
     files?: File[]; // bindable
     multiple?: boolean; // (false)
     constraints?: FileFieldConstraint[];
@@ -68,7 +67,6 @@
     right?: Snippet<[File[], string, HTMLInputElement | undefined]>; // Snippet<[files,variant,element]>
     bottom?: string;
     reserve?: boolean; // (false)
-    flip?: boolean; // (false)
     files?: File[]; // bindable
     multiple?: boolean; // (false)
     constraints?: FileFieldConstraint[];
@@ -103,7 +101,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { label, extra, aux, left, right, bottom, reserve = false, flip = false, files = $bindable([]), multiple = false, content, constraints = [], validations = [], name, element = $bindable(), variant = $bindable(VARIANT.NEUTRAL), styling, fileInput, children }: FileFieldProps = $props();
+  let { label, extra, aux, left, right, bottom, reserve = false, files = $bindable([]), multiple = false, content, constraints = [], validations = [], name, element = $bindable(), variant = $bindable(VARIANT.NEUTRAL), styling, fileInput, children }: FileFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(_FILE_FIELD_PRESET, styling));
@@ -247,7 +245,6 @@
       {/if}
     </div>
   {/if}
-  {@render desc(flip)}
   <div class={cls(PARTS.MIDDLE, variant)}>
     {@render side(PARTS.LEFT, left)}
     {#if children}
@@ -257,7 +254,9 @@
     {/if}
     {@render side(PARTS.RIGHT, right)}
   </div>
-  {@render desc(!flip)}
+  {#if reserve || message?.trim()}
+    <div class={cls(PARTS.BOTTOM, variant)} id={idDesc ?? idErr} role={live}>{message}</div>
+  {/if}
 </div>
 
 {#snippet lbl()}
@@ -273,10 +272,5 @@
 {#snippet side(area: string, body?: Snippet<[File[], string, HTMLInputElement | undefined]>)}
   {#if body}
     <span class={cls(area, variant)}>{@render body(files, variant, element)}</span>
-  {/if}
-{/snippet}
-{#snippet desc(show: boolean)}
-  {#if show && (reserve || message?.trim())}
-    <div class={cls(PARTS.BOTTOM, variant)} id={idDesc ?? idErr} role={live}>{message}</div>
   {/if}
 {/snippet}

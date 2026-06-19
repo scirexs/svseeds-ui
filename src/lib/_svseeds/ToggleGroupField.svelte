@@ -26,7 +26,6 @@
     right?: Snippet<[string[], string]>; // Snippet<[values,variant]>
     bottom?: string;
     reserve?: boolean; // (false)
-    flip?: boolean; // (false)
     values?: string[]; // bindable
     multiple?: boolean; // (true)
     validations?: ToggleGroupFieldValidation[];
@@ -76,7 +75,6 @@
     right?: Snippet<[string[], string]>; // Snippet<[values,variant]>
     bottom?: string;
     reserve?: boolean; // (false)
-    flip?: boolean; // (false)
     values?: string[]; // bindable
     multiple?: boolean; // (true)
     validations?: ToggleGroupFieldValidation[];
@@ -116,7 +114,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { options, label, extra, aux, left, right, bottom, reserve = false, flip = false, values = $bindable([]), multiple = true, validations = [], constraints = [], name, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), toggleGroup, children }: ToggleGroupFieldProps = $props();
+  let { options, label, extra, aux, left, right, bottom, reserve = false, values = $bindable([]), multiple = true, validations = [], constraints = [], name, elements = $bindable([]), styling, variant = $bindable(VARIANT.NEUTRAL), toggleGroup, children }: ToggleGroupFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(_TOGGLE_GROUP_FIELD_PRESET, styling));
@@ -223,7 +221,6 @@
         {/if}
       </div>
     {/if}
-    {@render desc(flip)}
     <div class={cls(PARTS.MIDDLE, variant)}>
       {@render side(PARTS.LEFT, left)}
       {@render fnForm()}
@@ -234,7 +231,9 @@
       {/if}
       {@render side(PARTS.RIGHT, right)}
     </div>
-    {@render desc(!flip)}
+    {#if reserve || message?.trim()}
+      <div class={cls(PARTS.BOTTOM, variant)} id={idDesc ?? idErr} role={live}>{message}</div>
+    {/if}
   </div>
 {/if}
 
@@ -251,11 +250,6 @@
 {#snippet side(area: string, body?: Snippet<[string[], string]>)}
   {#if body}
     <span class={cls(area, variant)}>{@render body(values, variant)}</span>
-  {/if}
-{/snippet}
-{#snippet desc(show: boolean)}
-  {#if show && (reserve || message?.trim())}
-    <div class={cls(PARTS.BOTTOM, variant)} id={idDesc ?? idErr} role={live}>{message}</div>
   {/if}
 {/snippet}
 {#snippet fnForm()}

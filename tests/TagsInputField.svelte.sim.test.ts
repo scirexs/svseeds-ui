@@ -150,17 +150,16 @@ describe("Switching existence of elements", () => {
     expect(tag1).toHaveLength(1);
   });
 
-  test("w/ flip true", () => {
-    const props = { bottom, flip: true };
+  test("w/ bottom", () => {
+    const props = { bottom };
     const { getByRole } = render(TagsInputField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
-    const btm = whole.firstElementChild as HTMLDivElement;
+    const btm = whole.lastElementChild as HTMLDivElement;
     expect(whole.children).toHaveLength(2);
-    expect(whole.firstElementChild).toBe(btm);
     expect(btm).toHaveTextContent(bottom);
     expect(btm).not.toHaveAttribute("role");
-    expect(whole.lastElementChild?.firstElementChild).toBe(main.parentElement);
+    expect(whole.firstElementChild?.firstElementChild).toBe(main.parentElement);
   });
 });
 

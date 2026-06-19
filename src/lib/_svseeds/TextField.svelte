@@ -16,7 +16,6 @@
     right?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[value,variant,element]>
     bottom?: string;
     reserve?: boolean; // (false)
-    flip?: boolean; // (false)
     value?: string; // bindable
     type?: "text" | "textarea" | "email" | "password" | "search" | "tel" | "url";  // ("text")
     options?: SvelteSet<string> | Set<string>;
@@ -70,7 +69,6 @@
     right?: Snippet<[string, string, HTMLInputElement | HTMLTextAreaElement | undefined]>; // Snippet<[value,variant,element]>
     bottom?: string;
     reserve?: boolean; // (false)
-    flip?: boolean; // (false)
     value?: string; // bindable
     type?: "text" | "textarea" | "email" | "password" | "search" | "tel" | "url"; // ("text")
     options?: SvelteSet<string> | Set<string>;
@@ -101,7 +99,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { label, extra, aux, left, right, bottom, reserve = false, flip = false, value = $bindable(""), type = "text", cols, rows, wrap, options, validations = [], id, onchange, oninvalid, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, ...rest }: TextFieldProps = $props();
+  let { label, extra, aux, left, right, bottom, reserve = false, value = $bindable(""), type = "text", cols, rows, wrap, options, validations = [], id, onchange, oninvalid, attach, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), class: c, ...rest }: TextFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(_TEXT_FIELD_PRESET, styling));
@@ -171,13 +169,14 @@
       {/if}
     </div>
   {/if}
-  {@render desc(flip)}
   <div class={cls(PARTS.MIDDLE, variant)}>
     {@render side(PARTS.LEFT, left)}
     {@render main()}
     {@render side(PARTS.RIGHT, right)}
   </div>
-  {@render desc(!flip)}
+  {#if reserve || message?.trim()}
+    <div class={cls(PARTS.BOTTOM, variant)} id={idErr} role={live}>{message}</div>
+  {/if}
 </div>
 
 {#snippet lbl()}
@@ -235,10 +234,5 @@
         {/each}
       </datalist>
     {/if}
-  {/if}
-{/snippet}
-{#snippet desc(show: boolean)}
-  {#if show && (reserve || message?.trim())}
-    <div class={cls(PARTS.BOTTOM, variant)} id={idErr} role={live}>{message}</div>
   {/if}
 {/snippet}

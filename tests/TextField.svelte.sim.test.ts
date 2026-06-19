@@ -804,15 +804,8 @@ describe("a11y, structure & textarea attrs", () => {
     expect(input).not.toHaveAttribute("wrap");
   });
 
-  test("flip controls bottom order", () => {
-    const firstRender = render(TextField, { bottom, flip: true });
-    const firstWhole = firstRender.getByRole("group") as HTMLDivElement;
-    const firstMain = firstRender.getByRole("textbox") as HTMLInputElement;
-    expect(firstWhole.firstElementChild).toHaveTextContent(bottom);
-    expect(firstWhole.children[1]).toBe(firstMain.parentElement);
-    firstRender.unmount();
-
-    const lastRender = render(TextField, { bottom, flip: false });
+  test("bottom renders after middle", () => {
+    const lastRender = render(TextField, { bottom });
     const lastWhole = lastRender.getByRole("group") as HTMLDivElement;
     const lastMain = lastRender.getByRole("textbox") as HTMLInputElement;
     expect(lastWhole.firstElementChild).toBe(lastMain.parentElement);

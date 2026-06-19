@@ -142,18 +142,6 @@ describe("Switching existence of elements", () => {
     expect(inner).not.toHaveAttribute("aria-describedby");
   });
 
-  test("w/ bottom flip", () => {
-    const props = { options, bottom, flip: true };
-    const { getAllByRole } = render(ToggleGroupField, props);
-    const whole = getAllByRole("group")[0] as HTMLDivElement;
-    const btm = whole.firstElementChild as HTMLDivElement;
-    expect(btm).toHaveTextContent(bottom);
-    expect(btm).not.toHaveAttribute("role");
-    expect(whole.children).toHaveLength(2);
-    expect(whole.firstElementChild).toBe(btm);
-    expect(whole.lastElementChild?.tagName).toBe("DIV"); // middle
-  });
-
   test("w/ blank string", () => {
     const props = { options, label: " ", bottom: " " };
     const { getAllByRole } = render(ToggleGroupField, props);
@@ -846,24 +834,6 @@ describe("Specify state transition & event handlers", () => {
     });
   });
 
-  test("flip keeps bottom before middle in error state", async () => {
-    const props = $state({
-      options,
-      bottom,
-      flip: true,
-      validations: [({ value }: { value: string[] }) => (value.length ? "" : "required")],
-      values: [] as string[],
-      variant: VARIANT.NEUTRAL,
-    });
-    const { getAllByRole } = render(ToggleGroupField, props);
-    const whole = getAllByRole("group")[0] as HTMLDivElement;
-
-    await fireEvent.invalid(proxyInput(whole));
-    const alert = whole.firstElementChild as HTMLDivElement;
-    expect(alert).toHaveAttribute("role", "alert");
-    expect(alert).toHaveTextContent("required");
-    expect(whole.lastElementChild).toHaveClass(PARTS.MIDDLE);
-  });
 });
 
 describe("Compound / children", () => {
