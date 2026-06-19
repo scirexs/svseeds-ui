@@ -24,22 +24,20 @@
     flip?: boolean; // (false)
     files?: File[]; // bindable
     multiple?: boolean; // (false)
-    accept?: string;
-    maxSize?: number;
-    maxFiles?: number;
-    droppable?: boolean; // (false)
     constraints?: FileFieldConstraint[];
     validations?: FileFieldValidation[];
     name?: string;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
+    fileInput?: Omit<FileInputProps, FileInputReqdProps | FileInputBindProps | "multiple" | "name" | "variant" | "events">; // default <FileInput/> props
     children?: Snippet;
   }
   type FileFieldConstraint = (ctx: { file: File; files: File[]; reason?: FileRejectReason; validity: ValidityState; element: HTMLInputElement }) => string | undefined | null;
   type FileFieldValidation = SVSFieldValidation<File[]>;
   // When reason is set, the primitive already rejected the file and the constraint supplies a message only.
   // When reason is undefined, a returned message also vetoes that candidate before commit.
+  // `fileInput` configures the default `<FileInput/>` only; when `children` is provided the bag is ignored and the child control owns its own props.
   ```
   ### Anatomy
   ```svelte
@@ -73,16 +71,13 @@
     flip?: boolean; // (false)
     files?: File[]; // bindable
     multiple?: boolean; // (false)
-    accept?: string;
-    maxSize?: number;
-    maxFiles?: number;
-    droppable?: boolean; // (false)
     constraints?: FileFieldConstraint[];
     validations?: FileFieldValidation[];
     name?: string;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
+    fileInput?: Omit<FileInputProps, FileInputReqdProps | FileInputBindProps | "multiple" | "name" | "variant" | "events">;
     children?: Snippet;
   }
   export type FileFieldReqdProps = "content";
@@ -103,12 +98,12 @@
   import FileInput, { _FILE_INPUT_PRESET, _setFileInputContext } from "./FileInput.svelte";
   import type { Snippet } from "svelte";
   import type { SVSClass, SVSVariant, SVSFieldValidation } from "./core";
-  import type { FileInputContext, FileRejection, FileRejectReason } from "./FileInput.svelte";
+  import type { FileInputContext, FileInputProps, FileInputReqdProps, FileInputBindProps, FileRejection, FileRejectReason } from "./FileInput.svelte";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { label, extra, aux, left, right, bottom, reserve = false, flip = false, files = $bindable([]), multiple = false, accept, maxSize, maxFiles, droppable = false, content, constraints = [], validations = [], name, element = $bindable(), variant = $bindable(VARIANT.NEUTRAL), styling, children }: FileFieldProps = $props();
+  let { label, extra, aux, left, right, bottom, reserve = false, flip = false, files = $bindable([]), multiple = false, content, constraints = [], validations = [], name, element = $bindable(), variant = $bindable(VARIANT.NEUTRAL), styling, fileInput, children }: FileFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(_FILE_FIELD_PRESET, styling));
@@ -258,7 +253,7 @@
     {#if children}
       {@render children()}
     {:else}
-      <FileInput {multiple} {accept} {maxSize} {maxFiles} {droppable} {name} children={content} />
+      <FileInput {...fileInput} {multiple} {name} children={content} />
     {/if}
     {@render side(PARTS.RIGHT, right)}
   </div>

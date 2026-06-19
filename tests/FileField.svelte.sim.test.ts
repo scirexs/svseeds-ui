@@ -83,10 +83,10 @@ describe("FileField constraints", () => {
     const props = $state({
       files: [] as File[],
       variant: VARIANT.NEUTRAL,
-      accept: ".png",
       content,
       element: undefined as HTMLInputElement | undefined,
       constraints: [(({ reason }) => (reason === "accept" ? "type" : null)) as FileFieldConstraint],
+      fileInput: { accept: ".png" },
     });
     const { container, getByRole } = render(FileField, props);
     const input = container.querySelector("input") as HTMLInputElement;
@@ -104,10 +104,10 @@ describe("FileField constraints", () => {
     const sizeProps = $state({
       files: [] as File[],
       variant: VARIANT.NEUTRAL,
-      maxSize: 5,
       content,
       element: undefined as HTMLInputElement | undefined,
       constraints: [(({ reason }) => (reason === "maxSize" ? "size" : null)) as FileFieldConstraint],
+      fileInput: { maxSize: 5 },
     });
     const sizeRender = render(FileField, sizeProps);
     await tick();
@@ -120,10 +120,10 @@ describe("FileField constraints", () => {
       files: [] as File[],
       variant: VARIANT.NEUTRAL,
       multiple: true,
-      maxFiles: 1,
       content,
       element: undefined as HTMLInputElement | undefined,
       constraints: [(({ reason }) => (reason === "maxFiles" ? "count" : null)) as FileFieldConstraint],
+      fileInput: { maxFiles: 1 },
     });
     const countRender = render(FileField, countProps);
     await tick();
@@ -135,7 +135,7 @@ describe("FileField constraints", () => {
     expect(countProps.variant).toBe(VARIANT.INACTIVE);
     expect(within(countRender.container).getByRole("alert")).toHaveTextContent("count");
 
-    const silentProps = $state({ files: [] as File[], variant: VARIANT.NEUTRAL, accept: ".png", content, constraints: [] as FileFieldConstraint[] });
+    const silentProps = $state({ files: [] as File[], variant: VARIANT.NEUTRAL, content, constraints: [] as FileFieldConstraint[], fileInput: { accept: ".png" } });
     const silentRender = render(FileField, silentProps);
     await tick();
     await fireEvent.change(silentRender.container.querySelector("input") as HTMLInputElement, { target: { files: [mkFile("a.txt", "text/plain")] } });
@@ -150,7 +150,6 @@ describe("FileField constraints", () => {
       files: [] as File[],
       variant: VARIANT.NEUTRAL,
       multiple: true,
-      accept: "image/*",
       content,
       element: undefined as HTMLInputElement | undefined,
       constraints: [
@@ -160,6 +159,7 @@ describe("FileField constraints", () => {
           return null;
         }) as FileFieldConstraint,
       ],
+      fileInput: { accept: "image/*" },
     });
     const { container, getByRole } = render(FileField, props);
     const input = container.querySelector("input") as HTMLInputElement;
@@ -298,7 +298,7 @@ describe("FileField validations and bindings", () => {
   });
 
   test("drag-over active display stays local to the nested file input", async () => {
-    const props = $state({ files: [] as File[], variant: VARIANT.NEUTRAL, content, droppable: true });
+    const props = $state({ files: [] as File[], variant: VARIANT.NEUTRAL, content, fileInput: { droppable: true } });
     const { container, getByRole } = render(FileField, props);
     const group = getByRole("group");
     const label = container.querySelector(`label.${PARTS.MIDDLE}`) as HTMLLabelElement;
