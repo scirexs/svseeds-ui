@@ -56,6 +56,7 @@
   export const _COMBO_BOX_PRESET = "svs-combo-box";
   const NA = -1;
 
+  import { tick } from "svelte";
   import { VARIANT, PARTS, fnClass } from "./core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
@@ -99,6 +100,10 @@
     }
     wasExpanded = expanded;
   });
+  $effect(() => {
+    if (!expanded || selected <= NA || !listElem) return;
+    listElem.children[selected]?.scrollIntoView?.({ block: "nearest" });
+  });
 
   // *** Event Handlers *** //
   function open(activate: boolean = false, bottom: boolean = false) {
@@ -106,11 +111,13 @@
     typed = false;
     selected = view.indexOf(value);
     if (activate && selected === NA) selected = bottom ? view.length - 1 : 0;
-    observeOverflow();
     expanded = true;
+    observeOverflow();
   }
-  function observeOverflow() {
-    if (!listElem || !window) return;
+  async function observeOverflow() {
+    overflow = { x: false, y: false };
+    await tick();
+    if (!listElem || typeof window === "undefined") return;
     const rect = listElem.getBoundingClientRect();
     overflow.x = window.innerWidth < rect.right;
     overflow.y = window.innerHeight < rect.bottom;
@@ -174,7 +181,6 @@
     if (!alt && !expanded) return open(true);
     if (!view.length) return (selected = NA);
     if (selected < view.length - 1) selected++;
-    if (selected === NA) selected = 0;
   }
   function caseArrowUp(ev: KeyboardEvent, alt: boolean) {
     if (alt && !expanded) return;

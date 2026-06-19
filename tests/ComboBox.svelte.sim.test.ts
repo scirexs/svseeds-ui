@@ -6,6 +6,24 @@ import ComboBox from "#svs/ComboBox.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 
 const attachfn = () => {};
+const mockScrollIntoView = () => {
+  const prev = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollIntoView");
+  if (!prev) {
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value() {},
+    });
+  }
+  const spy = vi.spyOn(HTMLElement.prototype, "scrollIntoView").mockImplementation(() => {});
+  return {
+    spy,
+    restore() {
+      spy.mockRestore();
+      if (prev) Object.defineProperty(HTMLElement.prototype, "scrollIntoView", prev);
+      else Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
+    },
+  };
+};
 
 describe("Switching existence of elements", () => {
   const options = new Set(["option1", "option2", "option3"]);
@@ -828,5 +846,107 @@ describe("Extra snippet", () => {
     const variant = extra.mock.calls[0]?.[2] as (() => string) | undefined;
     expect(expanded?.()).toBe(true);
     expect(variant?.()).toBe(VARIANT.ACTIVE);
+  });
+});
+
+describe("Active option visibility", () => {
+  const options = new Set(["apple", "banana", "cherry", "date"]);
+
+  test("scrollIntoView is called for the active option on keyboard navigation", async () => {
+    const user = userEvent.setup();
+    const scroll = mockScrollIntoView();
+    try {
+      const { getByRole } = render(ComboBox, { options });
+      const combobox = getByRole("combobox") as HTMLInputElement;
+
+      combobox.focus();
+      await user.keyboard("{ArrowDown}");
+      await user.keyboard("{ArrowDown}");
+
+      const items = within(getByRole("listbox")).getAllByRole("option");
+      const active = items.find((item) => item.getAttribute("aria-selected") === "true");
+      expect(scroll.spy).toHaveBeenCalled();
+      expect(scroll.spy.mock.contexts.at(-1)).toBe(active);
+    } finally {
+      scroll.restore();
+    }
+  });
+
+  test("scrollIntoView is not called while collapsed", () => {
+    const scroll = mockScrollIntoView();
+    try {
+      render(ComboBox, { options });
+
+      expect(scroll.spy).not.toHaveBeenCalled();
+    } finally {
+      scroll.restore();
+    }
+  });
+
+  test("hover updates active option and keeps it visible", async () => {
+    const user = userEvent.setup();
+    const scroll = mockScrollIntoView();
+    try {
+      const { getAllByRole } = render(ComboBox, { options, expanded: true });
+      const items = getAllByRole("option");
+
+      await user.hover(items[2]);
+
+      expect(items[2]).toHaveAttribute("aria-selected", "true");
+      expect(scroll.spy).toHaveBeenCalled();
+    } finally {
+      scroll.restore();
+    }
+  });
+
+  test("opening with an existing value scrolls the active option into view", async () => {
+    const user = userEvent.setup();
+    const scroll = mockScrollIntoView();
+    try {
+      const { getByRole, getAllByRole } = render(ComboBox, { options, value: "cherry" });
+      const combobox = getByRole("combobox") as HTMLInputElement;
+
+      await user.click(combobox);
+
+      const items = getAllByRole("option");
+      expect(items[2]).toHaveAttribute("aria-selected", "true");
+      expect(scroll.spy).toHaveBeenCalledWith({ block: "nearest" });
+      expect(scroll.spy.mock.contexts.at(-1)).toBe(items[2]);
+    } finally {
+      scroll.restore();
+    }
+  });
+});
+
+describe("Overflow detection on open", () => {
+  const options = new Set(["apple", "banana", "cherry"]);
+
+  test("opening still renders the listbox and does not throw with reset overflow", async () => {
+    const user = userEvent.setup();
+    const { getByRole } = render(ComboBox, { options });
+    const combobox = getByRole("combobox") as HTMLInputElement;
+
+    await user.click(combobox);
+
+    const listbox = getByRole("listbox") as HTMLUListElement;
+    expect(combobox).toHaveAttribute("aria-expanded", "true");
+    expect(listbox).toHaveStyle("visibility: visible");
+    expect(within(listbox).getAllByRole("option")).toHaveLength(3);
+  });
+
+  test("re-open after close still opens cleanly", async () => {
+    const user = userEvent.setup();
+    const { getByRole } = render(ComboBox, { options });
+    const combobox = getByRole("combobox") as HTMLInputElement;
+
+    await user.click(combobox);
+    expect(combobox).toHaveAttribute("aria-expanded", "true");
+    expect(within(getByRole("listbox")).getAllByRole("option")).toHaveLength(3);
+
+    await fireEvent.blur(combobox);
+    await user.click(combobox);
+
+    expect(combobox).toHaveAttribute("aria-expanded", "true");
+    expect(within(getByRole("listbox")).getAllByRole("option")).toHaveLength(3);
   });
 });
