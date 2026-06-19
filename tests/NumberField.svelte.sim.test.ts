@@ -72,12 +72,14 @@ describe("NumberField chrome", () => {
 describe("NumberField default child and passthrough", () => {
   test("renders NumberInput by default and forwards numeric config", async () => {
     const { container, getByRole } = render(NumberField, {
-      integer: true,
-      spin: true,
-      options: new Set([1, 2]),
       name: "qty",
-      ariaDecLabel: "Less",
-      ariaIncLabel: "More",
+      numberInput: {
+        integer: true,
+        spin: true,
+        options: new Set([1, 2]),
+        ariaDecLabel: "Less",
+        ariaIncLabel: "More",
+      },
     });
     let input = container.querySelector("input") as HTMLInputElement;
     const list = container.querySelector("datalist") as HTMLDataListElement;
@@ -92,17 +94,35 @@ describe("NumberField default child and passthrough", () => {
     expect(getByRole("button", { name: "More" })).toBeInTheDocument();
   });
 
+  test("forwards min/max/step through numberInput and preserves field validation", async () => {
+    const user = userEvent.setup();
+    const props = $state({
+      value: undefined as number | undefined,
+      variant: VARIANT.NEUTRAL,
+      numberInput: { min: 2, max: 6, step: 2 },
+    });
+    const { container } = render(NumberField, props);
+    const input = container.querySelector("input") as HTMLInputElement;
+
+    await user.type(input, "5");
+    await fireEvent.change(input);
+
+    expect(props.value).toBe(6);
+    expect(input).toHaveValue("6");
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+  });
+
   test("forwards decrement/increment snippets to the spin buttons", () => {
     const decrement = createRawSnippet(() => ({ render: () => "<i data-testid='dec'></i>" }));
     const increment = createRawSnippet(() => ({ render: () => "<i data-testid='inc'></i>" }));
-    const { getByTestId } = render(NumberField, { spin: true, decrement, increment });
+    const { getByTestId } = render(NumberField, { numberInput: { spin: true, decrement, increment } });
 
     expect(getByTestId("dec")).toBeInTheDocument();
     expect(getByTestId("inc")).toBeInTheDocument();
   });
 
   test("forwards stack to NumberInput (stacked spin buttons)", () => {
-    const { container } = render(NumberField, { spin: true, stack: true });
+    const { container } = render(NumberField, { numberInput: { spin: true, stack: true } });
 
     expect(container.querySelector(`.${PARTS.AUX}`)).not.toBeNull();
   });

@@ -22,25 +22,16 @@
     reserve?: boolean; // (false)
     flip?: boolean; // (false)
     value?: number; // bindable; undefined = empty
-    min?: number;
-    max?: number;
-    step?: number; // (1)
-    integer?: boolean; // (false)
-    spin?: boolean; // (false)
-    stack?: boolean; // (false)
-    options?: SvelteSet<number> | Set<number>;
-    ariaDecLabel?: string;
-    ariaIncLabel?: string;
-    decrement?: Snippet<[string]>; // Snippet<[variant]> spin decrement button content
-    increment?: Snippet<[string]>; // Snippet<[variant]> spin increment button content
     validations?: NumberFieldValidation[];
     name?: string;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
+    numberInput?: Omit<NumberInputProps, NumberInputReqdProps | NumberInputBindProps | "name" | "variant">; // default <NumberInput/> props
     children?: Snippet;
   }
   type NumberFieldValidation = SVSFieldValidation<number | undefined>;
+  // `numberInput` configures the default `<NumberInput/>` only; when `children` is provided the bag is ignored and the child control owns its own props.
   ```
   ### Anatomy
   ```svelte
@@ -72,22 +63,12 @@
     reserve?: boolean; // (false)
     flip?: boolean; // (false)
     value?: number; // bindable; undefined = empty
-    min?: number;
-    max?: number;
-    step?: number; // (1)
-    integer?: boolean; // (false)
-    spin?: boolean; // (false)
-    stack?: boolean; // (false)
-    options?: SvelteSet<number> | Set<number>;
-    ariaDecLabel?: string;
-    ariaIncLabel?: string;
-    decrement?: Snippet<[string]>; // Snippet<[variant]> spin decrement button content
-    increment?: Snippet<[string]>; // Snippet<[variant]> spin increment button content
     validations?: NumberFieldValidation[];
     name?: string;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
+    numberInput?: Omit<NumberInputProps, NumberInputReqdProps | NumberInputBindProps | "name" | "variant">;
     children?: Snippet;
   }
   export type NumberFieldReqdProps = never;
@@ -100,14 +81,13 @@
   import { VARIANT, PARTS, fnClass, isNeutral } from "./core";
   import NumberInput, { _NUMBER_INPUT_PRESET, _setNumberInputContext } from "./NumberInput.svelte";
   import type { Snippet } from "svelte";
-  import type { SvelteSet } from "svelte/reactivity";
   import type { SVSClass, SVSVariant, SVSFieldValidation } from "./core";
-  import type { NumberInputContext } from "./NumberInput.svelte";
+  import type { NumberInputContext, NumberInputProps, NumberInputReqdProps, NumberInputBindProps } from "./NumberInput.svelte";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { label, extra, aux, left, right, bottom, reserve = false, flip = false, value = $bindable(), min, max, step = 1, integer = false, spin = false, stack = false, options, ariaDecLabel, ariaIncLabel, decrement, increment, validations = [], name, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), children }: NumberFieldProps = $props();
+  let { label, extra, aux, left, right, bottom, reserve = false, flip = false, value = $bindable(), validations = [], name, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), numberInput, children }: NumberFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(_NUMBER_FIELD_PRESET, styling));
@@ -210,7 +190,7 @@
     {#if children}
       {@render children()}
     {:else}
-      <NumberInput {min} {max} {step} {integer} {spin} {stack} {options} {ariaDecLabel} {ariaIncLabel} {decrement} {increment} {name} />
+      <NumberInput {...numberInput} {name} />
     {/if}
     {@render side(PARTS.RIGHT, right)}
   </div>
