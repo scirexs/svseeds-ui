@@ -22,20 +22,19 @@
     reserve?: boolean; // (false)
     flip?: boolean; // (false)
     values?: string[]; // bindable
-    separator?: string | string[]; // ([",", "\n"]) - forwarded to the default <TagsInput/>
-    paste?: boolean; // (true) - forwarded to the default <TagsInput/>
     constraints?: TagsInputFieldConstraint[];
     validations?: TagsInputFieldValidation[];
     name?: string;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
+    tagsInput?: Omit<TagsInputProps, TagsInputReqdProps | TagsInputBindProps | "ariaErrMsgId" | "variant" | "events">; // default <TagsInput/> props
     children?: Snippet;
   }
   type TagsInputFieldConstraint = SVSFieldConstraint;
   type TagsInputFieldValidation = SVSFieldValidation<string[]>;
   // Migration: min -> validations fn `({ value }) => value.length < N ? msg : null`; max -> constraints fn `({ values }) => values.length >= N ? msg : null`.
-  // `separator` and `paste` apply only to the default `<TagsInput/>`; when `children` is provided, the child control owns those options.
+  // `tagsInput` configures the default `<TagsInput/>` only; when `children` is provided the bag is ignored and the child control owns its own props.
   ```
   ### Anatomy
   ```svelte
@@ -67,14 +66,13 @@
     reserve?: boolean; // (false)
     flip?: boolean; // (false)
     values?: string[]; // bindable
-    separator?: string | string[]; // ([",", "\n"]) - forwarded to the default <TagsInput/>
-    paste?: boolean; // (true) - forwarded to the default <TagsInput/>
     constraints?: TagsInputFieldConstraint[];
     validations?: TagsInputFieldValidation[];
     name?: string;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
+    tagsInput?: Omit<TagsInputProps, TagsInputReqdProps | TagsInputBindProps | "ariaErrMsgId" | "variant" | "events">;
     children?: Snippet;
   }
   export type TagsInputFieldReqdProps = never;
@@ -89,12 +87,12 @@
   import TagsInput, { _TAGS_INPUT_PRESET, _setTagsInputContext } from "./TagsInput.svelte";
   import type { Snippet } from "svelte";
   import type { SVSClass, SVSVariant, SVSFieldValidation, SVSFieldConstraint } from "./core";
-  import type { TagsInputContext } from "./TagsInput.svelte";
+  import type { TagsInputContext, TagsInputProps, TagsInputReqdProps, TagsInputBindProps } from "./TagsInput.svelte";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { label, extra, aux, left, right, bottom, reserve = false, flip = false, values = $bindable([]), separator, paste, constraints = [], validations = [], name, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), children }: TagsInputFieldProps = $props();
+  let { label, extra, aux, left, right, bottom, reserve = false, flip = false, values = $bindable([]), constraints = [], validations = [], name, element = $bindable(), styling, variant = $bindable(VARIANT.NEUTRAL), tagsInput, children }: TagsInputFieldProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(fnClass(_TAGS_INPUT_FIELD_PRESET, styling));
@@ -234,7 +232,7 @@
   <div class={cls(PARTS.MIDDLE, variant)}>
     {@render side(PARTS.LEFT, left)}
     {@render fnForm()}
-    {#if children}{@render children()}{:else}<TagsInput {separator} {paste} />{/if}
+    {#if children}{@render children()}{:else}<TagsInput {...tagsInput} />{/if}
     {@render side(PARTS.RIGHT, right)}
   </div>
   {@render desc(!flip)}

@@ -324,7 +324,7 @@ describe("Specify props & state transition & event handlers", () => {
   test("field separator prop reaches the default control", async () => {
     const props = $state({
       values: [] as string[],
-      separator: ";",
+      tagsInput: { separator: ";" },
     });
     const user = userEvent.setup();
     const { getByRole } = render(TagsInputField, props);
@@ -342,13 +342,23 @@ describe("Specify props & state transition & event handlers", () => {
   test("field paste=false disables paste splitting", async () => {
     const props = $state({
       values: [] as string[],
-      paste: false,
+      tagsInput: { paste: false },
     });
     const { getByRole } = render(TagsInputField, props);
 
     await paste(getByRole("textbox") as HTMLInputElement, "a,b");
 
     expect(props.values).toEqual([]);
+  });
+
+  test("tagsInput bag forwards arbitrary child props to the default control", async () => {
+    const props = $state({
+      values: ["a"] as string[],
+      tagsInput: { removeAriaLabel: (t: string) => `del ${t}` },
+    });
+    const { getByRole } = render(TagsInputField, props);
+
+    expect(getByRole("button", { name: "del a" })).toBeTruthy();
   });
 
   test("major state transition with constraints", async () => {
@@ -851,6 +861,27 @@ describe("a11y, structure, form & review fixes", () => {
 
     expect(props.variant).toBe(VARIANT.ACTIVE);
     expect(queryByRole("alert")).toBeNull();
+  });
+
+  test("tagsInput bag is ignored when an embedded child owns its props", async () => {
+    const props = $state({
+      values: [] as string[],
+      tagsInput: { separator: ";" },
+    });
+    const user = userEvent.setup();
+    const { getByRole } = render(TagsInputFieldEmbedded, {
+      field: props,
+      input: { separator: "|" },
+    });
+    const main = getByRole("textbox") as HTMLInputElement;
+
+    await user.type(main, "a;");
+
+    expect(props.values).toEqual([]);
+
+    await user.type(main, "|");
+
+    expect(props.values).toEqual(["a;"]);
   });
 
   test("events.onadd on embedded child cancels add and composes with field", async () => {
