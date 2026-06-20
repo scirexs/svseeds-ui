@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
-import { fireEvent, render, waitFor, within } from "@testing-library/svelte";
-import { userEvent } from "@testing-library/user-event";
+import { render as svRender } from "vitest-browser-svelte";
+import { userEvent } from "vitest/browser";
 import { createRawSnippet, tick } from "svelte";
 import { SvelteMap } from "svelte/reactivity";
 import ToggleGroupField, { type ToggleGroupFieldProps, type ToggleOption } from "#svs/ToggleGroupField.svelte";
@@ -23,6 +23,53 @@ const rightfn = createRawSnippet((values: () => string[], variant: () => string)
   return { render: () => `<span data-testid="${rightid}">${variant()},${values().length}</span>` };
 });
 
+const byRole = (container: HTMLElement, role: string) =>
+  Array.from(container.querySelectorAll(`[role="${role}"]`)) as HTMLElement[];
+const byTestId = (container: ParentNode, id: string) =>
+  Array.from(container.querySelectorAll(`[data-testid="${id}"]`)) as HTMLElement[];
+const byText = (container: ParentNode, text: string) => {
+  const nodes = Array.from(container.querySelectorAll("*")) as HTMLElement[];
+  const node = [...nodes].reverse().find((element) => {
+    const direct = Array.from(element.childNodes)
+      .filter((node) => node.nodeType === Node.TEXT_NODE)
+      .map((node) => node.textContent)
+      .join("")
+      .trim();
+    return direct === text || element.textContent?.trim() === text;
+  });
+  if (!node) throw new Error(`No element with text ${text}`);
+  return node;
+};
+const within = (container: HTMLElement) => ({
+  getAllByRole: (role: string) => byRole(container, role),
+  getByText: (text: string) => byText(container, text),
+  getByTestId: (id: string) => byTestId(container, id)[0],
+});
+const render = (component: any, props?: any) => {
+  const result = svRender(component, props);
+  const { container } = result;
+  return {
+    ...result,
+    getAllByRole: (role: string) => byRole(container, role),
+    getByRole: (role: string) => {
+      const node = byRole(container, role)[0];
+      if (!node) throw new Error(`No element with role ${role}`);
+      return node;
+    },
+    getByText: (text: string) => byText(container, text),
+    getByTestId: (id: string) => byTestId(container, id)[0],
+    queryByRole: (role: string) => byRole(container, role)[0] ?? null,
+  };
+};
+const invalid = async (element: Element) => {
+  element.dispatchEvent(new Event("invalid", { cancelable: true }));
+  await tick();
+};
+const change = async (element: Element) => {
+  element.dispatchEvent(new Event("change", { bubbles: true }));
+  await tick();
+};
+
 describe("Switching existence of elements", () => {
   const seed = "svs-toggle-group-field";
   const options = new SvelteMap([
@@ -33,12 +80,8 @@ describe("Switching existence of elements", () => {
 
   test("no options", () => {
     const emptyOptions = new SvelteMap<string, string>();
-    try {
-      const { container } = render(ToggleGroupField, { options: emptyOptions });
-      expect(container.firstChild).toBeNull();
-    } catch (e) {
-      // ok
-    }
+    const { container } = render(ToggleGroupField, { options: emptyOptions });
+    expect(container.querySelector('[role="group"]')).toBeNull();
   });
 
   test("basic render with options", () => {
@@ -191,16 +234,15 @@ describe("Specify state transition & event handlers", () => {
     expect(btm).toHaveTextContent("");
     expect(innerToggleGroupOf(whole)).not.toHaveAttribute("aria-describedby");
 
-    await fireEvent.invalid(proxyInput(whole));
+    await invalid(proxyInput(whole));
     expect(getByRole("alert")).toBe(btm);
     expect(btm).toHaveTextContent(errmsg);
 
     props.values = ["opt1"];
-    await waitFor(() => {
-      expect(whole.lastElementChild).toBe(btm);
-      expect(btm).not.toHaveAttribute("role");
-      expect(btm).toHaveTextContent("");
-    });
+    await tick();
+    expect(whole.lastElementChild).toBe(btm);
+    expect(btm).not.toHaveAttribute("role");
+    expect(btm).toHaveTextContent("");
   });
 
   test("w/ default values", () => {
@@ -228,7 +270,7 @@ describe("Specify state transition & event handlers", () => {
     expect(props.variant).toBe(VARIANT.NEUTRAL);
 
     // Trigger validation by simulating invalid event
-    await fireEvent.invalid(hiddenInput);
+    await invalid(hiddenInput);
     expect(mockValidation).toHaveBeenCalled();
     expect(mockValidation).toHaveBeenLastCalledWith(
       expect.objectContaining({ value: [], validity: expect.anything(), element: hiddenInput }),
@@ -242,12 +284,12 @@ describe("Specify state transition & event handlers", () => {
 
     // Add selection to make it valid
     props.values = ["opt1"];
-    await fireEvent.change(hiddenInput); // Simulate validation trigger
+    await change(hiddenInput); // Simulate validation trigger
     expect(props.variant).toBe(VARIANT.ACTIVE);
 
     // Clear selection
     props.values = [];
-    await fireEvent.change(hiddenInput);
+    await change(hiddenInput);
     expect(props.variant).toBe(VARIANT.NEUTRAL);
   });
 
@@ -262,12 +304,10 @@ describe("Specify state transition & event handlers", () => {
     const whole = getAllByRole("group")[0] as HTMLDivElement;
     const hiddenInput = whole.querySelector('input[style*="display: none"]') as HTMLInputElement;
 
-    await fireEvent.invalid(hiddenInput);
-    await waitFor(() => {
-      const alert = getByRole("alert") as HTMLDivElement;
-      expect(alert).toBeInTheDocument();
-      expect(props.variant).toBe(VARIANT.INACTIVE);
-    });
+    await invalid(hiddenInput);
+    const alert = getByRole("alert") as HTMLDivElement;
+    expect(alert).toBeInTheDocument();
+    expect(props.variant).toBe(VARIANT.INACTIVE);
   });
 
   test("multiple validation functions", async () => {
@@ -283,19 +323,16 @@ describe("Specify state transition & event handlers", () => {
     const whole = getAllByRole("group")[0] as HTMLDivElement;
     const hiddenInput = whole.querySelector('input[style*="display: none"]') as HTMLInputElement;
 
-    await fireEvent.invalid(hiddenInput);
-    await waitFor(() => {
-      expect(validation1).toHaveBeenCalled();
-      expect(validation2).toHaveBeenCalled();
-      expect(props.variant).toBe(VARIANT.INACTIVE);
-
-      const alert = getByRole("alert") as HTMLDivElement;
-      expect(alert).toHaveTextContent("Too many selections");
-    });
+    await invalid(hiddenInput);
+    expect(validation1).toHaveBeenCalled();
+    expect(validation2).toHaveBeenCalled();
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+    const alert = getByRole("alert") as HTMLDivElement;
+    expect(alert).toHaveTextContent("Too many selections");
   });
 
   test("constraints block adding a second multiple value but allow removing", async () => {
-    const user = userEvent.setup();
+    const user = userEvent;
     const props = $state({
       options,
       constraints: [({ values }: { values: string[] }) => (values.length >= 1 ? "max" : null)],
@@ -306,7 +343,8 @@ describe("Specify state transition & event handlers", () => {
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
     await user.click(buttons[0]);
-    await waitFor(() => expect(props.values).toEqual(["opt1"]));
+    await tick();
+    expect(props.values).toEqual(["opt1"]);
 
     await user.click(buttons[1]);
     expect(props.values).toEqual(["opt1"]);
@@ -315,11 +353,12 @@ describe("Specify state transition & event handlers", () => {
     expect(getByRole("alert")).toHaveTextContent("max");
 
     await user.click(buttons[0]);
-    await waitFor(() => expect(props.values).toEqual([]));
+    await tick();
+    expect(props.values).toEqual([]);
   });
 
   test("constraints gate single-select clicks", async () => {
-    const user = userEvent.setup();
+    const user = userEvent;
     const props = $state({
       options,
       multiple: false,
@@ -336,7 +375,8 @@ describe("Specify state transition & event handlers", () => {
     expect(getByRole("alert")).toHaveTextContent("no opt2");
 
     await user.click(buttons[0]);
-    await waitFor(() => expect(props.values).toEqual(["opt1"]));
+    await tick();
+    expect(props.values).toEqual(["opt1"]);
 
     buttons[0].focus();
     await user.keyboard("[ArrowRight]");
@@ -344,7 +384,7 @@ describe("Specify state transition & event handlers", () => {
   });
 
   test("null validation result is valid", async () => {
-    const user = userEvent.setup();
+    const user = userEvent;
     const props = $state({
       options,
       validations: [() => null],
@@ -355,7 +395,8 @@ describe("Specify state transition & event handlers", () => {
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
     await user.click(buttons[0]);
-    await waitFor(() => expect(props.values).toEqual(["opt1"]));
+    await tick();
+    expect(props.values).toEqual(["opt1"]);
 
     expect(props.variant).toBe(VARIANT.ACTIVE);
     expect(queryByRole("alert")).toBeNull();
@@ -399,7 +440,7 @@ describe("Specify state transition & event handlers", () => {
 
     // Trigger invalid state
     const hiddenInput = whole.querySelector('input[style*="display: none"]') as HTMLInputElement;
-    await fireEvent.invalid(hiddenInput);
+    await invalid(hiddenInput);
     expect(props.variant).toBe(VARIANT.INACTIVE);
     expect(btm).toHaveAttribute("role", "alert");
     expect(whole).toHaveClass(seed, PARTS.WHOLE, VARIANT.INACTIVE);
@@ -414,7 +455,7 @@ describe("Specify state transition & event handlers", () => {
 
     // Make valid
     props.values = ["opt1"];
-    await fireEvent.change(hiddenInput);
+    await change(hiddenInput);
     expect(props.variant).toBe(VARIANT.ACTIVE);
     expect(btm).not.toHaveAttribute("role");
     expect(whole).toHaveClass(seed, PARTS.WHOLE, VARIANT.ACTIVE);
@@ -468,7 +509,7 @@ describe("Specify state transition & event handlers", () => {
 
     // Trigger invalid state
     const hiddenInput = whole.querySelector('input[style*="display: none"]') as HTMLInputElement;
-    await fireEvent.invalid(hiddenInput);
+    await invalid(hiddenInput);
     expect(props.variant).toBe(VARIANT.INACTIVE);
     expect(btm).toHaveAttribute("role", "alert");
     expect(whole).toHaveClass(clsid, PARTS.WHOLE, VARIANT.INACTIVE);
@@ -483,7 +524,7 @@ describe("Specify state transition & event handlers", () => {
 
     // Make valid
     props.values = ["opt1"];
-    await fireEvent.change(hiddenInput);
+    await change(hiddenInput);
     expect(props.variant).toBe(VARIANT.ACTIVE);
     expect(btm).not.toHaveAttribute("role");
     expect(whole).toHaveClass(clsid, PARTS.WHOLE, VARIANT.ACTIVE);
@@ -553,7 +594,7 @@ describe("Specify state transition & event handlers", () => {
 
     // Trigger invalid state
     const hiddenInput = whole.querySelector('input[style*="display: none"]') as HTMLInputElement;
-    await fireEvent.invalid(hiddenInput);
+    await invalid(hiddenInput);
     expect(props.variant).toBe(VARIANT.INACTIVE);
     expect(btm).toHaveAttribute("role", "alert");
     expect(whole).toHaveClass(dynObj.base, dynObj.inactive);
@@ -568,7 +609,7 @@ describe("Specify state transition & event handlers", () => {
 
     // Make valid
     props.values = ["opt1"];
-    await fireEvent.change(hiddenInput);
+    await change(hiddenInput);
     expect(props.variant).toBe(VARIANT.ACTIVE);
     expect(btm).not.toHaveAttribute("role");
     expect(whole).toHaveClass(dynObj.base, dynObj.active);
@@ -606,7 +647,7 @@ describe("Specify state transition & event handlers", () => {
   });
 
   test("clicking a toggle updates bound values and variant", async () => {
-    const user = userEvent.setup();
+    const user = userEvent;
     const props = $state({
       options,
       validations: [validationFn],
@@ -617,18 +658,16 @@ describe("Specify state transition & event handlers", () => {
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
     await user.click(buttons[0]);
-    await waitFor(() => {
-      expect(props.values).toEqual(["opt1"]);
-      expect(buttons[0]).toHaveAttribute("aria-checked", "true");
-      expect(props.variant).toBe(VARIANT.ACTIVE);
-    });
+    await tick();
+    expect(props.values).toEqual(["opt1"]);
+    await expect.element(buttons[0]).toHaveAttribute("aria-checked", "true");
+    expect(props.variant).toBe(VARIANT.ACTIVE);
 
     await user.click(buttons[0]);
-    await waitFor(() => {
-      expect(props.values).toEqual([]);
-      expect(buttons[0]).toHaveAttribute("aria-checked", "false");
-      expect(props.variant).toBe(VARIANT.NEUTRAL);
-    });
+    await tick();
+    expect(props.values).toEqual([]);
+    await expect.element(buttons[0]).toHaveAttribute("aria-checked", "false");
+    expect(props.variant).toBe(VARIANT.NEUTRAL);
   });
 
   test("name creates hidden inputs without assigning name to toggle buttons", () => {
@@ -673,7 +712,7 @@ describe("Specify state transition & event handlers", () => {
     const whole = getAllByRole("group")[0] as HTMLDivElement;
     const innerGroup = innerToggleGroupOf(whole);
 
-    await fireEvent.invalid(proxyInput(whole));
+    await invalid(proxyInput(whole));
     const alert = getByRole("alert");
     expect(innerGroup).toHaveClass("custom-toggle-group");
     expect(innerGroup).toHaveAttribute("aria-invalid", "true");
@@ -692,7 +731,7 @@ describe("Specify state transition & event handlers", () => {
     const whole = getAllByRole("group")[0] as HTMLDivElement;
     const innerGroup = innerToggleGroupOf(whole);
 
-    await fireEvent.invalid(proxyInput(whole));
+    await invalid(proxyInput(whole));
     const alert = getByRole("alert");
     expect(props.variant).toBe(VARIANT.INACTIVE);
     expect(alert).toHaveTextContent("required");
@@ -706,7 +745,7 @@ describe("Specify state transition & event handlers", () => {
   });
 
   test("single-select mode replaces values and places error aria on the radiogroup", async () => {
-    const user = userEvent.setup();
+    const user = userEvent;
     const props = $state({
       options,
       multiple: false,
@@ -719,13 +758,15 @@ describe("Specify state transition & event handlers", () => {
     const radios = getAllByRole("radio") as HTMLButtonElement[];
 
     await user.click(radios[0]);
-    await waitFor(() => expect(props.values).toEqual(["opt1"]));
+    await tick();
+    expect(props.values).toEqual(["opt1"]);
     await user.click(radios[1]);
-    await waitFor(() => expect(props.values).toEqual(["opt2"]));
+    await tick();
+    expect(props.values).toEqual(["opt2"]);
 
     props.values = [];
     await tick();
-    await fireEvent.invalid(proxyInput(whole));
+    await invalid(proxyInput(whole));
     const radiogroup = getByRole("radiogroup");
     const alert = getByRole("alert");
     expect(radiogroup).toHaveAttribute("aria-invalid", "true");
@@ -737,7 +778,6 @@ describe("Specify state transition & event handlers", () => {
   });
 
   test("disabled ToggleOption passes through and is not selectable", async () => {
-    const user = userEvent.setup();
     const toggleOptions = new SvelteMap<string, string | ToggleOption>([
       ["opt1", "Option 1"],
       ["opt2", { text: "Option 2", disabled: true }],
@@ -747,7 +787,10 @@ describe("Specify state transition & event handlers", () => {
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
     expect(buttons[1]).toBeDisabled();
-    await user.click(buttons[1]);
+    // A real user-event click waits for an enabled target; native .click() verifies the
+    // browser's disabled-button default action without that retry timeout.
+    buttons[1].click();
+    await tick();
     expect(props.values).toEqual([]);
     expect(buttons[1]).toHaveAttribute("aria-checked", "false");
   });
@@ -783,16 +826,15 @@ describe("Specify state transition & event handlers", () => {
     expect(btm).toHaveTextContent(bottom);
     expect(btm).not.toHaveAttribute("role");
 
-    await fireEvent.invalid(proxyInput(whole));
+    await invalid(proxyInput(whole));
     expect(btm).toHaveAttribute("role", "alert");
     expect(btm).toHaveTextContent("required");
 
     props.values = ["opt1"];
-    await waitFor(() => {
-      expect(props.variant).toBe(VARIANT.ACTIVE);
-      expect(btm).toHaveTextContent(bottom);
-      expect(btm).not.toHaveAttribute("role");
-    });
+    await tick();
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(btm).toHaveTextContent(bottom);
+    expect(btm).not.toHaveAttribute("role");
   });
 
   test("label and bottom ids react to prop changes", async () => {
@@ -809,16 +851,17 @@ describe("Specify state transition & event handlers", () => {
     expect(whole).not.toHaveAttribute("aria-labelledby");
 
     props.label = "Now labeled";
-    await waitFor(() => {
-      const lbl = getByText("Now labeled");
-      expect(container.querySelector(`.${PARTS.TOP}`)).toContainElement(lbl);
-      expect(whole).toHaveAttribute("aria-labelledby", lbl.id);
-    });
+    await tick();
+    const lbl = getByText("Now labeled");
+    expect(container.querySelector(`.${PARTS.TOP}`)).toContainElement(lbl);
+    expect(whole).toHaveAttribute("aria-labelledby", lbl.id);
 
     props.bottom = "help-2";
-    await waitFor(() => expect(container.querySelector(`.${PARTS.BOTTOM}`)).toHaveTextContent("help-2"));
+    await tick();
+    await expect.element(container.querySelector(`.${PARTS.BOTTOM}`) as HTMLElement).toHaveTextContent("help-2");
     props.bottom = "help-3";
-    await waitFor(() => expect(container.querySelector(`.${PARTS.BOTTOM}`)).toHaveTextContent("help-3"));
+    await tick();
+    await expect.element(container.querySelector(`.${PARTS.BOTTOM}`) as HTMLElement).toHaveTextContent("help-3");
   });
 
   test("binds button elements", async () => {
@@ -826,12 +869,11 @@ describe("Specify state transition & event handlers", () => {
     const { getAllByRole } = render(ToggleGroupField, props);
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
-    await waitFor(() => {
-      expect(props.elements).toHaveLength(options.size);
-      expect(props.elements[0]).toBe(buttons[0]);
-      expect(props.elements[1]).toBe(buttons[1]);
-      expect(props.elements[2]).toBe(buttons[2]);
-    });
+    await tick();
+    expect(props.elements).toHaveLength(options.size);
+    expect(props.elements[0]).toBe(buttons[0]);
+    expect(props.elements[1]).toBe(buttons[1]);
+    expect(props.elements[2]).toBe(buttons[2]);
   });
 
 });
@@ -860,7 +902,7 @@ describe("Compound / children", () => {
 
   test("explicit child wires click to field values", async () => {
     const field = $state<ToggleGroupFieldProps>({});
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroupFieldEmbedded, { field, input: { options } });
 
     await user.click(getAllByRole("checkbox")[0]);
@@ -887,7 +929,7 @@ describe("Compound / children", () => {
     const whole = getAllByRole("group")[0] as HTMLDivElement;
     const innerGroup = innerToggleGroupOf(whole);
 
-    await fireEvent.invalid(proxyInput(whole));
+    await invalid(proxyInput(whole));
     const alert = getByRole("alert");
     expect(field.variant).toBe(VARIANT.INACTIVE);
     expect(alert).toHaveTextContent("too few");
@@ -930,7 +972,7 @@ describe("Compound / children", () => {
       values: [] as string[],
       variant: VARIANT.NEUTRAL,
     });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole, getByRole } = render(ToggleGroupFieldEmbedded, { field, input: { options } });
 
     await user.click(getAllByRole("checkbox")[0]);
@@ -942,7 +984,7 @@ describe("Compound / children", () => {
 
   test("single-select declarative child", async () => {
     const field = $state({ values: ["opt1"] });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroupFieldEmbedded, { field, input: { options, multiple: false } });
 
     await user.click(getAllByRole("radio")[1]);
@@ -952,7 +994,7 @@ describe("Compound / children", () => {
 
   test("field multiple is ignored when child supplied", async () => {
     const field = $state({ multiple: false, values: [] as string[] });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroupFieldEmbedded, { field, input: { options, multiple: true } });
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 

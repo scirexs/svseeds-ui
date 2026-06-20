@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
-import { render, waitFor } from "@testing-library/svelte";
-import { userEvent } from "@testing-library/user-event";
+import { render as svRender } from "vitest-browser-svelte";
+import { userEvent } from "vitest/browser";
 import { createRawSnippet, tick } from "svelte";
 import ToggleGroup, { type ToggleOption } from "#svs/ToggleGroup.svelte";
 import { PARTS, VARIANT, _fnClass } from "#svs/core";
@@ -18,14 +18,26 @@ const customSnippet = createRawSnippet((value: () => string) => {
   return { render: () => `<span data-testid="custom-${value()}">${value().toUpperCase()}</span>` };
 });
 
+const byRole = (container: HTMLElement, role: string) =>
+  Array.from(container.querySelectorAll(`[role="${role}"]`)) as HTMLElement[];
+const byTestId = (container: HTMLElement, id: string) =>
+  Array.from(container.querySelectorAll(`[data-testid="${id}"]`)) as HTMLElement[];
+const render = (component: any, props?: any) => {
+  const result = svRender(component, props);
+  const { container } = result;
+  return {
+    ...result,
+    getAllByRole: (role: string) => byRole(container, role),
+    getByRole: (role: string) => byRole(container, role)[0],
+    getAllByTestId: (id: string) => byTestId(container, id),
+    getByTestId: (id: string) => byTestId(container, id)[0],
+  };
+};
+
 describe("Switching existence of elements", () => {
   test("no props", () => {
-    try {
-      const { container } = render(ToggleGroup, { options: new Map() });
-      expect(container.firstChild).toBeNull();
-    } catch (e) {
-      // ok
-    }
+    const { container } = render(ToggleGroup, { options: new Map() });
+    expect(container.firstChild).toBeNull();
   });
 
   test("with options", () => {
@@ -135,7 +147,6 @@ describe("Switching existence of elements", () => {
       ]),
       values: ["b"],
     });
-    const user = userEvent.setup();
     const { getAllByRole } = render(ToggleGroup, props);
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
@@ -144,7 +155,7 @@ describe("Switching existence of elements", () => {
     expect(buttons[2]).not.toBeDisabled();
     expect(buttons[1]).toHaveAttribute("aria-checked", "true");
 
-    await user.click(buttons[1]);
+    await userEvent.click(buttons[1]);
     expect(props.values).toEqual(["b"]);
     expect(buttons[1]).toHaveAttribute("aria-checked", "true");
   });
@@ -270,7 +281,7 @@ describe("Status and styling", () => {
 describe("User interactions", () => {
   test("multiple selection toggle", async () => {
     const props = $state({ options, values: [] });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroup, props);
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
@@ -295,7 +306,7 @@ describe("User interactions", () => {
   test("events.onadd can veto adding with [] but does not gate removing", async () => {
     const onadd = vi.fn(({ added }: { added: string[] }) => (added[0] === "option2" ? [] : undefined));
     const props = $state({ options, values: [] as string[], events: { onadd } });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroup, { props });
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
@@ -318,7 +329,7 @@ describe("User interactions", () => {
   test("events.onremove can veto removing with []", async () => {
     const onremove = vi.fn(() => []);
     const props = $state({ options, values: ["option1"], events: { onremove } });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroup, { props });
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
@@ -342,7 +353,7 @@ describe("User interactions", () => {
       values: ["option2"] as string[],
       events: { onadd, onremove },
     });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroup, { props });
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
@@ -356,14 +367,14 @@ describe("User interactions", () => {
     expect(props.values).toEqual(["option2"]);
 
     onremove.mockClear();
-    await user.click(buttons[1]);
+    await userEvent.click(buttons[1]);
     expect(onremove).not.toHaveBeenCalled();
     expect(props.values).toEqual(["option2"]);
   });
 
   test("single selection radio behavior", async () => {
     const props = $state({ options, values: [], multiple: false });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroup, props);
     const buttons = getAllByRole("radio") as HTMLButtonElement[];
 
@@ -391,7 +402,7 @@ describe("User interactions", () => {
 
   test("maintains order in multiple selection", async () => {
     const props = $state({ options, values: [] });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroup, props);
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
@@ -410,7 +421,7 @@ describe("User interactions", () => {
 
   test("multiple selection drops out-of-options values after toggle", async () => {
     const props = $state({ options, values: ["option1", "ghost", "option2"] });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroup, props);
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
@@ -444,7 +455,7 @@ describe("User interactions", () => {
     firstDisabled.unmount();
 
     const props = $state({ options, values: [], multiple: true });
-    const user = userEvent.setup();
+    const user = userEvent;
     const multipleMode = render(ToggleGroup, props);
     buttons = multipleMode.getAllByRole("checkbox") as HTMLButtonElement[];
     buttons.forEach((button) => expect(button).not.toHaveAttribute("tabindex"));
@@ -457,7 +468,7 @@ describe("User interactions", () => {
 
   test("single mode arrow, Home, and End navigation", async () => {
     const props = $state({ options, values: [], multiple: false });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroup, props);
     const buttons = getAllByRole("radio") as HTMLButtonElement[];
 
@@ -502,7 +513,7 @@ describe("User interactions", () => {
       values: [],
       multiple: false,
     });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroup, props);
     const buttons = getAllByRole("radio") as HTMLButtonElement[];
 
@@ -521,7 +532,7 @@ describe("User interactions", () => {
   });
 
   test("keyboard navigation", async () => {
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroup, { options });
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
@@ -531,15 +542,13 @@ describe("User interactions", () => {
 
     // Space to activate
     await user.keyboard("[Space]");
-    await waitFor(() => {
-      expect(buttons[0]).toHaveAttribute("aria-checked", "true");
-    });
+    await expect.element(buttons[0]).toHaveAttribute("aria-checked", "true");
   });
 
   test("with attach and user interaction", async () => {
     const attach = vi.fn().mockImplementation(attachfn);
     const props = $state({ options, values: [], attach });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroup, props);
     const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
 
@@ -585,7 +594,7 @@ describe("Embedded in field context", () => {
 
   test("click writes to context values", async () => {
     const state = $state({ values: [] as string[], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroupCtxProvider, { state, input: { options, multiple: true } });
 
     await user.click(getAllByRole("checkbox")[0]);
@@ -594,7 +603,7 @@ describe("Embedded in field context", () => {
 
   test("click toggles off through context", async () => {
     const state = $state({ values: ["option1"], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroupCtxProvider, { state, input: { options } });
 
     await user.click(getAllByRole("checkbox")[0]);
@@ -640,7 +649,7 @@ describe("Embedded in field context", () => {
   test("context onadd hook can veto add with []", async () => {
     const state = $state({ values: [] as string[], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
     const onadd = vi.fn(() => []);
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroupCtxProvider, { state, hooks: { events: { onadd } }, input: { options } });
 
     await user.click(getAllByRole("checkbox")[0]);
@@ -652,7 +661,7 @@ describe("Embedded in field context", () => {
     const state = $state({ values: [] as string[], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
     const ownOnadd = vi.fn();
     const ctxOnadd = vi.fn();
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroupCtxProvider, {
       state,
       hooks: { events: { onadd: ctxOnadd } },
@@ -669,7 +678,7 @@ describe("Embedded in field context", () => {
     const state = $state({ values: [] as string[], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
     const ownOnadd = vi.fn(() => ["option1"]);
     const ctxOnadd = vi.fn(() => []);
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroupCtxProvider, {
       state,
       hooks: { events: { onadd: ctxOnadd } },
@@ -685,7 +694,7 @@ describe("Embedded in field context", () => {
   test("context onremove hook can veto remove with []", async () => {
     const state = $state({ values: ["option1"], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
     const onremove = vi.fn(() => []);
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroupCtxProvider, { state, hooks: { events: { onremove } }, input: { options } });
 
     await user.click(getAllByRole("checkbox")[0]);
@@ -697,7 +706,7 @@ describe("Embedded in field context", () => {
     const state = $state({ values: ["option1"], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
     const ownOnremove = vi.fn();
     const ctxOnremove = vi.fn();
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroupCtxProvider, {
       state,
       hooks: { events: { onremove: ctxOnremove } },
@@ -715,7 +724,7 @@ describe("Embedded in field context", () => {
     const state = $state({ values: ["option1"], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
     const ownOnremove = vi.fn(() => []);
     const ctxOnremove = vi.fn(() => ["option1"]);
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroupCtxProvider, {
       state,
       hooks: { events: { onremove: ctxOnremove } },
@@ -730,7 +739,7 @@ describe("Embedded in field context", () => {
 
   test("single-select via context", async () => {
     const state = $state({ values: ["option1"], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroupCtxProvider, { state, input: { options, multiple: false } });
 
     await user.click(getAllByRole("radio")[1]);
@@ -739,7 +748,7 @@ describe("Embedded in field context", () => {
 
   test("single-select keyboard navigation writes to context values", async () => {
     const state = $state({ values: ["option1"], variant: VARIANT.NEUTRAL, elements: [] as HTMLButtonElement[] });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getAllByRole } = render(ToggleGroupCtxProvider, { state, input: { options, multiple: false } });
     const buttons = getAllByRole("radio") as HTMLButtonElement[];
 
@@ -753,12 +762,8 @@ describe("Embedded in field context", () => {
 
 describe("Edge cases", () => {
   test("empty options", () => {
-    try {
-      const { container } = render(ToggleGroup, { options: new Map() });
-      expect(container.firstChild).toBeNull();
-    } catch (e) {
-      // ok
-    }
+    const { container } = render(ToggleGroup, { options: new Map() });
+    expect(container.firstChild).toBeNull();
   });
 
   test("options with empty values", () => {

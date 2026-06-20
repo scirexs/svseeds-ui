@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from "vitest";
-import { fireEvent, render, within } from "@testing-library/svelte";
-import { userEvent } from "@testing-library/user-event";
-import { createRawSnippet } from "svelte";
+import { render as svRender } from "vitest-browser-svelte";
+import { userEvent } from "vitest/browser";
+import { createRawSnippet, tick } from "svelte";
 import TextField from "#svs/TextField.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 
@@ -39,6 +39,64 @@ const rightfn = createRawSnippet(
     return { render: () => `<span data-testid="${rightid}">${value().length},${variant.length},${element?.toString()}</span>` };
   },
 );
+
+const byRole = (container: HTMLElement, role: string) => {
+  const selectors: Record<string, string> = {
+    alert: '[role="alert"]',
+    combobox: "input",
+    group: '[role="group"]',
+    searchbox: 'input[type="search"]',
+    status: '[role="status"]',
+    textbox: "input, textarea",
+  };
+  return Array.from(container.querySelectorAll(selectors[role] ?? `[role="${role}"]`)) as HTMLElement[];
+};
+const byTestId = (container: ParentNode, id: string) =>
+  Array.from(container.querySelectorAll(`[data-testid="${id}"]`)) as HTMLElement[];
+const byText = (container: ParentNode, text: string) => {
+  const nodes = Array.from(container.querySelectorAll("*")) as HTMLElement[];
+  const node = [...nodes].reverse().find((element) => {
+    const direct = Array.from(element.childNodes)
+      .filter((node) => node.nodeType === Node.TEXT_NODE)
+      .map((node) => node.textContent)
+      .join("")
+      .trim();
+    return direct === text || element.textContent?.trim() === text;
+  });
+  if (!node) throw new Error(`No element with text ${text}`);
+  return node;
+};
+const labelControl = (container: ParentNode, label: string, selector?: string) => {
+  const target = Array.from(container.querySelectorAll("label")).find((node) => node.textContent?.includes(label));
+  return target?.htmlFor ? container.querySelector(`#${target.htmlFor}`) : target?.querySelector(selector ?? "input, textarea");
+};
+const within = (container: HTMLElement) => ({
+  getByText: (text: string) => byText(container, text),
+  getByTestId: (id: string) => byTestId(container, id)[0],
+});
+const render = (component: any, props?: any) => {
+  const result = svRender(component, props);
+  const { container } = result;
+  return {
+    ...result,
+    getByLabelText: (label: string, options?: { selector?: string }) => labelControl(container, label, options?.selector),
+    getByPlaceholderText: (placeholder: string) => container.querySelector(`[placeholder="${placeholder}"]`),
+    getByRole: (role: string) => {
+      const node = byRole(container, role)[0];
+      if (!node) throw new Error(`No element with role ${role}`);
+      return node;
+    },
+    getByTestId: (id: string) => byTestId(container, id)[0],
+    getByText: (text: string) => byText(container, text),
+    queryByRole: (role: string) => byRole(container, role)[0] ?? null,
+    queryByTestId: (id: string) => byTestId(container, id)[0] ?? null,
+    queryByText: (text: string) => byText(container, text) ?? null,
+  };
+};
+const invalid = async (element: Element) => {
+  element.dispatchEvent(new Event("invalid", { cancelable: true }));
+  await tick();
+};
 
 describe("Switching existence of elements", () => {
   const options = new Set(["test1", "test2"]);
@@ -380,7 +438,7 @@ describe("Specify attrs & state transition & event handlers", () => {
       variant: VARIANT.NEUTRAL,
       validations: [mockValidation],
     });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getByRole } = render(TextField, props);
     const main = getByRole("textbox") as HTMLInputElement;
     await user.type(main, "a");
@@ -412,7 +470,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     });
     const { getByRole } = render(TextField, props);
     const main = getByRole("textbox") as HTMLInputElement;
-    await fireEvent.invalid(main); // simulation of main.checkValidity() with empty
+    await invalid(main); // simulation of main.checkValidity() with empty
     getByRole("alert") as HTMLDivElement;
     expect(main).toHaveAttribute("aria-invalid", "true");
     expect(main).toHaveAccessibleErrorMessage();
@@ -427,7 +485,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     });
     const { getByRole } = render(TextField, props);
     const main = getByRole("textbox") as HTMLInputElement;
-    await fireEvent.invalid(main); // simulation of main.checkValidity() with empty
+    await invalid(main); // simulation of main.checkValidity() with empty
     getByRole("alert") as HTMLDivElement;
     expect(main).toHaveAttribute("aria-invalid", "true");
     expect(main).toHaveAccessibleErrorMessage(errmsg);
@@ -445,10 +503,10 @@ describe("Specify attrs & state transition & event handlers", () => {
       oninvalid,
       required: true,
     });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getByRole } = render(TextField, props);
     const main = getByRole("textbox") as HTMLInputElement;
-    await fireEvent.invalid(main); // simulation of main.checkValidity() with empty
+    await invalid(main); // simulation of main.checkValidity() with empty
     expect(oninvalid).toHaveBeenCalledTimes(1);
     expect(props.variant).toBe(VARIANT.INACTIVE);
     await user.type(main, "aa");
@@ -468,7 +526,7 @@ describe("Specify attrs & state transition & event handlers", () => {
       variant: VARIANT.NEUTRAL,
       validations,
     });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getByRole, getByTestId, getByText } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const lbl = getByText(label);
@@ -532,7 +590,7 @@ describe("Specify attrs & state transition & event handlers", () => {
       validations,
       styling: clsid,
     });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getByRole, getByTestId, getByText } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const lbl = getByText(label);
@@ -613,7 +671,7 @@ describe("Specify attrs & state transition & event handlers", () => {
       validations,
       styling,
     });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getByRole, getByTestId, getByText } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const lbl = getByText(label);
@@ -674,7 +732,7 @@ describe("a11y, structure & textarea attrs", () => {
 
   test("bottom role transitions: none, alert, none", async () => {
     const props = $state({ bottom, variant: VARIANT.NEUTRAL, validations });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getByRole } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
@@ -694,7 +752,7 @@ describe("a11y, structure & textarea attrs", () => {
 
   test("reserved bottom stays mounted across error transition", async () => {
     const props = $state({ reserve: true, variant: VARIANT.NEUTRAL, validations });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getByRole } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
@@ -766,7 +824,7 @@ describe("a11y, structure & textarea attrs", () => {
 
   test("error message restores bottom text when valid again", async () => {
     const props = $state({ bottom, variant: VARIANT.NEUTRAL, validations });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getByRole } = render(TextField, props);
     const whole = getByRole("group") as HTMLDivElement;
     const main = getByRole("textbox") as HTMLInputElement;
@@ -837,7 +895,7 @@ describe("a11y, structure & textarea attrs", () => {
       },
     );
     const props = $state({ left: statefn, value: "", variant: VARIANT.NEUTRAL });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getByRole, getByTestId } = render(TextField, props);
     const main = getByRole("textbox") as HTMLInputElement;
     expect(getByTestId(stateid)).toHaveTextContent("0,neutral,undefined");
@@ -860,7 +918,7 @@ describe("a11y, structure & textarea attrs", () => {
     const { getByRole } = render(TextField, props);
     const main = getByRole("textbox") as HTMLInputElement;
 
-    await fireEvent.invalid(main);
+    await invalid(main);
     expect(props.variant).toBe(VARIANT.INACTIVE);
     expect(getByRole("alert")).toHaveTextContent(errmsg);
     const actualValidity = validation.mock.calls.at(-1)?.[0].validity as ValidityState;
@@ -871,7 +929,7 @@ describe("a11y, structure & textarea attrs", () => {
     const first = vi.fn(({ value }: { value: string }) => (value.length < 2 ? "first" : ""));
     const second = vi.fn(({ value }: { value: string }) => (value.includes("x") ? "second" : ""));
     const props = $state({ variant: VARIANT.NEUTRAL, validations: [first, second] });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getByRole } = render(TextField, props);
     const main = getByRole("textbox") as HTMLInputElement;
     first.mockClear();
@@ -885,7 +943,7 @@ describe("a11y, structure & textarea attrs", () => {
 
   test("null validation result is valid", async () => {
     const props = $state({ variant: VARIANT.NEUTRAL, validations: [() => null] });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getByRole, queryByRole } = render(TextField, props);
     const main = getByRole("textbox") as HTMLInputElement;
 
@@ -898,7 +956,7 @@ describe("a11y, structure & textarea attrs", () => {
 
   test("custom neutral variant is preserved and restored", async () => {
     const props = $state({ variant: "warning", validations });
-    const user = userEvent.setup();
+    const user = userEvent;
     const { getByRole } = render(TextField, props);
     const main = getByRole("textbox") as HTMLInputElement;
     await user.type(main, "a");
