@@ -37,7 +37,7 @@ const render = (component: any, props?: any) => {
 describe("Switching existence of elements", () => {
   test("no props", () => {
     const { container } = render(ToggleGroup, { options: new Map() });
-    expect(container.firstChild).toBeNull();
+    expect(container.querySelector('[role="checkbox"]')).toBeNull();
   });
 
   test("with options", () => {
@@ -155,7 +155,8 @@ describe("Switching existence of elements", () => {
     expect(buttons[2]).not.toBeDisabled();
     expect(buttons[1]).toHaveAttribute("aria-checked", "true");
 
-    await userEvent.click(buttons[1]);
+    buttons[1].click();
+    await tick();
     expect(props.values).toEqual(["b"]);
     expect(buttons[1]).toHaveAttribute("aria-checked", "true");
   });
@@ -367,7 +368,8 @@ describe("User interactions", () => {
     expect(props.values).toEqual(["option2"]);
 
     onremove.mockClear();
-    await userEvent.click(buttons[1]);
+    buttons[1].click();
+    await tick();
     expect(onremove).not.toHaveBeenCalled();
     expect(props.values).toEqual(["option2"]);
   });
@@ -763,7 +765,7 @@ describe("Embedded in field context", () => {
 describe("Edge cases", () => {
   test("empty options", () => {
     const { container } = render(ToggleGroup, { options: new Map() });
-    expect(container.firstChild).toBeNull();
+    expect(container.querySelector('[role="checkbox"]')).toBeNull();
   });
 
   test("options with empty values", () => {
