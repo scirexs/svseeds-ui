@@ -1,14 +1,25 @@
 import { describe, expect, test, vi } from "vitest";
-import { fireEvent, render, waitFor } from "@testing-library/svelte";
-import { userEvent } from "@testing-library/user-event";
-import { createRawSnippet } from "svelte";
+import { userEvent } from "vitest/browser";
+import { render } from "vitest-browser-svelte";
+import { createRawSnippet, tick } from "svelte";
 import TagsInput from "#svs/TagsInput.svelte";
 import TagsInputCtxProvider from "./fixtures/TagsInputCtxProvider.svelte";
 import { PARTS, VARIANT, _fnClass } from "#svs/core";
 
+const element = (target: Element | null | undefined) => expect.element(target as HTMLElement | null);
+const byBtnName = (root: ParentNode, name: string | RegExp) =>
+  [...root.querySelectorAll("button")].find((btn) => {
+    const label = btn.getAttribute("aria-label") ?? "";
+    return typeof name === "string" ? label === name : name.test(label);
+  }) as HTMLButtonElement;
 const preset = "svs-tags-input";
 const mainCls = (variant: string) => `${_fnClass(preset)(PARTS.MAIN, variant)}`.split(" ");
-const paste = (input: HTMLInputElement, text: string) => fireEvent.paste(input, { clipboardData: { getData: () => text } });
+const paste = async (input: HTMLInputElement, text: string) => {
+  const dt = new DataTransfer();
+  dt.setData("text/plain", text);
+  input.dispatchEvent(new ClipboardEvent("paste", { clipboardData: dt, bubbles: true, cancelable: true }));
+  await tick();
+};
 const stateDefaults = () => ({
   values: [] as string[],
   value: "",
@@ -20,37 +31,37 @@ const stateDefaults = () => ({
   describedby: undefined as string | undefined,
 });
 
-describe("Basic rendering and structure", () => {
-  test("renders with no props", () => {
+describe("Basic rendering and structure", async () => {
+  test("renders with no props", async () => {
     const { container } = render(TagsInput);
     const whole = container.querySelector(`.${preset}`);
     const input = container.querySelector("input") as HTMLInputElement;
 
-    expect(whole).toBeInTheDocument();
-    expect(input).toBeInTheDocument();
-    expect(input).toHaveAttribute("type", "text");
-    expect(input).toHaveValue("");
+    await element(whole).toBeInTheDocument();
+    await element(input).toBeInTheDocument();
+    await element(input).toHaveAttribute("type", "text");
+    await element(input).toHaveValue("");
   });
 
-  test("renders with initial values", () => {
+  test("renders with initial values", async () => {
     const values = ["tag1", "tag2"];
     const { container } = render(TagsInput, { values });
 
     const badges = container.querySelectorAll(`.${preset}.${PARTS.LABEL}`);
     expect(badges).toHaveLength(2);
-    expect(badges[0]).toHaveTextContent("tag1");
-    expect(badges[1]).toHaveTextContent("tag2");
+    await element(badges[0]).toHaveTextContent("tag1");
+    await element(badges[1]).toHaveTextContent("tag2");
   });
 
-  test("renders with initial value", () => {
+  test("renders with initial value", async () => {
     const value = "test input";
-    const { getByRole } = render(TagsInput, { value });
-    const input = getByRole("textbox") as HTMLInputElement;
+    const { container } = render(TagsInput, { value });
+    const input = container.querySelector("input") as HTMLInputElement;
 
-    expect(input).toHaveValue(value);
+    await element(input).toHaveValue(value);
   });
 
-  test("renders tags on left by default", () => {
+  test("renders tags on left by default", async () => {
     const values = ["tag1"];
     const { container } = render(TagsInput, { values });
 
@@ -58,11 +69,11 @@ describe("Basic rendering and structure", () => {
     const tagsSpan = whole?.querySelector(`.${preset}.aux`);
     const input = container.querySelector("input");
 
-    expect(tagsSpan).toBeInTheDocument();
+    await element(tagsSpan).toBeInTheDocument();
     expect(tagsSpan?.nextElementSibling).toBe(input);
   });
 
-  test("renders tags on right when side='right'", () => {
+  test("renders tags on right when side='right'", async () => {
     const values = ["tag1"];
     const { container } = render(TagsInput, { values, side: "right" });
 
@@ -70,63 +81,62 @@ describe("Basic rendering and structure", () => {
     const tagsSpan = whole?.querySelector(`.${preset}.aux`);
     const input = container.querySelector("input");
 
-    expect(tagsSpan).toBeInTheDocument();
+    await element(tagsSpan).toBeInTheDocument();
     expect(input?.nextElementSibling).toBe(tagsSpan);
   });
 
-  test("remove button is type='button'", () => {
+  test("remove button is type='button'", async () => {
     const { container } = render(TagsInput, { values: ["tag1"] });
     const btn = container.querySelector(`.${preset}.${PARTS.EXTRA}`) as HTMLButtonElement;
 
-    expect(btn).toHaveAttribute("type", "button");
+    await element(btn).toHaveAttribute("type", "button");
   });
 
-  test("remove button has default accessible name", () => {
-    const { getByRole } = render(TagsInput, { values: ["tag1", "tag2"] });
+  test("remove button has default accessible name", async () => {
+    const { container } = render(TagsInput, { values: ["tag1", "tag2"] });
 
-    expect(getByRole("button", { name: "Remove tag1" })).toBeInTheDocument();
-    expect(getByRole("button", { name: "Remove tag2" })).toBeInTheDocument();
+    await element(byBtnName(container, "Remove tag1")).toBeInTheDocument();
+    await element(byBtnName(container, "Remove tag2")).toBeInTheDocument();
   });
 
-  test("remove button supports custom removeAriaLabel", () => {
-    const { getByRole } = render(TagsInput, {
+  test("remove button supports custom removeAriaLabel", async () => {
+    const { container } = render(TagsInput, {
       values: ["x"],
       removeAriaLabel: (text: string) => `delete ${text}`,
     });
 
-    expect(getByRole("button", { name: "delete x" })).toBeInTheDocument();
+    await element(byBtnName(container, "delete x")).toBeInTheDocument();
   });
 
-  test("default icon is decorative", () => {
+  test("default icon is decorative", async () => {
     const { container } = render(TagsInput, { values: ["tag1"] });
     const svg = container.querySelector("svg");
 
-    expect(svg).toHaveAttribute("aria-hidden", "true");
-    expect(svg).toHaveAttribute("focusable", "false");
+    await element(svg).toHaveAttribute("aria-hidden", "true");
+    await element(svg).toHaveAttribute("focusable", "false");
   });
 
-  test("label snippet renders custom per-tag content", () => {
+  test("label snippet renders custom per-tag content", async () => {
     const label = vi.fn().mockImplementation(
       createRawSnippet((text: () => string, variant: () => string) => {
         return { render: () => `<span data-testid="custom-label">${variant()}:${text()}</span>` };
       }),
     );
-    const { container, getAllByTestId } = render(TagsInput, {
+    const { container } = render(TagsInput, {
       values: ["tag1", "tag2"],
       label,
       variant: VARIANT.ACTIVE,
     });
 
-    const labels = getAllByTestId("custom-label");
+    const labels = [...container.querySelectorAll(`[data-testid="${"custom-label"}"]`)];
     expect(labels).toHaveLength(2);
-    expect(labels[0]).toHaveTextContent(`${VARIANT.ACTIVE}:tag1`);
-    expect(labels[1]).toHaveTextContent(`${VARIANT.ACTIVE}:tag2`);
+    await element(labels[0]).toHaveTextContent(`${VARIANT.ACTIVE}:tag1`);
+    await element(labels[1]).toHaveTextContent(`${VARIANT.ACTIVE}:tag2`);
     expect(container.querySelectorAll(`.${preset}.${PARTS.LABEL}`)[0]).not.toHaveTextContent(/^tag1$/);
     expect(label).toHaveBeenCalledTimes(2);
   });
 
   test("extra snippet renders custom remove-button content", async () => {
-    const user = userEvent.setup();
     const extra = vi.fn().mockImplementation(
       createRawSnippet((text: () => string) => {
         return { render: () => `<span data-testid="custom-extra">custom ${text()}</span>` };
@@ -137,36 +147,35 @@ describe("Basic rendering and structure", () => {
       extra,
       removeAriaLabel: (text: string) => `remove custom ${text}`,
     });
-    const { container, getByRole, getByTestId } = render(TagsInput, props);
+    const { container } = render(TagsInput, props);
 
-    const button = getByRole("button", { name: "remove custom tag1" });
+    const button = byBtnName(container, "remove custom tag1");
     expect(container.querySelector("svg")).toBeNull();
-    expect(getByTestId("custom-extra")).toHaveTextContent("custom tag1");
+    await element(container.querySelector(`[data-testid="${"custom-extra"}"]`) as HTMLElement).toHaveTextContent("custom tag1");
 
-    await user.click(button);
+    await userEvent.click(button);
 
     expect(props.values).toEqual([]);
     expect(extra).toHaveBeenCalledTimes(1);
   });
 
-  test("renders with attach", () => {
+  test("renders with attach", async () => {
     const attach = vi.fn().mockImplementation(() => ({}));
     const { container } = render(TagsInput, { attach });
     const input = container.querySelector("input");
 
-    expect(input).toBeInTheDocument();
+    await element(input).toBeInTheDocument();
     expect(attach).toHaveBeenCalled();
   });
 });
 
-describe("Tag addition functionality", () => {
+describe("Tag addition functionality", async () => {
   test("adds tag on Enter key", async () => {
     const props = $state({ values: [] as string[], value: "" });
-    const user = userEvent.setup();
     const { container } = render(TagsInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
-    await user.type(input, "new tag");
-    await user.keyboard("{Enter}");
+    await userEvent.type(input, "new tag");
+    await userEvent.keyboard("{Enter}");
 
     expect(props.values).toEqual(["new tag"]);
     expect(props.value).toBe("");
@@ -174,12 +183,11 @@ describe("Tag addition functionality", () => {
 
   test("trims whitespace by default", async () => {
     const props = $state({ values: [] as string[], value: "" });
-    const user = userEvent.setup();
     const { container } = render(TagsInput, props);
     const input = container.querySelector("input") as HTMLInputElement;
 
-    await user.type(input, "  spaced tag  ");
-    await user.keyboard("{Enter}");
+    await userEvent.type(input, "  spaced tag  ");
+    await userEvent.keyboard("{Enter}");
 
     expect(props.values).toEqual(["spaced tag"]);
   });
@@ -191,12 +199,11 @@ describe("Tag addition functionality", () => {
       value: "",
       events: { onadd },
     });
-    const user = userEvent.setup();
     const { container } = render(TagsInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
 
-    await user.type(input, "  spaced  ");
-    await user.keyboard("{Enter}");
+    await userEvent.type(input, "  spaced  ");
+    await userEvent.keyboard("{Enter}");
 
     expect(onadd).toHaveBeenCalledWith({ values: [], added: ["spaced"] });
     expect(props.values).toEqual(["spaced"]);
@@ -209,12 +216,11 @@ describe("Tag addition functionality", () => {
       value: "",
       events: { onadd },
     });
-    const user = userEvent.setup();
     const { container } = render(TagsInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
 
-    await user.type(input, "   ");
-    await user.keyboard("{Enter}");
+    await userEvent.type(input, "   ");
+    await userEvent.keyboard("{Enter}");
 
     expect(onadd).not.toHaveBeenCalled();
     expect(props.values).toEqual([]);
@@ -222,12 +228,11 @@ describe("Tag addition functionality", () => {
 
   test("does not trim when trim=false", async () => {
     const props = $state({ values: [] as string[], value: "", trim: false });
-    const user = userEvent.setup();
     const { container } = render(TagsInput, props);
     const input = container.querySelector("input") as HTMLInputElement;
 
-    await user.type(input, "  spaced tag  ");
-    await user.keyboard("{Enter}");
+    await userEvent.type(input, "  spaced tag  ");
+    await userEvent.keyboard("{Enter}");
 
     expect(props.values).toEqual(["  spaced tag  "]);
   });
@@ -235,12 +240,11 @@ describe("Tag addition functionality", () => {
   test("prevents duplicate tags by default without firing onadd", async () => {
     const onadd = vi.fn();
     const props = $state({ values: ["existing"], value: "", events: { onadd } });
-    const user = userEvent.setup();
     const { container } = render(TagsInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
 
-    await user.type(input, "existing");
-    await user.keyboard("{Enter}");
+    await userEvent.type(input, "existing");
+    await userEvent.keyboard("{Enter}");
 
     expect(props.values).toEqual(["existing"]);
     expect(props.value).toBe("");
@@ -249,24 +253,22 @@ describe("Tag addition functionality", () => {
 
   test("allows duplicate tags when unique=false", async () => {
     const props = $state({ values: ["existing"], value: "", unique: false });
-    const user = userEvent.setup();
     const { container } = render(TagsInput, props);
     const input = container.querySelector("input") as HTMLInputElement;
 
-    await user.type(input, "existing");
-    await user.keyboard("{Enter}");
+    await userEvent.type(input, "existing");
+    await userEvent.keyboard("{Enter}");
 
     expect(props.values).toEqual(["existing", "existing"]);
   });
 
   test("does not add empty tag", async () => {
     const props = $state({ values: [] as string[], value: "" });
-    const user = userEvent.setup();
     const { container } = render(TagsInput, props);
     const input = container.querySelector("input") as HTMLInputElement;
     input.focus();
 
-    await user.keyboard("{Enter}");
+    await userEvent.keyboard("{Enter}");
 
     expect(props.values).toEqual([]);
   });
@@ -276,64 +278,61 @@ describe("Tag addition functionality", () => {
     const { container } = render(TagsInput, props);
     const input = container.querySelector("input") as HTMLInputElement;
 
-    await fireEvent.keyDown(input, {
-      key: "Enter",
-      isComposing: true,
-    });
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", isComposing: true, bubbles: true, cancelable: true }));
+    await tick();
 
     expect(props.values).toEqual([]);
   });
 
   test("live commit on separator keystroke", async () => {
     const props = $state({ values: [] as string[], value: "" });
-    const user = userEvent.setup();
-    const { getByRole } = render(TagsInput, props);
-    const input = getByRole("textbox") as HTMLInputElement;
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
 
-    await user.type(input, "a,");
+    await userEvent.type(input, "a,");
 
     expect(props.values).toEqual(["a"]);
     expect(props.value).toBe("");
-    expect(input).toHaveValue("");
+    await element(input).toHaveValue("");
   });
 
   test("live commit keeps trailing partial", async () => {
     const props = $state({ values: [] as string[], value: "" });
-    const user = userEvent.setup();
-    const { getByRole } = render(TagsInput, props);
-    const input = getByRole("textbox") as HTMLInputElement;
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
 
-    await user.type(input, "a,b");
+    await userEvent.type(input, "a,b");
 
     expect(props.values).toEqual(["a"]);
     expect(props.value).toBe("b");
-    expect(input).toHaveValue("b");
+    await element(input).toHaveValue("b");
   });
 
   test("multiple separators in one typed burst", async () => {
     const props = $state({ values: [] as string[], value: "" });
-    const { getByRole } = render(TagsInput, props);
-    const input = getByRole("textbox") as HTMLInputElement;
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
 
-    await fireEvent.input(input, { target: { value: "a,b," }, inputType: "insertText" });
+    input.value = "a,b,";
+    input.dispatchEvent(new InputEvent("input", { inputType: "insertText", bubbles: true }));
+    await tick();
 
     expect(props.values).toEqual(["a", "b"]);
     expect(props.value).toBe("");
-    expect(input).toHaveValue("");
+    await element(input).toHaveValue("");
   });
 
   test("custom single-char separator", async () => {
     const props = $state({ values: [] as string[], value: "", separator: ";" });
-    const user = userEvent.setup();
-    const { getByRole } = render(TagsInput, props);
-    const input = getByRole("textbox") as HTMLInputElement;
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
 
-    await user.type(input, "a,");
+    await userEvent.type(input, "a,");
 
     expect(props.values).toEqual([]);
     expect(props.value).toBe("a,");
 
-    await user.type(input, ";");
+    await userEvent.type(input, ";");
 
     expect(props.values).toEqual(["a,"]);
     expect(props.value).toBe("");
@@ -341,12 +340,11 @@ describe("Tag addition functionality", () => {
 
   test("empty separator disables splitting", async () => {
     const props = $state({ values: [] as string[], value: "", separator: "" });
-    const user = userEvent.setup();
-    const { getByRole } = render(TagsInput, props);
-    const input = getByRole("textbox") as HTMLInputElement;
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
 
-    await user.type(input, "a,b");
-    await user.keyboard("{Enter}");
+    await userEvent.type(input, "a,b");
+    await userEvent.keyboard("{Enter}");
 
     expect(props.values).toEqual(["a,b"]);
     expect(props.value).toBe("");
@@ -354,23 +352,23 @@ describe("Tag addition functionality", () => {
 
   test("does not commit live input while composing", async () => {
     const props = $state({ values: [] as string[], value: "" });
-    const { getByRole } = render(TagsInput, props);
-    const input = getByRole("textbox") as HTMLInputElement;
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
     input.value = "a,";
 
-    await fireEvent(input, new InputEvent("input", { bubbles: true, inputType: "insertText", isComposing: true }));
+    input.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", isComposing: true }));
+    await tick();
 
     expect(props.values).toEqual([]);
   });
 
   test("Enter splits current box on separators", async () => {
     const props = $state({ values: [] as string[], value: "x,y,z" });
-    const user = userEvent.setup();
-    const { getByRole } = render(TagsInput, props);
-    const input = getByRole("textbox") as HTMLInputElement;
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
     input.focus();
 
-    await user.keyboard("{Enter}");
+    await userEvent.keyboard("{Enter}");
 
     expect(props.values).toEqual(["x", "y", "z"]);
     expect(props.value).toBe("");
@@ -378,8 +376,8 @@ describe("Tag addition functionality", () => {
 
   test("paste splits into multiple tags", async () => {
     const props = $state({ values: [] as string[], value: "" });
-    const { getByRole } = render(TagsInput, props);
-    const input = getByRole("textbox") as HTMLInputElement;
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
 
     await paste(input, "a,b,c");
 
@@ -389,8 +387,8 @@ describe("Tag addition functionality", () => {
 
   test("paste merges with existing box content", async () => {
     const props = $state({ values: [] as string[], value: "AAA" });
-    const { getByRole } = render(TagsInput, props);
-    const input = getByRole("textbox") as HTMLInputElement;
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
     input.setSelectionRange(3, 3);
 
     await paste(input, "B,C,D");
@@ -401,8 +399,8 @@ describe("Tag addition functionality", () => {
 
   test("paste over a full selection overwrites", async () => {
     const props = $state({ values: [] as string[], value: "AAA" });
-    const { getByRole } = render(TagsInput, props);
-    const input = getByRole("textbox") as HTMLInputElement;
+    const { container } = render(TagsInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
     input.setSelectionRange(0, 3);
 
     await paste(input, "B,C,D");
@@ -413,45 +411,45 @@ describe("Tag addition functionality", () => {
 
   test("paste on newline-delimited text", async () => {
     const props = $state({ values: [] as string[], value: "" });
-    const { getByRole } = render(TagsInput, props);
+    const { container } = render(TagsInput, props);
 
-    await paste(getByRole("textbox") as HTMLInputElement, "x\ny\nz");
+    await paste(container.querySelector("input") as HTMLInputElement, "x\ny\nz");
 
     expect(props.values).toEqual(["x", "y", "z"]);
   });
 
   test("Windows CRLF + trim default strips carriage returns", async () => {
     const props = $state({ values: [] as string[], value: "" });
-    const { getByRole } = render(TagsInput, props);
+    const { container } = render(TagsInput, props);
 
-    await paste(getByRole("textbox") as HTMLInputElement, "x\r\ny\r\nz");
+    await paste(container.querySelector("input") as HTMLInputElement, "x\r\ny\r\nz");
 
     expect(props.values).toEqual(["x", "y", "z"]);
   });
 
   test("Windows CRLF + trim=false keeps carriage returns", async () => {
     const props = $state({ values: [] as string[], value: "", trim: false });
-    const { getByRole } = render(TagsInput, props);
+    const { container } = render(TagsInput, props);
 
-    await paste(getByRole("textbox") as HTMLInputElement, "x\r\ny");
+    await paste(container.querySelector("input") as HTMLInputElement, "x\r\ny");
 
     expect(props.values).toEqual(["x\r", "y"]);
   });
 
   test("paste without separator is native", async () => {
     const props = $state({ values: [] as string[], value: "" });
-    const { getByRole } = render(TagsInput, props);
+    const { container } = render(TagsInput, props);
 
-    await paste(getByRole("textbox") as HTMLInputElement, "single");
+    await paste(container.querySelector("input") as HTMLInputElement, "single");
 
     expect(props.values).toEqual([]);
   });
 
   test("paste:false leaves delimited text un-split", async () => {
     const props = $state({ values: [] as string[], value: "", paste: false });
-    const { getByRole } = render(TagsInput, props);
+    const { container } = render(TagsInput, props);
 
-    await paste(getByRole("textbox") as HTMLInputElement, "a,b");
+    await paste(container.querySelector("input") as HTMLInputElement, "a,b");
 
     expect(props.values).toEqual([]);
   });
@@ -459,9 +457,9 @@ describe("Tag addition functionality", () => {
   test("user onpaste runs first and can cancel", async () => {
     const onpaste = vi.fn((ev: ClipboardEvent) => ev.preventDefault());
     const props = $state({ values: [] as string[], value: "", onpaste });
-    const { getByRole } = render(TagsInput, props);
+    const { container } = render(TagsInput, props);
 
-    await paste(getByRole("textbox") as HTMLInputElement, "a,b");
+    await paste(container.querySelector("input") as HTMLInputElement, "a,b");
 
     expect(onpaste).toHaveBeenCalledTimes(1);
     expect(props.values).toEqual([]);
@@ -469,36 +467,36 @@ describe("Tag addition functionality", () => {
 
   test("trim applies per segment", async () => {
     const props = $state({ values: [] as string[], value: "" });
-    const { getByRole } = render(TagsInput, props);
+    const { container } = render(TagsInput, props);
 
-    await paste(getByRole("textbox") as HTMLInputElement, " a , b ");
+    await paste(container.querySelector("input") as HTMLInputElement, " a , b ");
 
     expect(props.values).toEqual(["a", "b"]);
   });
 
   test("unique dedupes within a paste batch", async () => {
     const props = $state({ values: [] as string[], value: "" });
-    const { getByRole } = render(TagsInput, props);
+    const { container } = render(TagsInput, props);
 
-    await paste(getByRole("textbox") as HTMLInputElement, "a,a,b");
+    await paste(container.querySelector("input") as HTMLInputElement, "a,a,b");
 
     expect(props.values).toEqual(["a", "b"]);
   });
 
   test("unique drops already-existing values in batch", async () => {
     const props = $state({ values: ["a"], value: "" });
-    const { getByRole } = render(TagsInput, props);
+    const { container } = render(TagsInput, props);
 
-    await paste(getByRole("textbox") as HTMLInputElement, "a,b,c");
+    await paste(container.querySelector("input") as HTMLInputElement, "a,b,c");
 
     expect(props.values).toEqual(["a", "b", "c"]);
   });
 
   test("unique=false keeps duplicates", async () => {
     const props = $state({ values: [] as string[], value: "", unique: false });
-    const { getByRole } = render(TagsInput, props);
+    const { container } = render(TagsInput, props);
 
-    await paste(getByRole("textbox") as HTMLInputElement, "a,a");
+    await paste(container.querySelector("input") as HTMLInputElement, "a,a");
 
     expect(props.values).toEqual(["a", "a"]);
   });
@@ -506,9 +504,9 @@ describe("Tag addition functionality", () => {
   test("onadd fires once with the full batch", async () => {
     const onadd = vi.fn();
     const props = $state({ values: [] as string[], value: "", events: { onadd } });
-    const { getByRole } = render(TagsInput, { props });
+    const { container } = render(TagsInput, { props });
 
-    await paste(getByRole("textbox") as HTMLInputElement, "a,b,c");
+    await paste(container.querySelector("input") as HTMLInputElement, "a,b,c");
 
     expect(onadd).toHaveBeenCalledTimes(1);
     expect(onadd).toHaveBeenCalledWith({ values: [], added: ["a", "b", "c"] });
@@ -517,9 +515,9 @@ describe("Tag addition functionality", () => {
   test("onadd veto of subset commits only the kept", async () => {
     const onadd = vi.fn().mockReturnValue(["a", "c"]);
     const props = $state({ values: [] as string[], value: "", events: { onadd } });
-    const { getByRole } = render(TagsInput, { props });
+    const { container } = render(TagsInput, { props });
 
-    await paste(getByRole("textbox") as HTMLInputElement, "a,b,c");
+    await paste(container.querySelector("input") as HTMLInputElement, "a,b,c");
 
     expect(props.values).toEqual(["a", "c"]);
   });
@@ -527,9 +525,9 @@ describe("Tag addition functionality", () => {
   test("onadd returns [] cancels the whole batch", async () => {
     const onadd = vi.fn().mockReturnValue([]);
     const props = $state({ values: [] as string[], value: "", events: { onadd } });
-    const { getByRole } = render(TagsInput, { props });
+    const { container } = render(TagsInput, { props });
 
-    await paste(getByRole("textbox") as HTMLInputElement, "a,b");
+    await paste(container.querySelector("input") as HTMLInputElement, "a,b");
 
     expect(props.values).toEqual([]);
   });
@@ -537,51 +535,48 @@ describe("Tag addition functionality", () => {
   test("onadd not fired for empty post-filter batch", async () => {
     const onadd = vi.fn();
     const props = $state({ values: ["a"], value: "", unique: true, events: { onadd } });
-    const { getByRole } = render(TagsInput, { props });
+    const { container } = render(TagsInput, { props });
 
-    await paste(getByRole("textbox") as HTMLInputElement, "a,a");
+    await paste(container.querySelector("input") as HTMLInputElement, "a,a");
 
     expect(onadd).not.toHaveBeenCalled();
     expect(props.values).toEqual(["a"]);
   });
 });
 
-describe("Tag removal functionality", () => {
+describe("Tag removal functionality", async () => {
   test("removes tag when tag's button is clicked", async () => {
     const props = $state({ values: ["tag1", "tag2", "tag3"] });
-    const user = userEvent.setup();
-    const { getAllByRole } = render(TagsInput, props);
+    const { container } = render(TagsInput, props);
 
-    const badges = getAllByRole("button");
-    await user.click(badges[1]); // Click second tag
+    const badges = [...container.querySelectorAll("button")] as HTMLButtonElement[];
+    await userEvent.click(badges[1]); // Click second tag
 
     expect(props.values).toEqual(["tag1", "tag3"]);
   });
 
   test("removes first tag", async () => {
     const props = $state({ values: ["tag1", "tag2"] });
-    const user = userEvent.setup();
-    const { getAllByRole } = render(TagsInput, props);
+    const { container } = render(TagsInput, props);
 
-    const badges = getAllByRole("button");
-    await user.click(badges[0]);
+    const badges = [...container.querySelectorAll("button")] as HTMLButtonElement[];
+    await userEvent.click(badges[0]);
 
     expect(props.values).toEqual(["tag2"]);
   });
 
   test("removes last tag", async () => {
     const props = $state({ values: ["tag1", "tag2"] });
-    const user = userEvent.setup();
-    const { getAllByRole } = render(TagsInput, props);
+    const { container } = render(TagsInput, props);
 
-    const badges = getAllByRole("button");
-    await user.click(badges[1]);
+    const badges = [...container.querySelectorAll("button")] as HTMLButtonElement[];
+    await userEvent.click(badges[1]);
 
     expect(props.values).toEqual(["tag1"]);
   });
 });
 
-describe("Event handlers", () => {
+describe("Event handlers", async () => {
   test("calls onadd event handler and commits when it returns undefined", async () => {
     const onadd = vi.fn();
     const onremove = vi.fn();
@@ -590,12 +585,11 @@ describe("Event handlers", () => {
       value: "",
       events: { onadd, onremove },
     });
-    const user = userEvent.setup();
-    const { getByRole } = render(TagsInput, { props });
-    const input = getByRole("textbox") as HTMLInputElement;
+    const { container } = render(TagsInput, { props });
+    const input = container.querySelector("input") as HTMLInputElement;
 
-    await user.type(input, "new tag");
-    await user.keyboard("{Enter}");
+    await userEvent.type(input, "new tag");
+    await userEvent.keyboard("{Enter}");
 
     expect(onadd).toHaveBeenCalledWith({ values: [], added: ["new tag"] });
     expect(props.values).toEqual(["new tag"]);
@@ -608,17 +602,16 @@ describe("Event handlers", () => {
       value: "",
       events: { onadd },
     });
-    const user = userEvent.setup();
-    const { getByRole } = render(TagsInput, { props });
-    const input = getByRole("textbox") as HTMLInputElement;
+    const { container } = render(TagsInput, { props });
+    const input = container.querySelector("input") as HTMLInputElement;
 
-    await user.type(input, "new tag");
-    await user.keyboard("{Enter}");
+    await userEvent.type(input, "new tag");
+    await userEvent.keyboard("{Enter}");
 
     expect(onadd).toHaveBeenCalledWith({ values: [], added: ["new tag"] });
     expect(props.values).toEqual([]);
     expect(props.value).toBe("");
-    expect(input).toHaveValue("");
+    await element(input).toHaveValue("");
   });
 
   test("commits tag addition when onadd returns the added value", async () => {
@@ -628,12 +621,11 @@ describe("Event handlers", () => {
       value: "",
       events: { onadd },
     });
-    const user = userEvent.setup();
-    const { getByRole } = render(TagsInput, { props });
-    const input = getByRole("textbox") as HTMLInputElement;
+    const { container } = render(TagsInput, { props });
+    const input = container.querySelector("input") as HTMLInputElement;
 
-    await user.type(input, "new tag");
-    await user.keyboard("{Enter}");
+    await userEvent.type(input, "new tag");
+    await userEvent.keyboard("{Enter}");
 
     expect(onadd).toHaveBeenCalledWith({ values: [], added: ["new tag"] });
     expect(props.values).toEqual(["new tag"]);
@@ -646,16 +638,14 @@ describe("Event handlers", () => {
       values: ["tag1", "tag2"],
       events: { onremove },
     });
-    const user = userEvent.setup();
     const { container } = render(TagsInput, { props });
 
     const badges = container.querySelectorAll(".svs-tags-input.extra");
-    await user.click(badges[0]);
+    await userEvent.click(badges[0]);
 
-    await waitFor(() => {
-      expect(onremove).toHaveBeenCalledWith({ values: ["tag1", "tag2"], removed: ["tag1"] });
-      expect(props.values).toEqual(["tag2"]);
-    });
+    await tick();
+    expect(onremove).toHaveBeenCalledWith({ values: ["tag1", "tag2"], removed: ["tag1"] });
+    expect(props.values).toEqual(["tag2"]);
   });
 
   test("cancels tag removal when onremove returns []", async () => {
@@ -664,16 +654,14 @@ describe("Event handlers", () => {
       values: ["tag1", "tag2"],
       events: { onremove },
     });
-    const user = userEvent.setup();
     const { container } = render(TagsInput, { props });
 
     const badges = container.querySelectorAll(".svs-tags-input.extra");
-    await user.click(badges[0]);
+    await userEvent.click(badges[0]);
 
-    await waitFor(() => {
-      expect(onremove).toHaveBeenCalledWith({ values: ["tag1", "tag2"], removed: ["tag1"] });
-      expect(props.values).toEqual(["tag1", "tag2"]);
-    });
+    await tick();
+    expect(onremove).toHaveBeenCalledWith({ values: ["tag1", "tag2"], removed: ["tag1"] });
+    expect(props.values).toEqual(["tag1", "tag2"]);
   });
 
   test("removes tag when onremove returns the removed value", async () => {
@@ -682,21 +670,19 @@ describe("Event handlers", () => {
       values: ["tag1", "tag2"],
       events: { onremove },
     });
-    const user = userEvent.setup();
     const { container } = render(TagsInput, { props });
 
     const badges = container.querySelectorAll(".svs-tags-input.extra");
-    await user.click(badges[0]);
+    await userEvent.click(badges[0]);
 
-    await waitFor(() => {
-      expect(onremove).toHaveBeenCalledWith({ values: ["tag1", "tag2"], removed: ["tag1"] });
-      expect(props.values).toEqual(["tag2"]);
-    });
+    await tick();
+    expect(onremove).toHaveBeenCalledWith({ values: ["tag1", "tag2"], removed: ["tag1"] });
+    expect(props.values).toEqual(["tag2"]);
   });
 });
 
-describe("Attributes and styling", () => {
-  test("applies custom attributes to input", () => {
+describe("Attributes and styling", async () => {
+  test("applies custom attributes to input", async () => {
     const { container } = render(TagsInput, {
       placeholder: "Enter tags...",
       "data-testid": "tags-input",
@@ -704,34 +690,33 @@ describe("Attributes and styling", () => {
     });
     const input = container.querySelector("input") as HTMLInputElement;
 
-    expect(input).toHaveAttribute("placeholder", "Enter tags...");
-    expect(input).toHaveAttribute("data-testid", "tags-input");
-    expect(input).toHaveAttribute("name", "tags");
+    await element(input).toHaveAttribute("placeholder", "Enter tags...");
+    await element(input).toHaveAttribute("data-testid", "tags-input");
+    await element(input).toHaveAttribute("name", "tags");
   });
 
-  test("class merged onto control, input type forced to text", () => {
+  test("class merged onto control, input type forced to text", async () => {
     const { container } = render(TagsInput, { class: "custom-class" });
     const root = container.querySelector("div") as HTMLDivElement;
     const input = container.querySelector("input") as HTMLInputElement;
 
-    expect(input).toHaveClass("custom-class"); // merged onto the control (same as ...rest)
+    await element(input).toHaveClass("custom-class"); // merged onto the control (same as ...rest)
     expect(root).not.toHaveClass("custom-class"); // not on the WHOLE root
-    expect(input).toHaveAttribute("type", "text");
+    await element(input).toHaveAttribute("type", "text");
   });
 
   test("calls original onkeydown handler", async () => {
     const onkeydown = vi.fn();
-    const user = userEvent.setup();
     const { container } = render(TagsInput, { onkeydown });
     const input = container.querySelector("input") as HTMLInputElement;
 
-    await user.type(input, "test");
-    await user.keyboard("{Enter}");
+    await userEvent.type(input, "test");
+    await userEvent.keyboard("{Enter}");
 
     expect(onkeydown).toHaveBeenCalled();
   });
 
-  test("applies default CSS classes", () => {
+  test("applies default CSS classes", async () => {
     const values = ["tag1"];
     const variant = VARIANT.ACTIVE;
     const { container } = render(TagsInput, { values, variant });
@@ -740,12 +725,12 @@ describe("Attributes and styling", () => {
     const input = container.querySelector("input");
     const tagsSpan = container.querySelector(`.${preset}.aux`);
 
-    expect(whole).toHaveClass(preset, PARTS.WHOLE, variant);
-    expect(input).toHaveClass(preset, PARTS.MAIN, variant);
-    expect(tagsSpan).toHaveClass(preset, PARTS.AUX, variant);
+    await element(whole).toHaveClass(preset, PARTS.WHOLE, variant);
+    await element(input).toHaveClass(preset, PARTS.MAIN, variant);
+    await element(tagsSpan).toHaveClass(preset, PARTS.AUX, variant);
   });
 
-  test("applies string styling", () => {
+  test("applies string styling", async () => {
     const styling = "custom-styling";
     const variant = VARIANT.NEUTRAL;
     const { container } = render(TagsInput, { styling, variant });
@@ -753,28 +738,28 @@ describe("Attributes and styling", () => {
     const whole = container.querySelector(".custom-styling");
     const input = container.querySelector("input");
 
-    expect(whole).toHaveClass("custom-styling", PARTS.WHOLE, variant);
-    expect(input).toHaveClass("custom-styling", PARTS.MAIN, variant);
+    await element(whole).toHaveClass("custom-styling", PARTS.WHOLE, variant);
+    await element(input).toHaveClass("custom-styling", PARTS.MAIN, variant);
   });
 });
 
-describe("Status and state management", () => {
-  test("initializes with neutral variant by default", () => {
+describe("Status and state management", async () => {
+  test("initializes with neutral variant by default", async () => {
     const { container } = render(TagsInput, { variant: VARIANT.NEUTRAL });
     const whole = container.querySelector(`.${preset}`);
 
-    expect(whole).toHaveClass(preset, PARTS.WHOLE, VARIANT.NEUTRAL);
+    await element(whole).toHaveClass(preset, PARTS.WHOLE, VARIANT.NEUTRAL);
   });
 
-  test("maintains provided variant", () => {
+  test("maintains provided variant", async () => {
     const variant = VARIANT.ACTIVE;
     const { container } = render(TagsInput, { variant });
     const whole = container.querySelector(`.${preset}`);
 
-    expect(whole).toHaveClass(preset, PARTS.WHOLE, variant);
+    await element(whole).toHaveClass(preset, PARTS.WHOLE, variant);
   });
 
-  test("binds element reference", () => {
+  test("binds element reference", async () => {
     const props = $state({ element: undefined as HTMLInputElement | undefined });
     const { container } = render(TagsInput, props);
     const input = container.querySelector("input") as HTMLInputElement;
@@ -782,115 +767,113 @@ describe("Status and state management", () => {
     expect(props.element).toBe(input);
   });
 
-  test("binds ariaErrMsgId", () => {
+  test("binds ariaErrMsgId", async () => {
     const props = $state({ ariaErrMsgId: "eid" });
-    const { getByRole } = render(TagsInput, props);
+    const { container } = render(TagsInput, props);
 
-    const input = getByRole("textbox");
-    expect(input).toHaveAttribute("aria-errormessage", "eid");
-    expect(input).toHaveAttribute("aria-invalid", "true");
+    const input = container.querySelector("input") as HTMLInputElement;
+    await element(input).toHaveAttribute("aria-errormessage", "eid");
+    await element(input).toHaveAttribute("aria-invalid", "true");
   });
 
-  test("explicit aria-invalid=false overrides ariaErrMsgId-derived default", () => {
-    const { getByRole } = render(TagsInput, {
+  test("explicit aria-invalid=false overrides ariaErrMsgId-derived default", async () => {
+    const { container } = render(TagsInput, {
       "aria-invalid": false,
       ariaErrMsgId: "eid",
     });
 
-    const input = getByRole("textbox");
-    expect(input).toHaveAttribute("aria-errormessage", "eid");
-    expect(input).toHaveAttribute("aria-invalid", "false");
+    const input = container.querySelector("input") as HTMLInputElement;
+    await element(input).toHaveAttribute("aria-errormessage", "eid");
+    await element(input).toHaveAttribute("aria-invalid", "false");
   });
 
-  test("explicit aria-invalid=true is preserved without ariaErrMsgId", () => {
-    const { getByRole } = render(TagsInput, { "aria-invalid": true });
+  test("explicit aria-invalid=true is preserved without ariaErrMsgId", async () => {
+    const { container } = render(TagsInput, { "aria-invalid": true });
 
-    expect(getByRole("textbox")).toHaveAttribute("aria-invalid", "true");
+    await element(container.querySelector("input") as HTMLInputElement).toHaveAttribute("aria-invalid", "true");
   });
 });
 
-describe("Embedded in field context", () => {
-  test("variant comes from context", () => {
+describe("Embedded in field context", async () => {
+  test("variant comes from context", async () => {
     const state = $state({ ...stateDefaults(), variant: VARIANT.ACTIVE });
-    const { getByRole } = render(TagsInputCtxProvider, { state });
+    const { container } = render(TagsInputCtxProvider, { state });
 
-    expect(getByRole("textbox")).toHaveClass(...mainCls(VARIANT.ACTIVE));
+    await element(container.querySelector("input") as HTMLInputElement).toHaveClass(...mainCls(VARIANT.ACTIVE));
   });
 
-  test("own variant prop is ignored when embedded", () => {
+  test("own variant prop is ignored when embedded", async () => {
     const state = $state({ ...stateDefaults(), variant: VARIANT.ACTIVE });
-    const { getByRole } = render(TagsInputCtxProvider, { state, input: { variant: VARIANT.INACTIVE } });
+    const { container } = render(TagsInputCtxProvider, { state, input: { variant: VARIANT.INACTIVE } });
 
-    expect(getByRole("textbox")).toHaveClass(...mainCls(VARIANT.ACTIVE));
-    expect(getByRole("textbox")).not.toHaveClass(VARIANT.INACTIVE);
+    await element(container.querySelector("input") as HTMLInputElement).toHaveClass(...mainCls(VARIANT.ACTIVE));
+    expect(container.querySelector("input") as HTMLInputElement).not.toHaveClass(VARIANT.INACTIVE);
   });
 
   test("add writes to context values", async () => {
     const state = $state(stateDefaults());
-    const user = userEvent.setup();
-    const { getByRole } = render(TagsInputCtxProvider, { state });
-    const input = getByRole("textbox") as HTMLInputElement;
+    const { container } = render(TagsInputCtxProvider, { state });
+    const input = container.querySelector("input") as HTMLInputElement;
 
-    await user.type(input, "tag1");
-    await user.keyboard("{Enter}");
+    await userEvent.type(input, "tag1");
+    await userEvent.keyboard("{Enter}");
 
     expect(state.values).toEqual(["tag1"]);
     expect(state.value).toBe("");
-    expect(input).toHaveValue("");
+    await element(input).toHaveValue("");
   });
 
   test("remove writes to context values", async () => {
     const state = $state({ ...stateDefaults(), values: ["a", "b"] });
-    const user = userEvent.setup();
-    const { getByRole } = render(TagsInputCtxProvider, { state });
+    const { container } = render(TagsInputCtxProvider, { state });
 
-    await user.click(getByRole("button", { name: "Remove a" }));
+    await userEvent.click(byBtnName(container, "Remove a"));
 
     expect(state.values).toEqual(["b"]);
   });
 
   test("element is mirrored into context", async () => {
     const state = $state(stateDefaults());
-    const { getByRole } = render(TagsInputCtxProvider, { state });
-    const input = getByRole("textbox") as HTMLInputElement;
+    const { container } = render(TagsInputCtxProvider, { state });
+    const input = container.querySelector("input") as HTMLInputElement;
 
-    await waitFor(() => expect(state.element).toBe(input));
+    await tick();
+    expect(state.element).toBe(input);
   });
 
-  test("ariaErrMsgId and aria-invalid come from context", () => {
+  test("ariaErrMsgId and aria-invalid come from context", async () => {
     const state = $state({ ...stateDefaults(), ariaErrMsgId: "err-1" });
-    const { getByRole } = render(TagsInputCtxProvider, { state });
-    const input = getByRole("textbox");
+    const { container } = render(TagsInputCtxProvider, { state });
+    const input = container.querySelector("input") as HTMLInputElement;
 
-    expect(input).toHaveAttribute("aria-errormessage", "err-1");
-    expect(input).toHaveAttribute("aria-invalid", "true");
+    await element(input).toHaveAttribute("aria-errormessage", "err-1");
+    await element(input).toHaveAttribute("aria-invalid", "true");
   });
 
-  test("id and aria-describedby come from context", () => {
+  test("id and aria-describedby come from context", async () => {
     const state = $state({ ...stateDefaults(), id: "ctrl-1", describedby: "desc-1" });
-    const { getByRole } = render(TagsInputCtxProvider, {
+    const { container } = render(TagsInputCtxProvider, {
       state,
       input: { id: "own-id", "aria-describedby": "own-desc" },
     });
-    const input = getByRole("textbox");
+    const input = container.querySelector("input") as HTMLInputElement;
 
-    expect(input).toHaveAttribute("id", "ctrl-1");
-    expect(input).toHaveAttribute("aria-describedby", "desc-1");
+    await element(input).toHaveAttribute("id", "ctrl-1");
+    await element(input).toHaveAttribute("aria-describedby", "desc-1");
   });
 
   test("onadd composition runs user hook before field hook", async () => {
     const state = $state(stateDefaults());
     const userOnadd = vi.fn();
     const fieldOnadd = vi.fn();
-    const user = userEvent.setup();
-    const { getByRole } = render(TagsInputCtxProvider, {
+    const { container } = render(TagsInputCtxProvider, {
       state,
       hooks: { events: { onadd: fieldOnadd } },
       input: { events: { onadd: userOnadd } },
     });
 
-    await user.type(getByRole("textbox"), "tag1");
-    await user.keyboard("{Enter}");
+    await userEvent.type(container.querySelector("input") as HTMLInputElement, "tag1");
+    await userEvent.keyboard("{Enter}");
 
     expect(userOnadd).toHaveBeenCalledWith({ values: [], added: ["tag1"] });
     expect(fieldOnadd).toHaveBeenCalledWith({ values: [], added: ["tag1"] });
@@ -900,9 +883,9 @@ describe("Embedded in field context", () => {
 
   test("paste writes a batch to context values", async () => {
     const state = $state(stateDefaults());
-    const { getByRole } = render(TagsInputCtxProvider, { state });
+    const { container } = render(TagsInputCtxProvider, { state });
 
-    await paste(getByRole("textbox") as HTMLInputElement, "a,b");
+    await paste(container.querySelector("input") as HTMLInputElement, "a,b");
 
     expect(state.values).toEqual(["a", "b"]);
     expect(state.value).toBe("");
@@ -912,13 +895,13 @@ describe("Embedded in field context", () => {
     const state = $state(stateDefaults());
     const userOnadd = vi.fn();
     const fieldOnadd = vi.fn();
-    const { getByRole } = render(TagsInputCtxProvider, {
+    const { container } = render(TagsInputCtxProvider, {
       state,
       hooks: { events: { onadd: fieldOnadd } },
       input: { events: { onadd: userOnadd } },
     });
 
-    await paste(getByRole("textbox") as HTMLInputElement, "a,b");
+    await paste(container.querySelector("input") as HTMLInputElement, "a,b");
 
     expect(userOnadd).toHaveBeenCalledTimes(1);
     expect(fieldOnadd).toHaveBeenCalledTimes(1);
@@ -932,15 +915,14 @@ describe("Embedded in field context", () => {
     const state = $state(stateDefaults());
     const userOnadd = vi.fn(() => ["blocked"]);
     const fieldOnadd = vi.fn(() => []);
-    const user = userEvent.setup();
-    const { getByRole } = render(TagsInputCtxProvider, {
+    const { container } = render(TagsInputCtxProvider, {
       state,
       hooks: { events: { onadd: fieldOnadd } },
       input: { events: { onadd: userOnadd } },
     });
 
-    await user.type(getByRole("textbox"), "blocked");
-    await user.keyboard("{Enter}");
+    await userEvent.type(container.querySelector("input") as HTMLInputElement, "blocked");
+    await userEvent.keyboard("{Enter}");
 
     expect(userOnadd).toHaveBeenCalledWith({ values: [], added: ["blocked"] });
     expect(fieldOnadd).toHaveBeenCalledWith({ values: [], added: ["blocked"] });
@@ -951,15 +933,14 @@ describe("Embedded in field context", () => {
     const state = $state(stateDefaults());
     const userOnadd = vi.fn(() => []);
     const fieldOnadd = vi.fn(() => ["blocked"]);
-    const user = userEvent.setup();
-    const { getByRole } = render(TagsInputCtxProvider, {
+    const { container } = render(TagsInputCtxProvider, {
       state,
       hooks: { events: { onadd: fieldOnadd } },
       input: { events: { onadd: userOnadd } },
     });
 
-    await user.type(getByRole("textbox"), "blocked");
-    await user.keyboard("{Enter}");
+    await userEvent.type(container.querySelector("input") as HTMLInputElement, "blocked");
+    await userEvent.keyboard("{Enter}");
 
     expect(userOnadd).toHaveBeenCalledWith({ values: [], added: ["blocked"] });
     expect(fieldOnadd).toHaveBeenCalledWith({ values: [], added: ["blocked"] });
@@ -970,13 +951,15 @@ describe("Embedded in field context", () => {
     const state = $state(stateDefaults());
     const userOnchange = vi.fn();
     const fieldOnchange = vi.fn();
-    const { getByRole } = render(TagsInputCtxProvider, {
+    const { container } = render(TagsInputCtxProvider, {
       state,
       hooks: { onchange: fieldOnchange },
       input: { onchange: userOnchange },
     });
 
-    await fireEvent.change(getByRole("textbox"));
+    const input = container.querySelector("input") as HTMLInputElement;
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+    await tick();
 
     expect(userOnchange).toHaveBeenCalledTimes(1);
     expect(fieldOnchange).toHaveBeenCalledTimes(1);
@@ -987,13 +970,15 @@ describe("Embedded in field context", () => {
     const state = $state(stateDefaults());
     const userOninvalid = vi.fn();
     const fieldOninvalid = vi.fn();
-    const { getByRole } = render(TagsInputCtxProvider, {
+    const { container } = render(TagsInputCtxProvider, {
       state,
       hooks: { oninvalid: fieldOninvalid },
       input: { oninvalid: userOninvalid },
     });
 
-    await fireEvent.invalid(getByRole("textbox"));
+    const input = container.querySelector("input") as HTMLInputElement;
+    input.dispatchEvent(new Event("invalid", { cancelable: true }));
+    await tick();
 
     expect(userOninvalid).toHaveBeenCalledTimes(1);
     expect(fieldOninvalid).toHaveBeenCalledTimes(1);
@@ -1004,27 +989,26 @@ describe("Embedded in field context", () => {
     const state = $state({ ...stateDefaults(), styling: "ctx-style" });
     const { container, rerender } = render(TagsInputCtxProvider, { state });
 
-    expect(container.querySelector(".ctx-style")).toHaveClass("ctx-style", PARTS.WHOLE);
-    expect(container.querySelector("input")).toHaveClass("ctx-style", PARTS.MAIN);
+    await element(container.querySelector(".ctx-style")).toHaveClass("ctx-style", PARTS.WHOLE);
+    await element(container.querySelector("input")).toHaveClass("ctx-style", PARTS.MAIN);
 
     await rerender({ state, input: { styling: "own-style" } });
 
-    expect(container.querySelector(".own-style")).toHaveClass("own-style", PARTS.WHOLE);
-    expect(container.querySelector("input")).toHaveClass("own-style", PARTS.MAIN);
+    await element(container.querySelector(".own-style")).toHaveClass("own-style", PARTS.WHOLE);
+    await element(container.querySelector("input")).toHaveClass("own-style", PARTS.MAIN);
   });
 
   test("onremove local hook composes with context through intersection", async () => {
     const state = $state({ ...stateDefaults(), values: ["a", "b"] });
     const onremove = vi.fn(() => []);
     const fieldOnremove = vi.fn(() => ["a"]);
-    const user = userEvent.setup();
-    const { getByRole } = render(TagsInputCtxProvider, {
+    const { container } = render(TagsInputCtxProvider, {
       state,
       hooks: { events: { onremove: fieldOnremove } },
       input: { events: { onremove } },
     });
 
-    await user.click(getByRole("button", { name: "Remove a" }));
+    await userEvent.click(byBtnName(container, "Remove a"));
 
     expect(onremove).toHaveBeenCalledWith({ values: ["a", "b"], removed: ["a"] });
     expect(fieldOnremove).toHaveBeenCalledWith({ values: ["a", "b"], removed: ["a"] });
