@@ -120,7 +120,7 @@
   const mode = $derived(integer ? "numeric" : "decimal");
   const disabled = $derived(Boolean(rest.disabled));
   const decDisabled = $derived(disabled || (min !== undefined && (effValue ?? min) <= min));
-  const incDisabled = $derived(disabled || (max !== undefined && (effValue ?? min ?? 0) >= max));
+  const incDisabled = $derived(disabled || (max !== undefined && (effValue ?? min ?? 0) >= alignedMax()));
 
   function format(v?: number): string {
     return v === undefined ? "" : String(v);
@@ -268,12 +268,20 @@
   function unit(): number {
     return Number.isFinite(step) && step > 0 ? step : 1;
   }
+  function alignedMax(): number {
+    if (max === undefined) return Infinity;
+    const u = unit();
+    const d = decimals(u);
+    const base = min ?? 0;
+    const steps = Math.floor((max - base) / u + 1e-9);
+    return base + Number((steps * u).toFixed(d));
+  }
   function clampSnap(n: number): number {
     const u = unit();
     const d = decimals(u);
     const base = min ?? 0;
     const lo = min ?? -Infinity;
-    const hi = max ?? Infinity;
+    const hi = alignedMax();
     let v = base + Number((Math.round((n - base) / u) * u).toFixed(d));
     if (integer) v = Math.round(v);
     return Math.min(hi, Math.max(lo, v));
@@ -298,7 +306,7 @@
     role={spin ? "spinbutton" : undefined}
     aria-valuenow={spin ? effValue : undefined}
     aria-valuemin={spin ? min : undefined}
-    aria-valuemax={spin ? max : undefined}
+    aria-valuemax={spin && max !== undefined ? alignedMax() : undefined}
     onbeforeinput={hbeforeinput}
     oninput={hinput}
     onkeydown={hkeydown}

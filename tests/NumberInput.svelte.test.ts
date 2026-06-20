@@ -119,9 +119,20 @@ describe("_NumberInput value and commit behavior", () => {
     const alignedInput = input(alignedRender.container);
     await userEvent.type(alignedInput, "99");
     alignedInput.blur(); await tick();
-    // Chromium commits the clamped max after snapping this off-grid value.
-    expect(aligned.value).toBe(10);
-    await expect.element(alignedInput).toHaveValue("10");
+    // Off-grid 99 snaps to 99 then clamps to the aligned max 9 (largest 0,3,6,9 value <= 10).
+    expect(aligned.value).toBe(9);
+    await expect.element(alignedInput).toHaveValue("9");
+    await alignedRender.unmount();
+
+    // Decimal aligned max must survive FP underflow: (0.7 - 0)/0.1 === 6.999...,
+    // so without the epsilon in alignedMax() floor() yields 6 and clamps wrongly to 0.6.
+    const decAligned = $state({ value: undefined as number | undefined, min: 0, max: 0.7, step: 0.1 });
+    const decAlignedRender = render(NumberInput, decAligned);
+    const decAlignedInput = input(decAlignedRender.container);
+    await userEvent.type(decAlignedInput, "9");
+    decAlignedInput.blur(); await tick();
+    expect(decAligned.value).toBe(0.7);
+    await expect.element(decAlignedInput).toHaveValue("0.7");
   });
 
   test("syncs external value only while not focused", async () => {
@@ -175,6 +186,36 @@ describe("_NumberInput spin behavior", () => {
     await userEvent.click(dec); expect(props.value).toBe(0); await expect.element(input(container)).toHaveValue("0");
     props.disabled = true; await rerender(props);
     await expect.element(dec).toBeDisabled(); await expect.element(inc).toBeDisabled();
+  });
+
+  test("disables increment at the aligned max", async () => {
+    const props = $state({ value: undefined as number | undefined, spin: true, min: 0, max: 10, step: 3 });
+    const { container } = render(NumberInput, props);
+    const inc = button(container, "Increment");
+    await userEvent.click(inc); await userEvent.click(inc); await userEvent.click(inc);
+    expect(props.value).toBe(9);
+    await expect.element(inc).toBeDisabled();
+    inc.click();
+    expect(props.value).toBe(9);
+  });
+
+  test("reports the aligned maximum and omits an unbounded maximum", async () => {
+    const aligned = $state({ value: undefined as number | undefined, spin: true, min: 0, max: 10, step: 3 });
+    const alignedRender = render(NumberInput, aligned);
+    const alignedInput = input(alignedRender.container);
+    await expect.element(alignedInput).toHaveAttribute("aria-valuemin", "0");
+    await expect.element(alignedInput).toHaveAttribute("aria-valuemax", "9");
+
+    const unbounded = $state({ value: undefined as number | undefined, spin: true, min: 0, step: 3 });
+    const unboundedRender = render(NumberInput, unbounded);
+    expect(input(unboundedRender.container).hasAttribute("aria-valuemax")).toBe(false);
+
+    // Without spin there is no spinbutton role, so aria-valuemax must stay absent even when max is set.
+    const noSpin = $state({ value: undefined as number | undefined, min: 0, max: 10, step: 3 });
+    const noSpinRender = render(NumberInput, noSpin);
+    const noSpinInput = input(noSpinRender.container);
+    expect(noSpinInput.hasAttribute("role")).toBe(false);
+    expect(noSpinInput.hasAttribute("aria-valuemax")).toBe(false);
   });
 
   test("pointer hold bumps once and spinbutton arrows are native", async () => {
