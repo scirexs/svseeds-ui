@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { tick } from "svelte";
 import SortableGroupBasic from "./fixtures/SortableGroupBasic.svelte";
@@ -8,23 +8,28 @@ import SortableBasic from "./fixtures/SortableBasic.svelte";
 import { createSortableGroup } from "#svs/Sortable.svelte";
 import { PARTS, VARIANT, _fnClass } from "#svs/core";
 
-const POLL = 20;
 const el = (container: HTMLElement, id: string) => container.querySelector(`[data-testid="${id}"]`) as HTMLElement;
+
+function stubReducedMotion() {
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: query.includes("prefers-reduced-motion"),
+    media: query,
+    onchange: null,
+    addEventListener() {},
+    removeEventListener() {},
+    addListener() {},
+    removeListener() {},
+    dispatchEvent: () => false,
+  }));
+}
 
 async function drag(origin: HTMLElement, over: HTMLElement | null, opts?: { up?: boolean }) {
   origin.dispatchEvent(new PointerEvent("pointerdown", { button: 0, buttons: 1, clientX: 0, clientY: 0, bubbles: true, cancelable: true }));
   await tick();
   window.dispatchEvent(new PointerEvent("pointermove", { buttons: 1, clientX: 20, clientY: 20, bubbles: true }));
-  await new Promise((resolve) => setTimeout(resolve, POLL));
+  if (over) over.dispatchEvent(new PointerEvent("pointerover", { buttons: 1, bubbles: true }));
+  if (opts?.up ?? true) window.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
   await tick();
-  if (over) {
-    over.dispatchEvent(new PointerEvent("pointerover", { buttons: 1, bubbles: true }));
-    await tick();
-  }
-  if (opts?.up ?? true) {
-    window.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
-    await tick();
-  }
 }
 
 afterEach(() => {
@@ -83,6 +88,8 @@ describe("SortableGroup motion", () => {
 });
 
 describe("SortableGroup context wiring", () => {
+  beforeEach(stubReducedMotion);
+
   test("children without group props move items through context", async () => {
     const props = $state({ a: ["a1", "a2"], b: ["b1"] });
     const { container } = render(SortableGroupBasic, props);
@@ -111,6 +118,8 @@ describe("SortableGroup context wiring", () => {
 });
 
 describe("SortableGroup inheritance and external controller", () => {
+  beforeEach(stubReducedMotion);
+
   test("variant and styling inherit to neutral children", async () => {
     const { container } = render(SortableGroupBasic, { variant: VARIANT.ACTIVE, styling: "child-style" });
     const firstList = container.querySelector("ul") as HTMLElement;
@@ -143,6 +152,8 @@ describe("SortableGroup inheritance and external controller", () => {
 });
 
 describe("SortableGroup isolation", () => {
+  beforeEach(stubReducedMotion);
+
   test("separate groups and standalone Sortable remain isolated", async () => {
     const first = render(SortableGroupBasic, { a: ["a1"], b: ["b1"] });
     const second = render(SortableGroupBasic, { a: ["x1"], b: ["y1"] });

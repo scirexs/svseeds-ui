@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { tick } from "svelte";
 import SortableBasic from "./fixtures/SortableBasic.svelte";
@@ -10,23 +10,28 @@ import SortableGhost from "./fixtures/SortableGhost.svelte";
 import { createSortableGroup } from "#svs/Sortable.svelte";
 import { PARTS, VARIANT, _fnClass } from "#svs/core";
 
-const POLL = 20;
 const el = (container: HTMLElement, id: string) => container.querySelector(`[data-testid="${id}"]`) as HTMLElement;
+
+function stubReducedMotion() {
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: query.includes("prefers-reduced-motion"),
+    media: query,
+    onchange: null,
+    addEventListener() {},
+    removeEventListener() {},
+    addListener() {},
+    removeListener() {},
+    dispatchEvent: () => false,
+  }));
+}
 
 async function drag(origin: HTMLElement, over: HTMLElement | null, opts?: { up?: boolean }) {
   origin.dispatchEvent(new PointerEvent("pointerdown", { button: 0, buttons: 1, clientX: 0, clientY: 0, bubbles: true, cancelable: true }));
   await tick();
   window.dispatchEvent(new PointerEvent("pointermove", { buttons: 1, clientX: 20, clientY: 20, bubbles: true }));
-  await new Promise((resolve) => setTimeout(resolve, POLL));
+  if (over) over.dispatchEvent(new PointerEvent("pointerover", { buttons: 1, bubbles: true }));
+  if (opts?.up ?? true) window.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
   await tick();
-  if (over) {
-    over.dispatchEvent(new PointerEvent("pointerover", { buttons: 1, bubbles: true }));
-    await tick();
-  }
-  if (opts?.up ?? true) {
-    window.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
-    await tick();
-  }
 }
 
 afterEach(() => {
@@ -91,6 +96,7 @@ describe("_Sortable rendering and API", () => {
   });
 
   test("standalone renders are isolated", async () => {
+    stubReducedMotion();
     const first = render(SortableBasic, { items: ["a", "b", "c"] });
     const second = render(SortableBasic, { items: ["x", "y"] });
 
@@ -102,6 +108,8 @@ describe("_Sortable rendering and API", () => {
 });
 
 describe("_Sortable single-list drag", () => {
+  beforeEach(stubReducedMotion);
+
   test("move mode reorders the bound array", async () => {
     const props = $state({ items: ["a", "b", "c"] });
     const { container } = render(SortableBasic, props);
@@ -139,6 +147,8 @@ describe("_Sortable single-list drag", () => {
 });
 
 describe("_Sortable drag handles and shadow", () => {
+  beforeEach(stubReducedMotion);
+
   test("dedicated handle starts drag while label does not", async () => {
     const { container } = render(SortableHandle, { items: ["a", "b"] });
 
@@ -176,6 +186,8 @@ describe("_Sortable drag handles and shadow", () => {
 });
 
 describe("_Sortable generic object items", () => {
+  beforeEach(stubReducedMotion);
+
   test("object items reorder by key without stringifying values", async () => {
     const alpha: Card = { id: "a", text: "Alpha" };
     const beta: Card = { id: "b", text: "Beta" };
@@ -192,6 +204,8 @@ describe("_Sortable generic object items", () => {
 });
 
 describe("_Sortable connected lists", () => {
+  beforeEach(stubReducedMotion);
+
   test("move transfers an item between explicit group lists", async () => {
     const props = $state({ a: ["a1", "a2"], b: ["b1", "b2"] });
     const { container } = render(SortableConnected, props);
@@ -259,6 +273,8 @@ describe("_Sortable connected lists", () => {
 });
 
 describe("_Sortable multiple, confirm, append, and dragging", () => {
+  beforeEach(stubReducedMotion);
+
   test("multiple selected followers move with the dragged item", async () => {
     const { container } = render(SortableConnected, { a: ["a1", "a2", "a3"], b: ["b1"], multiple: true });
 
