@@ -148,9 +148,12 @@
   // svelte-ignore state_referenced_locally
   let last = $state(format());
   let focused = $state(false);
+  let overflow = $state({ x: false, y: false });
+  let overlayElem = $state<HTMLDivElement>();
   let returning = false;
 
   // *** Reactive Handlers *** //
+  const overlayStyle = $derived(`position:absolute;${overflow.x ? "right:0%;" : ""}${overflow.y ? "bottom:100%;" : ""}`);
   $effect(() => {
     effValue;
     focused;
@@ -163,6 +166,7 @@
     if (!open) return;
     document.addEventListener("pointerdown", houtside);
     document.addEventListener("keydown", hkey);
+    observeOverflow();
     tick().then(() => focusCalendar());
     return stopListening;
   });
@@ -232,6 +236,14 @@
   function focusCalendar() {
     const el = document.querySelector(`[data-svs-dateinput="${uid}"] [data-svs-calendar] [tabindex="0"]`) as HTMLElement | null;
     el?.focus();
+  }
+  async function observeOverflow() {
+    overflow = { x: false, y: false };
+    await tick();
+    if (!overlayElem || typeof window === "undefined") return;
+    const rect = overlayElem.getBoundingClientRect();
+    overflow.x = window.innerWidth < rect.right;
+    overflow.y = window.innerHeight < rect.bottom;
   }
   function stopListening() {
     if (typeof document === "undefined") return;
@@ -317,7 +329,7 @@
     <input type="hidden" {name} value={effValue?.toString() ?? ""} />
   {/if}
   {#if open}
-    <div id={idOverlay} class={cls(PARTS.BOTTOM, effVariant)} style="position:absolute;" transition:tfn|local={tparams}>
+    <div id={idOverlay} class={cls(PARTS.BOTTOM, effVariant)} bind:this={overlayElem} style={overlayStyle} transition:tfn|local={tparams}>
       <Calendar
         {...calendar}
         bind:value={() => effValue, onPick}

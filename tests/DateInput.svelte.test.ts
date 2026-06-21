@@ -251,6 +251,104 @@ describe("_DateInput calendar and dismissal", () => {
   });
 });
 
+describe("_DateInput overlay overflow flip", () => {
+  const overlay = (container: HTMLElement) => container.querySelector(`.${PARTS.BOTTOM}`) as HTMLDivElement;
+
+  test("keeps the default anchor when the overlay does not overflow", async () => {
+    const props = $state({ open: true });
+    const { container } = render(DateInputBindable, props);
+
+    await tick();
+    await tick();
+    expect(overlay(container).getAttribute("style")).toMatch(/^position:\s*absolute;$/);
+  });
+
+  test("flips both axes when the overlay overflows at the bottom-right", async () => {
+    const props = $state({ open: false });
+    const { container } = render(DateInputBindable, props);
+    container.style.position = "fixed";
+    container.style.left = `${window.innerWidth - 16}px`;
+    container.style.top = `${window.innerHeight - 16}px`;
+    props.open = true;
+
+    await tick();
+    await tick();
+    expect(overlay(container).getAttribute("style")).toMatch(/right:\s*0%/);
+    expect(overlay(container).getAttribute("style")).toMatch(/bottom:\s*100%/);
+  });
+
+  test("flips only the y axis when the overlay overflows at the bottom", async () => {
+    const props = $state({ open: false });
+    const { container } = render(DateInputBindable, props);
+    container.style.position = "fixed";
+    container.style.left = "8px";
+    container.style.top = `${window.innerHeight - 16}px`;
+    props.open = true;
+
+    await tick();
+    await tick();
+    expect(overlay(container).getAttribute("style")).not.toMatch(/right:\s*0%/);
+    expect(overlay(container).getAttribute("style")).toMatch(/bottom:\s*100%/);
+  });
+
+  test("re-measures from the default anchor when re-opened", async () => {
+    const props = $state({ open: false });
+    const { container } = render(DateInputBindable, props);
+    container.style.position = "fixed";
+    container.style.left = `${window.innerWidth - 16}px`;
+    container.style.top = `${window.innerHeight - 16}px`;
+    props.open = true;
+    await tick();
+    await tick();
+    expect(overlay(container).getAttribute("style")).toMatch(/right:\s*0%/);
+    expect(overlay(container).getAttribute("style")).toMatch(/bottom:\s*100%/);
+
+    props.open = false;
+    await tick();
+    container.style.left = "8px";
+    container.style.top = "8px";
+    props.open = true;
+    await tick();
+    await tick();
+    expect(overlay(container).getAttribute("style")).toMatch(/^position:\s*absolute;$/);
+  });
+
+  test("does not close or re-measure on scroll or resize", async () => {
+    const props = $state({ open: false });
+    const { container } = render(DateInputBindable, props);
+    container.style.position = "fixed";
+    container.style.left = "8px";
+    container.style.top = "8px";
+    props.open = true;
+    await tick();
+    await tick();
+    expect(overlay(container).getAttribute("style")).toMatch(/^position:\s*absolute;$/);
+
+    container.style.left = `${window.innerWidth - 16}px`;
+    container.style.top = `${window.innerHeight - 16}px`;
+    document.dispatchEvent(new Event("scroll"));
+    window.dispatchEvent(new Event("resize"));
+    await tick();
+    expect(props.open).toBe(true);
+    expect(overlay(container)).toBeTruthy();
+    expect(overlay(container).getAttribute("style")).toMatch(/^position:\s*absolute;$/);
+  });
+
+  test("opens, closes, and re-opens without errors", async () => {
+    const props = $state({ open: false });
+    const { container } = render(DateInputBindable, props);
+
+    props.open = true;
+    await tick();
+    expect(overlay(container)).toBeTruthy();
+    props.open = false;
+    await tick();
+    props.open = true;
+    await tick();
+    expect(overlay(container)).toBeTruthy();
+  });
+});
+
 describe("_DateInput form, context, and motion", () => {
   test("routes name and canonical ISO value exclusively to its hidden input", () => {
     const named = render(DateInput, { name: "date", value: d("2026-06-21") });
