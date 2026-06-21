@@ -93,7 +93,7 @@
   }
   export const [_getNumberInputContext, _setNumberInputContext] = _createContext<NumberInputContext>();
 
-  import { untrack } from "svelte";
+  import { onDestroy, untrack } from "svelte";
   import { VARIANT, PARTS, _fnClass, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
@@ -212,7 +212,10 @@
     bump(dir);
     stop();
     wait = setTimeout(() => {
-      repeat = setInterval(() => bump(dir), 60);
+      repeat = setInterval(() => {
+        if (dir > 0 ? incDisabled : decDisabled) return stop();
+        bump(dir);
+      }, 60);
     }, 300);
   };
   const hup = () => stop();
@@ -286,6 +289,7 @@
     if (integer) v = Math.round(v);
     return Math.min(hi, Math.max(lo, v));
   }
+  onDestroy(stop);
 </script>
 
 <!---------------------------------------->

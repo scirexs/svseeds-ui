@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { createRawSnippet, tick } from "svelte";
@@ -238,6 +238,33 @@ describe("_NumberInput spin behavior", () => {
     const next = new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true, cancelable: true });
     el.dispatchEvent(next); await tick();
     expect(next.defaultPrevented).toBe(false); expect(props.value).toBe(4); expect(el.hasAttribute("role")).toBe(false);
+  });
+
+  test("clears a pending press-hold timer on unmount", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const { container, unmount } = render(NumberInput, { spin: true, min: 0, max: 10, step: 1 });
+      button(container, "Increment").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+      await unmount();
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      expect(warn.mock.calls.flat().join("\n")).not.toContain("derived_inert");
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test("stops press-hold repeat after reaching its bound", async () => {
+    const clear = vi.spyOn(globalThis, "clearInterval");
+    const { container, unmount } = render(NumberInput, { spin: true, min: 0, max: 2, step: 1 });
+    try {
+      button(container, "Increment").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      await expect.element(button(container, "Increment")).toBeDisabled();
+      expect(clear).toHaveBeenCalled();
+    } finally {
+      await unmount();
+      clear.mockRestore();
+    }
   });
 
   test("binds element and applies local variant without context", async () => {
