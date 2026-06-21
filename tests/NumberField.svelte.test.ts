@@ -105,6 +105,26 @@ describe("NumberField default child and binding", () => {
     await userEvent.type(el, "5"); await change(el);
     expect(props.value).toBe(6); await expect.element(el).toHaveValue("6"); expect(props.variant).toBe(VARIANT.ACTIVE);
   });
+
+  test("re-runs custom validations and drives variant when the spinner bumps the value", async () => {
+    const props = $state({
+      value: undefined as number | undefined,
+      variant: VARIANT.NEUTRAL,
+      validations: [({ value }: { value: number | undefined }) => value === 2 ? "blocked" : ""],
+      numberInput: { spin: true, min: 0, max: 10, step: 2 },
+    });
+    const { container } = render(NumberField, props);
+    const el = input(container);
+    const inc = container.querySelector('[aria-label="Increment"]') as HTMLElement;
+
+    await userEvent.click(inc);
+    await tick();
+    expect(props.value).toBe(2);
+    expect(el.validity.customError).toBe(true);
+    expect(el.validationMessage).toBe("blocked");
+    expect(el.checkValidity()).toBe(false);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+  });
 });
 
 describe("NumberField variant state machine and a11y", () => {

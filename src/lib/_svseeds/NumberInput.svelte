@@ -129,6 +129,11 @@
     if (ctx) ctx.value = v;
     else value = v;
   }
+  function emitChange() {
+    const ev = new Event("change");
+    onchangeProp?.(ev as any);
+    ctx?.onchange?.(ev);
+  }
   $effect(() => {
     if (ctx) ctx.element = element;
   });
@@ -240,6 +245,7 @@
     text = format(v);
     last = text;
     setValue(v);
+    emitChange();
   }
   function bumpValue(dir: 1 | -1): number {
     const base = effValue ?? min ?? 0;

@@ -151,6 +151,16 @@ describe("_NumberInput value and commit behavior", () => {
 });
 
 describe("_NumberInput spin behavior", () => {
+  test("notifies change when the spinner bumps the value", async () => {
+    const onchange = vi.fn();
+    const props = $state({ value: undefined as number | undefined, spin: true, min: 0, max: 10, step: 2, onchange });
+    const { container } = render(NumberInput, props);
+    await userEvent.click(button(container, "Increment"));
+    await tick();
+    expect(props.value).toBe(2);
+    expect(onchange).toHaveBeenCalled();
+  });
+
   test("renders labelled snippets and supports split and stack layouts", async () => {
     const dec = createRawSnippet(() => ({ render: () => "<i data-testid='dec'></i>" }));
     const inc = createRawSnippet(() => ({ render: () => "<i data-testid='inc'></i>" }));
