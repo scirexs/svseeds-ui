@@ -193,6 +193,35 @@ describe("_DateInput calendar and dismissal", () => {
     expect(props.open).toBe(true);
   });
 
+  test("notifies onchange once for calendar picks and exposed clears", async () => {
+    let ctl: (() => { clear: () => void }) | undefined;
+    const right = createRawSnippet((control: () => { clear: () => void }) => {
+      ctl = control;
+      return { render: () => "<span>clear</span>" };
+    });
+    const onchange = vi.fn();
+    const props = $state({
+      value: d("2026-06-20") as Temporal.PlainDate | undefined,
+      open: true,
+      closeOnSelect: false,
+      right,
+      onchange,
+    });
+    const { container } = render(DateInputBindable, props);
+
+    await userEvent.click(day(container));
+    await tick();
+    expect(props.value?.toString()).toBe("2026-06-21");
+    expect(onchange).toHaveBeenCalledTimes(1);
+    expect(onchange.mock.calls[0][0]).toMatchObject({ type: "change" });
+
+    ctl?.().clear();
+    await tick();
+    expect(props.value).toBeUndefined();
+    expect(onchange).toHaveBeenCalledTimes(2);
+    expect(onchange.mock.calls[1][0]).toMatchObject({ type: "change" });
+  });
+
   test("opens on focus, closes on Escape and outside pointerdown, and clear resets value/text", async () => {
     let ctl: (() => { clear: () => void }) | undefined;
     const right = createRawSnippet((control: () => { clear: () => void }) => {

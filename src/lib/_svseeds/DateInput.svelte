@@ -130,6 +130,11 @@
     if (ctx) ctx.value = v;
     else value = v;
   }
+  function emitChange() {
+    const ev = new Event("change");
+    onchangeProp?.(ev as any);
+    ctx?.onchange?.(ev);
+  }
   function noop() {
     return {};
   }
@@ -208,9 +213,11 @@
     setValue(undefined);
     text = "";
     last = "";
+    emitChange();
   }
   function onPick(v: Temporal.PlainDate | undefined) {
     setValue(v);
+    emitChange();
     if (!closeOnSelect) return;
     hide();
     returnFocus();
