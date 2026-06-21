@@ -5,7 +5,7 @@ import { PARTS, VARIANT, type SVSVariant } from "#svs/core";
 
 const triggers: HTMLElement[] = [];
 const cleanups: Array<() => void> = [];
-function makeTrigger(): HTMLButtonElement { const btn = document.createElement("button"); document.body.appendChild(btn); triggers.push(btn); return btn; }
+function makeTrigger(): HTMLButtonElement { const btn = document.createElement("button"); btn.style.pointerEvents = "none"; document.body.appendChild(btn); triggers.push(btn); return btn; }
 function attach(node: HTMLElement, params: TooltipParams) { const cleanup = tooltip(params)(node) as () => void; cleanups.push(cleanup); return cleanup; }
 function resetTooltipDefaults() { initTooltip({ position: "top", align: "center", offset: { x: 0, y: 0 }, delay: 1000, cursor: false, variant: VARIANT.NEUTRAL, styling: undefined }); }
 function setHover(can: boolean) { vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: can, media: "", onchange: null, addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() })); }
@@ -59,7 +59,7 @@ describe("tooltip attachment factory", () => {
 
 describe("content snippet", () => {
   const contentSnippet = createRawSnippet<[string, SVSVariant, boolean]>((text, variant, flipped) => ({ render: () => `<span data-testid="tooltip-content">text=${text()};variant=${variant()};flipped=${flipped()}</span>` }));
-  test("[TT-19] renders custom content with text, variant, and flipped args", async () => { const trigger = makeTrigger(); trigger.style.cssText = "position:fixed;top:100px;left:100px"; attach(trigger, { text: "Custom", content: contentSnippet, variant: VARIANT.ACTIVE, delay: 10 }); await enter(trigger); await showAfter(10); await expect.element(getTip().querySelector('[data-testid="tooltip-content"]') as HTMLElement).toHaveTextContent("text=Custom;variant=active;flipped=false"); });
+  test("[TT-19] renders custom content with text, variant, and flipped args", async () => { const trigger = makeTrigger(); trigger.style.position = "fixed"; trigger.style.top = "100px"; trigger.style.left = "100px"; attach(trigger, { text: "Custom", content: contentSnippet, variant: VARIANT.ACTIVE, delay: 10 }); await enter(trigger); await showAfter(10); await expect.element(getTip().querySelector('[data-testid="tooltip-content"]') as HTMLElement).toHaveTextContent("text=Custom;variant=active;flipped=false"); });
   test("[TT-20] content falls back to text when no content snippet", async () => { const trigger = makeTrigger(); attach(trigger, { text: "Plain", delay: 10 }); await enter(trigger); await showAfter(10); expect(getTip().textContent?.trim()).toBe("Plain"); });
 });
 
