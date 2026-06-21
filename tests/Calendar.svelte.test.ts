@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { createRawSnippet, tick } from "svelte";
 import Calendar, { type DayCtx } from "#svs/Calendar.svelte";
@@ -333,7 +333,11 @@ describe("_Calendar rendering variants and snippets", () => {
     expect(screen.container.querySelector("select")).toBeTruthy();
   });
 
-  test.skip("transition fn is invoked on toggle", () => {
-    // Animation timing is visual and brittle to assert; the toggle swap itself is covered.
+  test("transition fn is invoked on toggle", async () => {
+    const fn = vi.fn(() => ({}));
+    const screen = render(Calendar, { display: ym(2026, 6), transition: { fn } });
+    (screen.container.querySelector(`.${PARTS.LABEL}`) as HTMLButtonElement).click();
+    await tick();
+    expect(fn).toHaveBeenCalled();
   });
 });

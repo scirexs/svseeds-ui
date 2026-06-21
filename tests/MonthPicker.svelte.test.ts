@@ -109,10 +109,6 @@ describe("_MonthPicker layout and styling", () => {
     expect(withoutSlots.container.querySelector(`.${PARTS.WHOLE} > .${PARTS.RIGHT}`)).toBeNull();
   });
 
-  test.skip("default loop: month wheel loops, year wheel does not", () => {
-    // loop is an internal visual flag on the child; not observable from the MonthPicker DOM.
-  });
-
   test("own styling applies to whole and slot parts", () => {
     const screen = render(MonthPicker, {
       value: ym(2021, 6),
