@@ -1,10 +1,10 @@
 # Output
-/.svelte-kit
-/build
-/dist
-.wrangler
-*.tgz
+/.svelte-kit/
+/build/
+/dist/
 /npm/
+.wrangler/
+*.tgz
 
 # Env
 .env
@@ -32,24 +32,26 @@ node_modules/
 
 # Test
 *.sqlite
+__screenshots__/
+.vitest-attachments/
 
 # VSCode
 .devcontainer/
 .vscode/
-.vscode-test
+.vscode-test/
 
 # AI
-/.trash/
-/.plan/
 /.claude/
 /.codex/
+/.agents/
 CLAUDE.md
 AGENTS.md
-SKILL.md
+/SKILL.md
+/.ws/task/*/
+/.ws/task/.*
+/.ws/
 
 # Others
-.devconfig/
 .ref/
 /zzz.ts
 /publish.sh
-/backup.sh
