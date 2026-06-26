@@ -49,7 +49,8 @@ AGENTS.md
 /SKILL.md
 /.ws/task/*/
 /.ws/task/.*
-/.ws/
+/.ws/collaboration/
+/.ws/policy/*-guide.md
 
 # Others
 .ref/
