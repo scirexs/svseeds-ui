@@ -22,14 +22,23 @@ hand-maintained and represent the intended style. When in doubt, match them.
 ## 1. Imports
 
 Keep **type** imports separate from **value** imports — even from the same
-module. A combined form (`import { type X, y } from "m"`) trips a check/test
-warning, so all components use the split style:
+module (a combined `import { type X, y } from "m"` trips a check/test warning).
+Write the **value** imports as one block, then the **type** imports as a second
+block; within each block order by source, as numbered below:
 
 ```ts
-import { untrack } from "svelte";
-import { VARIANT, PARTS, _fnClass } from "./_core";
-import type { Snippet } from "svelte";
-import type { SVSClass, SVSVariant } from "./_core";
+// value imports
+import { someUtil } from "some-lib";              // 1. external libraries
+import { untrack } from "svelte";                 // 2. "svelte"
+import { slide } from "svelte/transition";        // 3. svelte sub-paths (svelte/attachments, …)
+import { VARIANT, PARTS, _fnClass } from "./_core"; // 4. _core.ts
+import Disclosure from "./Disclosure.svelte";     // 5. other components
+
+// type imports — same source order
+import type { Snippet } from "svelte";            // 2.
+import type { FormEventHandler } from "svelte/elements"; // 3.
+import type { SVSClass, SVSVariant } from "./_core";     // 4.
+import type { DisclosureProps } from "./Disclosure.svelte"; // 5.
 ```
 
 ## 2. `$props()`
