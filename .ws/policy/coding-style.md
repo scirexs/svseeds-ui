@@ -1,7 +1,7 @@
 # Coding Style
 
 Project-specific coding conventions for **this project (svseeds-ui)**, read by
-the cowork implementation and review agents (C / D) and cited by their skills
+the cowork implementation and review agents (`impl` / `review`) and cited by their skills
 (`cowork-impl`, `cowork-review`). This is the **single source of truth** for the
 project's code style — update here, not in copies.
 

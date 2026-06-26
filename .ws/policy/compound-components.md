@@ -2,7 +2,7 @@
 
 How to build components that wrap or coordinate other svseeds components — the project's
 compound / context pattern reference, linked from `coding-style.md` §15 and used when
-authoring change requests (agents A / E) for compound components.
+authoring change requests (`design` / `analyze`) for compound components.
 
 ## 1. Pattern selection
 Three patterns. The discriminator: **does the caller write or supply the composed child?**

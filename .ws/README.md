@@ -9,12 +9,14 @@ collaboration system, see `collaboration/agent-collaboration.md`.
 
 ## Directories
 
-- `architecture/` — The product's own architecture (agent B's domain).
+- `architecture/` — The product's own architecture. Updated as part of a change
+  when the system's shape shifts: `design` includes the update in `request.md`,
+  the implementer applies it, the reviewer checks it. A maintainer-triggered
+  `cowork-reconcile` pass periodically reconciles it against the actual code.
   - `overview.md` — System overview (whole system / purpose / structure
     summary / directory layout).
 - `collaboration/` — How the multi-agent development process itself works
-  (reference material; not the product's architecture, so out of scope for
-  agent B's overview-update rules).
+  (reference material; not the product's own architecture).
   - `agent-collaboration.md` — Operating model of the multi-agent workflow
     (phases / agent roles / status flow / governance).
   - `json-definition.md` — Authoritative JSON schemas for the workflow's data
@@ -35,16 +37,16 @@ collaboration system, see `collaboration/agent-collaboration.md`.
   - `review-guide.md` — Review criteria and the blocking / non-blocking
     boundary (`needs_fix` / `pass` split).
   - `signals-guide.md` — `causes` enum definitions for `signals.jsonl` and the
-    "primary improvement target" mapping (shared vocabulary for agents G/H).
+    "primary improvement target" mapping (shared vocabulary for `signal`/`opt`).
   - `optimize-guide.md` — Format, scope, and governance for process-improvement
-    proposals (`.ref/z-human/opt/`), shared by agents F (single-task) and H
-    (cross-task).
+    proposals (`.ref/z-maintainer/opt/`), shared by `feedback` (single-task) and
+    `opt` (cross-task).
 - `task/` — Per-task working materials.
   - `INDEX.tsv` — History of branch names / work summaries.
   - `stats.jsonl` — Model-behavior and cost-analysis statistics.
   - `signals.jsonl` — Statistics for document / skill improvement.
   - `.periodic-opt-state` — Last `signals.jsonl` position analyzed by the
-    periodic optimizer (agent H). Not tracked by git.
+    periodic optimizer (`opt`). Not tracked by git.
   - `.agent-assignment.json` — Model / prompt settings used by the
     orchestrator. Not tracked by git.
   - `YYYYMMDD_xxxxxx/` — Per-task directory. Not tracked by git. Holds the
@@ -57,7 +59,7 @@ collaboration system, see `collaboration/agent-collaboration.md`.
 
 ## Git management
 
-- `.ws/` is tracked by git by default.
-- Exceptions (not tracked): `/.ws/task/YYYYMMDD_xxxxxx/` task directories and
-  operation-only files. These are excluded via `.gitignore` rules
-  `/.ws/task/*/` and `/.ws/task/.*`.
+- `.ws/` is tracked by git by default except for the followings:
+  - `/.ws/task/YYYYMMDD_xxxxxx/` task directories (`/.ws/task/*/`)
+  - Operation-only files in the task directory (`/.ws/task/.*`)
+  - Documents shared across all projects (`/.ws/collaboration/`, `/.ws/policy/*-guide.md`)

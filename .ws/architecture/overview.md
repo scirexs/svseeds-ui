@@ -1,6 +1,9 @@
 <!--
 TEMPLATE — system overview of the product.
-Maintained by agent B (arch phase). Update ONLY when the system's "shape"
+Maintained as part of a change: `design` includes the overview update in
+`request.md`, the implementer applies it, the reviewer checks it; a
+maintainer-triggered `cowork-reconcile` pass periodically reconciles it against the
+actual code. Update ONLY when the system's "shape"
 changes; each section below maps 1:1 to one update trigger, so a change either
 touches a section here (→ update it) or it does not (→ leave the file
 untouched). Triggers: component add/delete · directory layout · public API /
@@ -34,7 +37,7 @@ parent–child nesting**: the child is written explicitly and self-wires to its
 parent through a shared context (e.g.
 `<TagsInputField><TagsInput/></TagsInputField>`) — far flatter than the deep
 nesting typical of compound-component libraries (see
-`.ref/compound-components.md`).
+`.ws/policy/compound-components.md`).
 
 Design principles (see `.ref/web-svseeds/src/md/concepts.sv.md`):
 - **Standards-first** — prefer semantic/native HTML over JS where it suffices;
@@ -71,7 +74,7 @@ shared module — there is no central runtime or app shell.
   **Composites** privately instantiate a fixed set of children (e.g. Calendar
   over MonthPicker). Either way the intra-library dependency is extracted into
   `dep.json` at build time so the CLI can copy a component together with
-  everything it needs. See `.ref/compound-components.md` for the conventions.
+  everything it needs. See `.ws/policy/compound-components.md` for the conventions.
 - The public package surface (`index.js`/`index.d.ts`) is **generated** from
   the per-component exports by `src/script/make_index.ts`; nothing is exported
   by hand.
@@ -148,7 +151,7 @@ redirects users to npm — see `mod.ts`):
   configured directly on the explicitly-written child; a Composite's private
   children are configured through per-child namespaced `Omit` bags (e.g.
   Calendar's `monthPicker`). See `.ref/web-svseeds/src/md/customization.sv.md`
-  and `.ref/compound-components.md`.
+  and `.ws/policy/compound-components.md`.
 - **Internal subpath imports** (dev/tests only, via `package.json` `imports`):
   `#svs/core` → `_svseeds/_core.ts`, `#svs/*` → `_svseeds/*`.
 - **CLI distribution** (alternate entry point): the external `svseeds-cli`
