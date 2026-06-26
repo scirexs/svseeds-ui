@@ -97,11 +97,14 @@
   export const [_getDateInputContext, _setDateInputContext] = _createContext<DateInputContext>();
   export const _DATE_INPUT_PRESET = "svs-date-input";
 
-  import { type Snippet, onDestroy, tick, untrack } from "svelte";
-  import { type Attachment } from "svelte/attachments";
-  import { type FocusEventHandler, type FormEventHandler, type HTMLInputAttributes, type KeyboardEventHandler } from "svelte/elements";
-  import { type SVSClass, type SVSContext, type SVSVariant, VARIANT, PARTS, _createContext, _fnClass, shouldReduceMotion } from "./_core";
-  import Calendar, { type CalendarProps } from "./Calendar.svelte";
+  import { onDestroy, tick, untrack } from "svelte";
+  import { VARIANT, PARTS, _createContext, _fnClass, shouldReduceMotion } from "./_core";
+  import Calendar from "./Calendar.svelte";
+  import type { Snippet } from "svelte";
+  import type { Attachment } from "svelte/attachments";
+  import type { FocusEventHandler, FormEventHandler, HTMLInputAttributes, KeyboardEventHandler } from "svelte/elements";
+  import type { SVSClass, SVSContext, SVSVariant } from "./_core";
+  import type { CalendarProps } from "./Calendar.svelte";
 </script>
 
 <script lang="ts">

@@ -92,16 +92,12 @@
 
   export const _DATE_FIELD_PRESET = "svs-date-field";
 
-  import { type Snippet, onMount, untrack } from "svelte";
-  import { type SVSClass, type SVSFieldValidation, type SVSVariant, PARTS, VARIANT, _fnClass, _isNeutral } from "./_core";
-  import DateInput, {
-    type DateInputBindProps,
-    type DateInputContext,
-    type DateInputProps,
-    type DateInputReqdProps,
-    _DATE_INPUT_PRESET,
-    _setDateInputContext,
-  } from "./DateInput.svelte";
+  import { onMount, untrack } from "svelte";
+  import { PARTS, VARIANT, _fnClass, _isNeutral } from "./_core";
+  import DateInput, { _DATE_INPUT_PRESET, _setDateInputContext } from "./DateInput.svelte";
+  import type { Snippet } from "svelte";
+  import type { SVSClass, SVSFieldValidation, SVSVariant } from "./_core";
+  import type { DateInputBindProps, DateInputContext, DateInputProps, DateInputReqdProps } from "./DateInput.svelte";
 </script>
 
 <script lang="ts">
