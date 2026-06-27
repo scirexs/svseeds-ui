@@ -88,7 +88,7 @@ Shared module:
   `SVSFieldConstraint`, `SVSContext`), and utilities (`_omit`, `_debounce`,
   `_throttle`, `shouldReduceMotion`, `canHover`, …).
 
-Components (39 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
+Components (40 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
 
 - **Field components** (label/validation wrapper around an input; structured
   whole→top/middle/bottom anatomy): TextField, NumberField, CheckField,
@@ -102,7 +102,7 @@ Components (39 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
 - **Date/time pickers**: Calendar, MonthPicker.
 - **Navigation & progress**: Tabs, ProgressTracker.
 - **Drag & drop**: Sortable, SortableGroup.
-- **Feedback & utility**: Toast, DarkToggle, HotkeyCapture.
+- **Feedback & utility**: Toast, DarkToggle, HotkeyCapture, Image.
 
 **Composition / dependencies** (source of truth: the generated `dep.json`):
 - **Hard dependencies** — one component imports another, so the CLI copies them

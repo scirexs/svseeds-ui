@@ -1,2 +1,3 @@
 # <task_id>	<type>: <description>
 20260625_n26zru	feat: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+20260625_n26zru	feat: Add a standalone Image component (picture/img abstraction with lazy loading, layout-shift mitigation, placeholder, preload, and load/error state)
