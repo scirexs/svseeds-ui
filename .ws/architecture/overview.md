@@ -88,7 +88,7 @@ Shared module:
   `SVSFieldConstraint`, `SVSContext`), and utilities (`_omit`, `_debounce`,
   `_throttle`, `shouldReduceMotion`, `canHover`, …).
 
-Components (40 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
+Components (41 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
 
 - **Field components** (label/validation wrapper around an input; structured
   whole→top/middle/bottom anatomy): TextField, NumberField, CheckField,
@@ -101,6 +101,7 @@ Components (40 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
 - **Menu primitives**: MenuList, MenuGroup, MenuItem, MenuSeparator.
 - **Date/time pickers**: Calendar, MonthPicker.
 - **Navigation & progress**: Tabs, ProgressTracker.
+- **Layout** (resizable two-pane region): Splitter.
 - **Drag & drop**: Sortable, SortableGroup.
 - **Feedback & utility**: Toast, DarkToggle, HotkeyCapture, Image.
 
