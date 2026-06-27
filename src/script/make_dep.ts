@@ -29,7 +29,9 @@ function buildDependency(path: string): DependencyObject {
   const parser = new SvelteParser();
   const dep: DependencyObject = { components: {} };
   findDependFiles(dir).forEach((file) => {
-    dep.components[file] = parser.parse(p.join(dir, file));
+    const parsed = parser.parse(p.join(dir, file));
+    parsed.dependencies = [...new Set(parsed.dependencies)].filter((x) => x !== file);
+    dep.components[file] = parsed;
   });
   return dep;
 }

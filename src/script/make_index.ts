@@ -38,7 +38,7 @@ function getExtPath(files: string[], path: string, ext: string): string[] {
 class ExportParser {
   static EXT = { svelte: ".svelte", ts: ".ts" };
   #REGEX = {
-    type: /export\s+(?:type|interface)\s+(\w+)\s*[=|{|e]/g,
+    type: /export\s+(?:type|interface)\s+(\w+)(?:\s*<[^>]*>)?(?:\s+extends\b|\s*[={])/g,
     each: /export\s+(?:function|class|const|let|var)\s+(\w+)\s*[\s|=|{|(]/g,
     bulk: /export\s*{([^}]*)}/g,
   };
@@ -46,6 +46,7 @@ class ExportParser {
   #path = "";
   #match: RegExpExecArray | null = null;
   #code = "";
+  #names = new Set<string>();
 
   constructor(out: string) {
     this.#out = p.dirname(out);
@@ -89,7 +90,19 @@ class ExportParser {
     return result.map((x) => x.split(",").map((x) => x.trim()).filter((x) => x)).flat(Infinity) as string[];
   }
   #getTemplate(exports: string[]): string {
-    return `export { ${exports.join(", ")} } from "${this.#getFromPath()}";\n`;
+    const filtered = exports.filter((x) => {
+      const name = this.#getName(x);
+      if (this.#names.has(name)) return false;
+      this.#names.add(name);
+      return true;
+    });
+    if (!filtered.length) return "";
+    return `export { ${filtered.join(", ")} } from "${this.#getFromPath()}";\n`;
+  }
+  #getName(value: string): string {
+    const raw = value.replace(/^type\s+/, "").trim();
+    const match = raw.match(/\bas\s+(\w+)$/);
+    return match?.[1] ?? raw;
   }
   #getFromPath(): string {
     const file = this.#path.endsWith(ExportParser.EXT.ts) ? this.#path.replace(ExportParser.EXT.ts, "") : this.#path;

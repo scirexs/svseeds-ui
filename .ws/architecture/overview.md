@@ -102,7 +102,8 @@ Components (41 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
   shared `_core.ts`. The single source of truth for what ships.
 - `src/script/` — build-time generators: `prep.ts` (entrypoint),
   `make_index.ts` → `src/lib/index.ts` (generated), `make_dep.ts` → `dep.json`
-  (generated) from intra-component imports.
+  (generated) from intra-component imports, and `post.ts` → publish metadata
+  and copied package assets in `dist/`.
 - `src/app.html` — SvelteKit shell (dev/check only; not published).
 - `tests/` — Vitest specs: `*.svelte.test.ts` (unit) and `*.svelte.sim.test.ts`
   (browser/interaction simulation), with fixtures.
@@ -127,7 +128,7 @@ run (see `cowork-impl` / `cowork-review`):
 ## Public API / Entry Points
 
 Published package `svseeds` (npm; mirrored as `@svseeds/ui` on JSR, which only
-redirects users to npm — see `mod.ts`):
+redirects users to npm — see the generated `mod.ts`):
 
 - **Package entry** `./index.js` / `./index.d.ts` (generated; field
   `svelte`/`exports` in `package.json`), built from `src/lib/index.ts`
@@ -146,6 +147,8 @@ redirects users to npm — see `mod.ts`):
   and `.ws/policy/compound-components.md`.
 - **Internal subpath imports** (dev/tests only, via `package.json` `imports`):
   `#svs/core` → `_svseeds/_core.ts`, `#svs/*` → `_svseeds/*`.
+- **JSR redirect metadata**: `mod.ts` and `jsr.json` are generated into
+  `dist/` during build and are no longer committed at the repository root.
 - **CLI distribution** (alternate entry point): the external `svseeds-cli`
   copies component `.svelte` files into a consumer's `src/lib/_svseeds/`,
   resolving dependencies via the generated `dep.json`.
@@ -155,8 +158,12 @@ redirects users to npm — see `mod.ts`):
 - **Runtime/PM**: Bun. Framework: Svelte 5 (peer `^5.29`) + SvelteKit
   (adapter-auto) + Vite; TypeScript in strict mode.
 - **Build**: `bun run build` → `src/script/prep.ts` (regenerate `index.ts` +
-  `dep.json`) → `@sveltejs/package` → `post` (flatten `dist/`, copy and
-  Terser-minify `_core` into `/_svseeds/`).
+  `dep.json`) → `@sveltejs/package` → `src/script/post.ts` (assemble `dist/`
+  as the publish directory: cleaned `package.json`, generated `jsr.json` +
+  `mod.ts`, copied `_core.ts`, `README.md`, and `LICENSE`). `_core.js` is the
+  unminified output emitted by `@sveltejs/package`; no Terser step runs. CI
+  publishes npm and JSR from `dist/`, and release versions are single-sourced
+  from the root `package.json`.
 - **Test**: `bun run test` (`vitest --run ./tests`); unit specs run under jsdom,
   `*.sim.test.ts` run in a real browser via Playwright/Chromium.
 - **Type/lint**: `bun run check` (`svelte-kit sync` + `svelte-check`);

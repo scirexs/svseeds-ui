@@ -32,9 +32,11 @@ jobs:
         run: bun run build
 
       - name: Publish to NPM
+        working-directory: dist
         run: npm publish --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
 
       - name: Publish to JSR
+        working-directory: dist
         run: bunx jsr publish --allow-dirty
