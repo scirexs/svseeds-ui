@@ -8,16 +8,11 @@ project's code style — update here, not in copies.
 **Gold-standard files:** `TextField.svelte` and `Disclosure.svelte` are
 hand-maintained and represent the intended style. When in doubt, match them.
 
-## 0. Project context
+## 0. Orientation
 
-- **Stack:** Svelte 5 (runes) + TypeScript; headless UI components.
-- **Layout:** components in `src/lib/_svseeds/*.svelte`; shared core imported
-  from `./_core` (`PARTS`, `VARIANT`, `_fnClass`, `_cssVar`, `_cssVarStyle`,
-  `_resolveDuration`, types). Tests in `tests/`.
-- **Validation** (run narrowest first): `bunx vitest --run ./tests/<File>.test.ts`
-  → `bun run check` → `bun run test`.
-- **Change discipline:** minimal, localized changes; no unrelated refactors;
-  behaviour over cleanliness. `_core` usually needs no change — say so when true.
+- **Change discipline:** behaviour over cleanliness; `_core` usually needs no
+  change — say so when true. (The generic minimal / localized-change rule lives
+  in the `impl` / `review` skills.)
 
 ## 1. Imports
 

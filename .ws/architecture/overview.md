@@ -1,22 +1,3 @@
-<!--
-TEMPLATE — system overview of the product.
-Maintained as part of a change: `design` includes the overview update in
-`request.md`, the implementer applies it, the reviewer checks it; a
-maintainer-triggered `cowork-reconcile` pass periodically reconciles it against the
-actual code. Update ONLY when the system's "shape"
-changes; each section below maps 1:1 to one update trigger, so a change either
-touches a section here (→ update it) or it does not (→ leave the file
-untouched). Triggers: component add/delete · directory layout · public API /
-entry points · build-test-toolchain · an architecture-level decision/.
-Replace each `> guidance` block and the bracketed placeholders with real
-content; keep the headings stable so the staleness check stays mechanical.
-Keep it concise: link to decision/ for the "why"; do not restate what the code
-already makes obvious.
-Convention: mark build-generated paths and exports with a `(generated)` tag, so
-a change to generated output is distinguishable from a hand-authored one and the
-update trigger stays unambiguous.
--->
-
 # Project Overview — SvSeeds (`svseeds`)
 
 SvSeeds is a headless Svelte 5 UI component library that ships unstyled,
@@ -130,8 +111,18 @@ Components (41 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
 - `.ref/` — reference material, incl. the canonical concept docs under
   `.ref/web-svseeds/src/md/` (`concepts.sv.md`, `customization.sv.md`,
   `form-controls.sv.md`).
-- Build output (gitignored, generated): `_svseeds/`, `index.js`, `index.d.ts`
-  are produced by the build and constitute the published package.
+**Generated working-tree paths** (all git-ignored). The cowork agents leave the
+persistent ones in place and move the disposable ones to `/tmp/trash/` after a
+run (see `cowork-impl` / `cowork-review`):
+
+- **Persistent (leave in place)** — recreated on demand and relied on by later
+  commands: `node_modules/` (deps), `.svelte-kit/` (SvelteKit sync), and caches
+  (`.vite/`, `*.tsbuildinfo`, `.eslintcache`, `.stylelintcache`, `.npm`).
+- **Disposable (move to `/tmp/trash/` after a run)** — run outputs not consumed
+  by later steps:
+  - build output `(generated)`: `/build/`, `/dist/`, `/npm/`, and the published
+    package output `/_svseeds/`, `index.js`, `index.d.ts`.
+  - test result artifacts: `__screenshots__/`, `.vitest-attachments/`, etc.
 
 ## Public API / Entry Points
 
@@ -165,7 +156,7 @@ redirects users to npm — see `mod.ts`):
   (adapter-auto) + Vite; TypeScript in strict mode.
 - **Build**: `bun run build` → `src/script/prep.ts` (regenerate `index.ts` +
   `dep.json`) → `@sveltejs/package` → `post` (flatten `dist/`, copy and
-  Terser-minify `_core` into `_svseeds/`).
+  Terser-minify `_core` into `/_svseeds/`).
 - **Test**: `bun run test` (`vitest --run ./tests`); unit specs run under jsdom,
   `*.sim.test.ts` run in a real browser via Playwright/Chromium.
 - **Type/lint**: `bun run check` (`svelte-kit sync` + `svelte-check`);
