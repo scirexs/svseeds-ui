@@ -24,8 +24,8 @@ hand-maintained and represent the intended style. When in doubt, match them.
     pass; never use it as a review validation step. See
     `.ws/knowledge/bun-run-fmt-rewrites-whole-src-lib.md`.
   - **Build (only when the change affects build output):** `bun run build` —
-    regenerates `src/lib/index.ts` and `_svseeds/dep.json` (untracked,
-    non-gitignored; they linger in `git status`).
+    regenerates `src/lib/index.ts` and `_svseeds/dep.json` for packaging, then
+    removes those generated source files so `git status` stays clean.
 
 ## 1. Imports
 

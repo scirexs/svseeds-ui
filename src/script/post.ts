@@ -1,6 +1,6 @@
 export { post };
 
-import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import * as p from "node:path";
 
 type Pkg = Record<string, unknown>;
@@ -18,6 +18,7 @@ function post() {
     makeJsr(pkg);
     makeMod();
     copyMeta();
+    cleanGen();
   } catch (e) {
     Err.show(e);
     process.exit(1);
@@ -52,7 +53,9 @@ function makeJsr(pkg: Pkg) {
   });
 }
 function makeMod() {
-  writeFileSync(p.resolve(DIST, "mod.ts"), `/**
+  writeFileSync(
+    p.resolve(DIST, "mod.ts"),
+    `/**
  * For more information, see the README.md or visit:
  * https://github.com/scirexs/svseeds-ui
  */
@@ -69,13 +72,18 @@ console.warn(String.raw\`
 \`);
 
 export { };
-`);
+`,
+  );
 }
 function copyMeta() {
   mkdirSync(p.resolve(DIST, "_svseeds"), { recursive: true });
   copyFileSync(p.resolve(ROOT, "src/lib/_svseeds/_core.ts"), p.resolve(DIST, "_svseeds/_core.ts"));
   copyFileSync(p.resolve(ROOT, "README.md"), p.resolve(DIST, "README.md"));
   copyFileSync(p.resolve(ROOT, "LICENSE"), p.resolve(DIST, "LICENSE"));
+}
+function cleanGen() {
+  rmSync(p.resolve(ROOT, "src/lib/index.ts"), { force: true });
+  rmSync(p.resolve(ROOT, "src/lib/_svseeds/dep.json"), { force: true });
 }
 function writeJson(file: string, value: unknown) {
   writeFileSync(p.resolve(DIST, file), `${JSON.stringify(value, null, 2)}\n`);

@@ -3,3 +3,4 @@
 20260627_vy26yl	feat: Add a headless, accessible two-pane resizable Splitter component (drag/keyboard separator, ARIA window-splitter)
 20260627_ym2zqu	build: Rework build/publish pipeline: publish a cleaned package.json from a dist/ staging dir, generate jsr.json/mod.ts with version from package.json, drop Terser, dedupe generated index exports, tidy dep.json (dedupe + drop self-refs), remove publish.sh
 20260629_quy35s	feat: Add combobox-based Pagination component and make ComboBox context-capable
+20260629_l7mnph	build: Merge the index/dep generators into a single prep.ts and have post.ts remove the generated source-tree files after build, with unit tests locking the regex extraction

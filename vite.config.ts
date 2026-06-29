@@ -30,6 +30,7 @@ export default defineConfig({
         include: [
           "tests/**/*.svelte.sim.test.ts",
           "tests/_core.test.ts",
+          "tests/prep.test.ts",
         ],
         setupFiles: ["./tests/sim-setup.ts"],
       },

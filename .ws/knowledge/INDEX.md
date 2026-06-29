@@ -10,7 +10,6 @@
 ## Build, Tooling & Dependencies
 - bun-run-check-generates-svelte-kit-dir.md — `bun run check` runs `svelte-kit sync`, (re)generating a gitignored `.svelte-kit/` build dir; leave it in place, don't clean it up.
 - bun-no-native-npm-publish-dry-run.md — no native `npm` on PATH; use `bunx --bun npm pack --dry-run` to inspect the npm file set; `bunx --bun npm publish --dry-run` can still fail on registry/version state.
-- build-generates-untracked-index-dep.md — `bun run build` writes `src/lib/index.ts` and `_svseeds/dep.json` as untracked, NON-gitignored files (only `dist/` is ignored); they linger in `git status`.
 - bun-run-fmt-rewrites-whole-src-lib.md — default `bun run fmt` runs `prettier --write` over the whole `./src/lib` tree; on a scoped task it picks up unrelated pre-existing formatting churn — validate with `SVS_FMT="<changed files>" bun run fmt:check` instead.
 
 ## Testing
