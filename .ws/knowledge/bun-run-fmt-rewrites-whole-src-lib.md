@@ -1,24 +1,33 @@
 # `bun run fmt` reformats all of `src/lib`, not just changed files
 
-**Applies to:** this repo as of prettier `^3.8.5`; `fmt` script =
-`bunx prettier --write ./src/lib --ignore-path .gitignore`.
+**Applies to:** this repo as of prettier `^3.8.5`. The format scripts take a
+variable target with a whole-tree default:
+`fmt` = `bunx prettier --write ${SVS_FMT:-./src/lib}`,
+`fmt:check` = `bunx prettier --check ${SVS_FMT:-./src/lib}`.
 
 ## Finding
-The `fmt` script runs `prettier --write` over the whole `./src/lib` tree, so it
-rewrites every source file whose current formatting differs from prettier's
-output — including files unrelated to the task. The repo currently has
-pre-existing formatting drift (e.g. `FileField.svelte`, `Tooltip.svelte`,
-`WheelPicker.svelte`), so a scoped task that runs `bun run fmt` for validation
-picks up unrelated formatting churn in its diff.
+With no `SVS_FMT` set, `fmt` runs `prettier --write` over the whole `./src/lib`
+tree, so it rewrites every source file whose current formatting differs from
+prettier's output — including files unrelated to the task. The repo currently
+has pre-existing formatting drift (e.g. `FileField.svelte`, `Tooltip.svelte`,
+`WheelPicker.svelte`), so a scoped task that runs the default `bun run fmt`
+(or `bun run fmt:check`) for validation picks up that unrelated churn / noise in
+its result.
 
 ## Why it matters / how to apply
-For a scoped change, do not run `bun run fmt` as a way to leave the tree
-formatted — it pollutes the diff with unrelated files. To check only the files
-you touched, use a check-only invocation scoped to those paths, e.g.
-`bunx prettier --check <changed files> --ignore-path .gitignore`. Reserve the
-repo-wide `--write` for an intentional formatting pass.
+For a scoped change, validate formatting with the **check-only** script narrowed
+to the files you touched via the `SVS_FMT` env var (space-separated):
+
+```
+SVS_FMT="src/lib/_svseeds/Foo.svelte src/lib/_svseeds/Bar.svelte" bun run fmt:check
+```
+
+This is the standard validation form for review (non-destructive, scoped). Use
+the default `bun run fmt:check` only for an intentional repo-wide check, and the
+`--write` `bun run fmt` only for an intentional formatting pass. The scripts read
+`.gitignore` by default (prettier 3), so no `--ignore-path` is needed.
 
 ## References
-`package.json` `fmt` script; `feedback-implementer.md` and `review-result.md`
-of task 20260629_quy35s (review verified formatting with `prettier --check`
-instead).
+`package.json` `fmt` / `fmt:check` scripts; `.ws/policy/coding-style.md` §0
+(validation commands); `feedback-implementer.md` and `review-result.md` of task
+20260629_quy35s (review verified formatting with a scoped `prettier --check`).
