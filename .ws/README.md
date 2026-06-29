@@ -24,7 +24,9 @@ collaboration system, see `collaboration/agent-collaboration.md`.
     `.agent-assignment.json`).
 - `decision/` — Design-intent documents (ADRs). One decision per file,
   append-only; changes are made by superseding with a new file.
-- `knowledge/` — Reusable findings discovered during work.
+- `knowledge/` — Reusable findings discovered during work. A maintainer-triggered
+  `cowork-audit` pass periodically audits it against the actual code and reports
+  stale entries to the maintainer (read-only; it does not edit knowledge).
   - `INDEX.md` — Index of knowledge files.
 - `policy/` — Project conventions, rules, and formats. (`-guide` denotes
   "rule + rationale + template".)

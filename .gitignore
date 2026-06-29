@@ -55,4 +55,13 @@ AGENTS.md
 # Others
 .ref/
 /zzz.ts
-/publish.sh
+
+# Disposable List
+## /build/
+## /dist/
+## /npm/
+## .vite/
+## *.sqlite
+## .vitest-attachments/
+## __screenshots__/
+

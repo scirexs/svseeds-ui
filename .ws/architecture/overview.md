@@ -112,18 +112,6 @@ Components (41 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
 - `.ref/` — reference material, incl. the canonical concept docs under
   `.ref/web-svseeds/src/md/` (`concepts.sv.md`, `customization.sv.md`,
   `form-controls.sv.md`).
-**Generated working-tree paths** (all git-ignored). The cowork agents leave the
-persistent ones in place and move the disposable ones to `/tmp/trash/` after a
-run (see `cowork-impl` / `cowork-review`):
-
-- **Persistent (leave in place)** — recreated on demand and relied on by later
-  commands: `node_modules/` (deps), `.svelte-kit/` (SvelteKit sync), and caches
-  (`.vite/`, `*.tsbuildinfo`, `.eslintcache`, `.stylelintcache`, `.npm`).
-- **Disposable (move to `/tmp/trash/` after a run)** — run outputs not consumed
-  by later steps:
-  - build output `(generated)`: `/build/`, `/dist/`, `/npm/`, and the published
-    package output `/_svseeds/`, `index.js`, `index.d.ts`.
-  - test result artifacts: `__screenshots__/`, `.vitest-attachments/`, etc.
 
 ## Public API / Entry Points
 
