@@ -4,6 +4,7 @@ import { userEvent } from "vitest/browser";
 import { createRawSnippet, tick } from "svelte";
 import ComboBox from "#svs/ComboBox.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import ComboBoxCtxProvider from "./fixtures/ComboBoxCtxProvider.svelte";
 
 const attachfn = () => {};
 const mockScrollIntoView = () => {
@@ -669,6 +670,59 @@ describe("Filtering", () => {
     expect(items).toHaveLength(1);
     txt(items[0], "CSS");
     attr(items[0], "aria-selected", "true");
+  });
+});
+
+describe("Embedded context", () => {
+  test("uses context options, value, variant, and styling", () => {
+    const state = $state({
+      options: new Set(["alpha", "beta", "gamma"]),
+      value: "beta",
+      variant: VARIANT.ACTIVE,
+      styling: "ctx-combo",
+      commits: 0,
+    });
+    const { getByRole, getAllByRole } = render(ComboBoxCtxProvider, { state, input: { expanded: true } });
+    const combobox = getByRole("combobox") as HTMLInputElement;
+
+    val(combobox, "beta");
+    has(combobox, "ctx-combo", PARTS.MAIN, VARIANT.ACTIVE);
+    expect(getAllByRole("option").map((item) => item.textContent)).toEqual(["alpha", "beta", "gamma"]);
+  });
+
+  test("writes typed input back to context", async () => {
+    const state = $state({
+      options: new Set(["alpha", "beta", "gamma"]),
+      value: "alpha",
+      variant: VARIANT.NEUTRAL,
+      styling: undefined,
+      commits: 0,
+    });
+    const { getByRole } = render(ComboBoxCtxProvider, { state });
+    const combobox = getByRole("combobox") as HTMLInputElement;
+
+    await userEvent.click(combobox);
+    await userEvent.clear(combobox);
+    await userEvent.keyboard("ga");
+
+    expect(state.value).toBe("ga");
+  });
+
+  test("invokes context commit when the listbox closes", async () => {
+    const state = $state({
+      options: new Set(["alpha", "beta", "gamma"]),
+      value: "alpha",
+      variant: VARIANT.NEUTRAL,
+      styling: undefined,
+      commits: 0,
+    });
+    const { getByRole } = render(ComboBoxCtxProvider, { state, input: { expanded: true } });
+    const combobox = getByRole("combobox") as HTMLInputElement;
+
+    combobox.focus();
+    await fireEvent.blur(combobox);
+
+    expect(state.commits).toBe(1);
   });
 });
 

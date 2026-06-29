@@ -69,7 +69,7 @@ Shared module:
   `SVSFieldConstraint`, `SVSContext`), and utilities (`_omit`, `_debounce`,
   `_throttle`, `shouldReduceMotion`, `canHover`, …).
 
-Components (41 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
+Components (42 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
 
 - **Field components** (label/validation wrapper around an input; structured
   whole→top/middle/bottom anatomy): TextField, NumberField, CheckField,
@@ -81,19 +81,20 @@ Components (41 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
   Disclosure, Accordion.
 - **Menu primitives**: MenuList, MenuGroup, MenuItem, MenuSeparator.
 - **Date/time pickers**: Calendar, MonthPicker.
-- **Navigation & progress**: Tabs, ProgressTracker.
+- **Navigation & progress**: Tabs, ProgressTracker, Pagination.
 - **Layout** (resizable two-pane region): Splitter.
 - **Drag & drop**: Sortable, SortableGroup.
 - **Feedback & utility**: Toast, DarkToggle, HotkeyCapture, Image.
 
 **Composition / dependencies** (source of truth: the generated `dep.json`):
 - **Hard dependencies** — one component imports another, so the CLI copies them
-  together: Calendar → MonthPicker → WheelPicker; MenuList → MenuSeparator
-  (Tooltip recurses into itself). Update when an intra-library import is added
-  or removed.
+  together: Calendar → MonthPicker → WheelPicker; MenuList → MenuSeparator;
+  Pagination → ComboBox (Tooltip recurses into itself). Update when an
+  intra-library import is added or removed.
 - **Coordinator pairings** — no import; the child is written explicitly and
   self-wires to the parent through an optional context, staying usable
-  standalone: each Field over its input control, Accordion over Disclosure.
+  standalone: each Field over its input control, Accordion over Disclosure,
+  Pagination over ComboBox.
   These are composition relationships, not packaging dependencies.
 
 ## Directory Layout

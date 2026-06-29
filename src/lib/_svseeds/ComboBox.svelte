@@ -1,15 +1,19 @@
 <!--
   @component
   ### Usage
-  Use standalone.
+  Use standalone, or inside `Pagination`.
   ```svelte
   <ComboBox {...props} />
+
+  <Pagination>
+    <ComboBox {...props} />
+  </Pagination>
   ```
   ### Types
   default value: *`(value)`*
   ```ts
   interface ComboBoxProps extends Omit<HTMLInputAttributes, "type" | "value" | "list" | "role" | "aria-haspopup" | "aria-autocomplete" | "aria-controls" | "aria-expanded" | "aria-activedescendant"> {
-    options: SvelteSet<string> | Set<string>;
+    options?: SvelteSet<string> | Set<string>;
     extra?: Snippet<[boolean, string]>; // Snippet<[expanded,variant]>
     value?: string; // bindable
     expanded?: boolean; // bindable
@@ -33,6 +37,9 @@
     </ul>
   </span>
   ```
+  ### Behavior
+  - When embedded in a `ComboBoxContext`, `options`, `value`, `variant`, and fallback `styling` come from the context.
+  - Closing the listbox invokes the context's `commit` hook when present.
   Open/close animations should be layered on the `bottom` part variant classes (`active` = open) with opacity, transform, or scale; the component keeps `visibility` as its structural default.
 -->
 <script module lang="ts">
@@ -40,7 +47,7 @@
     HTMLInputAttributes,
     "type" | "value" | "list" | "role" | "aria-haspopup" | "aria-autocomplete" | "aria-controls" | "aria-expanded" | "aria-activedescendant"
   > {
-    options: SvelteSet<string> | Set<string>;
+    options?: SvelteSet<string> | Set<string>;
     extra?: Snippet<[boolean, string]>; // Snippet<[expanded,variant]>
     value?: string; // bindable
     expanded?: boolean; // bindable
@@ -50,14 +57,22 @@
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
-  export type ComboBoxReqdProps = "options";
+  export type ComboBoxReqdProps = never;
   export type ComboBoxBindProps = "value" | "expanded" | "element";
 
   export const _COMBO_BOX_PRESET = "svs-combo-box";
   const NA = -1;
 
+  export interface ComboBoxContext extends SVSContext {
+    get options(): SvelteSet<string> | Set<string>;
+    get value(): string;
+    set value(v: string);
+    commit?(): void;
+  }
+  export const [_getComboBoxContext, _setComboBoxContext] = _createContext<ComboBoxContext>();
+
   import { tick } from "svelte";
-  import { VARIANT, PARTS, _fnClass } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { SvelteSet } from "svelte/reactivity";
@@ -69,29 +84,37 @@
     FocusEventHandler,
     MouseEventHandler,
   } from "svelte/elements";
-  import type { SVSClass, SVSVariant } from "./_core";
+  import type { SVSClass, SVSVariant, SVSContext } from "./_core";
 </script>
 
 <script lang="ts">
   // prettier-ignore
   let { options, extra, value = $bindable(""), expanded = $bindable(false), search = true, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, onclick, onkeydown, oninput, onfocus, onblur, ...rest }: ComboBoxProps = $props();
+  const ctx = _getComboBoxContext();
 
   // *** Initialize *** //
-  const cls = $derived(_fnClass(_COMBO_BOX_PRESET, styling));
+  const cls = $derived(_fnClass(_COMBO_BOX_PRESET, styling ?? ctx?.styling));
   const uid = $props.id();
   const idList = `${uid}-list`;
+  const effOptions = $derived(ctx ? ctx.options : options);
+  const effValue = $derived(ctx ? ctx.value : value);
+  const effVariant = $derived(ctx ? ctx.variant : variant);
   let selected = $state(NA);
   let typed = $state(false);
   let wasExpanded = expanded;
   let overflow = $state({ x: false, y: false });
   let listElem = $state<HTMLUListElement>();
+  function setValue(v: string) {
+    if (ctx) ctx.value = v;
+    else value = v;
+  }
 
   // *** Reactive Handlers *** //
   const listboxStyle = $derived(
     `position:absolute;cursor:default;user-select:none;visibility: ${expanded ? "visible" : "hidden"};${overflow.x ? "right:0%;" : ""}${overflow.y ? "bottom:100%;" : ""}`,
   );
-  const opts = $derived([...options.keys()]);
-  const view = $derived(search && typed && value ? opts.filter((x) => x.toLowerCase().startsWith(value.toLowerCase())) : opts);
+  const opts = $derived(effOptions ? [...effOptions.keys()] : []);
+  const view = $derived(search && typed && effValue ? opts.filter((x) => x.toLowerCase().startsWith(effValue.toLowerCase())) : opts);
 
   $effect.pre(() => {
     if (wasExpanded && !expanded) {
@@ -109,7 +132,7 @@
   function open(activate: boolean = false, bottom: boolean = false) {
     if (expanded) return;
     typed = false;
-    selected = view.indexOf(value);
+    selected = view.indexOf(effValue);
     if (activate && selected === NA) selected = bottom ? view.length - 1 : 0;
     expanded = true;
     observeOverflow();
@@ -125,14 +148,16 @@
   function apply() {
     if (!expanded) return;
     if (selected === NA || selected >= view.length) return;
-    value = view[selected];
-    if (element) element.selectionStart = value.length;
+    const v = view[selected];
+    setValue(v);
+    if (element) element.selectionStart = v.length;
     close();
   }
   function close() {
     expanded = false;
     selected = NA;
     typed = false;
+    if (ctx) ctx.commit?.();
   }
   const hfocus: FocusEventHandler<HTMLInputElement> = (ev) => {
     onfocus?.(ev);
@@ -150,7 +175,7 @@
     oninput?.(ev);
     if ((ev as Parameters<EventHandler<InputEvent, HTMLInputElement>>[0]).isComposing) return;
     typed = true;
-    selected = options.has(value) ? view.indexOf(value) : NA;
+    selected = effOptions?.has(effValue) ? view.indexOf(effValue) : NA;
   };
   const hkeydown: KeyboardEventHandler<HTMLInputElement> = (ev) => {
     onkeydown?.(ev);
@@ -164,6 +189,10 @@
         if (!ev.altKey && expanded && selected > NA) {
           ev.preventDefault();
           apply();
+        }
+        if (!ev.altKey && expanded && selected === NA && ctx) {
+          ev.preventDefault();
+          close();
         }
         break;
       case "ArrowDown":
@@ -196,12 +225,12 @@
 <!---------------------------------------->
 <svelte:document onscroll={() => close()} />
 
-{#if options.size}
-  <span class={cls(PARTS.WHOLE, variant)} style="position:relative;">
+{#if effOptions?.size}
+  <span class={cls(PARTS.WHOLE, effVariant)} style="position:relative;">
     <input
-      bind:value
+      bind:value={() => effValue, setValue}
       bind:this={element}
-      class={[cls(PARTS.MAIN, variant), c]}
+      class={[cls(PARTS.MAIN, effVariant), c]}
       {...rest}
       type="text"
       role="combobox"
@@ -218,14 +247,20 @@
       {@attach attach}
     />
     {#if extra}
-      <div class={cls(PARTS.EXTRA, variant)} style="position:absolute;top:50%;right:0%;transform:translateY(-50%);pointer-events:none;">
-        {@render extra(expanded, variant)}
+      <div class={cls(PARTS.EXTRA, effVariant)} style="position:absolute;top:50%;right:0%;transform:translateY(-50%);pointer-events:none;">
+        {@render extra(expanded, effVariant)}
       </div>
     {/if}
-    <ul bind:this={listElem} class={cls(PARTS.BOTTOM, expanded ? VARIANT.ACTIVE : variant)} id={idList} role="listbox" style={listboxStyle}>
+    <ul
+      bind:this={listElem}
+      class={cls(PARTS.BOTTOM, expanded ? VARIANT.ACTIVE : effVariant)}
+      id={idList}
+      role="listbox"
+      style={listboxStyle}
+    >
       {#each view as opt, i (opt)}
         {@const isSelected = i === selected}
-        {@const labelStatus = isSelected ? VARIANT.ACTIVE : variant}
+        {@const labelStatus = isSelected ? VARIANT.ACTIVE : effVariant}
         {@const onpointerenter = () => (selected = i)}
         <li
           id={`${idList}-${i}`}
