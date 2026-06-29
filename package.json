@@ -45,6 +45,7 @@
     "build": "bun run ./src/script/prep.ts && bunx @sveltejs/package && bun run ./src/script/post.ts",
     "check": "bunx svelte-kit sync && bunx svelte-check --tsconfig ./tsconfig.json",
     "fmt": "bunx prettier --write ./src/lib --ignore-path .gitignore",
+    "fmt:check": "prettier --check ./src/lib --ignore-path .gitignore",
     "test": "bunx vitest --run ./tests",
     "update": "bun update && bunx playwright install chromium",
     "update:full": "bun update --latest && bunx playwright install-deps chromium"

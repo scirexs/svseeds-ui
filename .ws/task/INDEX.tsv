@@ -1,4 +1,5 @@
 # <task_id>	<type>: <description>
 20260625_n26zru	feat: Add a standalone Image component (picture/img abstraction with lazy loading, layout-shift mitigation, placeholder, preload, and load/error state)
 20260627_vy26yl	feat: Add a headless, accessible two-pane resizable Splitter component (drag/keyboard separator, ARIA window-splitter)
+20260627_ym2zqu	build: Rework build/publish pipeline: publish a cleaned package.json from a dist/ staging dir, generate jsr.json/mod.ts with version from package.json, drop Terser, dedupe generated index exports, tidy dep.json (dedupe + drop self-refs), remove publish.sh
 20260629_quy35s	feat: Add combobox-based Pagination component and make ComboBox context-capable
