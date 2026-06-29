@@ -51,15 +51,16 @@ export type Later = string;
     ]);
   });
 
-  test("extracts the svelte default export and module exports", () => {
+  test("extracts the svelte default and public module exports, excluding internal `_`-prefixed exports", () => {
     const code = `
 <script module lang="ts">
   export interface InputProps<T = string> extends HTMLInputAttributes {}
+  export const inputBase = "svs-input";
   export const _INPUT_PRESET = "svs-input";
 </script>
 `;
 
-    expect(extractExportNames(code, ".svelte")).toEqual(["default as Input", "type InputProps", "_INPUT_PRESET"]);
+    expect(extractExportNames(code, ".svelte")).toEqual(["default as Input", "type InputProps", "inputBase"]);
   });
 });
 

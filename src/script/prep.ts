@@ -122,9 +122,9 @@ class ExportParser {
     this.#prepCode(code, path);
     switch (p.extname(path)) {
       case ExportParser.EXT.svelte:
-        return [this.#default(ExportParser.EXT.svelte), ...this.#extract("type"), ...this.#extract("each")];
+        return this.#public([this.#default(ExportParser.EXT.svelte), ...this.#extract("type"), ...this.#extract("each")]);
       case ExportParser.EXT.ts:
-        return [...this.#extract("bulk"), ...this.#extract("type"), ...this.#extract("each")];
+        return this.#public([...this.#extract("bulk"), ...this.#extract("type"), ...this.#extract("each")]);
     }
     return [];
   }
@@ -157,6 +157,9 @@ class ExportParser {
           .filter((x) => x),
       )
       .flat(Infinity) as string[];
+  }
+  #public(names: string[]): string[] {
+    return names.filter((x) => !exportName(x).startsWith("_"));
   }
   #getTemplate(exports: string[]): string {
     const filtered = dedupeExportNames(exports, this.#names);

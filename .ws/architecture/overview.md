@@ -127,6 +127,9 @@ redirects users to npm — see the generated `mod.ts`):
   (default export, `_` prefix stripped), alongside its public types, e.g.
   `Button`, `ButtonProps`; `TextField`, `TextFieldValidation`. Type surface
   from `_core.ts` is also re-exported (`SVSClass`, `SVSVariant`, `SVSPart`, …).
+  `_`-prefixed symbols (such as per-component `_*_PRESET` values and `_core`
+  internals) are treated as library-internal and excluded from the generated
+  public surface.
 - **Conventional prop API** across components: `styling` (class rules),
   `variant` (drives variant-keyed classes; defaults to `VARIANT.NEUTRAL`),
   `attributes` (passthrough to the main element), `element` (`bind:`),
