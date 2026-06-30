@@ -8,7 +8,7 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface ColorPickerProps extends Omit<HTMLInputAttributes, "type" | "value"> {
+  interface ColorPickerProps extends Omit<HTMLInputAttributes, "type" | "value" | "alpha"> {
     value?: string; // bindable ("#000000")
     alpha?: number; // (1)
     checkered?: boolean; // (true)
