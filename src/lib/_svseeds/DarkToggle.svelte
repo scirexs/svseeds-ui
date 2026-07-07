@@ -294,9 +294,9 @@
     {@render children(value, variant, element)}
   {:else}
     {#if value}
-      {@render svgDark()}
-    {:else}
       {@render svgLight()}
+    {:else}
+      {@render svgDark()}
     {/if}
   {/if}
 {/snippet}
