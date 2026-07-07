@@ -113,9 +113,11 @@
 
 <style>
   :root:has(dialog[open]) {
-    overflow: clip;
+    overflow: hidden;
   }
-  dialog {
-    margin: auto;
+  @layer components {
+    dialog {
+      margin: auto;
+    }
   }
 </style>
