@@ -484,14 +484,14 @@
     }
     #commitFollowers() {
       const active = this.#active;
-      if (!active || active.followers.length <= 0 || active.current.id === active.source.id) return;
+      if (!active || active.followers.length <= 0) return;
       const values = active.followers
         .map((key) => {
           const index = findIndex(active.source, key);
           return index >= 0 ? { key, index, value: active.source.items[index] } : undefined;
         })
         .filter((x): x is { key: string; index: number; value: unknown } => x !== undefined);
-      if (active.mode === "clone") {
+      if (active.mode === "clone" && active.current.id !== active.source.id) {
         const cloned = values.map(({ value }) => active.source.clone(value));
         insertAfter(active.current, active.activeKey, cloned);
         active.current.touch();
@@ -747,7 +747,7 @@
       pendingSelect = "";
       pendingDeselect = false;
     }
-    const followers = multiple && selected.has(key) ? [...selected].filter((x) => x !== key) : [];
+    const followers = multiple ? [...selected].filter((x) => x !== key) : [];
     if (controller.prepare(member, key, ev, li, followers)) {
       controller.setGhost?.(ghost !== undefined, ev);
     }

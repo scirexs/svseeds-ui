@@ -11,3 +11,4 @@
 20260708_yd65jy	fix: Fix floating-point display error in NumberInput spinner snapping when the snap base (min) is non-zero
 20260708_ggw45p	feat: Rename Calendar's `prev`/`next` snippet props to `left`/`right` for naming consistency with other components and the LEFT/RIGHT styling parts
 20260708_wpr67y	fix: Fix Sortable backward reorder reverting during the flip animation
+20260708_jd7pcc	fix: Fix same-list multi-select move so the whole selection follows the dragged item

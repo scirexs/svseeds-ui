@@ -315,6 +315,19 @@ describe("_Sortable multiple, confirm, append, and dragging", () => {
     await expect.element(el(container, "readout-b")).toHaveTextContent("a1,a2,b1");
   });
 
+  test("same-list multi-select move relocates the whole selection to the drop target", async () => {
+    const { container } = render(SortableBasic, { items: ["one", "two", "three", "four"], multiple: true });
+
+    el(container, "item-one").dispatchEvent(new PointerEvent("pointerdown", { button: 0, buttons: 1, bubbles: true }));
+    el(container, "item-one").dispatchEvent(new PointerEvent("pointerup", { button: 0, buttons: 0, bubbles: true }));
+    await tick();
+    await expect.element(el(container, "item-one")).toHaveAttribute("data-variant", VARIANT.ACTIVE);
+
+    await drag(el(container, "item-two"), el(container, "item-four"));
+
+    await expect.element(el(container, "value-readout")).toHaveTextContent("three,four,two,one");
+  });
+
   test("confirm shows a pending highlight before committing", async () => {
     const { container } = render(SortableBasic, { items: ["a", "b", "c"], confirm: true });
 
