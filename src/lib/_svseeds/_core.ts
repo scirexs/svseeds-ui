@@ -8,6 +8,7 @@ export {
   type CollectionEvents,
   type Position,
   type Align,
+  type Vector,
   BASE,
   SR_ONLY,
   _DEFAULT_DURATION,
@@ -65,6 +66,7 @@ interface CollectionEvents<T> {
 }
 type Position = "top" | "right" | "bottom" | "left";
 type Align = "start" | "center" | "end";
+type Vector = { x: number; y: number };
 
 const BASE = "base";
 const SR_ONLY =

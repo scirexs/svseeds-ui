@@ -59,7 +59,6 @@
     variant?: SVSVariant;
   }
   export type TooltipDefaults = Omit<TooltipParams, "text" | "content">;
-  export type Vector = { x: number; y: number };
 
   export function tooltip(params: TooltipParams): Attachment<HTMLElement> {
     return (node) => {
@@ -306,7 +305,7 @@
   import TooltipRoot from "./Tooltip.svelte";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
-  import type { SVSClass, SVSVariant, Position, Align } from "./_core";
+  import type { SVSClass, SVSVariant, Position, Align, Vector } from "./_core";
 </script>
 
 <script lang="ts">
