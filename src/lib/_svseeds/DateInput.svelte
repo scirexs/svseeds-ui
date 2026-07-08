@@ -7,10 +7,6 @@
   ```
   ### Types
   ```ts
-  type TransitionProp = {
-    fn?: (node: HTMLElement, params: any, options: { direction: "in" | "out" | "both" }) => import("svelte/transition").TransitionConfig;
-    params?: unknown;
-  };
   interface DateInputProps extends Omit<HTMLInputAttributes, "type" | "value" | "min" | "max" | "readonly" | "list" | "name"> {
     value?: Temporal.PlainDate; // bindable; undefined = empty
     open?: boolean; // bindable (false)
@@ -32,6 +28,16 @@
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
+  type DateInputCtl = {
+    toggle: () => void;
+    show: () => void;
+    hide: () => void;
+    clear: () => void;
+  };
+  type TransitionProp = {
+    fn?: (node: HTMLElement, params: any, options: { direction: "in" | "out" | "both" }) => import("svelte/transition").TransitionConfig;
+    params?: unknown;
+  };
   ```
   ### Anatomy
   ```svelte
@@ -50,16 +56,6 @@
   - `format` and `parse` are caller-coordinated; the default locale display is not necessarily parseable by a supplied parser.
 -->
 <script module lang="ts">
-  type DateInputCtl = {
-    toggle: () => void;
-    show: () => void;
-    hide: () => void;
-    clear: () => void;
-  };
-  export type TransitionProp = {
-    fn?: (node: HTMLElement, params: any, options: { direction: "in" | "out" | "both" }) => import("svelte/transition").TransitionConfig;
-    params?: unknown;
-  };
   export interface DateInputProps extends Omit<HTMLInputAttributes, "type" | "value" | "min" | "max" | "readonly" | "list" | "name"> {
     value?: Temporal.PlainDate;
     open?: boolean;
@@ -81,6 +77,16 @@
     styling?: SVSClass;
     variant?: SVSVariant;
   }
+  export type DateInputCtl = {
+    toggle: () => void;
+    show: () => void;
+    hide: () => void;
+    clear: () => void;
+  };
+  export type TransitionProp = {
+    fn?: (node: HTMLElement, params: any, options: { direction: "in" | "out" | "both" }) => import("svelte/transition").TransitionConfig;
+    params?: unknown;
+  };
   export type DateInputReqdProps = never;
   export type DateInputBindProps = "value" | "open" | "element";
 

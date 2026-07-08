@@ -8,9 +8,6 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface ToggleOption extends Omit<HTMLButtonAttributes, "class" | "type" | "role" | "aria-checked" | "aria-invalid" | "aria-errormessage" | "onclick"> {
-    text: string;
-  }
   interface ToggleGroupProps {
     options: SvelteMap<string, string | ToggleOption> | Map<string, string | ToggleOption>;
     children?: Snippet<[string, string, string]>; // Snippet<[value,text,variant]>
@@ -23,6 +20,9 @@
     elements?: HTMLButtonElement[]; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
+  }
+  interface ToggleOption extends Omit<HTMLButtonAttributes, "class" | "type" | "role" | "aria-checked" | "aria-invalid" | "aria-errormessage" | "onclick"> {
+    text: string;
   }
   interface ToggleGroupEvents extends CollectionEvents<string> {}
   ```
@@ -38,12 +38,6 @@
   ```
 -->
 <script module lang="ts">
-  export interface ToggleOption extends Omit<
-    HTMLButtonAttributes,
-    "class" | "type" | "role" | "aria-checked" | "aria-invalid" | "aria-errormessage" | "onclick"
-  > {
-    text: string;
-  }
   export interface ToggleGroupProps {
     options: SvelteMap<string, string | ToggleOption> | Map<string, string | ToggleOption>;
     children?: Snippet<[string, string, string]>; // Snippet<[value,text,variant]>
@@ -56,6 +50,12 @@
     elements?: HTMLButtonElement[]; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
+  }
+  export interface ToggleOption extends Omit<
+    HTMLButtonAttributes,
+    "class" | "type" | "role" | "aria-checked" | "aria-invalid" | "aria-errormessage" | "onclick"
+  > {
+    text: string;
   }
   export interface ToggleGroupEvents extends CollectionEvents<string> {}
   export type ToggleGroupReqdProps = "options";

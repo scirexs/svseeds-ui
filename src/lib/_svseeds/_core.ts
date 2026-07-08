@@ -6,6 +6,8 @@ export {
   type SVSFieldConstraint,
   type SVSContext,
   type CollectionEvents,
+  type Position,
+  type Align,
   BASE,
   SR_ONLY,
   _DEFAULT_DURATION,
@@ -61,6 +63,8 @@ interface CollectionEvents<T> {
   onadd?: (detail: { values: T[]; added: T[] }) => T[] | void;
   onremove?: (detail: { values: T[]; removed: T[] }) => T[] | void;
 }
+type Position = "top" | "right" | "bottom" | "left";
+type Align = "start" | "center" | "end";
 
 const BASE = "base";
 const SR_ONLY =

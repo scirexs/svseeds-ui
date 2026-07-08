@@ -15,8 +15,8 @@
     children: Snippet<[string]>; // panel content; Snippet<[variant]>; usually renders a MenuList
     open?: boolean; // bindable (false); observe + control
     hover?: boolean; // (false); open on pointerenter / focusin where the primary pointer can hover
-    position?: PopoverPosition; // ("bottom")
-    align?: PopoverAlign; // ("start")
+    position?: Position; // ("bottom")
+    align?: Align; // ("start")
     offset?: number; // (0); gap from the anchor edge, px
     autoFlip?: boolean; // (true); native fallback placement
     matchWidth?: boolean; // (false); panel min-width = anchor width
@@ -30,9 +30,9 @@
     // other HTMLButtonAttributes are passed to the trigger via ...rest; `class` is merged onto the trigger
     // style, popovertarget, and popovertargetaction are component-owned
   }
-  type PopoverPosition = "top" | "right" | "bottom" | "left";
-  type PopoverAlign = "start" | "center" | "end";
   type PopoverRole = "menu" | "listbox" | "dialog";
+  type Position = "top" | "right" | "bottom" | "left";
+  type Align = "start" | "center" | "end";
   ```
   ### Anatomy
   ```svelte
@@ -56,8 +56,8 @@
     children: Snippet<[string]>; // panel content; Snippet<[variant]>; usually renders a MenuList
     open?: boolean; // bindable (false); observe + control
     hover?: boolean; // (false); hover-capable pointers only
-    position?: PopoverPosition; // ("bottom")
-    align?: PopoverAlign; // ("start")
+    position?: Position; // ("bottom")
+    align?: Align; // ("start")
     offset?: number; // (0)
     autoFlip?: boolean; // (true)
     matchWidth?: boolean; // (false)
@@ -69,11 +69,9 @@
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
+  export type PopoverRole = "menu" | "listbox" | "dialog";
   export type PopoverReqdProps = "label" | "children";
   export type PopoverBindProps = "open" | "element";
-  export type PopoverPosition = "top" | "right" | "bottom" | "left";
-  export type PopoverAlign = "start" | "center" | "end";
-  export type PopoverRole = "menu" | "listbox" | "dialog";
 
   export const _POPOVER_PRESET = "svs-popover";
 
@@ -91,7 +89,7 @@
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLButtonAttributes, FocusEventHandler, PointerEventHandler, ToggleEventHandler } from "svelte/elements";
-  import type { SVSClass, SVSVariant } from "./_core";
+  import type { SVSClass, SVSVariant, Position, Align } from "./_core";
   import type { MenuContainerContext } from "./MenuList.svelte";
 </script>
 
@@ -129,7 +127,7 @@
   }
 
   let panel = $state<HTMLDivElement>();
-  let placement = $state<PopoverPosition>(initial());
+  let placement = $state<Position>(initial());
   let shown = false;
 
   // *** Reactive Handlers *** //

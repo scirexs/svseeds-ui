@@ -60,8 +60,6 @@
   }
   export type TooltipDefaults = Omit<TooltipParams, "text" | "content">;
   export type Vector = { x: number; y: number };
-  export type Position = "top" | "right" | "bottom" | "left";
-  export type Align = "start" | "center" | "end";
 
   export function tooltip(params: TooltipParams): Attachment<HTMLElement> {
     return (node) => {
@@ -163,9 +161,11 @@
       } else {
         const origin = { x: ev.clientX, y: ev.clientY };
         this.#listeners.push(on(node, "pointerup", () => this.hide()));
-        this.#listeners.push(on(node, "pointermove", (mv) => {
-          if (exceedsMoveThreshold(origin, mv)) this.hide();
-        }));
+        this.#listeners.push(
+          on(node, "pointermove", (mv) => {
+            if (exceedsMoveThreshold(origin, mv)) this.hide();
+          }),
+        );
       }
     }
     computePoint(size: Vector): Vector {
@@ -306,7 +306,7 @@
   import TooltipRoot from "./Tooltip.svelte";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
-  import type { SVSClass, SVSVariant } from "./_core";
+  import type { SVSClass, SVSVariant, Position, Align } from "./_core";
 </script>
 
 <script lang="ts">

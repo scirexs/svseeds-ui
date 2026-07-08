@@ -12,11 +12,6 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface ToggleOption {
-    text: string;
-    disabled?: boolean;
-    // other button attributes
-  }
   interface ToggleGroupFieldProps {
     options?: SvelteMap<string, string | ToggleOption> | Map<string, string | ToggleOption>;
     label?: string;
@@ -39,6 +34,11 @@
       ToggleGroupReqdProps | ToggleGroupBindProps | "ariaDescId" | "ariaErrMsgId" | "multiple" | "variant" | "events"
     >;
     children?: Snippet;
+  }
+  interface ToggleOption {
+    text: string;
+    disabled?: boolean;
+    // other button attributes
   }
   type ToggleGroupFieldValidation = SVSFieldValidation<string[]>;
   type ToggleGroupFieldConstraint = SVSFieldConstraint;

@@ -8,19 +8,6 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  type DayCtx = {
-    date: Temporal.PlainDate;
-    variant: string;
-    weekday: number;
-    today: boolean;
-    selected: boolean;
-    outside: boolean;
-    disabled: boolean;
-  };
-  type TransitionProp = {
-    fn?: (node: HTMLElement, params: any, options: { direction: "in" | "out" | "both" }) => import("svelte/transition").TransitionConfig;
-    params?: unknown;
-  };
   interface CalendarProps {
     value?: Temporal.PlainDate; // bindable; selected date
     display?: Temporal.PlainYearMonth; // bindable; shown month
@@ -43,6 +30,19 @@
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
+  type DayCtx = {
+    date: Temporal.PlainDate;
+    variant: string;
+    weekday: number;
+    today: boolean;
+    selected: boolean;
+    outside: boolean;
+    disabled: boolean;
+  };
+  type TransitionProp = {
+    fn?: (node: HTMLElement, params: any, options: { direction: "in" | "out" | "both" }) => import("svelte/transition").TransitionConfig;
+    params?: unknown;
+  };
   ```
   ### Anatomy
   ```svelte
@@ -67,19 +67,6 @@
   - Arrow, Home/End, PageUp/PageDown, and Shift+PageUp/PageDown update roving focus.
 -->
 <script module lang="ts">
-  export type DayCtx = {
-    date: Temporal.PlainDate;
-    variant: string;
-    weekday: number;
-    today: boolean;
-    selected: boolean;
-    outside: boolean;
-    disabled: boolean;
-  };
-  export type TransitionProp = {
-    fn?: (node: HTMLElement, params: any, options: { direction: "in" | "out" | "both" }) => import("svelte/transition").TransitionConfig;
-    params?: unknown;
-  };
   export interface CalendarProps {
     value?: Temporal.PlainDate;
     display?: Temporal.PlainYearMonth;
@@ -102,6 +89,19 @@
     styling?: SVSClass;
     variant?: SVSVariant;
   }
+  export type DayCtx = {
+    date: Temporal.PlainDate;
+    variant: string;
+    weekday: number;
+    today: boolean;
+    selected: boolean;
+    outside: boolean;
+    disabled: boolean;
+  };
+  export type TransitionProp = {
+    fn?: (node: HTMLElement, params: any, options: { direction: "in" | "out" | "both" }) => import("svelte/transition").TransitionConfig;
+    params?: unknown;
+  };
   export type CalendarReqdProps = never;
   export type CalendarBindProps = "value" | "display" | "picking";
 
