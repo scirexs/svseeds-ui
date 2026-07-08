@@ -1,6 +1,7 @@
 # Knowledge Index
 
 ## Language & Types
+- svelte-state-widens-object-string-literals.md — `$state({ key: "literal" })` widens string literals to `string`; annotate the type explicitly when passing reactive prop objects to typed components.
 
 ## Framework & Libraries
 - svelte-native-event-handler-typing.md — intrinsic-element `onload`/`onerror` type as a generic `EventHandler`; keep the public prop precise and cast the internal DOM handler narrowly.

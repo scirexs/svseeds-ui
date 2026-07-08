@@ -7,3 +7,4 @@
 20260629_frxdxy	build: Exclude `_`-prefixed internal symbols from the generated package index
 20260708_dqekeu	fix: Fix WheelPicker display collapse in object-styling mode by measuring row height via bind:this + offsetHeight instead of a styling-dependent selector; disable text selection on the decorative drum
 20260708_dxvznm	feat: Restructure Popover arrow into MAIN + flip-following caret parts
+20260708_d4d7g4	feat: Restructure NumberInput spin props into a "none|split|stack" enum, rename the decrement/increment button snippets to left/right, and simplify the spinner button markup (drop the EXTRA span, size the default svg to 100%)

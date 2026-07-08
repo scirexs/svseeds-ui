@@ -12,7 +12,10 @@ prettier's output — including files unrelated to the task. The repo currently
 has pre-existing formatting drift (e.g. `FileField.svelte`, `Tooltip.svelte`,
 `WheelPicker.svelte`), so a scoped task that runs the default `bun run fmt`
 (or `bun run fmt:check`) for validation picks up that unrelated churn / noise in
-its result.
+its result. Test files under `tests/` carry their own pre-existing drift
+(e.g. multi-statement one-liners that prettier expands), so even a
+`SVS_FMT`-scoped `fmt:check` limited to edited test files may report failures
+that pre-date the task's changes.
 
 ## Why it matters / how to apply
 For a scoped change, validate formatting with the **check-only** script narrowed

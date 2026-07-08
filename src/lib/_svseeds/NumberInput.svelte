@@ -14,10 +14,9 @@
     max?: number;
     step?: number; // (1)
     integer?: boolean; // (false)
-    spin?: boolean; // (false)
-    stack?: boolean; // (false)
-    decrement?: Snippet<[string]>; // Snippet<[variant]>
-    increment?: Snippet<[string]>; // Snippet<[variant]>
+    spin?: "none" | "split" | "stack"; // ("none")
+    left?: Snippet<[string]>; // Snippet<[variant]>
+    right?: Snippet<[string]>; // Snippet<[variant]>
     options?: SvelteSet<number> | Set<number>;
     ariaDecLabel?: string; // ("Decrement")
     ariaIncLabel?: string; // ("Increment")
@@ -31,21 +30,13 @@
   ### Anatomy
   ```svelte
   <span class="whole">
-    <button class="left" type="button" conditional: spin && !stack>
-      <span class="extra">decrement</span>
-    </button>
+    <button class="left" type="button" conditional: spin === "split">{left}</button>
     <input class="main" type="text" inputmode="numeric|decimal" />
-    <span class="aux" conditional: spin && stack>
-      <button class="right" type="button">
-        <span class="extra">increment</span>
-      </button>
-      <button class="left" type="button">
-        <span class="extra">decrement</span>
-      </button>
+    <span class="aux" conditional: spin === "stack">
+      <button class="right" type="button">{right}</button>
+      <button class="left" type="button">{left}</button>
     </span>
-    <button class="right" type="button" conditional: spin && !stack>
-      <span class="extra">increment</span>
-    </button>
+    <button class="right" type="button" conditional: spin === "split">{right}</button>
     <datalist conditional>
       {#each options as option}
         <option value={option}></option>
@@ -64,10 +55,9 @@
     max?: number;
     step?: number; // (1)
     integer?: boolean; // (false)
-    spin?: boolean; // (false)
-    stack?: boolean; // (false)
-    decrement?: Snippet<[string]>; // Snippet<[variant]>
-    increment?: Snippet<[string]>; // Snippet<[variant]>
+    spin?: "none" | "split" | "stack"; // ("none")
+    left?: Snippet<[string]>; // Snippet<[variant]>
+    right?: Snippet<[string]>; // Snippet<[variant]>
     options?: SvelteSet<number> | Set<number>;
     ariaDecLabel?: string; // ("Decrement")
     ariaIncLabel?: string; // ("Increment")
@@ -104,7 +94,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { value = $bindable(), min, max, step = 1, integer = false, spin = false, stack = false, options, ariaDecLabel = "Decrement", ariaIncLabel = "Increment", decrement, increment, onchange: onchangeProp, oninvalid: oninvalidProp, onkeydown, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, id: idProp, "aria-describedby": ariaDescribedbyProp, class: c, "aria-invalid": ariaInvalid, ...rest }: NumberInputProps = $props();
+  let { value = $bindable(), min, max, step = 1, integer = false, spin = "none", options, ariaDecLabel = "Decrement", ariaIncLabel = "Increment", left, right, onchange: onchangeProp, oninvalid: oninvalidProp, onkeydown, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, id: idProp, "aria-describedby": ariaDescribedbyProp, class: c, "aria-invalid": ariaInvalid, ...rest }: NumberInputProps = $props();
   const ctx = _getNumberInputContext();
 
   // *** Initialize *** //
@@ -203,7 +193,7 @@
   };
   const hkeydown: KeyboardEventHandler<HTMLInputElement> = (ev) => {
     onkeydown?.(ev);
-    if (!spin || ev.isComposing) return;
+    if (spin === "none" || ev.isComposing) return;
     if (ev.key === "ArrowUp") {
       ev.preventDefault();
       bump(1);
@@ -301,7 +291,7 @@
 <!---------------------------------------->
 
 <span class={cls(PARTS.WHOLE, effVariant)}>
-  {#if spin && !stack}
+  {#if spin === "split"}
     {@render decBtn()}
   {/if}
   <input
@@ -313,10 +303,10 @@
     id={effId}
     list={idList}
     inputmode={mode}
-    role={spin ? "spinbutton" : undefined}
-    aria-valuenow={spin ? effValue : undefined}
-    aria-valuemin={spin ? min : undefined}
-    aria-valuemax={spin && max !== undefined ? alignedMax() : undefined}
+    role={spin !== "none" ? "spinbutton" : undefined}
+    aria-valuenow={spin !== "none" ? effValue : undefined}
+    aria-valuemin={spin !== "none" ? min : undefined}
+    aria-valuemax={spin !== "none" && max !== undefined ? alignedMax() : undefined}
     onbeforeinput={hbeforeinput}
     oninput={hinput}
     onkeydown={hkeydown}
@@ -329,12 +319,12 @@
     aria-errormessage={effAriaErrMsgId}
     {@attach attach}
   />
-  {#if spin && stack}
+  {#if spin === "stack"}
     <span class={cls(PARTS.AUX, effVariant)}>
       {@render incBtn()}
       {@render decBtn()}
     </span>
-  {:else if spin}
+  {:else if spin === "split"}
     {@render incBtn()}
   {/if}
   {#if options?.size}
@@ -358,15 +348,13 @@
     onpointerleave={hup}
     onpointercancel={hup}
   >
-    <span class={cls(PARTS.EXTRA, effVariant)}>
-      {#if decrement}
-        {@render decrement(effVariant)}
-      {:else}
-        <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="10" height="10">
-          <path d="M0 7h16v2H0z" />
-        </svg>
-      {/if}
-    </span>
+    {#if left}
+      {@render left(effVariant)}
+    {:else}
+      <svg style="width:100%;height:100%;" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+        <path d="M0 7h16v2H0z" />
+      </svg>
+    {/if}
   </button>
 {/snippet}
 {#snippet incBtn()}
@@ -381,15 +369,13 @@
     onpointerleave={hup}
     onpointercancel={hup}
   >
-    <span class={cls(PARTS.EXTRA, effVariant)}>
-      {#if increment}
-        {@render increment(effVariant)}
-      {:else}
-        <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="10" height="10">
-          <path d="M7 0h2v16H7z" />
-          <path d="M0 7h16v2H0z" />
-        </svg>
-      {/if}
-    </span>
+    {#if right}
+      {@render right(effVariant)}
+    {:else}
+      <svg style="width:100%;height:100%;" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+        <path d="M7 0h2v16H7z" />
+        <path d="M0 7h16v2H0z" />
+      </svg>
+    {/if}
   </button>
 {/snippet}

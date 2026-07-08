@@ -4,6 +4,9 @@ import { render } from "vitest-browser-svelte";
 import { createRawSnippet, tick } from "svelte";
 import NumberInput from "#svs/NumberInput.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import type { NumberInputProps } from "#svs/NumberInput.svelte";
+
+type NumberInputSpin = NonNullable<NumberInputProps["spin"]>;
 
 const input = (container: HTMLElement) => container.querySelector("input") as HTMLInputElement;
 const button = (container: HTMLElement, label: string) => container.querySelector(`[aria-label="${label}"]`) as HTMLButtonElement;
@@ -77,12 +80,14 @@ describe("_NumberInput value and commit behavior", () => {
     await userEvent.clear(el);
     expect(props.value).toBeUndefined();
     await userEvent.type(el, "99");
-    el.blur(); await tick();
+    el.blur();
+    await tick();
     expect(props.value).toBe(10);
     await expect.element(el).toHaveValue("10");
     await userEvent.clear(el);
     await userEvent.type(el, "7");
-    el.blur(); await tick();
+    el.blur();
+    await tick();
     expect(props.value).toBe(5);
     await expect.element(el).toHaveValue("5");
     await rerender(props);
@@ -95,19 +100,22 @@ describe("_NumberInput value and commit behavior", () => {
     const negativeRender = render(NumberInput, negative);
     const negativeInput = input(negativeRender.container);
     await userEvent.type(negativeInput, "-99");
-    negativeInput.blur(); await tick();
+    negativeInput.blur();
+    await tick();
     expect(negative.value).toBe(-10);
     await expect.element(negativeInput).toHaveValue("-10");
     await negativeRender.unmount();
 
-    const decimal = $state({ value: undefined as number | undefined, step: 0.1, spin: true });
+    const decimal = $state({ value: undefined as number | undefined, step: 0.1, spin: "split" as NumberInputSpin });
     const decimalRender = render(NumberInput, decimal);
     const decimalInput = input(decimalRender.container);
     await userEvent.type(decimalInput, "0.30000000000000004");
-    decimalInput.blur(); await tick();
+    decimalInput.blur();
+    await tick();
     expect(decimal.value).toBe(0.3);
     await expect.element(decimalInput).toHaveValue("0.3");
-    await userEvent.clear(decimalInput); await tick();
+    await userEvent.clear(decimalInput);
+    await tick();
     await userEvent.click(button(decimalRender.container, "Increment"));
     await userEvent.click(button(decimalRender.container, "Increment"));
     await userEvent.click(button(decimalRender.container, "Increment"));
@@ -118,7 +126,8 @@ describe("_NumberInput value and commit behavior", () => {
     const alignedRender = render(NumberInput, aligned);
     const alignedInput = input(alignedRender.container);
     await userEvent.type(alignedInput, "99");
-    alignedInput.blur(); await tick();
+    alignedInput.blur();
+    await tick();
     // Off-grid 99 snaps to 99 then clamps to the aligned max 9 (largest 0,3,6,9 value <= 10).
     expect(aligned.value).toBe(9);
     await expect.element(alignedInput).toHaveValue("9");
@@ -130,7 +139,8 @@ describe("_NumberInput value and commit behavior", () => {
     const decAlignedRender = render(NumberInput, decAligned);
     const decAlignedInput = input(decAlignedRender.container);
     await userEvent.type(decAlignedInput, "9");
-    decAlignedInput.blur(); await tick();
+    decAlignedInput.blur();
+    await tick();
     expect(decAligned.value).toBe(0.7);
     await expect.element(decAlignedInput).toHaveValue("0.7");
   });
@@ -140,10 +150,14 @@ describe("_NumberInput value and commit behavior", () => {
     const { container, rerender } = render(NumberInput, props);
     const el = input(container);
     await expect.element(el).toHaveValue("1");
-    props.value = 2; await rerender(props);
+    props.value = 2;
+    await rerender(props);
     await expect.element(el).toHaveValue("2");
-    await userEvent.click(el); await userEvent.clear(el); await userEvent.type(el, "45");
-    props.value = 9; await tick();
+    await userEvent.click(el);
+    await userEvent.clear(el);
+    await userEvent.type(el, "45");
+    props.value = 9;
+    await tick();
     await expect.element(el).toHaveValue("45");
     await userEvent.tab();
     await expect.element(el).toHaveValue("45");
@@ -153,7 +167,7 @@ describe("_NumberInput value and commit behavior", () => {
 describe("_NumberInput spin behavior", () => {
   test("notifies change when the spinner bumps the value", async () => {
     const onchange = vi.fn();
-    const props = $state({ value: undefined as number | undefined, spin: true, min: 0, max: 10, step: 2, onchange });
+    const props = $state({ value: undefined as number | undefined, spin: "split" as NumberInputSpin, min: 0, max: 10, step: 2, onchange });
     const { container } = render(NumberInput, props);
     await userEvent.click(button(container, "Increment"));
     await tick();
@@ -164,7 +178,7 @@ describe("_NumberInput spin behavior", () => {
   test("renders labelled snippets and supports split and stack layouts", async () => {
     const dec = createRawSnippet(() => ({ render: () => "<i data-testid='dec'></i>" }));
     const inc = createRawSnippet(() => ({ render: () => "<i data-testid='inc'></i>" }));
-    const { container } = render(NumberInput, { spin: true, ariaDecLabel: "Less", ariaIncLabel: "More", decrement: dec, increment: inc });
+    const { container } = render(NumberInput, { spin: "split", ariaDecLabel: "Less", ariaIncLabel: "More", left: dec, right: inc });
     const less = button(container, "Less");
     const more = button(container, "More");
     await expect.element(less).toHaveAttribute("tabindex", "-1");
@@ -178,7 +192,7 @@ describe("_NumberInput spin behavior", () => {
     const plain = render(NumberInput);
     expect(plain.container.querySelector("button")).toBeNull();
     expect(plain.container.querySelector(`.${PARTS.AUX}`)).toBeNull();
-    const stacked = render(NumberInput, { spin: true, stack: true });
+    const stacked = render(NumberInput, { spin: "stack" });
     const aux = stacked.container.querySelector(`.${PARTS.AUX}`) as HTMLElement;
     expect(stacked.container.querySelectorAll(`.${PARTS.AUX}`)).toHaveLength(1);
     expect(aux.querySelectorAll("button")).toHaveLength(2);
@@ -186,23 +200,39 @@ describe("_NumberInput spin behavior", () => {
   });
 
   test("increments, decrements, disables at bounds, and respects disabled attr", async () => {
-    const props = $state({ value: undefined as number | undefined, spin: true, min: 0, max: 2, step: 2, disabled: false });
+    const props = $state({
+      value: undefined as number | undefined,
+      spin: "split" as NumberInputSpin,
+      min: 0,
+      max: 2,
+      step: 2,
+      disabled: false,
+    });
     const { container, rerender } = render(NumberInput, props);
     const dec = button(container, "Decrement");
     const inc = button(container, "Increment");
-    await tick(); await expect.element(dec).toBeDisabled();
-    await userEvent.click(inc); expect(props.value).toBe(2); await expect.element(input(container)).toHaveValue("2");
+    await tick();
+    await expect.element(dec).toBeDisabled();
+    await userEvent.click(inc);
+    expect(props.value).toBe(2);
+    await expect.element(input(container)).toHaveValue("2");
     await expect.element(inc).toBeDisabled();
-    await userEvent.click(dec); expect(props.value).toBe(0); await expect.element(input(container)).toHaveValue("0");
-    props.disabled = true; await rerender(props);
-    await expect.element(dec).toBeDisabled(); await expect.element(inc).toBeDisabled();
+    await userEvent.click(dec);
+    expect(props.value).toBe(0);
+    await expect.element(input(container)).toHaveValue("0");
+    props.disabled = true;
+    await rerender(props);
+    await expect.element(dec).toBeDisabled();
+    await expect.element(inc).toBeDisabled();
   });
 
   test("disables increment at the aligned max", async () => {
-    const props = $state({ value: undefined as number | undefined, spin: true, min: 0, max: 10, step: 3 });
+    const props = $state({ value: undefined as number | undefined, spin: "split" as NumberInputSpin, min: 0, max: 10, step: 3 });
     const { container } = render(NumberInput, props);
     const inc = button(container, "Increment");
-    await userEvent.click(inc); await userEvent.click(inc); await userEvent.click(inc);
+    await userEvent.click(inc);
+    await userEvent.click(inc);
+    await userEvent.click(inc);
     expect(props.value).toBe(9);
     await expect.element(inc).toBeDisabled();
     inc.click();
@@ -210,13 +240,13 @@ describe("_NumberInput spin behavior", () => {
   });
 
   test("reports the aligned maximum and omits an unbounded maximum", async () => {
-    const aligned = $state({ value: undefined as number | undefined, spin: true, min: 0, max: 10, step: 3 });
+    const aligned = $state({ value: undefined as number | undefined, spin: "split" as NumberInputSpin, min: 0, max: 10, step: 3 });
     const alignedRender = render(NumberInput, aligned);
     const alignedInput = input(alignedRender.container);
     await expect.element(alignedInput).toHaveAttribute("aria-valuemin", "0");
     await expect.element(alignedInput).toHaveAttribute("aria-valuemax", "9");
 
-    const unbounded = $state({ value: undefined as number | undefined, spin: true, min: 0, step: 3 });
+    const unbounded = $state({ value: undefined as number | undefined, spin: "split" as NumberInputSpin, min: 0, step: 3 });
     const unboundedRender = render(NumberInput, unbounded);
     expect(input(unboundedRender.container).hasAttribute("aria-valuemax")).toBe(false);
 
@@ -229,7 +259,7 @@ describe("_NumberInput spin behavior", () => {
   });
 
   test("pointer hold bumps once and spinbutton arrows are native", async () => {
-    const props = $state({ value: undefined as number | undefined, spin: true, min: 0, max: 10, step: 2 });
+    const props = $state({ value: undefined as number | undefined, spin: "split" as NumberInputSpin, min: 0, max: 10, step: 2 });
     const { container, rerender } = render(NumberInput, props);
     const inc = button(container, "Increment");
     const el = input(container);
@@ -239,21 +269,28 @@ describe("_NumberInput spin behavior", () => {
     expect(el.hasAttribute("aria-valuenow")).toBe(false);
     inc.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
     inc.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
-    await tick(); expect(props.value).toBe(2);
+    await tick();
+    expect(props.value).toBe(2);
     const up = new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true, cancelable: true });
-    el.dispatchEvent(up); await tick();
-    expect(up.defaultPrevented).toBe(true); expect(props.value).toBe(4);
+    el.dispatchEvent(up);
+    await tick();
+    expect(up.defaultPrevented).toBe(true);
+    expect(props.value).toBe(4);
     await expect.element(el).toHaveAttribute("aria-valuenow", "4");
-    props.spin = false; await rerender(props);
+    props.spin = "none";
+    await rerender(props);
     const next = new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true, cancelable: true });
-    el.dispatchEvent(next); await tick();
-    expect(next.defaultPrevented).toBe(false); expect(props.value).toBe(4); expect(el.hasAttribute("role")).toBe(false);
+    el.dispatchEvent(next);
+    await tick();
+    expect(next.defaultPrevented).toBe(false);
+    expect(props.value).toBe(4);
+    expect(el.hasAttribute("role")).toBe(false);
   });
 
   test("clears a pending press-hold timer on unmount", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
-      const { container, unmount } = render(NumberInput, { spin: true, min: 0, max: 10, step: 1 });
+      const { container, unmount } = render(NumberInput, { spin: "split", min: 0, max: 10, step: 1 });
       button(container, "Increment").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
       await unmount();
       await new Promise((resolve) => setTimeout(resolve, 400));
@@ -265,7 +302,7 @@ describe("_NumberInput spin behavior", () => {
 
   test("stops press-hold repeat after reaching its bound", async () => {
     const clear = vi.spyOn(globalThis, "clearInterval");
-    const { container, unmount } = render(NumberInput, { spin: true, min: 0, max: 2, step: 1 });
+    const { container, unmount } = render(NumberInput, { spin: "split", min: 0, max: 2, step: 1 });
     try {
       button(container, "Increment").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -280,7 +317,8 @@ describe("_NumberInput spin behavior", () => {
   test("binds element and applies local variant without context", async () => {
     const props = $state({ element: undefined as HTMLInputElement | undefined, variant: VARIANT.ACTIVE });
     const { container } = render(NumberInput, props);
-    const el = input(container); await tick();
+    const el = input(container);
+    await tick();
     expect(props.element).toBe(el);
     await expect.element(el).toHaveClass("svs-number-input", PARTS.MAIN, VARIANT.ACTIVE);
   });
