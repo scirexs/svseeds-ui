@@ -107,6 +107,14 @@ describe("Rendering and options", () => {
     expect(main.getAttribute("style")).toContain("pointer-events: none");
   });
 
+  test("drum text is not selectable", () => {
+    const { container } = render(WheelPicker, { options: opts });
+    const style = middle(container).getAttribute("style") ?? "";
+
+    expect(style).toContain("touch-action: none");
+    expect(style).toContain("user-select: none");
+  });
+
   test("renders labels and supports a custom label snippet", async () => {
     const label = vi.fn().mockImplementation(labelfn);
     const { container, getByTestId } = render(WheelPicker, { options: opts, value: "feb", label });
@@ -431,6 +439,26 @@ describe("Drum layout, pointer and animation (browser)", () => {
 
     const v = whole(container).style.getPropertyValue("--row-h");
     expect(parseFloat(v)).toBeGreaterThan(0);
+  });
+
+  test("object styling measures item height without part literal classes", async () => {
+    const { container } = render(WheelPicker, {
+      options: opts,
+      perspective: 600,
+      styling: { whole: { base: "w" }, middle: { base: "m" }, label: { base: "l" } },
+      cssvar: { itemHeight: "--row-h" },
+    });
+    const root = container.firstElementChild as HTMLElement;
+    const rows = Array.from(root.querySelectorAll(".l")) as HTMLElement[];
+
+    expect(root.classList.contains(PARTS.WHOLE)).toBe(false);
+    expect(rows[0].classList.contains(PARTS.LABEL)).toBe(false);
+    await vi.waitFor(() => expect(parseFloat(root.style.getPropertyValue("--row-h"))).toBeGreaterThan(0));
+
+    const selected = rows[0].getAttribute("style") ?? "";
+    const radius = Number(selected.match(/translateZ\((-?\d+(?:\.\d+)?)px\)/)?.[1]);
+    expect(radius).toBeGreaterThan(0);
+    expect(rows[2].getAttribute("style")).toContain("visibility: hidden");
   });
 
   test("visible-count cssvar reflects measured rows", async () => {

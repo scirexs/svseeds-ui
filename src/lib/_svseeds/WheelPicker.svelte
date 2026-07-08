@@ -109,7 +109,7 @@
 
   // *** States *** //
   let whole: HTMLDivElement | undefined = $state();
-  let middle: HTMLDivElement | undefined = $state();
+  let labelElems = $state<HTMLDivElement[]>([]);
   let itemH = $state(0);
   let wholeH = $state(0);
   let pos = $state(0);
@@ -122,7 +122,7 @@
   // *** Reactive Handlers *** //
   const visible = $derived(Math.max(1, itemH > 0 && wholeH > 0 ? Math.round(wholeH / itemH) : 1));
   const middleStyle = $derived.by(() => {
-    const base = "position: relative; overflow: hidden; touch-action: none;";
+    const base = "position: relative; overflow: hidden; touch-action: none; user-select: none;";
     if (perspective == null) return base;
     return `${base} perspective: ${perspective}px;`;
   });
@@ -167,9 +167,8 @@
 
   function measure() {
     tick().then(() => {
-      const row = middle?.querySelector(`.${PARTS.LABEL}`) as HTMLElement | null;
-      const rect = row?.getBoundingClientRect();
-      itemH = rect?.height || row?.offsetHeight || 0;
+      const row = labelElems.find(Boolean);
+      itemH = row?.offsetHeight || 0;
       wholeH = whole?.getBoundingClientRect().height || whole?.offsetHeight || 0;
     });
   }
@@ -201,11 +200,14 @@
     startPos = pos;
     ev.currentTarget.setPointerCapture?.(ev.pointerId);
   };
-  const hpointermove: PointerEventHandler<HTMLDivElement> = _throttle(POINTER_RATE, (ev: Parameters<PointerEventHandler<HTMLDivElement>>[0]) => {
-    if (!dragging) return;
-    const unit = itemH || 1;
-    pos = normalize(startPos - (ev.clientY - startY) / unit);
-  });
+  const hpointermove: PointerEventHandler<HTMLDivElement> = _throttle(
+    POINTER_RATE,
+    (ev: Parameters<PointerEventHandler<HTMLDivElement>>[0]) => {
+      if (!dragging) return;
+      const unit = itemH || 1;
+      pos = normalize(startPos - (ev.clientY - startY) / unit);
+    },
+  );
   const hpointerup: PointerEventHandler<HTMLDivElement> = (ev) => {
     if (!dragging) return;
     dragging = false;
@@ -304,7 +306,6 @@
   </select>
 
   <div
-    bind:this={middle}
     class={cls(PARTS.MIDDLE, variant)}
     style={middleStyle}
     aria-hidden="true"
@@ -314,8 +315,8 @@
     onpointercancel={hpointerup}
     onwheel={hwheel}
   >
-    {#each shown as o (o.key)}
-      <div class={cls(PARTS.LABEL, itemVariant(o.index))} style={labelStyle(o.virtual)}>
+    {#each shown as o, i (o.key)}
+      <div bind:this={labelElems[i]} class={cls(PARTS.LABEL, itemVariant(o.index))} style={labelStyle(o.virtual)}>
         {#if label}{@render label(o.option, itemVariant(o.index), o.index)}{:else}{o.option.text}{/if}
       </div>
     {/each}
