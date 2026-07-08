@@ -143,6 +143,9 @@
     get styling() {
       return `${_TOGGLE_GROUP_FIELD_PRESET} ${_TOGGLE_GROUP_PRESET}`;
     },
+    get ariaLabelId() {
+      return idLabel;
+    },
     get ariaDescId() {
       return idDesc;
     },

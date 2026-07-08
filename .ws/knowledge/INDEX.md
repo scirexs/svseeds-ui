@@ -5,6 +5,7 @@
 
 ## Framework & Libraries
 - svelte-native-event-handler-typing.md — intrinsic-element `onload`/`onerror` type as a generic `EventHandler`; keep the public prop precise and cast the internal DOM handler narrowly.
+- svelte-rest-props-reemitted-aria-undefined-clobber.md — when rest-props include an attr the component re-emits as a computed value, destructure it out of rest; an explicit `undefined` after `{...rest}` silently erases the caller's attr.
 - sortable-commit-followers-remove-before-insert.md — `#commitFollowers` must splice followers out before calling `insertAfter`; `insertAfter` re-finds the leader by key so it re-derives the correct index after any preceding removals.
 - svelte-a11y-separator-not-interactive.md — Svelte's a11y checker flags a focusable `role="separator"` (APG Window Splitter); suppress with a narrow role-listing `svelte-ignore`.
 - sveltejs-package-output-layout.md — `@sveltejs/package` passes `.svelte` through, compiles `_core.ts`→`_core.js`/`.d.ts` (dropping `_core.ts`), and emits no `package.json`; the post-build step must supply those.

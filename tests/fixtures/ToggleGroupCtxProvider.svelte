@@ -11,6 +11,7 @@
   interface State {
     values: string[];
     variant: SVSVariant;
+    ariaLabelId?: string;
     ariaDescId?: string;
     ariaErrMsgId?: string;
     styling?: SVSClass;
@@ -41,6 +42,9 @@
     },
     get styling() {
       return state.styling;
+    },
+    get ariaLabelId() {
+      return state.ariaLabelId;
     },
     get ariaDescId() {
       return state.ariaDescId;

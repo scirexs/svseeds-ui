@@ -23,10 +23,8 @@ const rightfn = createRawSnippet((values: () => string[], variant: () => string)
   return { render: () => `<span data-testid="${rightid}">${variant()},${values().length}</span>` };
 });
 
-const byRole = (container: HTMLElement, role: string) =>
-  Array.from(container.querySelectorAll(`[role="${role}"]`)) as HTMLElement[];
-const byTestId = (container: ParentNode, id: string) =>
-  Array.from(container.querySelectorAll(`[data-testid="${id}"]`)) as HTMLElement[];
+const byRole = (container: HTMLElement, role: string) => Array.from(container.querySelectorAll(`[role="${role}"]`)) as HTMLElement[];
+const byTestId = (container: ParentNode, id: string) => Array.from(container.querySelectorAll(`[data-testid="${id}"]`)) as HTMLElement[];
 const byText = (container: ParentNode, text: string) => {
   const nodes = Array.from(container.querySelectorAll("*")) as HTMLElement[];
   const node = [...nodes].reverse().find((element) => {
@@ -742,6 +740,7 @@ describe("Specify state transition & event handlers", () => {
       expect(button).not.toHaveAttribute("aria-errormessage");
     });
     expect(whole).toHaveAttribute("aria-labelledby", getByText(label).id);
+    expect(innerGroup).toHaveAttribute("aria-labelledby", getByText(label).id);
   });
 
   test("single-select mode replaces values and places error aria on the radiogroup", async () => {
@@ -804,11 +803,13 @@ describe("Specify state transition & event handlers", () => {
     expect(top).toContainElement(lbl);
     expect(lbl).toHaveClass(PARTS.LABEL);
     expect(whole).toHaveAttribute("aria-labelledby", lbl.id);
+    expect(innerToggleGroupOf(whole)).toHaveAttribute("aria-labelledby", lbl.id);
     labeled.unmount();
 
     const plain = render(ToggleGroupField, { options });
     expect(plain.container.querySelector(`.${PARTS.TOP}`)).toBeNull();
     expect(plain.getAllByRole("group")[0]).not.toHaveAttribute("aria-labelledby");
+    expect(innerToggleGroupOf(plain.getAllByRole("group")[0])).not.toHaveAttribute("aria-labelledby");
   });
 
   test("bottom role and message transition with variant", async () => {
@@ -875,7 +876,6 @@ describe("Specify state transition & event handlers", () => {
     expect(props.elements[1]).toBe(buttons[1]);
     expect(props.elements[2]).toBe(buttons[2]);
   });
-
 });
 
 describe("Compound / children", () => {
@@ -944,6 +944,16 @@ describe("Compound / children", () => {
     const desc = whole.querySelector(`.${PARTS.BOTTOM}`) as HTMLDivElement;
 
     expect(innerToggleGroupOf(whole)).toHaveAttribute("aria-describedby", desc.id);
+  });
+
+  test("explicit child gets aria-labelledby from field label", () => {
+    const field = $state({ label: "Field label" });
+    const { getAllByRole, getByText } = render(ToggleGroupFieldEmbedded, { field, input: { options, "aria-labelledby": "own-label" } });
+    const whole = getAllByRole("group")[0] as HTMLDivElement;
+    const lbl = getByText("Field label");
+
+    expect(whole).toHaveAttribute("aria-labelledby", lbl.id);
+    expect(innerToggleGroupOf(whole)).toHaveAttribute("aria-labelledby", lbl.id);
   });
 
   test("explicit child honours its own styling over context default", () => {

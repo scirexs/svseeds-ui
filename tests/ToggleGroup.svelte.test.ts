@@ -18,10 +18,8 @@ const customSnippet = createRawSnippet((value: () => string) => {
   return { render: () => `<span data-testid="custom-${value()}">${value().toUpperCase()}</span>` };
 });
 
-const byRole = (container: HTMLElement, role: string) =>
-  Array.from(container.querySelectorAll(`[role="${role}"]`)) as HTMLElement[];
-const byTestId = (container: HTMLElement, id: string) =>
-  Array.from(container.querySelectorAll(`[data-testid="${id}"]`)) as HTMLElement[];
+const byRole = (container: HTMLElement, role: string) => Array.from(container.querySelectorAll(`[role="${role}"]`)) as HTMLElement[];
+const byTestId = (container: HTMLElement, id: string) => Array.from(container.querySelectorAll(`[data-testid="${id}"]`)) as HTMLElement[];
 const render = (component: any, props?: any) => {
   const result = svRender(component, props);
   const { container } = result;
@@ -92,6 +90,46 @@ describe("Switching existence of elements", () => {
     const group = getByRole("group") as HTMLSpanElement;
 
     expect(group).toHaveAttribute("aria-describedby", ariaDescId);
+  });
+
+  test("passes group span attributes through", () => {
+    const { getByRole } = render(ToggleGroup, {
+      options,
+      "aria-label": "Choices",
+      "aria-labelledby": "group-label",
+      "data-testid": "toggle-group",
+      id: "choices",
+    });
+    const group = getByRole("group") as HTMLSpanElement;
+
+    expect(group).toHaveAttribute("aria-label", "Choices");
+    expect(group).toHaveAttribute("aria-labelledby", "group-label");
+    expect(group).toHaveAttribute("data-testid", "toggle-group");
+    expect(group).toHaveAttribute("id", "choices");
+  });
+
+  test("passes aria-label through in single selection mode", () => {
+    const { getByRole } = render(ToggleGroup, { options, multiple: false, "aria-label": "One choice" });
+
+    expect(getByRole("radiogroup")).toHaveAttribute("aria-label", "One choice");
+  });
+
+  test("group rest props cannot override owned semantics", () => {
+    const { getByRole } = render(ToggleGroup, {
+      options,
+      role: "presentation",
+      ariaDescId: "owned-desc",
+      ariaErrMsgId: "owned-error",
+      "aria-describedby": "caller-desc",
+      "aria-invalid": "false",
+      "aria-errormessage": "caller-error",
+    });
+    const group = getByRole("group") as HTMLSpanElement;
+
+    expect(group).toHaveAttribute("role", "group");
+    expect(group).toHaveAttribute("aria-describedby", "owned-desc");
+    expect(group).toHaveAttribute("aria-invalid", "true");
+    expect(group).toHaveAttribute("aria-errormessage", "owned-error");
   });
 
   test("with ariaErrMsgId (multiple mode)", () => {
@@ -221,6 +259,13 @@ describe("Status and styling", () => {
     buttons.forEach((button) => {
       expect(button).toHaveClass(preset, PARTS.MAIN, VARIANT.NEUTRAL);
     });
+  });
+
+  test("caller class is merged onto the group", () => {
+    const { getByRole } = render(ToggleGroup, { options, class: "caller-class" });
+    const group = getByRole("group") as HTMLSpanElement;
+
+    expect(group).toHaveClass(preset, PARTS.WHOLE, VARIANT.NEUTRAL, "caller-class");
   });
 
   test("with custom variant", () => {
@@ -646,6 +691,18 @@ describe("Embedded in field context", () => {
     const { getByRole } = render(ToggleGroupCtxProvider, { state, input: { options, ariaDescId: "own-desc" } });
 
     expect(getByRole("group")).toHaveAttribute("aria-describedby", "desc-1");
+  });
+
+  test("ariaLabelId comes from context", () => {
+    const state = $state({
+      values: [] as string[],
+      variant: VARIANT.NEUTRAL,
+      ariaLabelId: "label-1",
+      elements: [] as HTMLButtonElement[],
+    });
+    const { getByRole } = render(ToggleGroupCtxProvider, { state, input: { options, "aria-labelledby": "own-label" } });
+
+    expect(getByRole("group")).toHaveAttribute("aria-labelledby", "label-1");
   });
 
   test("context onadd hook can veto add with []", async () => {

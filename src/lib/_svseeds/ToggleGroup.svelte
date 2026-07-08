@@ -8,7 +8,7 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface ToggleGroupProps {
+  interface ToggleGroupProps extends Omit<HTMLAttributes<HTMLSpanElement>, "children" | "role" | "aria-describedby" | "aria-invalid" | "aria-errormessage"> {
     options: SvelteMap<string, string | ToggleOption> | Map<string, string | ToggleOption>;
     children?: Snippet<[string, string, string]>; // Snippet<[value,text,variant]>
     values?: string[]; // bindable
@@ -20,6 +20,8 @@
     elements?: HTMLButtonElement[]; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
+    // other span attributes are passed to the group <span> via ...rest; `class` is merged
+    // aria-label / aria-labelledby name the group
   }
   interface ToggleOption extends Omit<HTMLButtonAttributes, "class" | "type" | "role" | "aria-checked" | "aria-invalid" | "aria-errormessage" | "onclick"> {
     text: string;
@@ -28,7 +30,7 @@
   ```
   ### Anatomy
   ```svelte
-  <span class="whole" aria-describedby aria-errormessage>
+  <span class="whole" {...rest} role aria-labelledby aria-describedby aria-errormessage>
     {#each options as { text, ...attrs }}
       <button class="main" {...attrs}>
         {text} or {children}
@@ -38,7 +40,10 @@
   ```
 -->
 <script module lang="ts">
-  export interface ToggleGroupProps {
+  export interface ToggleGroupProps extends Omit<
+    HTMLAttributes<HTMLSpanElement>,
+    "children" | "role" | "aria-describedby" | "aria-invalid" | "aria-errormessage"
+  > {
     options: SvelteMap<string, string | ToggleOption> | Map<string, string | ToggleOption>;
     children?: Snippet<[string, string, string]>; // Snippet<[value,text,variant]>
     values?: string[]; // bindable
@@ -67,6 +72,7 @@
     get values(): string[];
     set values(v: string[]);
     set elements(v: HTMLButtonElement[]);
+    get ariaLabelId(): string | undefined;
     get ariaDescId(): string | undefined;
     get ariaErrMsgId(): string | undefined;
     events?: ToggleGroupEvents;
@@ -77,14 +83,14 @@
   import { VARIANT, PARTS, _fnClass, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
-  import type { HTMLButtonAttributes } from "svelte/elements";
+  import type { HTMLAttributes, HTMLButtonAttributes } from "svelte/elements";
   import type { SvelteMap } from "svelte/reactivity";
   import type { SVSClass, SVSVariant, SVSContext, CollectionEvents } from "./_core";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { options, children, values = $bindable([]), multiple = true, events, ariaDescId, ariaErrMsgId, attach, elements = $bindable([]), styling, variant = VARIANT.NEUTRAL }: ToggleGroupProps = $props();
+  let { options, children, values = $bindable([]), multiple = true, events, ariaDescId, ariaErrMsgId, attach, elements = $bindable([]), styling, variant = VARIANT.NEUTRAL, class: c, "aria-labelledby": ariaLabelledbyProp, ...rest }: ToggleGroupProps = $props();
   const ctx = _getToggleGroupContext();
 
   // *** Initialize *** //
@@ -93,6 +99,7 @@
   const roleGroup = $derived(multiple ? "group" : "radiogroup");
   const effVariant = $derived(ctx ? ctx.variant : variant);
   const effValues = $derived(ctx ? ctx.values : values);
+  const effAriaLabelId = $derived(ctx ? ctx.ariaLabelId : ariaLabelledbyProp);
   const effAriaDescId = $derived(ctx ? ctx.ariaDescId : ariaDescId);
   const effAriaErrMsgId = $derived(ctx ? ctx.ariaErrMsgId : ariaErrMsgId);
 
@@ -192,8 +199,10 @@
 
 {#if opts.length}
   <span
-    class={cls(PARTS.WHOLE, effVariant)}
+    class={[cls(PARTS.WHOLE, effVariant), c]}
+    {...rest}
     role={roleGroup}
+    aria-labelledby={effAriaLabelId}
     aria-describedby={effAriaDescId}
     aria-invalid={invalid}
     aria-errormessage={effAriaErrMsgId}
