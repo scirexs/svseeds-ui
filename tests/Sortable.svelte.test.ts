@@ -120,6 +120,27 @@ describe("_Sortable single-list drag", () => {
     expect(props.items).toEqual(["b", "c", "a"]);
   });
 
+  test("repeated pointerover on a moving target does not reverse the reorder", async () => {
+    const props = $state({ items: ["a", "b", "c"] });
+    const { container } = render(SortableBasic, props);
+    const origin = el(container, "item-a");
+    const target = el(container, "item-c");
+
+    origin.dispatchEvent(
+      new PointerEvent("pointerdown", { button: 0, buttons: 1, clientX: 0, clientY: 0, bubbles: true, cancelable: true }),
+    );
+    await tick();
+    window.dispatchEvent(new PointerEvent("pointermove", { buttons: 1, clientX: 20, clientY: 20, bubbles: true }));
+    target.dispatchEvent(new PointerEvent("pointerover", { buttons: 1, bubbles: true }));
+    await tick();
+    target.dispatchEvent(new PointerEvent("pointerover", { buttons: 1, bubbles: true }));
+    window.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+    await tick();
+
+    await expect.element(el(container, "value-readout")).toHaveTextContent("b,c,a");
+    expect(props.items).toEqual(["b", "c", "a"]);
+  });
+
   test("sort=false prevents same-list sorting", async () => {
     const { container } = render(SortableBasic, { items: ["a", "b", "c"], sort: false });
 

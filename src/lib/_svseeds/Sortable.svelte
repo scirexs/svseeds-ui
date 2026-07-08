@@ -179,6 +179,7 @@
     #pointer = new PointerVector(minDistance);
     #trigger = createTriggerNumber(triggerDrag);
     #timer: ReturnType<typeof setTimeout> | undefined;
+    #locks = new Map<string, ReturnType<typeof setTimeout>>();
     #active: ActiveDrag | undefined = $state.raw();
     #standby:
       | {
@@ -313,6 +314,7 @@
     }
     over<T>(member: SortableMember<T>, key: string): void {
       if (!this.#active || !this.#isAcceptable(member) || this.#guardSameTarget(member, key)) return;
+      if (this.#isLocked(member.id, key)) return;
       const run = () => this.#sort(member, key);
       if (member.confirm && this.#canSort(member)) {
         this.#confirmKey = key;
@@ -362,6 +364,7 @@
     }
     #clearDrag() {
       this.#stopListeners();
+      this.#clearLocks();
       this.#active = undefined;
       this.#standby = undefined;
       this.#dragging = false;
@@ -379,9 +382,11 @@
       switch (this.#active.mode) {
         case "move":
           this.#moveTo(member, key);
+          this.#lock(member.id, key);
           break;
         case "clone":
           this.#cloneTo(member, key);
+          this.#lock(member.id, key);
           break;
         case "swap":
           this.#active.pendingSwap = { member, key };
@@ -517,6 +522,23 @@
       if (!this.#active) return true;
       return member.id === this.#active.current.id && key === this.#active.activeKey;
     }
+    #isLocked(memberId: string, key: string): boolean {
+      return this.#locks.has(lockId(memberId, key));
+    }
+    #lock(memberId: string, key: string) {
+      const id = lockId(memberId, key);
+      const prev = this.#locks.get(id);
+      if (prev) clearTimeout(prev);
+      // Items that just reordered can emit transform-induced pointerover events until FLIP settles.
+      this.#locks.set(
+        id,
+        setTimeout(() => this.#locks.delete(id), this.tp.duration),
+      );
+    }
+    #clearLocks() {
+      this.#locks.forEach((timer) => clearTimeout(timer));
+      this.#locks.clear();
+    }
   }
 
   function memberIsAppendable(member: SortableMember & { appendable?: boolean }): boolean {
@@ -543,6 +565,9 @@
   }
   function stringifyKey(key: PropertyKey): string {
     return String(key);
+  }
+  function lockId(memberId: string, key: string): string {
+    return `${memberId} ${key}`;
   }
   function createTriggerNumber(buttonsArray: TriggerButton[]): number {
     let ret = 0;
