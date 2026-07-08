@@ -239,6 +239,59 @@ describe("_NumberInput spin behavior", () => {
     expect(props.value).toBe(9);
   });
 
+  test("rounds non-zero base decimal spinner values and aligned max", async () => {
+    const props = $state({ value: -3 as number | undefined, spin: "split" as NumberInputSpin, min: -100, max: 100, step: 0.3 });
+    const { container, unmount } = render(NumberInput, props);
+    const el = input(container);
+    const inc = button(container, "Increment");
+    await expect.element(el).toHaveAttribute("aria-valuemax", "99.8");
+
+    inc.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    inc.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+    await tick();
+    expect(props.value).toBe(-2.8);
+    await expect.element(el).toHaveValue("-2.8");
+    await expect.element(el).toHaveAttribute("aria-valuenow", "-2.8");
+
+    inc.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    inc.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+    await tick();
+    expect(props.value).toBe(-2.5);
+    await expect.element(el).toHaveValue("-2.5");
+    await expect.element(el).toHaveAttribute("aria-valuenow", "-2.5");
+
+    inc.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    inc.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+    await tick();
+    expect(props.value).toBe(-2.2);
+    await expect.element(el).toHaveValue("-2.2");
+    await expect.element(el).toHaveAttribute("aria-valuenow", "-2.2");
+    await unmount();
+
+    const fractional = $state({ value: 0.1 as number | undefined, spin: "split" as NumberInputSpin, min: 0.1, step: 0.1 });
+    const fractionalRender = render(NumberInput, fractional);
+    const fractionalInput = input(fractionalRender.container);
+    const fractionalInc = button(fractionalRender.container, "Increment");
+
+    fractionalInc.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    fractionalInc.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+    await tick();
+    expect(fractional.value).toBe(0.2);
+    await expect.element(fractionalInput).toHaveValue("0.2");
+
+    fractionalInc.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    fractionalInc.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+    await tick();
+    expect(fractional.value).toBe(0.3);
+    await expect.element(fractionalInput).toHaveValue("0.3");
+
+    fractionalInc.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    fractionalInc.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+    await tick();
+    expect(fractional.value).toBe(0.4);
+    await expect.element(fractionalInput).toHaveValue("0.4");
+  });
+
   test("reports the aligned maximum and omits an unbounded maximum", async () => {
     const aligned = $state({ value: undefined as number | undefined, spin: "split" as NumberInputSpin, min: 0, max: 10, step: 3 });
     const alignedRender = render(NumberInput, aligned);

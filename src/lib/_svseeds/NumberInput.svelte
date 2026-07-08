@@ -270,18 +270,18 @@
   function alignedMax(): number {
     if (max === undefined) return Infinity;
     const u = unit();
-    const d = decimals(u);
     const base = min ?? 0;
+    const d = Math.max(decimals(base), decimals(u));
     const steps = Math.floor((max - base) / u + 1e-9);
-    return base + Number((steps * u).toFixed(d));
+    return Number((base + steps * u).toFixed(d));
   }
   function clampSnap(n: number): number {
     const u = unit();
-    const d = decimals(u);
     const base = min ?? 0;
+    const d = Math.max(decimals(base), decimals(u));
     const lo = min ?? -Infinity;
     const hi = alignedMax();
-    let v = base + Number((Math.round((n - base) / u) * u).toFixed(d));
+    let v = Number((base + Math.round((n - base) / u) * u).toFixed(d));
     if (integer) v = Math.round(v);
     return Math.min(hi, Math.max(lo, v));
   }
