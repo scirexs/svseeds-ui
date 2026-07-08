@@ -9,3 +9,4 @@
 20260708_dxvznm	feat: Restructure Popover arrow into MAIN + flip-following caret parts
 20260708_d4d7g4	feat: Restructure NumberInput spin props into a "none|split|stack" enum, rename the decrement/increment button snippets to left/right, and simplify the spinner button markup (drop the EXTRA span, size the default svg to 100%)
 20260708_yd65jy	fix: Fix floating-point display error in NumberInput spinner snapping when the snap base (min) is non-zero
+20260708_ggw45p	feat: Rename Calendar's `prev`/`next` snippet props to `left`/`right` for naming consistency with other components and the LEFT/RIGHT styling parts

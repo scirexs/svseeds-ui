@@ -301,22 +301,22 @@ describe("_Calendar rendering variants and snippets", () => {
     expect(screen.container.querySelectorAll(`.${PARTS.EXTRA}[data-weekday="0"]`).length).toBeGreaterThan(1);
   });
 
-  test("day/weekday/label/prev/next/bottom snippets override defaults", async () => {
+  test("day/weekday/label/left/right/bottom snippets override defaults", async () => {
     const weekdaySnippet = createRawSnippet((weekday: () => number) => ({
       render: () => `<span data-testid="weekday-${weekday()}">w${weekday()}</span>`,
     }));
     const screen = render(CalendarBindable, {
       display: ym(2026, 6),
       label: labelSnippet,
-      prev: snippet0("prev", "<"),
-      next: snippet0("next", ">"),
+      left: snippet0("left", "<"),
+      right: snippet0("right", ">"),
       weekday: weekdaySnippet,
       day: daySnippet,
       bottom: bottomSnippet,
     });
     await expect.element(screen.getByTestId("label-snippet")).toHaveTextContent("2026-6-false");
-    await expect.element(screen.getByTestId("prev")).toBeVisible();
-    await expect.element(screen.getByTestId("next")).toBeVisible();
+    await expect.element(screen.getByTestId("left")).toBeVisible();
+    await expect.element(screen.getByTestId("right")).toBeVisible();
     await expect.element(screen.getByTestId("weekday-0")).toBeVisible();
     await expect.element(screen.getByTestId("day-1")).toBeVisible();
     await expect.element(screen.getByTestId("today")).toBeVisible();

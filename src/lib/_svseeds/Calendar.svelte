@@ -33,8 +33,8 @@
     firstDayOfWeek?: number; // (0=Sun)
     locale?: string;
     label?: Snippet<[Temporal.PlainYearMonth, string, boolean]>;
-    prev?: Snippet<[string]>;
-    next?: Snippet<[string]>;
+    left?: Snippet<[string]>;
+    right?: Snippet<[string]>;
     weekday?: Snippet<[number, string]>;
     day?: Snippet<[DayCtx]>;
     bottom?: Snippet<[string, () => void]>;
@@ -92,8 +92,8 @@
     firstDayOfWeek?: number;
     locale?: string;
     label?: Snippet<[Temporal.PlainYearMonth, string, boolean]>;
-    prev?: Snippet<[string]>;
-    next?: Snippet<[string]>;
+    left?: Snippet<[string]>;
+    right?: Snippet<[string]>;
     weekday?: Snippet<[number, string]>;
     day?: Snippet<[DayCtx]>;
     bottom?: Snippet<[string, () => void]>;
@@ -118,7 +118,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { value = $bindable(), display = $bindable(), picking = $bindable(false), min, max, isDisabled, outsideDays = false, fixedWeeks = false, firstDayOfWeek = 0, locale, label, prev, next, weekday, day, bottom, monthPicker, transition, styling, variant = VARIANT.NEUTRAL }: CalendarProps = $props();
+  let { value = $bindable(), display = $bindable(), picking = $bindable(false), min, max, isDisabled, outsideDays = false, fixedWeeks = false, firstDayOfWeek = 0, locale, label, left, right, weekday, day, bottom, monthPicker, transition, styling, variant = VARIANT.NEUTRAL }: CalendarProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(_fnClass(_CALENDAR_PRESET, styling));
@@ -277,13 +277,13 @@
 <div class={cls(PARTS.WHOLE, variant)} role="application" aria-label={appLabel} data-svs-calendar={uid}>
   <div class={cls(PARTS.TOP, variant)}>
     <button class={cls(PARTS.LEFT, variant)} type="button" onclick={hprev}
-      >{#if prev}{@render prev(variant)}{:else}Previous{/if}</button
+      >{#if left}{@render left(variant)}{:else}Previous{/if}</button
     >
     <button id={idCaption} class={cls(PARTS.LABEL, variant)} type="button" aria-expanded={picking} onclick={hlabel}>
       {#if label}{@render label(currentDisplay(), variant, picking)}{:else}{captionText}{/if}
     </button>
     <button class={cls(PARTS.RIGHT, variant)} type="button" onclick={hnext}
-      >{#if next}{@render next(variant)}{:else}Next{/if}</button
+      >{#if right}{@render right(variant)}{:else}Next{/if}</button
     >
   </div>
 
