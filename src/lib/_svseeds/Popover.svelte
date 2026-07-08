@@ -22,7 +22,7 @@
     matchWidth?: boolean; // (false); panel min-width = anchor width
     ariaRole?: PopoverRole; // panel role
     manual?: boolean; // (false); popover="manual" disables light-dismiss
-    arrow?: boolean; // (false); render an arrow/caret styling hook
+    arrow?: boolean; // (false); render the resolved placement caret part (`top`/`bottom`/`left`/`right`) and `data-svs-placement`
     attach?: Attachment<HTMLButtonElement>;
     element?: HTMLButtonElement; // bindable
     styling?: SVSClass;
@@ -39,13 +39,16 @@
   <button class="label" popovertarget aria-haspopup aria-expanded aria-controls>
     {label}
   </button>
-  <div class="whole" popover role style>
-    <div class="extra" aria-hidden></div>
-    {children}
+  <div class="whole" popover role style data-svs-placement>
+    <div class="top" aria-hidden conditional: arrow, placement=bottom></div>
+    <div class="left" aria-hidden conditional: arrow, placement=right></div>
+    <div class="main">{children}</div>
+    <div class="bottom" aria-hidden conditional: arrow, placement=top></div>
+    <div class="right" aria-hidden conditional: arrow, placement=left></div>
   </div>
   ```
   ### Behavior
-  Button trigger plus a `[popover]` panel, using the native Popover API and CSS Anchor Positioning only, with no JavaScript positioning fallback. `open` syncs both ways between programmatic state and native toggle events. `position`, `align`, `offset`, `matchWidth`, and `autoFlip` derive the native placement style; `hover` adds pointer/focus opening only where the primary pointer can hover, otherwise it behaves like native click/focus opening. The component always provides `MenuContainerContext` so a nested `MenuList` can focus its first enabled item and close through the container. `manual` switches the panel to `popover="manual"` and disables native light-dismiss behavior.
+  Button trigger plus a `[popover]` panel, using the native Popover API and CSS Anchor Positioning only, with no JavaScript positioning fallback. `open` syncs both ways between programmatic state and native toggle events. `position`, `align`, `offset`, `matchWidth`, and `autoFlip` derive the native placement style; when `arrow` is enabled, a measurement effect reads the resolved trigger/panel rects on open, scroll, and resize so the rendered caret follows native flips and `data-svs-placement` exposes the resolved side. `hover` adds pointer/focus opening only where the primary pointer can hover, otherwise it behaves like native click/focus opening. The component always provides `MenuContainerContext` so a nested `MenuList` can focus its first enabled item and close through the container. `manual` switches the panel to `popover="manual"` and disables native light-dismiss behavior.
 -->
 <script module lang="ts">
   export interface PopoverProps extends Omit<HTMLButtonAttributes, "children" | "style" | "popovertarget" | "popovertargetaction"> {
@@ -60,7 +63,7 @@
     matchWidth?: boolean; // (false)
     ariaRole?: PopoverRole;
     manual?: boolean; // (false)
-    arrow?: boolean; // (false)
+    arrow?: boolean; // (false); resolved placement caret part + data-svs-placement
     attach?: Attachment<HTMLButtonElement>;
     element?: HTMLButtonElement; // bindable
     styling?: SVSClass;
@@ -82,6 +85,7 @@
   } as const;
   const GAP_SIDE = { top: "margin-bottom", right: "margin-left", bottom: "margin-top", left: "margin-right" } as const;
 
+  import { untrack } from "svelte";
   import { VARIANT, PARTS, _fnClass, canHover } from "./_core";
   import { _setMenuContainerContext } from "./MenuList.svelte";
   import type { Snippet } from "svelte";
@@ -120,10 +124,16 @@
   };
   _setMenuContainerContext(ctx);
 
+  function initial() {
+    return position;
+  }
+
   let panel = $state<HTMLDivElement>();
+  let placement = $state<PopoverPosition>(initial());
   let shown = false;
 
   // *** Reactive Handlers *** //
+  const arrowAxis = $derived(position === "left" || position === "right" ? "row" : "column");
   const panelStyle = $derived(
     [
       `position-anchor:${anchor}`,
@@ -131,6 +141,7 @@
       offset ? `${GAP_SIDE[position]}:${offset}px` : "",
       matchWidth ? "min-width:anchor-size(width)" : "",
       autoFlip ? "position-try-fallbacks:flip-block, flip-inline" : "",
+      arrow ? `display:flex;flex-direction:${arrowAxis};align-items:center` : "",
     ]
       .filter(Boolean)
       .join(";"),
@@ -143,7 +154,40 @@
     else panel?.hidePopover();
   });
 
+  $effect(() => {
+    arrow;
+    open;
+    return untrack(() => watch());
+  });
+
   // *** Event Handlers *** //
+  function measure() {
+    if (!panel || !element) return;
+    const p = panel.getBoundingClientRect();
+    const a = element.getBoundingClientRect();
+    const dx = (p.left + p.right - a.left - a.right) / 2;
+    const dy = (p.top + p.bottom - a.top - a.bottom) / 2;
+    placement = Math.abs(dy) >= Math.abs(dx) ? (dy >= 0 ? "bottom" : "top") : dx >= 0 ? "right" : "left";
+  }
+  function watch() {
+    if (!arrow || !open) return;
+    measure();
+    let raf = 0;
+    const onmove = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        measure();
+      });
+    };
+    window.addEventListener("scroll", onmove, { capture: true, passive: true });
+    window.addEventListener("resize", onmove, { passive: true });
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onmove, { capture: true });
+      window.removeEventListener("resize", onmove);
+    };
+  }
   function maybeClose(ev: PointerEvent | FocusEvent) {
     if (!hoverEnabled) return;
     const to = ev.relatedTarget as Node | null;
@@ -206,10 +250,14 @@
   popover={manual ? "manual" : "auto"}
   role={ariaRole}
   style={panelStyle}
+  data-svs-placement={arrow ? placement : undefined}
   ontoggle={htoggle}
   onpointerleave={hoverEnabled ? panelleave : undefined}
   onfocusout={hoverEnabled ? panelfocusout : undefined}
 >
-  {#if arrow}<div class={cls(PARTS.EXTRA, variant)} aria-hidden="true"></div>{/if}
-  {@render children(variant)}
+  {#if arrow && placement === "bottom"}<div class={cls(PARTS.TOP, variant)} aria-hidden="true"></div>{/if}
+  {#if arrow && placement === "right"}<div class={cls(PARTS.LEFT, variant)} aria-hidden="true"></div>{/if}
+  <div class={cls(PARTS.MAIN, variant)}>{@render children(variant)}</div>
+  {#if arrow && placement === "top"}<div class={cls(PARTS.BOTTOM, variant)} aria-hidden="true"></div>{/if}
+  {#if arrow && placement === "left"}<div class={cls(PARTS.RIGHT, variant)} aria-hidden="true"></div>{/if}
 </div>

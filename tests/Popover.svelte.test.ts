@@ -59,7 +59,10 @@ describe("Popover structure, a11y, and positioning", () => {
     await expect.element(button).toHaveAttribute("data-x", "y"); await expect.element(button).toHaveAttribute("type", "submit");
     expect(pop.classList.contains("mine")).toBe(false);
     expect(attached).toBe(button); expect(props.element).toBe(button); expect(attach).toHaveBeenCalled();
-    const arrow = pop.querySelector(`.${PARTS.EXTRA}`) as HTMLElement; await expect.element(arrow).toHaveClass("pop", PARTS.EXTRA, VARIANT.ACTIVE); await expect.element(arrow).toHaveAttribute("aria-hidden", "true");
+    const main = pop.querySelector(`.${PARTS.MAIN}`) as HTMLElement; await expect.element(main).toHaveClass("pop", PARTS.MAIN, VARIANT.ACTIVE);
+    const arrow = pop.querySelector(`.${PARTS.BOTTOM}`) as HTMLElement; await expect.element(arrow).toHaveClass("pop", PARTS.BOTTOM, VARIANT.ACTIVE); await expect.element(arrow).toHaveAttribute("aria-hidden", "true");
+    expect(pop.querySelector(`.${PARTS.EXTRA}`)).toBeNull();
+    await expect.element(pop).toHaveAttribute("data-svs-placement", "top");
     expect(button.getAttribute("style")).toContain("anchor-name: --svs-popover");
     // Chromium normalizes the authored `top center` position-area order.
     expect(pop.getAttribute("style")).toContain("position-area: center top");

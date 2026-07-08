@@ -7,6 +7,7 @@
 - svelte-a11y-separator-not-interactive.md — Svelte's a11y checker flags a focusable `role="separator"` (APG Window Splitter); suppress with a narrow role-listing `svelte-ignore`.
 - sveltejs-package-output-layout.md — `@sveltejs/package` passes `.svelte` through, compiles `_core.ts`→`_core.js`/`.d.ts` (dropping `_core.ts`), and emits no `package.json`; the post-build step must supply those.
 - svseeds-object-styling-no-part-literal-class.md — object-form `styling` emits only user classes, not the literal part-name token; `querySelector('.label')` returns null in object mode — use `bind:this` instead.
+- svelte-state-prop-initializer-warning.md — `$state` directly capturing a prop variable in its initializer triggers a Svelte warning; wrap the initial read in a tiny helper to suppress it while preserving one-time seed behavior.
 
 ## Build, Tooling & Dependencies
 - bun-run-check-generates-svelte-kit-dir.md — `bun run check` runs `svelte-kit sync`, (re)generating a gitignored `.svelte-kit/` build dir; leave it in place, don't clean it up.

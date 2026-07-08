@@ -6,3 +6,4 @@
 20260629_l7mnph	build: Merge the index/dep generators into a single prep.ts and have post.ts remove the generated source-tree files after build, with unit tests locking the regex extraction
 20260629_frxdxy	build: Exclude `_`-prefixed internal symbols from the generated package index
 20260708_dqekeu	fix: Fix WheelPicker display collapse in object-styling mode by measuring row height via bind:this + offsetHeight instead of a styling-dependent selector; disable text selection on the decorative drum
+20260708_dxvznm	feat: Restructure Popover arrow into MAIN + flip-following caret parts
