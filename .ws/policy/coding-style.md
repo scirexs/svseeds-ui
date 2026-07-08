@@ -16,10 +16,10 @@ hand-maintained and represent the intended style. When in doubt, match them.
 - **Validation commands** (run from the repo root):
   - **Types / Svelte check:** `bun run check` — runs `svelte-kit sync` then
     `svelte-check`. (Regenerates a gitignored `.svelte-kit/`; leave it.)
-  - **Tests:** scoped, `SVS_TEST="tests/<Name>.svelte.test.ts" bun run test`;
+  - **Tests:** scoped, `BUN_TEST="tests/<Name>.svelte.test.ts" bun run test`;
     whole suite, `bun run test`.
   - **Format check (non-destructive):** scoped — the standard for review —
-    `SVS_FMT="<changed files>" bun run fmt:check`; whole tree, `bun run fmt:check`.
+    `BUN_FMT="<changed files>" bun run fmt:check`; whole tree, `bun run fmt:check`.
     The destructive `bun run fmt` (`--write`) is an *implementer-only* optional
     pass; never use it as a review validation step. See
     `.ws/knowledge/bun-run-fmt-rewrites-whole-src-lib.md`.

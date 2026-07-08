@@ -2,11 +2,11 @@
 
 **Applies to:** this repo as of prettier `^3.8.5`. The format scripts take a
 variable target with a whole-tree default:
-`fmt` = `bunx prettier --write ${SVS_FMT:-./src/lib}`,
-`fmt:check` = `bunx prettier --check ${SVS_FMT:-./src/lib}`.
+`fmt` = `bunx prettier --write ${BUN_FMT:-./src/lib}`,
+`fmt:check` = `bunx prettier --check ${BUN_FMT:-./src/lib}`.
 
 ## Finding
-With no `SVS_FMT` set, `fmt` runs `prettier --write` over the whole `./src/lib`
+With no `BUN_FMT` set, `fmt` runs `prettier --write` over the whole `./src/lib`
 tree, so it rewrites every source file whose current formatting differs from
 prettier's output — including files unrelated to the task. The repo currently
 has pre-existing formatting drift (e.g. `FileField.svelte`, `Tooltip.svelte`,
@@ -14,15 +14,15 @@ has pre-existing formatting drift (e.g. `FileField.svelte`, `Tooltip.svelte`,
 (or `bun run fmt:check`) for validation picks up that unrelated churn / noise in
 its result. Test files under `tests/` carry their own pre-existing drift
 (e.g. multi-statement one-liners that prettier expands), so even a
-`SVS_FMT`-scoped `fmt:check` limited to edited test files may report failures
+`BUN_FMT`-scoped `fmt:check` limited to edited test files may report failures
 that pre-date the task's changes.
 
 ## Why it matters / how to apply
 For a scoped change, validate formatting with the **check-only** script narrowed
-to the files you touched via the `SVS_FMT` env var (space-separated):
+to the files you touched via the `BUN_FMT` env var (space-separated):
 
 ```
-SVS_FMT="src/lib/_svseeds/Foo.svelte src/lib/_svseeds/Bar.svelte" bun run fmt:check
+BUN_FMT="src/lib/_svseeds/Foo.svelte src/lib/_svseeds/Bar.svelte" bun run fmt:check
 ```
 
 This is the standard validation form for review (non-destructive, scoped). Use
