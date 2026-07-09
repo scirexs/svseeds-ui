@@ -8,13 +8,15 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface TabsProps {
+  interface TabsProps extends Omit<HTMLAttributes<HTMLDivElement>, "children" | "role" | "aria-orientation" | "onfocusin"> {
     tabs: TabItem[];
     current?: string; // bindable (first enabled tab value)
     manual?: boolean; // (false) manual activation: Arrow keys only move focus; Enter/Space selects
     orientation?: "horizontal" | "vertical"; // ("horizontal")
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
+    // other div attributes are passed to the role="tablist" element via ...rest; `class` is merged onto the tablist
+    // aria-label / aria-labelledby name the tablist
   }
   type TabComponent = { component: Component<any>; props?: Record<string, unknown> };
   type TabItem = {
@@ -28,7 +30,7 @@
   ### Anatomy
   ```svelte
   <div class="whole">
-    <div class="top" role="tablist" aria-orientation={orientation}>
+    <div class="top" {...rest} role="tablist" aria-orientation={orientation} aria-label>
       {#each tabs as tab}
         <button class="label" role="tab">{tab.label}</button>
       {/each}
@@ -45,16 +47,16 @@
   ```
 -->
 <script module lang="ts">
-  export interface TabsProps {
+  export interface TabsProps extends Omit<HTMLAttributes<HTMLDivElement>, "children" | "role" | "aria-orientation" | "onfocusin"> {
     tabs: TabItem[];
     current?: string; // bindable (first enabled tab value)
     manual?: boolean; // (false) manual activation: Arrow keys only move focus; Enter/Space selects
     orientation?: "horizontal" | "vertical"; // ("horizontal")
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
+    // other div attributes are passed to the role="tablist" element via ...rest; `class` is merged onto the tablist
+    // aria-label / aria-labelledby name the tablist
   }
-  export type TabsReqdProps = "tabs";
-  export type TabsBindProps = "current";
   export type TabComponent = { component: Component<any>; props?: Record<string, unknown> };
   export type TabItem = {
     value: string; // REQUIRED, unique within `tabs`. Addresses `current`.
@@ -62,6 +64,8 @@
     panel: Snippet | TabComponent;
     disabled?: boolean; // (false)
   };
+  export type TabsReqdProps = "tabs";
+  export type TabsBindProps = "current";
 
   export const _TABS_PRESET = "svs-tabs";
 
@@ -82,12 +86,13 @@
   import { untrack } from "svelte";
   import { VARIANT, PARTS, _fnClass } from "./_core";
   import type { Component, Snippet } from "svelte";
+  import type { HTMLAttributes } from "svelte/elements";
   import type { SVSClass, SVSVariant } from "./_core";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { tabs, current = $bindable<string | undefined>(undefined), manual = false, orientation = "horizontal", styling, variant = VARIANT.NEUTRAL }: TabsProps = $props();
+  let { tabs, current = $bindable<string | undefined>(undefined), manual = false, orientation = "horizontal", styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: TabsProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(_fnClass(_TABS_PRESET, styling));
@@ -180,7 +185,7 @@
 
 {#if tabs.length > 0}
   <div class={cls(PARTS.WHOLE, variant)}>
-    <div class={cls(PARTS.TOP, variant)} role="tablist" aria-orientation={orientation} onfocusin={hfocusin}>
+    <div class={[cls(PARTS.TOP, variant), c]} {...rest} role="tablist" aria-orientation={orientation} onfocusin={hfocusin}>
       {#each tabs as tab, i (tab.value)}
         {@const selected = isSelected(tab)}
         <button

@@ -2,9 +2,10 @@ import { describe, expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { createRawSnippet, tick } from "svelte";
-import Tabs, { type TabItem } from "#svs/Tabs.svelte";
+import Tabs from "#svs/Tabs.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 import TabDummy from "./fixtures/TabDummy.svelte";
+import type { TabItem, TabsProps } from "#svs/Tabs.svelte";
 
 const element = (target: Element | null | undefined) => expect.element(target as HTMLElement | null);
 const byTabName = (root: ParentNode, name: string) =>
@@ -317,6 +318,34 @@ describe("Disabled tabs", async () => {
 });
 
 describe("Accessibility wiring", () => {
+  test("aria-label passes through to the tablist", async () => {
+    const { container } = render(Tabs, { tabs: baseTabs(), "aria-label": "Sections" });
+
+    await element(container.querySelector('[role="tablist"]') as HTMLDivElement).toHaveAttribute("aria-label", "Sections");
+  });
+
+  test("aria-labelledby passes through to the tablist", async () => {
+    const { container } = render(Tabs, { tabs: baseTabs(), "aria-labelledby": "ext-id" });
+
+    await element(container.querySelector('[role="tablist"]') as HTMLDivElement).toHaveAttribute("aria-labelledby", "ext-id");
+  });
+
+  test("caller class merges onto the tablist", async () => {
+    const { container } = render(Tabs, { tabs: baseTabs(), class: "my-tabs" });
+    const tablist = container.querySelector('[role="tablist"]') as HTMLDivElement;
+
+    await element(tablist).toHaveClass("my-tabs");
+    await element(tablist).toHaveClass(seed, PARTS.TOP);
+  });
+
+  test("component-owned tablist attributes are not overridable", async () => {
+    const props = { tabs: baseTabs(), role: "presentation", "aria-orientation": "vertical" } as unknown as TabsProps;
+    const { container } = render(Tabs, props);
+
+    await element(container.querySelector('[role="tablist"]') as HTMLDivElement).toHaveAttribute("role", "tablist");
+    await element(container.querySelector('[role="tablist"]') as HTMLDivElement).toHaveAttribute("aria-orientation", "horizontal");
+  });
+
   test("ARIA relationships are correctly wired", async () => {
     const { container } = render(Tabs, { tabs: baseTabs(), current: "b" });
     const tabs = tabsIn(container.querySelector('[role="tablist"]') as HTMLDivElement);
