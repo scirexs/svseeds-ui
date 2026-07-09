@@ -149,6 +149,33 @@ describe("_Sortable single-list drag", () => {
     expect(props.items).toEqual(["b", "c", "a"]);
   });
 
+  test("move mode reorders the bound array backward", async () => {
+    const props = $state({ items: ["a", "b", "c"] });
+    const { container } = render(SortableBasic, props);
+
+    await drag(el(container, "item-c"), el(container, "item-a"));
+
+    await expect.element(el(container, "value-readout")).toHaveTextContent("c,a,b");
+    expect(props.items).toEqual(["c", "a", "b"]);
+  });
+
+  test("swap mode exchanges two same-list items", async () => {
+    const { container } = render(SortableBasic, { items: ["a", "b", "c"], mode: "swap" });
+
+    await drag(el(container, "item-a"), el(container, "item-c"));
+
+    await expect.element(el(container, "value-readout")).toHaveTextContent("c,b,a");
+  });
+
+  test("clone mode reorders same-list items without duplicating", async () => {
+    const { container } = render(SortableBasic, { items: ["a", "b", "c"], mode: "clone" });
+
+    await drag(el(container, "item-a"), el(container, "item-c"));
+
+    await expect.element(el(container, "value-readout")).toHaveTextContent("b,c,a");
+    expect(container.querySelectorAll("li[data-svs-key]")).toHaveLength(3);
+  });
+
   test("repeated pointerover on a moving target does not reverse the reorder", async () => {
     const props = $state({ items: ["a", "b", "c"] });
     const { container } = render(SortableBasic, props);

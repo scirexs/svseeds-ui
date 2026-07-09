@@ -24,3 +24,4 @@
 20260709_2pwmbr	refactor: Extract duplicated Field lifecycle logic (id wiring, message/aria derivation, verify loop) into rune-free _core.ts helpers used by all 8 Field components, and add the missing element argument to ToggleGroupField's aux/left/right snippets.
 20260709_czievh	refactor: Extract three duplicated patterns (collection-commit merge, viewport-overflow detection, roving-focus index) into shared _core helpers
 20260709_bfinc7	refactor: Address the Svelte idiom / type-safety review findings (E): Disclosure reactive reorg, stale bind:this collections, Pagination effect merge, ComboBox isComposing unify, let->const in Toggle/ToggleGroup.
+20260709_pxnqbu	test: Add hardening tests for Sortable single-list backward reorder, swap, and clone paths
