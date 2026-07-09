@@ -8,5 +8,5 @@
     "noUnusedParameters": true,
     "outDir": "./_svseeds",
   },
-  "exclude": ["_svseeds", ".ref", "tests/sim-setup.ts"]
+  "exclude": [".ref", "tests/sim-setup.ts"]
 }

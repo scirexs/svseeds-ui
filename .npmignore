@@ -7,9 +7,6 @@ node_modules/
 src/
 .gitignore
 .npmignore
-deno.json
-deno.lock
-dep_analyzer.ts
 mod.ts
 svelte.config.js
 tsconfig.json
