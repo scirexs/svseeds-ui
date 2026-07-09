@@ -51,7 +51,6 @@
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
-  export type Position = "top" | "right" | "bottom" | "left";
   export type DrawerCssVar = "duration";
   export type DrawerReqdProps = "children";
   export type DrawerBindProps = "open" | "element";
@@ -80,7 +79,7 @@
   import { VARIANT, PARTS, _fnClass, _resolveDuration } from "./_core";
   import type { Snippet } from "svelte";
   import type { HTMLDialogAttributes, MouseEventHandler, KeyboardEventHandler, ToggleEventHandler } from "svelte/elements";
-  import type { SVSClass, SVSVariant } from "./_core";
+  import type { SVSClass, SVSVariant, Position } from "./_core";
 </script>
 
 <script lang="ts">
