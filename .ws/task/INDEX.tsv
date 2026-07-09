@@ -13,3 +13,4 @@
 20260708_wpr67y	fix: Fix Sortable backward reorder reverting during the flip animation
 20260708_jd7pcc	fix: Fix same-list multi-select move so the whole selection follows the dragged item
 20260708_byv4bq	feat: Add accessible-name API to the ToggleGroup group element (rest-props passthrough) and propagate the ToggleGroupField label to the embedded group
+20260708_itvs37 feat: Expose an accessible name for the Tabs tablist via rest-props passthrough
