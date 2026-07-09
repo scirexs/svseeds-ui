@@ -147,11 +147,11 @@ describe("_NumberInput value and commit behavior", () => {
 
   test("syncs external value only while not focused", async () => {
     const props = $state({ value: 1 as number | undefined });
-    const { container, rerender } = render(NumberInput, props);
+    const { container } = render(NumberInput, props);
     const el = input(container);
     await expect.element(el).toHaveValue("1");
     props.value = 2;
-    await rerender(props);
+    await tick();
     await expect.element(el).toHaveValue("2");
     await userEvent.click(el);
     await userEvent.clear(el);

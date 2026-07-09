@@ -13,6 +13,7 @@ const participant = (container: HTMLElement) => container.querySelector("input[h
 const nativeInput = (container: HTMLElement) => container.querySelector('input[type="date"]') as HTMLInputElement | null;
 const day = (container: HTMLElement, text = "2026-06-21") =>
   container.querySelector(`[data-svs-calendar] [data-date="${text}"]`) as HTMLButtonElement;
+const today = (container: HTMLElement) => container.querySelector("[data-svs-calendar] [data-today]") as HTMLButtonElement;
 const snippet = (id: string) =>
   createRawSnippet((value: () => Temporal.PlainDate | undefined, variant: () => string, element: () => DateFieldElement) => ({
     render: () => `<span data-testid="${id}">${value()?.toString() ?? "empty"}:${variant()}:${element() ? "element" : "none"}</span>`,
@@ -167,11 +168,13 @@ describe("DateField default DateInput and participant", () => {
     const { container } = render(DateField, props);
     visible(container).focus();
     await tick();
-    await userEvent.click(day(container));
+    const cell = today(container);
+    const iso = cell.getAttribute("data-date")!;
+    await userEvent.click(cell);
     await tick();
 
-    expect(props.value?.toString()).toBe("2026-06-21");
-    expect(participant(container)?.value).toBe("2026-06-21");
+    expect(props.value?.toString()).toBe(iso);
+    expect(participant(container)?.value).toBe(iso);
   });
 
   test("re-runs custom validations and blocks submit when a calendar day is picked", async () => {
@@ -179,9 +182,7 @@ describe("DateField default DateInput and participant", () => {
       value: undefined as Temporal.PlainDate | undefined,
       variant: VARIANT.NEUTRAL,
       name: "date",
-      validations: [
-        ({ value }: { value: Temporal.PlainDate | undefined }) => (value?.equals(d("2026-06-21")) ? "blocked date" : ""),
-      ],
+      validations: [({ value }: { value: Temporal.PlainDate | undefined }) => (value ? "blocked date" : "")],
       dateInput: { openOnFocus: true },
     });
     const { container } = render(DateField, props);
@@ -189,10 +190,12 @@ describe("DateField default DateInput and participant", () => {
 
     visible(container).focus();
     await tick();
-    await userEvent.click(day(container));
+    const cell = today(container);
+    const iso = cell.getAttribute("data-date")!;
+    await userEvent.click(cell);
     await tick();
 
-    expect(props.value?.toString()).toBe("2026-06-21");
+    expect(props.value?.toString()).toBe(iso);
     expect(proxy.validity.customError).toBe(true);
     expect(proxy.validationMessage).toBe("blocked date");
     expect(proxy.checkValidity()).toBe(false);

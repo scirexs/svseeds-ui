@@ -23,6 +23,7 @@
 ## Testing
 - vitest-browser-userevent-skips-aria-disabled.md — `userEvent.click` is a no-op on `aria-disabled="true"` elements; dispatch a DOM `MouseEvent` directly to exercise a focusable aria-disabled handler.
 - dateinput-test-fixed-date-drift.md — a test with a hardcoded target date breaks permanently (not intermittently) once real "today" advances past it, when the component under test defaults empty state from `Temporal.Now.plainDateISO()`.
+- svelte-rerender-then-mutate-state-props-loses-reactivity.md — calling `rerender(props)` once then later mutating the same `$state` props object directly can break reactive tracking (`track_reactivity_loss`); pick one props-driving mechanism per test.
 
 ## Runtime & Platform
 - css-flip-animation-spurious-pointerover.md — FLIP animation slides transformed boxes over the pointer, causing the browser to fire spurious `pointerover` on just-moved drag targets and reversing a committed reorder.

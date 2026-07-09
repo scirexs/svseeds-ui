@@ -15,25 +15,20 @@ function forceTheme(dark: boolean) {
   setTheme(dark);
 }
 
-
 // Custom snippet for testing the direct children prop
-const customMainSnippet = createRawSnippet(
-  (
-    value: () => boolean,
-    variant: () => string,
-    element: () => HTMLButtonElement | undefined,
-  ) => {
-    const text = () => `${variant()},${value()},${element()?.tagName}`;
-    return {
-      render: () => `<span data-testid="custom-main">${text()}</span>`,
-      // render() only produces the initial markup; without a reactive setup the snippet
-      // never reflects later changes (bound element, toggled value).
-      setup: (node: Element) => {
-        $effect(() => { node.textContent = text(); });
-      },
-    };
-  },
-);
+const customMainSnippet = createRawSnippet((value: () => boolean, variant: () => string, element: () => HTMLButtonElement | undefined) => {
+  const text = () => `${variant()},${value()},${element()?.tagName}`;
+  return {
+    render: () => `<span data-testid="custom-main">${text()}</span>`,
+    // render() only produces the initial markup; without a reactive setup the snippet
+    // never reflects later changes (bound element, toggled value).
+    setup: (node: Element) => {
+      $effect(() => {
+        node.textContent = text();
+      });
+    },
+  };
+});
 
 const waitFor = vi.waitFor;
 const has = (el: Element, ...names: string[]) => expect([...el.classList]).toEqual(expect.arrayContaining(names));
@@ -42,7 +37,8 @@ const render = (component: Parameters<typeof browserRender>[0], props?: Paramete
   const screen = browserRender(component, props);
   return {
     ...screen,
-    getByRole: (role: string) => (role === "button" ? screen.container.querySelector("button") : screen.container.querySelector(`[role="${role}"]`)) as HTMLElement,
+    getByRole: (role: string) =>
+      (role === "button" ? screen.container.querySelector("button") : screen.container.querySelector(`[role="${role}"]`)) as HTMLElement,
     getByTestId: (id: string) => screen.container.querySelector(`[data-testid="${id}"]`) as HTMLElement,
   };
 };
@@ -184,20 +180,20 @@ describe("DarkToggle - Singleton sync", () => {
 
     await waitFor(() => {
       expect(props.dark).toBe(false);
-      expect(container.querySelector("circle")?.isConnected).toBe(true);
+      expect(container.querySelector("circle")).toBeNull();
     });
 
     setTheme(true);
     await waitFor(() => {
       expect(props.dark).toBe(true);
-      expect(container.querySelector("circle")).toBeNull();
+      expect(container.querySelector("circle")?.isConnected).toBe(true);
       has(document.documentElement, THEME.DARK);
     });
 
     setTheme(false);
     await waitFor(() => {
       expect(props.dark).toBe(false);
-      expect(container.querySelector("circle")?.isConnected).toBe(true);
+      expect(container.querySelector("circle")).toBeNull();
       has(document.documentElement, THEME.LIGHT);
     });
   });
@@ -415,9 +411,7 @@ describe("DarkToggle - Theme class management", () => {
   });
 });
 
-
 describe("DarkToggle - Status states", () => {
-
   test("initializes with neutral variant", () => {
     const props = $state({ variant: VARIANT.NEUTRAL });
     render(DarkToggle, props);

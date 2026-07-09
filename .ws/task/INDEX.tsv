@@ -17,3 +17,4 @@
 20260708_qdxh75	feat: Give SortableGroup an accessible name and add a keyboard drag-and-drop verification copy (ZSortableA11y)
 20260709_5xy6cd	feat: Extend Pagination props from nav HTML attributes and consolidate aria button labels
 20260709_qzv7t6	refactor: Replace self-owned document.querySelector lookups with bind:this in Calendar/DateInput; keep delegation/slotted/global-focus queries (ADR 005)
+20260709_z4tgp7	test: Stabilize deterministically-failing browser tests (DateField fixed-date drift, DarkToggle stale svg-swap assertions; investigate NumberInput external-value sync)
