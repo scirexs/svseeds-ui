@@ -19,6 +19,7 @@ export default defineConfig({
           headless: true,
           instances: [{ browser: "chromium" }]
         },
+        setupFiles: ["./tests/client-setup.ts"],
       },
     }, {
       extends: "./vite.config.ts",

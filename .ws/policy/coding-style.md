@@ -349,6 +349,13 @@ arrays, element mirroring, function bindings) see
 
 ## 16. Tests
 
+- **Default to the browser (`client`) environment** — write
+  `tests/<Name>.svelte.test.ts`, run under real chromium, and include
+  accessibility (axe) checks there. Fall back to the `simulation` (jsdom)
+  environment (`tests/<Name>.svelte.sim.test.ts`) only when a browser test is
+  impractical (precise fake timers, mocked geometry / `window` dimensions, …).
+  For running axe in the browser see
+  `.ws/knowledge/vitest-axe-browser-use-axe-core-directly.md`.
 - Test file: `tests/<Name>.svelte.test.ts`; import the component via
   `#svs/<Name>.svelte` and shared values via `{ PARTS, VARIANT } from "#svs/core"`.
 - Use `createRawSnippet` for simple snippet children; add a fixture under
