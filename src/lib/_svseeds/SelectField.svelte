@@ -80,7 +80,7 @@
   export const _SELECT_FIELD_PRESET = "svs-select-field";
 
   import { untrack, onMount } from "svelte";
-  import { VARIANT, PARTS, _fnClass, _isNeutral } from "./_core";
+  import { VARIANT, PARTS, _fieldAria, _fieldIds, _fieldMessage, _fnClass, _isNeutral, _verify } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { SvelteMap } from "svelte/reactivity";
@@ -96,32 +96,29 @@
   const cls = $derived(_fnClass(_SELECT_FIELD_PRESET, styling));
   const uid = $props.id();
   const idMain = $derived(id ? id : label?.trim() ? `${uid}-ctrl` : undefined);
-  const idLabel = $derived(label?.trim() ? `${uid}-label` : undefined);
-  const idDesc = $derived(bottom?.trim() ? `${uid}-desc` : undefined);
-  const idErr = $derived(idDesc ?? `${uid}-err`);
+  const ids = $derived(_fieldIds(uid, label, bottom));
+  const idLabel = $derived(ids.idLabel);
+  const idDesc = $derived(ids.idDesc);
+  const idErr = $derived(ids.idErr);
   let errmsg = $state("");
-  const message = $derived(variant === VARIANT.INACTIVE ? errmsg || bottom : bottom);
+  const message = $derived(_fieldMessage(variant, errmsg, bottom));
 
   // *** States *** //
   let neutral = _isNeutral(variant) ? variant : VARIANT.NEUTRAL;
   $effect(() => {
     neutral = _isNeutral(variant) ? variant : neutral;
   });
-  const live = $derived(variant === VARIANT.INACTIVE ? "alert" : undefined);
+  const aria = $derived(_fieldAria(variant, message, idErr));
+  const live = $derived(aria.live);
   const invalid = $derived(variant === VARIANT.INACTIVE ? true : undefined);
-  const idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
+  const idMsg = $derived(aria.idMsg);
   function shift(oninvalid?: boolean) {
     const vmsg = element?.validationMessage ?? "";
     variant = !value && !oninvalid ? neutral : vmsg ? VARIANT.INACTIVE : VARIANT.ACTIVE;
     errmsg = vmsg;
   }
   function verify() {
-    if (!element) return;
-    for (const v of validations) {
-      const msg = v({ value, validity: element.validity, element });
-      if (msg) return element.setCustomValidity(msg);
-    }
-    element.setCustomValidity("");
+    _verify(element, validations, value);
   }
 
   // *** Reactive Handlers *** //

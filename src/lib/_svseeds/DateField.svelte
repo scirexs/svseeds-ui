@@ -93,7 +93,7 @@
   export const _DATE_FIELD_PRESET = "svs-date-field";
 
   import { onMount, untrack } from "svelte";
-  import { PARTS, VARIANT, _fnClass, _isNeutral } from "./_core";
+  import { PARTS, VARIANT, _fieldAria, _fieldIds, _fieldMessage, _fnClass, _isNeutral, _verify } from "./_core";
   import DateInput, { _DATE_INPUT_PRESET, _setDateInputContext } from "./DateInput.svelte";
   import type { Snippet } from "svelte";
   import type { SVSClass, SVSFieldValidation, SVSVariant } from "./_core";
@@ -108,12 +108,14 @@
   const cls = $derived(_fnClass(_DATE_FIELD_PRESET, styling));
   const uid = $props.id();
   const id = $derived(label?.trim() ? `${uid}-ctrl` : undefined);
-  const idLabel = $derived(label?.trim() ? `${uid}-label` : undefined);
-  const idDesc = $derived(bottom?.trim() ? `${uid}-desc` : undefined);
-  const idErr = $derived(idDesc ?? `${uid}-err`);
+  const ids = $derived(_fieldIds(uid, label, bottom));
+  const idLabel = $derived(ids.idLabel);
+  const idDesc = $derived(ids.idDesc);
+  const idErr = $derived(ids.idErr);
   let errmsg = $state("");
-  const message = $derived(variant === VARIANT.INACTIVE ? errmsg || bottom : bottom);
-  const idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
+  const message = $derived(_fieldMessage(variant, errmsg, bottom));
+  const aria = $derived(_fieldAria(variant, message, idErr));
+  const idMsg = $derived(aria.idMsg);
   let proxyEl = $state<HTMLInputElement>();
 
   // *** Initialize Context *** //
@@ -152,7 +154,7 @@
   $effect(() => {
     neutral = _isNeutral(variant) ? variant : neutral;
   });
-  const live = $derived(variant === VARIANT.INACTIVE ? "alert" : undefined);
+  const live = $derived(aria.live);
   const validEl = $derived(native ? element : proxyEl);
   function shift(oninvalid?: boolean) {
     const vmsg = validEl?.validationMessage ?? "";
@@ -160,12 +162,7 @@
     errmsg = vmsg;
   }
   function verify() {
-    if (!validEl) return;
-    for (const v of validations) {
-      const msg = v({ value, validity: validEl.validity, element: validEl });
-      if (msg) return validEl.setCustomValidity(msg);
-    }
-    validEl.setCustomValidity("");
+    _verify(validEl, validations, value);
   }
 
   // *** Reactive Handlers *** //
@@ -229,7 +226,7 @@
     {@render participant()}
   </div>
   {#if reserve || message?.trim()}
-    <div class={cls(PARTS.BOTTOM, variant)} id={idDesc ?? idErr} role={live}>{message}</div>
+    <div class={cls(PARTS.BOTTOM, variant)} id={idErr} role={live}>{message}</div>
   {/if}
 </div>
 

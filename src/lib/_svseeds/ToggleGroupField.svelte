@@ -16,9 +16,9 @@
     options?: SvelteMap<string, string | ToggleOption> | Map<string, string | ToggleOption>;
     label?: string;
     extra?: string;
-    aux?: Snippet<[string[], string]>; // Snippet<[values,variant]>
-    left?: Snippet<[string[], string]>; // Snippet<[values,variant]>
-    right?: Snippet<[string[], string]>; // Snippet<[values,variant]>
+    aux?: Snippet<[string[], string, HTMLInputElement | undefined]>; // Snippet<[values,variant,element]>
+    left?: Snippet<[string[], string, HTMLInputElement | undefined]>; // Snippet<[values,variant,element]>
+    right?: Snippet<[string[], string, HTMLInputElement | undefined]>; // Snippet<[values,variant,element]>
     bottom?: string;
     reserve?: boolean; // (false)
     values?: string[]; // bindable
@@ -51,7 +51,7 @@
         {label}
         <span class="extra" conditional>{extra}</span>
       </span>
-      <span class="aux" conditional>{aux}</span>
+      <span class="aux" conditional>{aux}</span> Snippet args: [values, variant, element]
     </div>
     <div class="middle">
       <span class="left" conditional>{left}</span>
@@ -70,9 +70,9 @@
     options?: SvelteMap<string, string | ToggleOption> | Map<string, string | ToggleOption>;
     label?: string;
     extra?: string;
-    aux?: Snippet<[string[], string]>; // Snippet<[values,variant]>
-    left?: Snippet<[string[], string]>; // Snippet<[values,variant]>
-    right?: Snippet<[string[], string]>; // Snippet<[values,variant]>
+    aux?: Snippet<[string[], string, HTMLInputElement | undefined]>; // Snippet<[values,variant,element]>
+    left?: Snippet<[string[], string, HTMLInputElement | undefined]>; // Snippet<[values,variant,element]>
+    right?: Snippet<[string[], string, HTMLInputElement | undefined]>; // Snippet<[values,variant,element]>
     bottom?: string;
     reserve?: boolean; // (false)
     values?: string[]; // bindable
@@ -98,7 +98,7 @@
   export const _TOGGLE_GROUP_FIELD_PRESET = "svs-toggle-group-field";
 
   import { untrack } from "svelte";
-  import { VARIANT, PARTS, _fnClass, _isNeutral } from "./_core";
+  import { VARIANT, PARTS, _fieldAria, _fieldIds, _fieldMessage, _fnClass, _isNeutral, _verify } from "./_core";
   import ToggleGroup, { _TOGGLE_GROUP_PRESET, _setToggleGroupContext } from "./ToggleGroup.svelte";
   import type { Snippet } from "svelte";
   import type { SvelteMap } from "svelte/reactivity";
@@ -119,11 +119,12 @@
   // *** Initialize *** //
   const cls = $derived(_fnClass(_TOGGLE_GROUP_FIELD_PRESET, styling));
   const uid = $props.id();
-  const idLabel = $derived(label?.trim() ? `${uid}-label` : undefined);
-  const idDesc = $derived(bottom?.trim() ? `${uid}-desc` : undefined);
-  const idErr = $derived(idDesc ?? `${uid}-err`);
+  const ids = $derived(_fieldIds(uid, label, bottom));
+  const idLabel = $derived(ids.idLabel);
+  const idDesc = $derived(ids.idDesc);
+  const idErr = $derived(ids.idErr);
   let errmsg = $state("");
-  const message = $derived(variant === VARIANT.INACTIVE ? errmsg || bottom : bottom);
+  const message = $derived(_fieldMessage(variant, errmsg, bottom));
   let element: HTMLInputElement | undefined = $state();
 
   // *** Initialize Context *** //
@@ -161,20 +162,16 @@
   $effect(() => {
     neutral = _isNeutral(variant) ? variant : neutral;
   });
-  const live = $derived(variant === VARIANT.INACTIVE ? "alert" : undefined);
-  const idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
+  const aria = $derived(_fieldAria(variant, message, idErr));
+  const live = $derived(aria.live);
+  const idMsg = $derived(aria.idMsg);
   function shift(oninvalid: boolean = false, msg?: string) {
     const vmsg = element?.validationMessage ?? "";
     variant = msg ? VARIANT.INACTIVE : oninvalid && vmsg ? VARIANT.INACTIVE : !values.length || vmsg ? neutral : VARIANT.ACTIVE;
     errmsg = msg ? msg : vmsg;
   }
   function verify() {
-    if (!element) return;
-    for (const v of validations) {
-      const msg = v({ value: values, validity: element.validity, element });
-      if (msg) return element.setCustomValidity(msg);
-    }
-    element.setCustomValidity("");
+    _verify(element, validations, values);
   }
   function check(value: string): string {
     if (!element) return "";
@@ -220,7 +217,7 @@
       <div class={cls(PARTS.TOP, variant)}>
         {@render lbl()}
         {#if aux}
-          <span class={cls(PARTS.AUX, variant)}>{@render aux(values, variant)}</span>
+          <span class={cls(PARTS.AUX, variant)}>{@render aux(values, variant, element)}</span>
         {/if}
       </div>
     {/if}
@@ -235,7 +232,7 @@
       {@render side(PARTS.RIGHT, right)}
     </div>
     {#if reserve || message?.trim()}
-      <div class={cls(PARTS.BOTTOM, variant)} id={idDesc ?? idErr} role={live}>{message}</div>
+      <div class={cls(PARTS.BOTTOM, variant)} id={idErr} role={live}>{message}</div>
     {/if}
   </div>
 {/if}
@@ -250,9 +247,9 @@
     </span>
   {/if}
 {/snippet}
-{#snippet side(area: string, body?: Snippet<[string[], string]>)}
+{#snippet side(area: string, body?: Snippet<[string[], string, HTMLInputElement | undefined]>)}
   {#if body}
-    <span class={cls(area, variant)}>{@render body(values, variant)}</span>
+    <span class={cls(area, variant)}>{@render body(values, variant, element)}</span>
   {/if}
 {/snippet}
 {#snippet fnForm()}

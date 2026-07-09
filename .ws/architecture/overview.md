@@ -44,7 +44,7 @@ shared module — there is no central runtime or app shell.
   `src/lib/_svseeds/` and exposes a flat prop API.
 - All components draw shared types, constants, and utilities from
   `_core.ts` (styling resolution, variant/part vocabulary, context helpers,
-  field validation types, small DOM/timing utilities).
+  field validation types, Field lifecycle helpers, small DOM/timing utilities).
 - Styling flows one way: a component declares a `preset` class and merges it
   with the consumer's `styling` prop via `_fnClass`, emitting classes keyed by
   **part** (`PARTS.*`) and **variant** (`VARIANT.*`). The consumer targets
@@ -68,8 +68,9 @@ Shared module:
 - **`_core.ts`** — shared styling engine (`_fnClass`, `_prepRule`,
   `_ruleClass`), the `BASE`/`VARIANT`/`PARTS` vocabulary, context helpers
   (`_createContext`), field-validation types (`SVSFieldValidation`,
-  `SVSFieldConstraint`, `SVSContext`), and utilities (`_omit`, `_debounce`,
-  `_throttle`, `shouldReduceMotion`, `canHover`, …).
+  `SVSFieldConstraint`, `SVSContext`), Field lifecycle helpers (id wiring,
+  message/aria derivation, validation verify loop), and utilities (`_omit`,
+  `_debounce`, `_throttle`, `shouldReduceMotion`, `canHover`, …).
 
 Components (43 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
 

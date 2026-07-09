@@ -17,10 +17,14 @@ import {
   _cssVar,
   _cssVarStyle,
   _createContext,
+  _fieldAria,
+  _fieldIds,
+  _fieldMessage,
   _isVariantMap,
   _prepRule,
   _resolveDuration,
   _ruleClass,
+  _verify,
 } from "#svs/core";
 
 vi.mock("svelte", async (importOriginal) => {
@@ -60,7 +64,9 @@ describe("const vars", () => {
     expect(BASE).toBe("base");
   });
   test("SR_ONLY", () => {
-    expect(SR_ONLY).toBe("position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0;");
+    expect(SR_ONLY).toBe(
+      "position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0;",
+    );
   });
 });
 
@@ -131,6 +137,69 @@ describe("variant and number helpers", () => {
     expect(_isUnsignedInteger(1.1)).toBe(false);
     expect(_isUnsignedInteger(NaN)).toBe(false);
     expect(_isUnsignedInteger(Infinity)).toBe(false);
+  });
+});
+
+describe("field helpers", () => {
+  test("_fieldIds derives label, description, and fallback error ids", () => {
+    expect(_fieldIds("uid", "Label", "Bottom")).toEqual({
+      idLabel: "uid-label",
+      idDesc: "uid-desc",
+      idErr: "uid-desc",
+    });
+    expect(_fieldIds("uid", " ", " ")).toEqual({
+      idLabel: undefined,
+      idDesc: undefined,
+      idErr: "uid-err",
+    });
+  });
+
+  test("_fieldMessage returns validation text only for inactive fields", () => {
+    expect(_fieldMessage(VARIANT.INACTIVE, "Error", "Bottom")).toBe("Error");
+    expect(_fieldMessage(VARIANT.INACTIVE, "", "Bottom")).toBe("Bottom");
+    expect(_fieldMessage(VARIANT.ACTIVE, "Error", "Bottom")).toBe("Bottom");
+    expect(_fieldMessage(VARIANT.NEUTRAL, "Error")).toBeUndefined();
+  });
+
+  test("_fieldAria emits message id and live role only for inactive fields with a non-blank message", () => {
+    expect(_fieldAria(VARIANT.INACTIVE, "Error", "uid-err")).toEqual({ idMsg: "uid-err", live: "alert" });
+    expect(_fieldAria(VARIANT.INACTIVE, " ", "uid-err")).toEqual({ idMsg: undefined, live: "alert" });
+    expect(_fieldAria(VARIANT.ACTIVE, "Error", "uid-err")).toEqual({ idMsg: undefined, live: undefined });
+  });
+
+  test("_verify is a no-op without an element", () => {
+    const validation = vi.fn();
+
+    _verify<string, HTMLInputElement>(undefined, [validation], "value");
+
+    expect(validation).not.toHaveBeenCalled();
+  });
+
+  test("_verify sets the first validation message and stops", () => {
+    const element = document.createElement("input");
+    const first = vi.fn().mockReturnValue("");
+    const second = vi.fn().mockReturnValue("Second error");
+    const third = vi.fn().mockReturnValue("Third error");
+    const setCustomValidity = vi.spyOn(element, "setCustomValidity");
+
+    _verify(element, [first, second, third], "value");
+
+    expect(first).toHaveBeenCalledWith({ value: "value", validity: element.validity, element });
+    expect(second).toHaveBeenCalledWith({ value: "value", validity: element.validity, element });
+    expect(third).not.toHaveBeenCalled();
+    expect(setCustomValidity).toHaveBeenCalledWith("Second error");
+  });
+
+  test("_verify clears custom validity when all validations pass", () => {
+    const element = document.createElement("input");
+    element.setCustomValidity("Previous error");
+    const validation = vi.fn().mockReturnValue(null);
+    const setCustomValidity = vi.spyOn(element, "setCustomValidity");
+
+    _verify(element, [validation], "value");
+
+    expect(setCustomValidity).toHaveBeenCalledWith("");
+    expect(element.validationMessage).toBe("");
   });
 });
 

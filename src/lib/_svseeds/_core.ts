@@ -21,9 +21,13 @@ export {
   _resolveDuration,
   _cssVar,
   _cssVarStyle,
+  _fieldAria,
+  _fieldIds,
+  _fieldMessage,
   _fnClass,
   _isNeutral,
   _isUnsignedInteger,
+  _verify,
   shouldReduceMotion,
   canHover,
   _omit,
@@ -236,6 +240,27 @@ function _cssVarStyle(entries: { name?: string; value?: string }[]): string | un
     .map((e) => `${e.name}: ${e.value}`)
     .join("; ");
   return css || undefined;
+}
+function _fieldIds(uid: string, label?: string, bottom?: string): { idLabel?: string; idDesc?: string; idErr: string } {
+  const idLabel = label?.trim() ? `${uid}-label` : undefined;
+  const idDesc = bottom?.trim() ? `${uid}-desc` : undefined;
+  return { idLabel, idDesc, idErr: idDesc ?? `${uid}-err` };
+}
+function _fieldMessage(variant: string, errmsg: string, bottom?: string): string | undefined {
+  return variant === VARIANT.INACTIVE ? errmsg || bottom : bottom;
+}
+function _fieldAria(variant: string, message: string | undefined, idErr: string): { idMsg?: string; live?: string } {
+  const active = variant === VARIANT.INACTIVE;
+  return { idMsg: active && message?.trim() ? idErr : undefined, live: active ? "alert" : undefined };
+}
+function _verify<V, E extends HTMLElement>(el: E | undefined, validations: SVSFieldValidation<V, E>[], value: V): void {
+  if (!el) return;
+  const target = el as E & { validity: ValidityState; setCustomValidity(message: string): void };
+  for (const v of validations) {
+    const msg = v({ value, validity: target.validity, element: el });
+    if (msg) return target.setCustomValidity(msg);
+  }
+  target.setCustomValidity("");
 }
 /**
  * Creates a new object with specified keys omitted from the original object.

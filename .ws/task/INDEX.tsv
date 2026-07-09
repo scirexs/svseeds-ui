@@ -21,3 +21,4 @@
 20260709_5fnxky	feat: Cancel ZSortableA11y keyboard grab on focus loss and add connected-list keyboard test coverage
 20260709_nzvwpq	fix: Move Calendar's weekday header row inside the grid and drop role=application so column headers associate with day cells
 20260709_c53ixc	fix: Improve accessibility of Toast (status/alert live-region roles + assertive flag), ColorPicker (ariaLabel), Tooltip (accessible-description docs), and HotkeyCapture (focus effect guards)
+20260709_2pwmbr	refactor: Extract duplicated Field lifecycle logic (id wiring, message/aria derivation, verify loop) into rune-free _core.ts helpers used by all 8 Field components, and add the missing element argument to ToggleGroupField's aux/left/right snippets.

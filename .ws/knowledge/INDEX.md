@@ -2,6 +2,7 @@
 
 ## Language & Types
 - svelte-state-widens-object-string-literals.md — `$state({ key: "literal" })` widens string literals to `string`; annotate the type explicitly when passing reactive prop objects to typed components.
+- ts-generic-htmlelement-excludes-constraint-validation.md — a generic `E extends HTMLElement` cannot access `validity`/`setCustomValidity` (declared per-concrete-interface, not on `HTMLElement`); narrow with a local cast internally instead of widening the public bound.
 
 ## Framework & Libraries
 - svelte-native-event-handler-typing.md — intrinsic-element `onload`/`onerror` type as a generic `EventHandler`; keep the public prop precise and cast the internal DOM handler narrowly.

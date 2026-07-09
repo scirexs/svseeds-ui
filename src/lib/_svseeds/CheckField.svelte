@@ -75,7 +75,7 @@
   export const _CHECK_FIELD_PRESET = "svs-check-field";
 
   import { untrack, onMount } from "svelte";
-  import { VARIANT, PARTS, _fnClass, _isNeutral } from "./_core";
+  import { VARIANT, PARTS, _fieldAria, _fieldIds, _fieldMessage, _fnClass, _isNeutral, _verify } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { SvelteMap } from "svelte/reactivity";
@@ -92,21 +92,23 @@
   const type = $derived(multiple ? "checkbox" : "radio");
   const uid = $props.id();
   const nm = $derived(name?.trim() ? name : `${uid}-name`);
-  const idLabel = $derived(label?.trim() ? `${uid}-label` : undefined);
-  const idDesc = $derived(bottom?.trim() ? `${uid}-desc` : undefined);
-  const idErr = $derived(idDesc ?? `${uid}-err`);
+  const ids = $derived(_fieldIds(uid, label, bottom));
+  const idLabel = $derived(ids.idLabel);
+  const idDesc = $derived(ids.idDesc);
+  const idErr = $derived(ids.idErr);
   const roleGroup = $derived(multiple ? "group" : "radiogroup");
   let errmsg = $state("");
-  const message = $derived(variant === VARIANT.INACTIVE ? errmsg || bottom : bottom);
+  const message = $derived(_fieldMessage(variant, errmsg, bottom));
 
   // *** States *** //
   let neutral = $state(_isNeutral(variant) ? variant : VARIANT.NEUTRAL);
   $effect(() => {
     neutral = _isNeutral(variant) ? variant : neutral;
   });
-  const live = $derived(variant === VARIANT.INACTIVE ? "alert" : undefined);
+  const aria = $derived(_fieldAria(variant, message, idErr));
+  const live = $derived(aria.live);
   const invalid = $derived(variant === VARIANT.INACTIVE ? true : undefined);
-  const idMsg = $derived(variant === VARIANT.INACTIVE && message?.trim() ? idErr : undefined);
+  const idMsg = $derived(aria.idMsg);
   const reqd = $derived(required && (!multiple || !values.length) ? true : undefined);
   function shift(oninvalid: boolean = false, msg?: string) {
     const vmsg = elements[0]?.validationMessage ?? "";
@@ -114,12 +116,7 @@
     errmsg = msg ? msg : vmsg;
   }
   function verify() {
-    if (!elements[0]) return;
-    for (const v of validations) {
-      const msg = v({ value: values, validity: elements[0].validity, element: elements[0] });
-      if (msg) return elements[0].setCustomValidity(msg);
-    }
-    elements[0].setCustomValidity("");
+    _verify(elements[0], validations, values);
   }
   function check(value: string): string {
     if (!elements[0]) return "";
@@ -179,7 +176,7 @@
     {/if}
     {@render main()}
     {#if reserve || message?.trim()}
-      <div class={cls(PARTS.BOTTOM, variant)} id={idDesc ?? idErr} role={live}>{message}</div>
+      <div class={cls(PARTS.BOTTOM, variant)} id={idErr} role={live}>{message}</div>
     {/if}
   </div>
 {/if}

@@ -13,14 +13,14 @@ const bottom = "bottom_text";
 const auxid = "test-aux";
 const leftid = "test-left";
 const rightid = "test-right";
-const auxfn = createRawSnippet((values: () => string[], variant: () => string) => {
-  return { render: () => `<span data-testid="${auxid}">${variant()},${values().length}</span>` };
+const auxfn = createRawSnippet((values: () => string[], variant: () => string, element: () => HTMLInputElement | undefined) => {
+  return { render: () => `<span data-testid="${auxid}">${variant()},${values().length},${element() ? "element" : "pending"}</span>` };
 });
-const leftfn = createRawSnippet((values: () => string[], variant: () => string) => {
-  return { render: () => `<span data-testid="${leftid}">${variant()},${values().length}</span>` };
+const leftfn = createRawSnippet((values: () => string[], variant: () => string, element: () => HTMLInputElement | undefined) => {
+  return { render: () => `<span data-testid="${leftid}">${variant()},${values().length},${element() ? "element" : "pending"}</span>` };
 });
-const rightfn = createRawSnippet((values: () => string[], variant: () => string) => {
-  return { render: () => `<span data-testid="${rightid}">${variant()},${values().length}</span>` };
+const rightfn = createRawSnippet((values: () => string[], variant: () => string, element: () => HTMLInputElement | undefined) => {
+  return { render: () => `<span data-testid="${rightid}">${variant()},${values().length},${element() ? "element" : "pending"}</span>` };
 });
 
 const byRole = (container: HTMLElement, role: string) => Array.from(container.querySelectorAll(`[role="${role}"]`)) as HTMLElement[];
@@ -135,6 +135,7 @@ describe("Switching existence of elements", () => {
     expect(whole.firstElementChild).toBe(auxsp.parentElement?.parentElement);
     expect(whole.lastElementChild?.tagName).toBe("DIV"); // middle
     expect(aux).toHaveBeenCalled();
+    expect(aux.mock.calls[0]?.slice(1)).toEqual([expect.any(Function), expect.any(Function), expect.any(Function)]);
   });
 
   test("w/ left", () => {
@@ -146,6 +147,7 @@ describe("Switching existence of elements", () => {
     expect(whole.children).toHaveLength(1); // middle only
     expect(whole.firstElementChild).toBe(leftsp.parentElement?.parentElement); // middle
     expect(left).toHaveBeenCalled();
+    expect(left.mock.calls[0]?.slice(1)).toEqual([expect.any(Function), expect.any(Function), expect.any(Function)]);
   });
 
   test("w/ right", () => {
@@ -157,6 +159,7 @@ describe("Switching existence of elements", () => {
     expect(whole.children).toHaveLength(1); // middle only
     expect(whole.firstElementChild).toBe(rightsp.parentElement?.parentElement); // middle
     expect(right).toHaveBeenCalled();
+    expect(right.mock.calls[0]?.slice(1)).toEqual([expect.any(Function), expect.any(Function), expect.any(Function)]);
   });
 
   test("w/ bottom", () => {
