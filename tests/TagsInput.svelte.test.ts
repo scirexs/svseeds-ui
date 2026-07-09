@@ -1,3 +1,4 @@
+import axe from "axe-core";
 import { describe, expect, test, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
@@ -5,6 +6,11 @@ import { createRawSnippet, tick } from "svelte";
 import TagsInput from "#svs/TagsInput.svelte";
 import TagsInputCtxProvider from "./fixtures/TagsInputCtxProvider.svelte";
 import { PARTS, VARIANT, _fnClass } from "#svs/core";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const element = (target: Element | null | undefined) => expect.element(target as HTMLElement | null);
 const byBtnName = (root: ParentNode, name: string | RegExp) =>
@@ -1013,5 +1019,21 @@ describe("Embedded in field context", async () => {
     expect(onremove).toHaveBeenCalledWith({ values: ["a", "b"], removed: ["a"] });
     expect(fieldOnremove).toHaveBeenCalledWith({ values: ["a", "b"], removed: ["a"] });
     expect(state.values).toEqual(["a", "b"]);
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("default render has no violations", async () => {
+    const { container } = render(TagsInput, { "aria-label": "Tags" });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("tags state has no violations", async () => {
+    const { container } = render(TagsInput, { "aria-label": "Tags", values: ["tag1", "tag2"] });
+
+    await element(byBtnName(container, "Remove tag1")).toBeInTheDocument();
+    await element(byBtnName(container, "Remove tag2")).toBeInTheDocument();
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

@@ -1,10 +1,16 @@
+import axe from "axe-core";
 import { describe, expect, test, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { createRawSnippet, tick } from "svelte";
 import NumberInput from "#svs/NumberInput.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import type { AxeMatchers } from "vitest-axe/matchers";
 import type { NumberInputProps } from "#svs/NumberInput.svelte";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 type NumberInputSpin = NonNullable<NumberInputProps["spin"]>;
 
@@ -374,5 +380,21 @@ describe("_NumberInput spin behavior", () => {
     await tick();
     expect(props.element).toBe(el);
     await expect.element(el).toHaveClass("svs-number-input", PARTS.MAIN, VARIANT.ACTIVE);
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("default render has no violations", async () => {
+    const { container } = render(NumberInput, { "aria-label": "Amount" });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("value state has no violations", async () => {
+    const { container } = render(NumberInput, { "aria-label": "Amount", value: 7 });
+    const el = input(container);
+
+    await expect.element(el).toHaveValue("7");
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

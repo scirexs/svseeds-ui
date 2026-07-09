@@ -1,3 +1,4 @@
+import axe from "axe-core";
 import { describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { userEvent } from "vitest/browser";
@@ -5,6 +6,11 @@ import { createRawSnippet, flushSync, tick } from "svelte";
 import { SvelteMap } from "svelte/reactivity";
 import SelectField from "#svs/SelectField.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const byText = (node: ParentNode, text: string) =>
   [...node.querySelectorAll("*")].reverse().find((el) => el.textContent?.trim() === text) ?? null;
@@ -689,5 +695,36 @@ describe("Specify attrs & state transition & event handlers", () => {
     await expect.element(main).toHaveClass(dynObj.base, dynObj.active);
     await expect.element(rightdv).toHaveClass(dynObj.base, dynObj.active);
     await expect.element(btm).toHaveClass(dynObj.base, dynObj.active);
+  });
+});
+
+describe("accessibility (axe)", () => {
+  const auditOptions = new SvelteMap([
+    ["val1", "Option 1"],
+    ["val2", "Option 2"],
+  ]);
+
+  test("default render has no violations", async () => {
+    const { container } = render(SelectField, { options: auditOptions, label });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("invalid state has no violations", async () => {
+    const msg = "invalid selection";
+    const props = $state({
+      options: auditOptions,
+      label,
+      value: "val2",
+      variant: VARIANT.NEUTRAL,
+      validations: [({ value }: { value: string }) => (value === "val1" ? msg : "")],
+    });
+    const { container } = render(SelectField, props);
+    const main = container.querySelector("select") as HTMLSelectElement;
+
+    await userEvent.selectOptions(main, "val1");
+    await expect.element(main).toHaveAttribute("aria-invalid", "true");
+    await expect.element(main).toHaveAccessibleErrorMessage(msg);
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

@@ -1,3 +1,4 @@
+import axe from "axe-core";
 import { describe, expect, test, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
@@ -6,6 +7,11 @@ import DateInput from "#svs/DateInput.svelte";
 import DateInputBindable from "./fixtures/DateInputBindable.svelte";
 import DateInputCtxProvider from "./fixtures/DateInputCtxProvider.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const d = (text: string) => Temporal.PlainDate.from(text);
 const input = (container: HTMLElement) => container.querySelector("input:not([type=hidden])") as HTMLInputElement;
@@ -417,5 +423,21 @@ describe("_DateInput form, context, and motion", () => {
     await tick();
     expect(fn).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("default render has no violations", async () => {
+    const { container } = render(DateInput, { "aria-label": "Date" });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("value state has no violations", async () => {
+    const { container } = render(DateInput, { "aria-label": "Date", value: d("2026-06-21") });
+    const el = input(container);
+
+    await expect.element(el).not.toHaveValue("");
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

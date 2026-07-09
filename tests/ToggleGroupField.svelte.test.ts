@@ -1,3 +1,4 @@
+import axe from "axe-core";
 import { describe, expect, test, vi } from "vitest";
 import { render as svRender } from "vitest-browser-svelte";
 import { userEvent } from "vitest/browser";
@@ -6,6 +7,11 @@ import { SvelteMap } from "svelte/reactivity";
 import ToggleGroupField, { type ToggleGroupFieldProps, type ToggleOption } from "#svs/ToggleGroupField.svelte";
 import { PARTS, VARIANT, _fnClass } from "#svs/core";
 import ToggleGroupFieldEmbedded from "./fixtures/ToggleGroupFieldEmbedded.svelte";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const label = "label_text";
 const extra = "(optional)";
@@ -1042,5 +1048,39 @@ describe("Compound / children", () => {
     expect(innerToggleGroupOf(whole)).toBeInTheDocument();
     expect(proxyInput(whole)).toBeInTheDocument();
     expect(container.querySelector('input[type="hidden"][name="grp"][value="opt1"]')).toBeInTheDocument();
+  });
+});
+
+describe("accessibility (axe)", () => {
+  const auditOptions = new SvelteMap([
+    ["opt1", "Option 1"],
+    ["opt2", "Option 2"],
+    ["opt3", "Option 3"],
+  ]);
+
+  test("default render has no violations", async () => {
+    const { container } = render(ToggleGroupField, { options: auditOptions, label });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("invalid state has no violations", async () => {
+    const msg = "At least one option must be selected";
+    const props = $state({
+      options: auditOptions,
+      label,
+      variant: VARIANT.NEUTRAL,
+      validations: [({ value }: { value: string[] }) => (value.length === 0 ? msg : "")],
+      values: [] as string[],
+    });
+    const { container, getAllByRole, getByRole } = render(ToggleGroupField, props);
+    const whole = getAllByRole("group")[0] as HTMLDivElement;
+    const hidden = whole.querySelector('input[style*="display: none"]') as HTMLInputElement;
+    const inner = whole.querySelector('[role="group"], [role="radiogroup"]') as HTMLElement;
+
+    await invalid(hidden);
+    expect(getByRole("alert")).toHaveTextContent(msg);
+    expect(inner).toHaveAttribute("aria-invalid", "true");
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

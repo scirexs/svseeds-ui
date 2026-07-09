@@ -1,3 +1,4 @@
+import axe from "axe-core";
 import { describe, expect, test, vi } from "vitest";
 import { render as svRender } from "vitest-browser-svelte";
 import { userEvent } from "vitest/browser";
@@ -5,6 +6,11 @@ import { createRawSnippet, tick } from "svelte";
 import CheckField from "#svs/CheckField.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 import CheckFieldBindable from "./fixtures/CheckFieldBindable.svelte";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const label = "label_text";
 const extra = "(optional)";
@@ -937,5 +943,32 @@ describe("Specify attrs & state transition & event handlers", () => {
       has(input, seed, PARTS.LEFT, expectedState);
       has(span, seed, PARTS.RIGHT, expectedState);
     });
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("default render has no violations", async () => {
+    const { container } = render(CheckField, { options, label });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("invalid state has no violations", async () => {
+    const msg = "invalid";
+    const props = $state({
+      options,
+      label,
+      required: true,
+      variant: VARIANT.NEUTRAL,
+      validations: [({ value }: { value: string[] }) => (value.length === 0 ? msg : "")],
+      values: [] as string[],
+    });
+    const { container, getAllByRole } = render(CheckField, props);
+    const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
+
+    await fireEvent.invalid(checkboxes[0]);
+    attr(checkboxes[0], "aria-invalid", "true");
+    aerr(checkboxes[0], msg);
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

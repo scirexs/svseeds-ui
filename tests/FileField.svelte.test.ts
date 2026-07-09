@@ -1,8 +1,14 @@
+import axe from "axe-core";
 import { describe, expect, test } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { createRawSnippet, tick } from "svelte";
 import FileField, { type FileFieldConstraint, type FileFieldValidation } from "#svs/FileField.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 function mkFile(name: string, type = "", size = 10): File {
   const f = new File(["x".repeat(Math.min(size, 1024))], name, { type });
@@ -316,5 +322,27 @@ describe("FileField validations and bindings", () => {
     await fireDrag(label, "dragleave");
     has(label, VARIANT.NEUTRAL);
     expect(props.variant).toBe(VARIANT.NEUTRAL);
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("default render has no violations", async () => {
+    const { container } = render(FileField, { label, content });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("invalid state has no violations", async () => {
+    const msg = "required";
+    const validations: FileFieldValidation[] = [({ value }) => (value.length < 1 ? msg : null)];
+    const props = $state({ label, files: [] as File[], variant: VARIANT.NEUTRAL, content, validations });
+    const { container } = render(FileField, props);
+    const input = container.querySelector("input") as HTMLInputElement;
+
+    input.dispatchEvent(new Event("invalid", { cancelable: true }));
+    await tick();
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+    expect(alert(container)?.textContent).toBe(msg);
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

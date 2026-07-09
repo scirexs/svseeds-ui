@@ -1,3 +1,4 @@
+import axe from "axe-core";
 import { describe, expect, test, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
@@ -5,6 +6,11 @@ import { createRawSnippet, tick } from "svelte";
 import DateField from "#svs/DateField.svelte";
 import DateFieldWithDateInput from "./fixtures/DateFieldWithDateInput.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 type DateFieldElement = HTMLInputElement | undefined;
 const d = (text: string) => Temporal.PlainDate.from(text);
@@ -278,5 +284,30 @@ describe("DateField children override", () => {
     expect(visible(container).type).toBe("text");
     expect(nativeInput(container)).toBeNull();
     expect(participant(container)).toBeNull();
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("default render has no violations", async () => {
+    const { container } = render(DateField, { label: "Date" });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("invalid state has no violations", async () => {
+    const msg = "required date";
+    const props = $state({
+      label: "Date",
+      value: undefined as Temporal.PlainDate | undefined,
+      variant: VARIANT.NEUTRAL,
+      validations: [({ value }: { value: Temporal.PlainDate | undefined }) => (value ? "" : msg)],
+    });
+    const { container } = render(DateField, props);
+    const proxy = participant(container) as HTMLInputElement;
+
+    await invalid(proxy);
+    await expect.element(visible(container)).toHaveAccessibleErrorMessage(msg);
+    await expect.element(container.querySelector('[role="alert"]') as HTMLElement).toHaveTextContent(msg);
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

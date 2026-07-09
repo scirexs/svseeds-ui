@@ -1,3 +1,4 @@
+import axe from "axe-core";
 import { describe, expect, test, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
@@ -5,6 +6,11 @@ import { createRawSnippet, tick } from "svelte";
 import TagsInputField from "#svs/TagsInputField.svelte";
 import TagsInputFieldEmbedded from "./fixtures/TagsInputFieldEmbedded.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 type TagsInputFieldElement = HTMLInputElement | undefined;
 const element = (target: Element | null | undefined) => expect.element(target as HTMLElement | null);
@@ -1135,5 +1141,30 @@ describe("Compound / children", async () => {
     expect(props.values).toEqual(["a", "b"]);
     expect(props.variant).toBe(VARIANT.INACTIVE);
     await element(main).toHaveAccessibleErrorMessage("max");
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("default render has no violations", async () => {
+    const { container } = render(TagsInputField, { label });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("invalid state has no violations", async () => {
+    const msg = "invalid";
+    const props = $state({
+      label,
+      variant: VARIANT.NEUTRAL,
+      validations: [({ value }: { value: string[] }) => (value.length === 0 ? msg : "")],
+    });
+    const { container } = render(TagsInputField, props);
+    const main = container.querySelector("input") as HTMLInputElement;
+
+    main.dispatchEvent(new Event("invalid", { cancelable: true }));
+    await tick();
+    await element(main).toHaveAttribute("aria-invalid", "true");
+    await element(main).toHaveAccessibleErrorMessage(msg);
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

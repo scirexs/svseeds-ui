@@ -1,9 +1,15 @@
+import axe from "axe-core";
 import { describe, expect, test, vi } from "vitest";
 import { render as svRender } from "vitest-browser-svelte";
 import { userEvent } from "vitest/browser";
 import { createRawSnippet, tick } from "svelte";
 import TextField from "#svs/TextField.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 type TextFieldElement = HTMLInputElement | HTMLTextAreaElement | undefined;
 const label = "label_text";
@@ -968,5 +974,30 @@ describe("a11y, structure & textarea attrs", () => {
 
     await user.clear(main);
     expect(props.variant).toBe("warning");
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("default render has no violations", async () => {
+    const { container } = render(TextField, { label });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("invalid state has no violations", async () => {
+    const msg = "invalid";
+    const props = $state({
+      label,
+      required: true,
+      variant: VARIANT.NEUTRAL,
+      validations: [({ value }: { value: string }) => (value.length < 2 ? msg : "")],
+    });
+    const { container, getByRole } = render(TextField, props);
+    const main = getByRole("textbox") as HTMLInputElement;
+
+    await invalid(main);
+    await expect.element(main).toHaveAttribute("aria-invalid", "true");
+    await expect.element(getByRole("alert")).toHaveTextContent(msg);
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

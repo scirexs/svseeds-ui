@@ -1,3 +1,4 @@
+import axe from "axe-core";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { createRawSnippet, tick } from "svelte";
@@ -5,6 +6,11 @@ import FileInput, { type FileRejectReason } from "#svs/FileInput.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 import FileInputCtxProvider from "./fixtures/FileInputCtxProvider.svelte";
 import FileInputDragProbe from "./fixtures/FileInputDragProbe.svelte";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 function mkFile(name: string, type = "", size = 10): File {
   const f = new File(["x".repeat(Math.min(size, 1024))], name, { type });
@@ -603,5 +609,23 @@ describe("_FileInput drop zone and a11y", () => {
     await input.click();
     await tick();
     expect(input.value).toBe("");
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("default render has no violations", async () => {
+    const { container } = render(FileInput, { children: zone });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("selected file state has no violations", async () => {
+    const props = $state({ files: [] as File[], children: zone });
+    const { container } = render(FileInput, props);
+    const input = container.querySelector("input") as HTMLInputElement;
+
+    await setFiles(input, [mkFile("a.png", "image/png")]);
+    expect(names(props.files)).toEqual(["a.png"]);
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

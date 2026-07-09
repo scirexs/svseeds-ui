@@ -1,9 +1,15 @@
+import axe from "axe-core";
 import { describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { userEvent } from "vitest/browser";
 import { createRawSnippet, tick } from "svelte";
 import Toggle from "#svs/Toggle.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 type ToggleElement = HTMLButtonElement | undefined;
 const ariaLabel = "toggle_label";
@@ -592,5 +598,26 @@ describe("Specify attrs & state transition & event handlers", () => {
     await expect.element(leftdv).toHaveClass(dynObj.base, dynObj.active);
     await expect.element(button).toHaveClass(dynObj.base, dynObj.active);
     await expect.element(rightdv).toHaveClass(dynObj.base, dynObj.active);
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("default render has no violations", async () => {
+    const children = vi.fn().mockImplementation(mainfn);
+    const { container } = render(Toggle, { children });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("checked state has no violations", async () => {
+    const children = vi.fn().mockImplementation(mainfn);
+    const props = $state({ children, value: false, variant: VARIANT.NEUTRAL });
+    const { container } = render(Toggle, props);
+    const main = container.querySelector("button") as HTMLButtonElement;
+
+    await userEvent.click(main);
+    expect(props.value).toBe(true);
+    await expect.element(main).toHaveAttribute("aria-pressed", "true");
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

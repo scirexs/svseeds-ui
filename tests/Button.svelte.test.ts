@@ -1,9 +1,15 @@
+import axe from "axe-core";
 import { describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { userEvent } from "vitest/browser";
 import { createRawSnippet, tick } from "svelte";
 import Button, { type ButtonProps } from "#svs/Button.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const leftid = "test-left";
 const rightid = "test-right";
@@ -694,5 +700,21 @@ describe("Specify attrs & form validation & event handlers", () => {
     }
 
     expect(mockClick).toHaveBeenCalledTimes(10);
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("default render has no violations", async () => {
+    const { container } = render(Button, { children });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("disabled state has no violations", async () => {
+    const { container } = render(Button, { children, disabled: true });
+    const btn = container.querySelector("button") as HTMLButtonElement;
+
+    attr(btn, "disabled");
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

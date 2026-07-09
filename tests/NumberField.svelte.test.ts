@@ -1,10 +1,16 @@
+import axe from "axe-core";
 import { describe, expect, test, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { createRawSnippet, tick } from "svelte";
 import NumberField from "#svs/NumberField.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import type { AxeMatchers } from "vitest-axe/matchers";
 import type { NumberInputProps } from "#svs/NumberInput.svelte";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 type NumberFieldElement = HTMLInputElement | undefined;
 type NumberInputSpin = NonNullable<NumberInputProps["spin"]>;
@@ -213,5 +219,31 @@ describe("NumberField variant state machine and a11y", () => {
     await change(el);
     const alert = container.querySelector('[role="alert"]') as HTMLElement;
     expect(el.getAttribute("aria-errormessage")).toBe(alert.id);
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("default render has no violations", async () => {
+    const { container } = render(NumberField, { label });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("invalid state has no violations", async () => {
+    const msg = "Too low";
+    const props = $state({
+      label,
+      value: 3 as number | undefined,
+      variant: VARIANT.NEUTRAL,
+      validations: [({ value }: { value: number | undefined }) => (value !== undefined && value < 5 ? msg : null)],
+    });
+    const { container } = render(NumberField, props);
+    const el = input(container);
+
+    await tick();
+    await invalid(el);
+    await expect.element(el).toHaveAttribute("aria-invalid", "true");
+    await expect.element(el).toHaveAccessibleErrorMessage(msg);
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

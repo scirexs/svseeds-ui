@@ -1,3 +1,4 @@
+import axe from "axe-core";
 import { describe, expect, test, vi } from "vitest";
 import { render as svRender } from "vitest-browser-svelte";
 import { userEvent } from "vitest/browser";
@@ -5,6 +6,11 @@ import { createRawSnippet, tick } from "svelte";
 import ToggleGroup, { type ToggleOption } from "#svs/ToggleGroup.svelte";
 import { PARTS, VARIANT, _fnClass } from "#svs/core";
 import ToggleGroupCtxProvider from "./fixtures/ToggleGroupCtxProvider.svelte";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const options = new Map([
   ["option1", "Option 1"],
@@ -944,5 +950,24 @@ describe("Edge cases", () => {
     expect(buttons[0]).toHaveAttribute("aria-checked", "true"); // 'a' still selected
     expect(buttons[1]).toHaveAttribute("aria-checked", "false"); // 'c' not selected
     expect(buttons[2]).toHaveAttribute("aria-checked", "false"); // 'd' not selected
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("default render has no violations", async () => {
+    const { container } = render(ToggleGroup, { options, "aria-label": "Options" });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("selected-option state has no violations", async () => {
+    const props = $state({ options, values: [] as string[], "aria-label": "Options" });
+    const { container, getAllByRole } = render(ToggleGroup, props);
+    const buttons = getAllByRole("checkbox") as HTMLButtonElement[];
+
+    await userEvent.click(buttons[0]);
+    expect(props.values).toEqual(["option1"]);
+    expect(buttons[0]).toHaveAttribute("aria-checked", "true");
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });
