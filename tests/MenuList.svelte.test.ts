@@ -1,3 +1,4 @@
+import axe from "axe-core";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { userEvent } from "vitest/browser";
@@ -6,6 +7,12 @@ import MenuList, { type MenuItemData } from "#svs/MenuList.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 import MenuListCtxProvider from "./fixtures/MenuListCtxProvider.svelte";
 import MenuListGroupedItems from "./fixtures/MenuListGroupedItems.svelte";
+
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const children = createRawSnippet<[string]>((variant) => ({ render: () => `<span>Child ${variant()}</span>` }));
 const root = (c: HTMLElement) => c.querySelector('[role="menu"]') as HTMLDivElement;
@@ -266,5 +273,19 @@ describe("MenuList attach and element", () => {
     expect(attached).toBe(root(container));
     expect(attach).toHaveBeenCalled();
     expect(props.element).toBe(root(container));
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("vertical composed menu has no violations", async () => {
+    const { container } = render(MenuListCtxProvider);
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("horizontal composed menu has no violations", async () => {
+    const { container } = render(MenuListCtxProvider, { orientation: "horizontal" });
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

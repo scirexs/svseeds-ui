@@ -1,3 +1,4 @@
+import axe from "axe-core";
 import { describe, expect, test, vi } from "vitest";
 import { render as svRender } from "vitest-browser-svelte";
 import { userEvent } from "vitest/browser";
@@ -5,6 +6,12 @@ import { createRawSnippet, tick } from "svelte";
 import ComboBox from "#svs/ComboBox.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 import ComboBoxCtxProvider from "./fixtures/ComboBoxCtxProvider.svelte";
+
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const attachfn = () => {};
 const mockScrollIntoView = () => {
@@ -1005,5 +1012,24 @@ describe("Overflow detection on open", () => {
 
     attr(combobox, "aria-expanded", "true");
     expect(within(getByRole("listbox")).getAllByRole("option")).toHaveLength(3);
+  });
+});
+
+describe("accessibility (axe)", () => {
+  const options = new Set(["apple", "banana", "cherry"]);
+
+  test("closed render has no violations", async () => {
+    const { container } = render(ComboBox, { options, "aria-label": "Fruit" });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("open render has no violations", async () => {
+    const { container, getByRole } = render(ComboBox, { options, "aria-label": "Fruit" });
+    const combobox = getByRole("combobox") as HTMLInputElement;
+    await userEvent.click(combobox);
+    await tick();
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

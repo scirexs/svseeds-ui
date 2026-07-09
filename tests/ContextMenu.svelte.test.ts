@@ -1,9 +1,16 @@
+import axe from "axe-core";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { render as browserRender } from "vitest-browser-svelte";
 import { createRawSnippet, tick } from "svelte";
 import ContextMenu from "#svs/ContextMenu.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 import ContextMenuItems from "./fixtures/ContextMenuItems.svelte";
+
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const childrenContent = "Menu Item";
 const childrenSnippet = createRawSnippet(() => ({ render: () => `<div>${childrenContent}</div>` }));
@@ -402,5 +409,20 @@ describe("ContextMenu positioning and attributes", () => {
     await rerender(props);
 
     has(wrapper, "menu-base", "menu-active");
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("closed render has no violations", async () => {
+    const { container } = render(ContextMenuItems);
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("open render has no violations", async () => {
+    const { container } = render(ContextMenuItems, { open: true });
+    await tick();
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

@@ -1,3 +1,4 @@
+import axe from "axe-core";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
@@ -5,6 +6,12 @@ import { createRawSnippet, tick } from "svelte";
 import Popover from "#svs/Popover.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 import PopoverMenu from "./fixtures/PopoverMenu.svelte";
+
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const content = "Panel content";
 const children = createRawSnippet<[string]>((variant) => ({ render: () => `<div>${content}-${variant()}</div>` }));
@@ -157,5 +164,20 @@ describe("Popover hover behavior", () => {
     toggle(pop, "open"); await flush(); expect(menuProps.open).toBe(true);
     await pointerLeave(pop, document.body); await focusOut(pop, document.body); expect(menuProps.open).toBe(true);
     toggle(pop, "closed"); await flush(); expect(menuProps.open).toBe(false);
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("closed render has no violations", async () => {
+    const { container } = render(Popover, { label: "Open", children });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("open render has no violations", async () => {
+    const { container } = render(Popover, { label: "Open", children, open: true });
+    await flush();
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

@@ -1,3 +1,4 @@
+import axe from "axe-core";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { render as browserRender } from "vitest-browser-svelte";
 import { userEvent } from "vitest/browser";
@@ -6,6 +7,12 @@ import Disclosure from "#svs/Disclosure.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 import DisclosureCtxProvider from "./fixtures/DisclosureCtxProvider.svelte";
 import DisclosureVariantBinding from "./fixtures/DisclosureVariantBinding.svelte";
+
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const label = "Disclosure Label";
 const childrenContent = "Disclosure Content";
@@ -1022,5 +1029,19 @@ describe("Edge cases and error handling", () => {
     const details = getByRole("group") as HTMLDetailsElement;
 
     expect(details?.isConnected).toBe(true);
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("closed render has no violations", async () => {
+    const { container } = render(Disclosure, { label, children: childrenSnippet });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("open render has no violations", async () => {
+    const { container } = render(Disclosure, { label, children: childrenSnippet, open: true });
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

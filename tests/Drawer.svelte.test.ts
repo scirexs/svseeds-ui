@@ -1,8 +1,15 @@
+import axe from "axe-core";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { render as browserRender } from "vitest-browser-svelte";
 import { createRawSnippet, tick } from "svelte";
 import Drawer from "#svs/Drawer.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 afterEach(() => {
   document.querySelectorAll("dialog[open]").forEach((dialog) => {
@@ -562,5 +569,20 @@ describe("Drawer edge cases", () => {
     });
 
     expect(getByText(`Variant: ${customVariant}`)?.isConnected).toBe(true);
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("closed render has no violations", async () => {
+    const { container } = render(Drawer, { children: childrenSnippet });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("open render has no violations", async () => {
+    const { container } = render(Drawer, { children: buttonChildren, open: true });
+    await tick();
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

@@ -1,3 +1,4 @@
+import axe from "axe-core";
 import { describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { userEvent } from "vitest/browser";
@@ -6,6 +7,12 @@ import Accordion, { type AccordionItem } from "#svs/Accordion.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 import AccordionDeclarative from "./fixtures/AccordionDeclarative.svelte";
 import TabDummy from "./fixtures/TabDummy.svelte";
+
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const seed = "svs-accordion";
 const disclosure = { duration: 0 };
@@ -488,5 +495,20 @@ describe("Edge cases", () => {
     bySummaryText(container, "Section B").click();
     await tick();
     expect(detailsIn(container).every((details) => !details.open)).toBe(true);
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("all-closed render has no violations", async () => {
+    const { container } = render(Accordion, { items: baseItems(), disclosure });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("expanded render has no violations", async () => {
+    const { container } = render(Accordion, { items: baseItems(), current: "b", disclosure });
+    await tick();
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

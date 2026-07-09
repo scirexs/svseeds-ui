@@ -26,3 +26,4 @@
 20260709_bfinc7	refactor: Address the Svelte idiom / type-safety review findings (E): Disclosure reactive reorg, stale bind:this collections, Pagination effect merge, ComboBox isComposing unify, let->const in Toggle/ToggleGroup.
 20260709_pxnqbu	test: Add hardening tests for Sortable single-list backward reorder, swap, and clone paths
 20260709_ssu33x	test: Add axe accessibility tests (default + a primary alternate state) to 15 Field and core Input component browser test files, as batch 1 of a 3-batch a11y-test rollout across all 43 components.
+20260709_xr344d	test: Add axe accessibility tests to overlay, menu, and picker components (batch 2)

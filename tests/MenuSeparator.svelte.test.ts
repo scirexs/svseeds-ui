@@ -1,8 +1,15 @@
+import axe from "axe-core";
 import { describe, expect, test } from "vitest";
 import { render } from "vitest-browser-svelte";
 import MenuSeparator from "#svs/MenuSeparator.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 import MenuSeparatorCtxProvider from "./fixtures/MenuSeparatorCtxProvider.svelte";
+
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const root = (c: HTMLElement) => c.querySelector('[role="separator"]') as HTMLDivElement;
 
@@ -77,5 +84,19 @@ describe("MenuSeparator", () => {
 
     const explicit = render(MenuSeparatorCtxProvider, { orientation: "horizontal", ariaOrientation: "horizontal" });
     await expect.element(root(explicit.container)).toHaveAttribute("aria-orientation", "horizontal");
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("horizontal separator has no violations", async () => {
+    const { container } = render(MenuSeparatorCtxProvider);
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("vertical separator has no violations", async () => {
+    const { container } = render(MenuSeparatorCtxProvider, { ariaOrientation: "vertical" });
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

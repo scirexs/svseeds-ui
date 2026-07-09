@@ -1,7 +1,14 @@
+import axe from "axe-core";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { createRawSnippet, tick } from "svelte";
 import { initTooltip, tooltip, type TooltipParams } from "#svs/Tooltip.svelte";
 import { PARTS, VARIANT, type SVSVariant } from "#svs/core";
+
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const triggers: HTMLElement[] = [];
 const cleanups: Array<() => void> = [];
@@ -76,4 +83,34 @@ describe("Singleton and defaults", () => {
   test("[TT-32] delay: 0 shows immediately", async () => { const trigger = makeTrigger(); attach(trigger, { text: "Now", delay: 0 }); await enter(trigger); await vi.waitFor(() => expect(getTip().style.visibility).toBe("visible")); });
   test("[TT-33] initTooltip sets library-wide defaults", async () => { initTooltip({ delay: 500, variant: VARIANT.ACTIVE }); const trigger = makeTrigger(); attach(trigger, { text: "Def" }); await enter(trigger); expect(getTip().style.visibility).toBe("hidden"); await vi.waitFor(() => expect(getTip().style.visibility).toBe("visible"), { timeout: 1500 }); await expect.element(getTip()).toHaveClass(VARIANT.ACTIVE); });
   test("[TT-34] per-call params override initTooltip defaults", async () => { initTooltip({ delay: 500 }); const trigger = makeTrigger(); attach(trigger, { text: "Fast", delay: 20 }); await enter(trigger); expect(getTip().style.visibility).toBe("hidden"); await vi.waitFor(() => expect(getTip().style.visibility).toBe("visible")); });
+});
+
+describe("accessibility (axe)", () => {
+  test("plain-text tip has no violations", async () => {
+    const trigger = makeTrigger();
+    attach(trigger, { text: "Plain axe", delay: 10 });
+    await enter(trigger);
+    await showAfter(10);
+    await vi.waitFor(() => expect(getTip().style.visibility).toBe("visible"));
+
+    expect(await axe.run(getTip())).toHaveNoViolations();
+  });
+
+  test("custom content tip has no violations", async () => {
+    const contentSnippet = createRawSnippet<[string, SVSVariant, boolean]>((text, variant, flipped) => ({
+      render: () => `<span data-testid="tooltip-content">text=${text()};variant=${variant()};flipped=${flipped()}</span>`,
+    }));
+    const trigger = makeTrigger();
+    trigger.style.position = "fixed";
+    trigger.style.top = "100px";
+    trigger.style.left = "100px";
+    attach(trigger, { text: "Custom axe", content: contentSnippet, variant: VARIANT.ACTIVE, delay: 10 });
+    await enter(trigger);
+    await showAfter(10);
+    await vi.waitFor(() => expect(getTip().style.visibility).toBe("visible"));
+    const content = getTip().querySelector('[data-testid="tooltip-content"]') as HTMLElement;
+    expect(content.textContent).toContain("text=Custom axe;variant=active;flipped=");
+
+    expect(await axe.run(getTip())).toHaveNoViolations();
+  });
 });

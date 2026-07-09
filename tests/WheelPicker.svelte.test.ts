@@ -1,9 +1,16 @@
+import axe from "axe-core";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { cdp } from "vitest/browser";
 import { createRawSnippet, tick } from "svelte";
 import WheelPicker, { type WheelOption } from "#svs/WheelPicker.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const seed = "svs-wheelpicker";
 const opts: WheelOption[] = [
@@ -523,4 +530,19 @@ describe("Drum layout, pointer and animation (browser)", () => {
   });
 
   // momentum: not applicable - release snaps directly to nearest (see WheelPicker.svelte hpointerup); no inertia implemented.
+});
+
+describe("accessibility (axe)", () => {
+  test("default render has no violations", async () => {
+    const { container } = render(WheelPicker, { options: opts, "aria-label": "Month" });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("disabled-option render has no violations", async () => {
+    const options = [{ ...opts[0], disabled: true }, ...opts.slice(1)];
+    const { container } = render(WheelPicker, { options, "aria-label": "Month" });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
 });

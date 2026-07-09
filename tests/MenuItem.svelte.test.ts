@@ -1,3 +1,4 @@
+import axe from "axe-core";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { userEvent } from "vitest/browser";
@@ -5,6 +6,13 @@ import { createRawSnippet, tick } from "svelte";
 import MenuItem from "#svs/MenuItem.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 import MenuItemCtxProvider from "./fixtures/MenuItemCtxProvider.svelte";
+import MenuListCtxProvider from "./fixtures/MenuListCtxProvider.svelte";
+
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const children = createRawSnippet(() => ({ render: () => "<span>Item</span>" }));
 const root = (c: HTMLElement) => c.querySelector('[role="menuitem"]') as HTMLButtonElement | HTMLAnchorElement;
@@ -241,5 +249,19 @@ describe("MenuItem embedded context", () => {
     expect(onselect).not.toHaveBeenCalled();
     expect(props.closed).toBe(0);
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("vertical composed menu has no violations", async () => {
+    const { container } = render(MenuListCtxProvider);
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("horizontal composed menu has no violations", async () => {
+    const { container } = render(MenuListCtxProvider, { orientation: "horizontal" });
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

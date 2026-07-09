@@ -1,8 +1,15 @@
+import axe from "axe-core";
 import { describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { tick } from "svelte";
 import ColorPicker, { getHex } from "#svs/ColorPicker.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 describe("Switching existence of elements and basic functionality", () => {
   const attachfn = () => {};
@@ -360,5 +367,19 @@ describe("Transparency background pattern", () => {
 
     await expect.element(middle).toHaveStyle({ display: "inline-block" });
     expect(middle.style.backgroundImage).toBe("");
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("default render has no violations", async () => {
+    const { container } = render(ColorPicker, { ariaLabel: "Accent color" });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("alpha value render has no violations", async () => {
+    const { container } = render(ColorPicker, { ariaLabel: "Accent color", value: "#ff0000", alpha: 0.5 });
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

@@ -1,9 +1,17 @@
+import axe from "axe-core";
 import { describe, expect, test } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { createRawSnippet } from "svelte";
 import MenuGroup from "#svs/MenuGroup.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 import MenuGroupCtxProvider from "./fixtures/MenuGroupCtxProvider.svelte";
+import MenuListGroupedItems from "./fixtures/MenuListGroupedItems.svelte";
+
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const children = createRawSnippet<[string]>((variant) => ({ render: () => `<span>Body ${variant()}</span>` }));
 const root = (c: HTMLElement) => c.querySelector('[role="group"]') as HTMLDivElement;
@@ -76,5 +84,14 @@ describe("MenuGroup", () => {
   test("component-owned role cannot be overridden", async () => {
     const { container } = render(MenuGroup, { label: "Edit", children, role: "menu" } as any);
     await expect.element(root(container)).toHaveAttribute("role", "group");
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("composed grouped menu has no violations", async () => {
+    // MenuGroup has one valid composed-menu fixture for isolation-safe axe coverage.
+    const { container } = render(MenuListGroupedItems);
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

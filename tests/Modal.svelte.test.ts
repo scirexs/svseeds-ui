@@ -1,9 +1,16 @@
+import axe from "axe-core";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import { render as browserRender } from "vitest-browser-svelte";
 import { createRawSnippet, tick } from "svelte";
 import Modal from "#svs/Modal.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 afterEach(() => {
   document.querySelectorAll("dialog[open]").forEach((dialog) => (dialog as HTMLDialogElement).remove());
@@ -143,5 +150,20 @@ describe("Modal event passthrough and edge cases", () => {
     expect(byText(contents.container, "Modal Title")?.isConnected).toBe(true);
     expect(byText(contents.container, "Some content")?.isConnected).toBe(true);
     expect(byText(contents.container, "Action")?.isConnected).toBe(true);
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("closed render has no violations", async () => {
+    const { container } = render(Modal, { children: childrenSnippet });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("open render has no violations", async () => {
+    const { container } = render(Modal, { children: childrenSnippet, open: true });
+    await tick();
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

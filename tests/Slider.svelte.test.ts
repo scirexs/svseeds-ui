@@ -1,8 +1,15 @@
+import axe from "axe-core";
 import { describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { createRawSnippet, flushSync, tick } from "svelte";
 import Slider from "#svs/Slider.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const leftid = "test-left";
 const rightid = "test-right";
@@ -497,5 +504,21 @@ describe("Binding and element reference", () => {
     await rerender(props);
 
     await expect.element(whole).toHaveClass("svs-slider", PARTS.WHOLE, VARIANT.ACTIVE);
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("default render has no violations", async () => {
+    const { container } = render(Slider, { min: 0, max: 100, "aria-label": "Volume" });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("populated render has no violations", async () => {
+    const left = vi.fn().mockImplementation(leftfn);
+    const right = vi.fn().mockImplementation(rightfn);
+    const { container } = render(Slider, { min: 0, max: 100, "aria-label": "Volume", left, right });
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });
