@@ -789,7 +789,7 @@
   import { VARIANT, PARTS, _fnClass, _throttle, _isNeutral, _resolveDuration, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
-  import type { HTMLAttributes, KeyboardEventHandler } from "svelte/elements";
+  import type { EventHandler, HTMLAttributes, KeyboardEventHandler } from "svelte/elements";
   import type { EasingFunction } from "svelte/transition";
   import type { SVSClass, SVSVariant, SVSContext } from "./_core";
 </script>
@@ -812,6 +812,7 @@
   let focusKey = $state("");
   let pendingSelect = $state("");
   let pendingDeselect = $state(false);
+  let suppressGrabCancel = false;
   let unregister: VoidFn | undefined;
 
   const member: SortableMember<T> & { get appendable(): boolean } = {
@@ -956,6 +957,12 @@
     const li = [...scope.querySelectorAll<HTMLElement>("[data-svs-key]")].find((el) => el.dataset.svsKey === key);
     li?.focus();
   }
+  const hblur: EventHandler<FocusEvent, HTMLLIElement> = (ev) => {
+    if (suppressGrabCancel || !controller.keyboardActive) return;
+    const related = ev.relatedTarget;
+    if (related instanceof Element && related.closest("[data-svs-key]")) return;
+    controller.cancelKeyboard();
+  };
   const hkeydown: KeyboardEventHandler<HTMLUListElement> = async (ev) => {
     const target = ev.target;
     if (!(target instanceof Element)) return;
@@ -974,10 +981,23 @@
     if (ev.key === "ArrowUp" || ev.key === "ArrowDown") {
       ev.preventDefault();
       const dir = ev.key === "ArrowUp" ? -1 : 1;
-      const next = controller.keyboardActive ? controller.stepKeyboard(dir) : nextFocus(key, dir);
-      if (next) {
-        focusKey = next;
-        await focusItem(next);
+      if (controller.keyboardActive) {
+        suppressGrabCancel = true;
+        try {
+          const next = controller.stepKeyboard(dir);
+          if (next) {
+            focusKey = next;
+            await focusItem(next);
+          }
+        } finally {
+          suppressGrabCancel = false;
+        }
+      } else {
+        const next = nextFocus(key, dir);
+        if (next) {
+          focusKey = next;
+          await focusItem(next);
+        }
       }
       return;
     }
@@ -1035,6 +1055,7 @@
       animate:flip={controller.tp}
       style="touch-action:none;"
       onfocus={() => (focusKey = k)}
+      onblur={hblur}
       {ondragstart}
     >
       {@render item(value, itemVariant, handle)}
