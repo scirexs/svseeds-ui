@@ -14,22 +14,22 @@
   ```ts
   interface PaginationProps extends Omit<HTMLAttributes<HTMLElement>, "children" | "aria-label"> {
     children?: Snippet<[number, string]>; // Snippet<[value,variant]>
-    value?: number; // bindable; current page (default 1)
-    min?: number; // first page (default 1)
-    max?: number; // last page (default = max(min, value))
+    value?: number; // bindable; current page (1)
+    min?: number; // first page (1)
+    max?: number; // last page (max(min, value))
     options?: number[]; // shortcut list shown in the ComboBox
     top?: Snippet<[number, string]>; // Snippet<[value,variant]>; FIRST button content
     left?: Snippet<[number, string]>; // Snippet<[value,variant]>; PREV button content
     right?: Snippet<[number, string]>; // Snippet<[value,variant]>; NEXT button content
     bottom?: Snippet<[number, string]>; // Snippet<[value,variant]>; LAST button content
     ariaLabel?: string; // ("Pagination")
-    buttonLabels?: PaginationLabel;
+    buttonLabels?: PaginationLabel; // ({top:"First page",left:"Previous page",right:"Next page",bottom:"Last page"})
     comboBox?: Omit<ComboBoxProps, ComboBoxReqdProps | ComboBoxBindProps | "options" | "variant" | "styling">;
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
     // other nav attributes are passed to <nav> via ...rest; `class` is merged onto root
   }
-  export type PaginationLabel = { top?: string; left?: string; right?: string; bottom?: string };
+  type PaginationLabel = { top?: string; left?: string; right?: string; bottom?: string };
   ```
   ### Anatomy
   ```svelte
@@ -51,16 +51,16 @@
 <script module lang="ts">
   export interface PaginationProps extends Omit<HTMLAttributes<HTMLElement>, "children" | "aria-label"> {
     children?: Snippet<[number, string]>; // Snippet<[value,variant]>
-    value?: number; // bindable; current page (default 1)
-    min?: number; // first page (default 1)
-    max?: number; // last page (default = max(min, value))
-    options?: number[]; // shortcut list shown in the ComboBox (default: magnitude-thinned min..max)
+    value?: number; // bindable; current page (1)
+    min?: number; // first page (1)
+    max?: number; // last page (max(min, value))
+    options?: number[]; // shortcut list shown in the ComboBox (magnitude-thinned min..max)
     top?: Snippet<[number, string]>; // Snippet<[value,variant]>; FIRST button content
     left?: Snippet<[number, string]>; // Snippet<[value,variant]>; PREV button content
     right?: Snippet<[number, string]>; // Snippet<[value,variant]>; NEXT button content
     bottom?: Snippet<[number, string]>; // Snippet<[value,variant]>; LAST button content
-    ariaLabel?: string; // nav landmark label (default "Pagination")
-    buttonLabels?: PaginationLabel;
+    ariaLabel?: string; // nav landmark label ("Pagination")
+    buttonLabels?: PaginationLabel; // ({top:"First page",left:"Previous page",right:"Next page",bottom:"Last page"})
     comboBox?: Omit<ComboBoxProps, ComboBoxReqdProps | ComboBoxBindProps | "options" | "variant" | "styling">;
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
