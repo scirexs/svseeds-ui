@@ -1,9 +1,15 @@
+import axe from "axe-core";
 import { beforeEach, describe, expect, test } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { createRawSnippet, tick } from "svelte";
 import MonthPicker from "#svs/MonthPicker.svelte";
 import MonthPickerBindable from "./fixtures/MonthPickerBindable.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const ym = (year: number, month: number) => Temporal.PlainYearMonth.from({ year, month });
 const selects = (container: HTMLElement) => Array.from(container.querySelectorAll("select")) as HTMLSelectElement[];
@@ -128,5 +134,29 @@ describe("_MonthPicker layout and styling", () => {
   test("variant reaches owned parts", () => {
     const screen = render(MonthPicker, { value: ym(2021, 6), variant: VARIANT.ACTIVE });
     expect(screen.container.querySelector(`.${PARTS.WHOLE}`)?.className).toContain(VARIANT.ACTIVE);
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("audits the default picker", async () => {
+    const { container } = render(MonthPicker, {
+      value: ym(2021, 6),
+      year: { "aria-label": "Year" },
+      month: { "aria-label": "Month" },
+    });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("audits constrained picker options", async () => {
+    const { container } = render(MonthPicker, {
+      value: ym(2020, 6),
+      min: ym(2020, 3),
+      max: ym(2022, 12),
+      year: { "aria-label": "Year" },
+      month: { "aria-label": "Month" },
+    });
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

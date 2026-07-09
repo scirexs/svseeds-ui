@@ -1,9 +1,15 @@
+import axe from "axe-core";
 import { describe, expect, test, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { createRawSnippet, tick } from "svelte";
 import Splitter from "#svs/Splitter.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const seed = "svs-splitter";
 const leftid = "splitter-left-content";
@@ -164,5 +170,19 @@ describe("Value handling and keyboard", () => {
     expect(props.value).toBe(50);
     await userEvent.keyboard("{ArrowRight}");
     expect(props.value).toBe(50);
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("audits the default horizontal splitter", async () => {
+    const { container } = render(Splitter, { left, right });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("audits a vertical splitter", async () => {
+    const { container } = render(Splitter, { left, right, orientation: "vertical" });
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

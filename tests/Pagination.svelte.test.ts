@@ -1,3 +1,4 @@
+import axe from "axe-core";
 import { describe, expect, test } from "vitest";
 import { render as svRender } from "vitest-browser-svelte";
 import { userEvent } from "vitest/browser";
@@ -5,6 +6,11 @@ import { tick } from "svelte";
 import Pagination from "#svs/Pagination.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 import PaginationEmbedded from "./fixtures/PaginationEmbedded.svelte";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const byRole = (container: HTMLElement | ParentNode, role: string) =>
   Array.from(container.querySelectorAll(`[role="${role}"]`)) as HTMLElement[];
@@ -191,5 +197,23 @@ describe("Pagination ComboBox composition", () => {
 
     expect(paging.value).toBe(6);
     val(combobox, "6");
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("audits the default pagination", async () => {
+    const { container } = render(Pagination, { min: 1, max: 10, value: 5, comboBox: { "aria-label": "Page" } });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("audits pagination with the listbox open", async () => {
+    const { container, getByRole } = render(Pagination, { min: 1, max: 10, value: 5, comboBox: { "aria-label": "Page" } });
+    const combobox = getByRole("combobox") as HTMLInputElement;
+
+    await userEvent.click(combobox);
+    await tick();
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

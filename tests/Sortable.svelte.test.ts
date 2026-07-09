@@ -1,3 +1,4 @@
+import axe from "axe-core";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { tick } from "svelte";
@@ -9,6 +10,11 @@ import SortableConnectedObjects from "./fixtures/SortableConnectedObjects.svelte
 import SortableGhost from "./fixtures/SortableGhost.svelte";
 import { createSortableGroup } from "#svs/Sortable.svelte";
 import { PARTS, VARIANT, _fnClass } from "#svs/core";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const el = (container: HTMLElement, id: string) => container.querySelector(`[data-testid="${id}"]`) as HTMLElement;
 
@@ -452,5 +458,19 @@ describe("_Sortable multiple, confirm, append, and dragging", () => {
     expect(props.dragging).toBe(false);
     await expect.element(el(container, "value-readout")).toHaveTextContent("a,b");
     expect(container.querySelector('[style*="position: fixed"]')).toBe(null);
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("audits the default sortable fixture", async () => {
+    const { container } = render(SortableBasic, {});
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("audits the multi-select sortable fixture", async () => {
+    const { container } = render(SortableBasic, { multiple: true });
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

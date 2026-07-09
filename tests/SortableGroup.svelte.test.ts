@@ -1,3 +1,4 @@
+import axe from "axe-core";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { tick } from "svelte";
@@ -7,6 +8,11 @@ import SortableGroupMotionProbe from "./fixtures/SortableGroupMotionProbe.svelte
 import SortableBasic from "./fixtures/SortableBasic.svelte";
 import { createSortableGroup } from "#svs/Sortable.svelte";
 import { PARTS, VARIANT, _fnClass } from "#svs/core";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const el = (container: HTMLElement, id: string) => container.querySelector(`[data-testid="${id}"]`) as HTMLElement;
 
@@ -192,5 +198,14 @@ describe("SortableGroup isolation", () => {
     await expect.element(el(group.container, "readout-a")).toHaveTextContent("a1");
     await expect.element(el(group.container, "readout-b")).toHaveTextContent("b1");
     await expect.element(el(standalone.container, "value-readout")).toHaveTextContent("s1,s2");
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("audits the default sortable group fixture", async () => {
+    // Single composed audit: SortableGroup has no distinct a11y-differing second fixture state.
+    const { container } = render(SortableGroupBasic, {});
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

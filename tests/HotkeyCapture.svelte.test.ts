@@ -1,9 +1,15 @@
+import axe from "axe-core";
 import { describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { userEvent } from "vitest/browser";
 import { tick } from "svelte";
 import HotkeyCapture, { parseHotkey } from "#svs/HotkeyCapture.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const placeholder = "Press a key combination...";
 const input = (c: HTMLElement) => c.querySelector("input") as HTMLInputElement;
@@ -802,5 +808,19 @@ describe("Event prevention", () => {
     await tick();
     expect(preventDefaultSpy).not.toHaveBeenCalled();
     expect(stopPropagationSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("audits the default hotkey capture", async () => {
+    const { container } = render(HotkeyCapture, { "aria-label": "Shortcut" });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("audits a populated hotkey capture", async () => {
+    const { container } = render(HotkeyCapture, { "aria-label": "Shortcut", value: "Ctrl Space" });
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

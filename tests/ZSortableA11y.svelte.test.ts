@@ -1,9 +1,15 @@
+import axe from "axe-core";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { tick } from "svelte";
 import ZSortableA11yBasic from "./fixtures/ZSortableA11yBasic.svelte";
 import ZSortableA11yConnected from "./fixtures/ZSortableA11yConnected.svelte";
 import { VARIANT } from "#svs/core";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const el = (container: HTMLElement, id: string) => container.querySelector(`[data-testid="${id}"]`) as HTMLElement;
 const keyed = (container: HTMLElement, key: string) => container.querySelector(`[data-svs-key="${key}"]`) as HTMLElement;
@@ -220,5 +226,26 @@ describe("ZSortableA11y connected-list keyboard", () => {
 
     expect(el(container, "readout-a").textContent).toBe("");
     await expect.element(el(container, "readout-b")).toHaveTextContent("a2,a1,b1");
+  });
+});
+
+describe("accessibility (axe)", () => {
+  beforeEach(stubReducedMotion);
+
+  test("audits the default keyboard sortable fixture", async () => {
+    const { container } = render(ZSortableA11yBasic, { items: ["a", "b", "c"] });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("audits a grabbed keyboard sortable item", async () => {
+    const { container } = render(ZSortableA11yBasic, { items: ["a", "b", "c"] });
+    const first = items(container)[0];
+
+    first.focus();
+    await press(first, " ");
+    await expect.element(live(container)).toHaveTextContent("Grabbed a");
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

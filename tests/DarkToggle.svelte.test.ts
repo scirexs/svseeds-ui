@@ -1,9 +1,15 @@
+import axe from "axe-core";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { render as browserRender } from "vitest-browser-svelte";
 import { userEvent } from "vitest/browser";
 import { createRawSnippet } from "svelte";
 import DarkToggle, { isDark, setTheme, setThemeToRoot, THEME, toggleTheme } from "#svs/DarkToggle.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 // The theme state is a module-level singleton (one theme per page). matchMedia is only
 // read once at import, so per-test matchMedia changes cannot re-derive it. Drive it
@@ -434,5 +440,19 @@ describe("DarkToggle - Status states", () => {
     const button = getByRole("button") as HTMLButtonElement;
 
     has(button, "svs-dark-toggle", "svs-toggle", PARTS.MAIN, customStatus);
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("audits the light toggle", async () => {
+    const { container } = render(DarkToggle, { dark: false });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("audits the dark toggle", async () => {
+    const { container } = render(DarkToggle, { dark: true });
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

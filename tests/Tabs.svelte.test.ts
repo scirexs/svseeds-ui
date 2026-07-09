@@ -1,3 +1,4 @@
+import axe from "axe-core";
 import { describe, expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
@@ -6,6 +7,11 @@ import Tabs from "#svs/Tabs.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 import TabDummy from "./fixtures/TabDummy.svelte";
 import type { TabItem, TabsProps } from "#svs/Tabs.svelte";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const element = (target: Element | null | undefined) => expect.element(target as HTMLElement | null);
 const byTabName = (root: ParentNode, name: string) =>
@@ -460,5 +466,22 @@ describe("Styling", async () => {
     await element(tabs[0]).toHaveClass(seed, PARTS.LABEL, VARIANT.ACTIVE);
     await element(tabs[1]).toHaveClass(seed, PARTS.LABEL, VARIANT.INACTIVE);
     await element(panel).toHaveClass(seed, PARTS.MAIN, VARIANT.INACTIVE);
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("audits the default tabs", async () => {
+    const { container } = render(Tabs, { tabs: baseTabs() });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("audits tabs with a disabled tab", async () => {
+    const { container } = render(Tabs, {
+      tabs: baseTabs().map((t) => (t.value === "b" ? { ...t, disabled: true } : t)),
+      current: "a",
+    });
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

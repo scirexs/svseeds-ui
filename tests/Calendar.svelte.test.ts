@@ -1,9 +1,15 @@
+import axe from "axe-core";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { createRawSnippet, tick } from "svelte";
 import Calendar, { type DayCtx } from "#svs/Calendar.svelte";
 import CalendarBindable from "./fixtures/CalendarBindable.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const date = (year: number, month: number, day: number) => Temporal.PlainDate.from({ year, month, day });
 const ym = (year: number, month: number) => Temporal.PlainYearMonth.from({ year, month });
@@ -364,5 +370,19 @@ describe("_Calendar rendering variants and snippets", () => {
     (screen.container.querySelector(`.${PARTS.LABEL}`) as HTMLButtonElement).click();
     await tick();
     expect(fn).toHaveBeenCalled();
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("audits the default grid", async () => {
+    const { container } = render(Calendar, { display: ym(2026, 6) });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("audits a selected constrained day", async () => {
+    const { container } = render(Calendar, { display: ym(2026, 6), value: date(2026, 6, 15), min: date(2026, 6, 20) });
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

@@ -1,8 +1,14 @@
+import axe from "axe-core";
 import { describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { createRawSnippet } from "svelte";
 import ProgressTracker from "#svs/ProgressTracker.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const byText = (node: ParentNode, text: string) =>
   [...node.querySelectorAll("*")].reverse().find((el) => el.textContent?.trim() === text) ?? null;
@@ -559,5 +565,19 @@ describe("Edge cases and error handling", () => {
 
     const items = [...container.querySelectorAll("li")];
     expect(items[1].className).toContain("special-variant");
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("audits the default tracker", async () => {
+    const { container } = render(ProgressTracker, { current: 1, labels });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("audits a mid-progress tracker with variant states", async () => {
+    const { container } = render(ProgressTracker, { current: 2, labels, variant: VARIANT.ACTIVE });
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

@@ -1,9 +1,15 @@
+import axe from "axe-core";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { createRawSnippet, tick } from "svelte";
 import Toast, { createToaster, type ToastItem } from "#svs/Toast.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 import ToastSnippetProbe from "./fixtures/ToastSnippetProbe.svelte";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const testid = "test-toast";
 const children = createRawSnippet<[ToastItem, string]>((item, variant) => ({
@@ -286,5 +292,23 @@ describe("Styling and lifecycle", () => {
     // once the 600ms window elapses only the dismissed toast is removed (the other persists: duration Infinity)
     await vi.waitFor(() => expect(el.getAttribute("aria-label")).toBe("1 notifications"), { timeout: 2000 });
     expect(statuses(container)).toHaveLength(1);
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("audits the empty toast region", async () => {
+    const { container } = setup();
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("audits a shown toast", async () => {
+    const { toaster, container } = setup({ duration: Infinity });
+
+    toaster.add("Saved");
+    await tick();
+
+    expect(statuses(container).length + alerts(container).length).toBe(1);
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });

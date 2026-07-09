@@ -1,8 +1,14 @@
+import axe from "axe-core";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { tick } from "svelte";
 import Image, { type ImageProps } from "#svs/Image.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import type { AxeMatchers } from "vitest-axe/matchers";
+
+declare module "vitest" {
+  interface Assertion<T = any> extends AxeMatchers {}
+}
 
 const has = (el: Element | null | undefined, ...names: string[]) =>
   expect([...(el?.classList ?? [])]).toEqual(expect.arrayContaining(names));
@@ -225,5 +231,23 @@ describe("Image state", () => {
 
     expect(props.element).toBe(main);
     expect(attach).toHaveBeenCalled();
+  });
+});
+
+describe("accessibility (axe)", () => {
+  test("audits the default image", async () => {
+    const { container } = render(Image, { src: "/image.jpg", alt: "Image" });
+
+    expect(await axe.run(container)).toHaveNoViolations();
+  });
+
+  test("audits a loaded image state", async () => {
+    const { container } = render(Image, { src: "/load.jpg", alt: "Load" });
+    const main = img(container);
+
+    main.dispatchEvent(new Event("load"));
+    await tick();
+
+    expect(await axe.run(container)).toHaveNoViolations();
   });
 });
