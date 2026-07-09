@@ -17,13 +17,29 @@
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
+  interface ToasterOptions {
+    duration?: number;
+    assertive?: boolean;
+  }
+  interface ToastAddOptions {
+    type?: string;
+    duration?: number;
+    assertive?: boolean;
+  }
+  interface ToastItem {
+    readonly id: string;
+    readonly message: string;
+    readonly type: string;
+    readonly assertive: boolean;
+    readonly visible: boolean;
+  }
   ```
   ### Anatomy
   ```svelte
   <div class="whole" popover="manual">
     {#each toaster.toasts as item (item.id)}
       <div class="middle" animate:flip={{ duration: motion }}>
-        <div class="main">
+        <div class="main" role aria-label>
           {children(item, variant)}
         </div>
       </div>
@@ -37,7 +53,7 @@
 
   class Toaster {
     readonly toasts: ToastItem[];                          // reactive list of current toasts
-    add(message: string, options?: ToastAddOptions): string; // enqueue a toast; returns its id
+    add(message: string, options?: ToastAddOptions): string; // enqueue a toast; options include type/duration/assertive; returns its id
     dismiss(id: string): void;                             // start the hide animation (auto-removes afterward)
     remove(id: string): void;                              // remove immediately without animation
     clear(): void;                                         // dismiss all toasts
@@ -45,6 +61,9 @@
     resume(id: string, extend?: boolean): void;            // restart the auto-dismiss timer; extend lengthens the duration
   }
   ```
+  ### Behavior
+  Default toasts render as `role="status"` for polite announcement. Passing `assertive: true`
+  to `Toaster.add()` or `createToaster()` renders them as `role="alert"` for assertive announcement.
 -->
 <script module lang="ts">
   export interface ToastProps {
@@ -59,15 +78,18 @@
 
   export interface ToasterOptions {
     duration?: number;
+    assertive?: boolean;
   }
   export interface ToastAddOptions {
     type?: string;
     duration?: number;
+    assertive?: boolean;
   }
   export interface ToastItem {
     readonly id: string;
     readonly message: string;
     readonly type: string;
+    readonly assertive: boolean;
     readonly visible: boolean;
   }
 
@@ -92,15 +114,17 @@
     readonly message: string;
     readonly type: string;
     readonly duration: number;
+    readonly assertive: boolean;
     #visible = $state(false);
     #dismissed = $state(false);
     timeoutId?: number;
 
-    constructor(id: string, message: string, type: string, duration: number) {
+    constructor(id: string, message: string, type: string, duration: number, assertive: boolean) {
       this.id = id;
       this.message = message;
       this.type = type;
       this.duration = duration;
+      this.assertive = assertive;
     }
     get visible(): boolean {
       return this.#visible;
@@ -120,18 +144,26 @@
   export class Toaster {
     #toasts = $state<ToastRecord[]>([]);
     #default: number;
+    #defaultAssertive: boolean;
     #uid = `svs-toast-${idSeq++}`;
     #seq = 0;
 
     constructor(options?: ToasterOptions) {
       this.#default = resolveDuration(options?.duration, DEFAULT_DISMISS);
+      this.#defaultAssertive = options?.assertive ?? false;
     }
     get toasts(): ToastItem[] {
       return this.#toasts;
     }
     add(message: string, options?: ToastAddOptions): string {
       const duration = resolveDuration(options?.duration, this.#default);
-      const toast = new ToastRecord(`${this.#uid}-${this.#seq++}`, message, options?.type ?? "", duration);
+      const toast = new ToastRecord(
+        `${this.#uid}-${this.#seq++}`,
+        message,
+        options?.type ?? "",
+        duration,
+        options?.assertive ?? this.#defaultAssertive,
+      );
       this.#toasts.push(toast);
       queueMicrotask(() => {
         if (!toast.dismissed && this.#toasts.includes(toast)) toast.visible = true;
@@ -272,10 +304,10 @@
       tabindex="-1"
       animate:flip={{ duration: dur }}
     >
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex (F6 moves focus to individual toasts.) -->
       <div
         class={cls(PARTS.MAIN, v)}
-        role="dialog"
-        aria-modal="false"
+        role={item.assertive ? "alert" : "status"}
         aria-label={label(item)}
         tabindex="0"
         style="pointer-events:auto;"

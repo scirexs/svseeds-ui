@@ -20,3 +20,4 @@
 20260709_z4tgp7	test: Stabilize deterministically-failing browser tests (DateField fixed-date drift, DarkToggle stale svg-swap assertions; investigate NumberInput external-value sync)
 20260709_5fnxky	feat: Cancel ZSortableA11y keyboard grab on focus loss and add connected-list keyboard test coverage
 20260709_nzvwpq	fix: Move Calendar's weekday header row inside the grid and drop role=application so column headers associate with day cells
+20260709_c53ixc	fix: Improve accessibility of Toast (status/alert live-region roles + assertive flag), ColorPicker (ariaLabel), Tooltip (accessible-description docs), and HotkeyCapture (focus effect guards)

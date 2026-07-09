@@ -39,6 +39,9 @@
   // Parses a space-separated hotkey string (e.g. "Ctrl Shift A") into its modifier flags and trailing key.
   function parseHotkey(value: string): Omit<HotkeyCaptureDetail, "event" | "kind">;
   ```
+  ### Behavior
+  Focus and blur events update `active`, and setting `active` focuses or blurs the input. Guards
+  keep focus in place when it is already correct, and `disabled` prevents programmatic focus moves.
 -->
 <script module lang="ts">
   export interface HotkeyCaptureProps extends Omit<
@@ -109,8 +112,6 @@
   });
   $effect(() => {
     active;
-    disabled;
-    element;
     untrack(() => toggleFocus());
   });
   function toggleFocus() {

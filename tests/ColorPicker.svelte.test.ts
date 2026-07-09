@@ -65,6 +65,14 @@ describe("Switching existence of elements and basic functionality", () => {
     expect(input.getAttribute("type")).not.toBe("text");
   });
 
+  test("w/ ariaLabel", async () => {
+    const props = { ariaLabel: "Accent color" };
+    const { container } = render(ColorPicker, props);
+    const input = container.querySelector("input") as HTMLInputElement;
+
+    await expect.element(input).toHaveAttribute("aria-label", "Accent color");
+  });
+
   test("w/ invalid hex value defaults to #000", async () => {
     const value = "invalid-color";
     const props = { value };

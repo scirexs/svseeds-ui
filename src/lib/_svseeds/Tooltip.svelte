@@ -45,6 +45,12 @@
   // Sets library-wide defaults. Callable repeatedly; last call wins per key.
   function initTooltip(defaults: Partial<TooltipDefaults>): void
   ```
+  ### Behavior
+  The `text` param is applied to the anchor as its accessible description (`aria-description`),
+  including when a `content` snippet is also provided. The snippet is the visual rendering;
+  `text` is what assistive tech reads. A `content`-only tooltip with no `text` sets no accessible
+  description because arbitrary snippet DOM cannot be auto-serialized, so callers that need screen
+  reader support must also pass `text`.
 -->
 <script module lang="ts">
   export interface TooltipParams {

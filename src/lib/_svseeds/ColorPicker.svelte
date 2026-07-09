@@ -8,14 +8,16 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface ColorPickerProps extends Omit<HTMLInputAttributes, "type" | "value" | "alpha"> {
+  interface ColorPickerProps extends Omit<HTMLInputAttributes, "type" | "value" | "alpha" | "aria-label"> {
     value?: string; // bindable ("#000000")
     alpha?: number; // (1)
     checkered?: boolean; // (true)
+    ariaLabel?: string;
     attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
+    // ariaLabel is the recommended accessible-name prop; aria-labelledby may be passed via ...rest
     // class & other HTMLInputAttributes are passed to <input> via ...rest (class is merged onto the control)
   }
   ```
@@ -24,7 +26,7 @@
   <label class="whole">
     <div class="middle"> // this middle element can provide the default transparency background when checkered is true
       <div class="main"> // this main element is color sample and positions the transparent, focusable native input overlay
-        <input {...rest} type="color" />
+        <input aria-label {...rest} type="color" />
       </div>
     </div>
   </label>
@@ -36,10 +38,11 @@
   ```
 -->
 <script module lang="ts">
-  export interface ColorPickerProps extends Omit<HTMLInputAttributes, "type" | "value" | "alpha"> {
+  export interface ColorPickerProps extends Omit<HTMLInputAttributes, "type" | "value" | "alpha" | "aria-label"> {
     value?: string; // bindable ("#000000")
     alpha?: number; // (1)
     checkered?: boolean; // (true)
+    ariaLabel?: string;
     attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
@@ -89,7 +92,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { value = $bindable(DEFAULT_COLOR), alpha = 1, checkered = true, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: ColorPickerProps = $props();
+  let { value = $bindable(DEFAULT_COLOR), alpha = 1, checkered = true, ariaLabel, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: ColorPickerProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(_fnClass(_COLOR_PICKER_PRESET, styling));
@@ -113,6 +116,7 @@
         bind:value
         bind:this={element}
         class={c}
+        aria-label={ariaLabel}
         {...rest}
         type="color"
         style="position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;"
