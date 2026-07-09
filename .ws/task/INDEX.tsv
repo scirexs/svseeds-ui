@@ -15,3 +15,4 @@
 20260708_byv4bq	feat: Add accessible-name API to the ToggleGroup group element (rest-props passthrough) and propagate the ToggleGroupField label to the embedded group
 20260708_itvs37 feat: Expose an accessible name for the Tabs tablist via rest-props passthrough
 20260708_qdxh75	feat: Give SortableGroup an accessible name and add a keyboard drag-and-drop verification copy (ZSortableA11y)
+20260709_5xy6cd	feat: Extend Pagination props from nav HTML attributes and consolidate aria button labels

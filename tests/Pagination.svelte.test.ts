@@ -54,6 +54,30 @@ describe("Pagination rendering", () => {
     attr(getButton("Last page"), "aria-disabled", "false");
   });
 
+  test("overrides the nav aria-label", () => {
+    const { container } = render(Pagination, { ariaLabel: "Results pages" });
+    const nav = container.querySelector("nav") as HTMLElement;
+
+    attr(nav, "aria-label", "Results pages");
+  });
+
+  test("overrides button labels by subset and preserves unset defaults", () => {
+    const { getButton } = render(Pagination, { buttonLabels: { left: "Go back", right: "Go forward" } });
+
+    expect(getButton("First page")).toBeTruthy();
+    expect(getButton("Go back")).toBeTruthy();
+    expect(getButton("Go forward")).toBeTruthy();
+    expect(getButton("Last page")).toBeTruthy();
+  });
+
+  test("merges caller class and forwards nav attributes", () => {
+    const { container } = render(Pagination, { class: "pager", id: "main-pages" });
+    const nav = container.querySelector("nav") as HTMLElement;
+
+    has(nav, "svs-pagination", PARTS.WHOLE, VARIANT.NEUTRAL, "pager");
+    attr(nav, "id", "main-pages");
+  });
+
   test("buttons move value and stay focusable no-ops at bounds", async () => {
     const props = $state({ min: 1, max: 3, value: 2 });
     const { getByRole, getButton } = render(Pagination, props);

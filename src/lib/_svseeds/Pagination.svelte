@@ -12,7 +12,7 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface PaginationProps {
+  interface PaginationProps extends Omit<HTMLAttributes<HTMLElement>, "children" | "aria-label"> {
     children?: Snippet<[number, string]>; // Snippet<[value,variant]>
     value?: number; // bindable; current page (default 1)
     min?: number; // first page (default 1)
@@ -23,14 +23,13 @@
     right?: Snippet<[number, string]>; // Snippet<[value,variant]>; NEXT button content
     bottom?: Snippet<[number, string]>; // Snippet<[value,variant]>; LAST button content
     ariaLabel?: string; // ("Pagination")
-    ariaTopLabel?: string; // ("First page")
-    ariaLeftLabel?: string; // ("Previous page")
-    ariaRightLabel?: string; // ("Next page")
-    ariaBottomLabel?: string; // ("Last page")
+    buttonLabels?: PaginationLabel;
     comboBox?: Omit<ComboBoxProps, ComboBoxReqdProps | ComboBoxBindProps | "options" | "variant" | "styling">;
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
+    // other nav attributes are passed to <nav> via ...rest; `class` is merged onto root
   }
+  export type PaginationLabel = { top?: string; left?: string; right?: string; bottom?: string };
   ```
   ### Anatomy
   ```svelte
@@ -50,7 +49,7 @@
   - The default shortcut list is centered on the current page. A caller-provided `options` list can follow the page with `bind:value={page}` and `const opts = $derived(...)`; no change event is needed.
 -->
 <script module lang="ts">
-  export interface PaginationProps {
+  export interface PaginationProps extends Omit<HTMLAttributes<HTMLElement>, "children" | "aria-label"> {
     children?: Snippet<[number, string]>; // Snippet<[value,variant]>
     value?: number; // bindable; current page (default 1)
     min?: number; // first page (default 1)
@@ -61,14 +60,12 @@
     right?: Snippet<[number, string]>; // Snippet<[value,variant]>; NEXT button content
     bottom?: Snippet<[number, string]>; // Snippet<[value,variant]>; LAST button content
     ariaLabel?: string; // nav landmark label (default "Pagination")
-    ariaTopLabel?: string; // FIRST (default "First page")
-    ariaLeftLabel?: string; // PREV  (default "Previous page")
-    ariaRightLabel?: string; // NEXT  (default "Next page")
-    ariaBottomLabel?: string; // LAST  (default "Last page")
+    buttonLabels?: PaginationLabel;
     comboBox?: Omit<ComboBoxProps, ComboBoxReqdProps | ComboBoxBindProps | "options" | "variant" | "styling">;
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
+  export type PaginationLabel = { top?: string; left?: string; right?: string; bottom?: string };
   export type PaginationReqdProps = never;
   export type PaginationBindProps = "value";
   export const _PAGINATION_PRESET = "svs-pagination";
@@ -77,17 +74,23 @@
   import { VARIANT, PARTS, _fnClass } from "./_core";
   import ComboBox, { _COMBO_BOX_PRESET, _setComboBoxContext } from "./ComboBox.svelte";
   import type { Snippet } from "svelte";
-  import type { MouseEventHandler } from "svelte/elements";
+  import type { HTMLAttributes, MouseEventHandler } from "svelte/elements";
   import type { SVSClass, SVSVariant } from "./_core";
   import type { ComboBoxContext, ComboBoxProps, ComboBoxReqdProps, ComboBoxBindProps } from "./ComboBox.svelte";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { children, value = $bindable(1), min = 1, max, options, top, left, right, bottom, ariaLabel = "Pagination", ariaTopLabel = "First page", ariaLeftLabel = "Previous page", ariaRightLabel = "Next page", ariaBottomLabel = "Last page", comboBox, styling, variant = VARIANT.NEUTRAL }: PaginationProps = $props();
+  let { children, value = $bindable(1), min = 1, max, options, top, left, right, bottom, ariaLabel = "Pagination", buttonLabels, comboBox, styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: PaginationProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(_fnClass(_PAGINATION_PRESET, styling));
+  const btn = $derived({
+    top: buttonLabels?.top ?? "First page",
+    left: buttonLabels?.left ?? "Previous page",
+    right: buttonLabels?.right ?? "Next page",
+    bottom: buttonLabels?.bottom ?? "Last page",
+  });
 
   // *** States *** //
   const lo = $derived(Math.trunc(min));
@@ -187,11 +190,11 @@
 
 <!---------------------------------------->
 
-<nav class={cls(PARTS.WHOLE, variant)} aria-label={ariaLabel}>
+<nav class={[cls(PARTS.WHOLE, variant), c]} {...rest} aria-label={ariaLabel}>
   <button
     class={cls(PARTS.TOP, atMin ? VARIANT.INACTIVE : variant)}
     type="button"
-    aria-label={ariaTopLabel}
+    aria-label={btn.top}
     aria-disabled={atMin}
     onclick={htop}
   >
@@ -204,7 +207,7 @@
   <button
     class={cls(PARTS.LEFT, atMin ? VARIANT.INACTIVE : variant)}
     type="button"
-    aria-label={ariaLeftLabel}
+    aria-label={btn.left}
     aria-disabled={atMin}
     onclick={hleft}
   >
@@ -222,7 +225,7 @@
   <button
     class={cls(PARTS.RIGHT, atMax ? VARIANT.INACTIVE : variant)}
     type="button"
-    aria-label={ariaRightLabel}
+    aria-label={btn.right}
     aria-disabled={atMax}
     onclick={hright}
   >
@@ -235,7 +238,7 @@
   <button
     class={cls(PARTS.BOTTOM, atMax ? VARIANT.INACTIVE : variant)}
     type="button"
-    aria-label={ariaBottomLabel}
+    aria-label={btn.bottom}
     aria-disabled={atMax}
     onclick={hbottom}
   >
