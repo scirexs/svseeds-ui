@@ -80,7 +80,7 @@
 
   export const [_getToggleGroupContext, _setToggleGroupContext] = _createContext<ToggleGroupContext>();
 
-  import { VARIANT, PARTS, _fnClass, _createContext } from "./_core";
+  import { VARIANT, PARTS, _commitSubset, _edgeEnabledIndex, _fnClass, _nextEnabledIndex, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLAttributes, HTMLButtonAttributes } from "svelte/elements";
@@ -139,20 +139,10 @@
       : (value: string) => (effValues.includes(value) ? [] : [value]),
   );
   function commitAdd(values: string[], added: string[]): string[] {
-    let keep = added;
-    const a = events?.onadd?.({ values, added });
-    if (a) keep = keep.filter((x) => a.includes(x));
-    const b = ctx?.events?.onadd?.({ values, added });
-    if (b) keep = keep.filter((x) => b.includes(x));
-    return keep;
+    return _commitSubset(added, { values, added }, events?.onadd, ctx?.events?.onadd);
   }
   function commitRemove(values: string[], removed: string[]): string[] {
-    let keep = removed;
-    const a = events?.onremove?.({ values, removed });
-    if (a) keep = keep.filter((x) => a.includes(x));
-    const b = ctx?.events?.onremove?.({ values, removed });
-    if (b) keep = keep.filter((x) => b.includes(x));
-    return keep;
+    return _commitSubset(removed, { values, removed }, events?.onremove, ctx?.events?.onremove);
   }
   function updateValues(value: string): () => void {
     return () => {
@@ -164,19 +154,10 @@
     };
   }
   function nextEnabledIndex(start: number, step: 1 | -1): number {
-    if (!opts.some((o) => !o.disabled)) return -1;
-    for (let offset = 1; offset <= opts.length; offset += 1) {
-      const index = (start + step * offset + opts.length) % opts.length;
-      if (!opts[index].disabled) return index;
-    }
-    return -1;
+    return _nextEnabledIndex(opts.length, start, step, (i) => opts[i].disabled);
   }
   function edgeEnabledIndex(edge: "first" | "last"): number {
-    if (edge === "first") return opts.findIndex((o) => !o.disabled);
-    for (let i = opts.length - 1; i >= 0; i -= 1) {
-      if (!opts[i].disabled) return i;
-    }
-    return -1;
+    return _edgeEnabledIndex(opts.length, edge, (i) => opts[i].disabled);
   }
   function targetIndex(key: string, index: number): number {
     if (key === "Home") return edgeEnabledIndex("first");

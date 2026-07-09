@@ -25,6 +25,10 @@ import {
   _resolveDuration,
   _ruleClass,
   _verify,
+  _commitSubset,
+  _detectOverflow,
+  _nextEnabledIndex,
+  _edgeEnabledIndex,
 } from "#svs/core";
 
 vi.mock("svelte", async (importOriginal) => {
@@ -226,6 +230,116 @@ describe("_createContext", () => {
     const firstKey = vi.mocked(setContext).mock.calls.at(-2)?.[0];
     const secondKey = vi.mocked(setContext).mock.calls.at(-1)?.[0];
     expect(firstKey).not.toBe(secondKey);
+  });
+});
+
+describe("_commitSubset", () => {
+  test("keeps all candidates without handlers", () => {
+    expect(_commitSubset(["a", "b"], { values: [] })).toEqual(["a", "b"]);
+  });
+
+  test("narrows candidates to a handler-returned subset", () => {
+    const detail = { values: ["a"], added: ["b", "c"] };
+    expect(_commitSubset(["b", "c"], detail, () => ["c"])).toEqual(["c"]);
+  });
+
+  test("leaves candidates unchanged when a handler returns undefined", () => {
+    const detail = { values: ["a"], removed: ["b", "c"] };
+    expect(_commitSubset(["b", "c"], detail, () => undefined)).toEqual(["b", "c"]);
+  });
+
+  test("applies multiple handlers left to right", () => {
+    const order: string[] = [];
+    const detail = { values: [], added: ["a", "b", "c"] };
+    const first = vi.fn(() => {
+      order.push("first");
+      return ["a", "c"];
+    });
+    const second = vi.fn(() => {
+      order.push("second");
+      return ["c"];
+    });
+
+    expect(_commitSubset(["a", "b", "c"], detail, first, second)).toEqual(["c"]);
+    expect(order).toEqual(["first", "second"]);
+    expect(first).toHaveBeenCalledWith(detail);
+    expect(second).toHaveBeenCalledWith(detail);
+  });
+
+  test("allows an empty handler result to reject all candidates", () => {
+    expect(_commitSubset(["a"], { values: [] }, () => [])).toEqual([]);
+  });
+});
+
+describe("_detectOverflow", () => {
+  const originalWidth = window.innerWidth;
+  const originalHeight = window.innerHeight;
+
+  afterEach(() => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: originalWidth });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: originalHeight });
+  });
+
+  function setViewport(width: number, height: number) {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
+  }
+
+  function elem(right: number, bottom: number): HTMLElement {
+    const el = document.createElement("div");
+    vi.spyOn(el, "getBoundingClientRect").mockReturnValue({
+      x: 0,
+      y: 0,
+      width: right,
+      height: bottom,
+      top: 0,
+      left: 0,
+      right,
+      bottom,
+      toJSON: () => ({}),
+    });
+    return el;
+  }
+
+  test("detects right and bottom overflow", () => {
+    setViewport(100, 80);
+
+    expect(_detectOverflow(elem(101, 81))).toEqual({ x: true, y: true });
+  });
+
+  test("returns false when the element stays within the viewport", () => {
+    setViewport(100, 80);
+
+    expect(_detectOverflow(elem(100, 79))).toEqual({ x: false, y: false });
+  });
+});
+
+describe("roving index helpers", () => {
+  const disabled = [false, true, false, true];
+  const isDisabled = (i: number) => disabled[i];
+
+  test("_nextEnabledIndex wraps forward and skips disabled entries", () => {
+    expect(_nextEnabledIndex(disabled.length, 2, 1, isDisabled)).toBe(0);
+    expect(_nextEnabledIndex(disabled.length, 0, 1, isDisabled)).toBe(2);
+  });
+
+  test("_nextEnabledIndex wraps backward and skips disabled entries", () => {
+    expect(_nextEnabledIndex(disabled.length, 0, -1, isDisabled)).toBe(2);
+    expect(_nextEnabledIndex(disabled.length, 2, -1, isDisabled)).toBe(0);
+  });
+
+  test("_nextEnabledIndex returns -1 when every entry is disabled", () => {
+    expect(_nextEnabledIndex(3, 0, 1, () => true)).toBe(-1);
+  });
+
+  test("_edgeEnabledIndex returns first and last enabled entries", () => {
+    expect(_edgeEnabledIndex(disabled.length, "first", isDisabled)).toBe(0);
+    expect(_edgeEnabledIndex(disabled.length, "last", isDisabled)).toBe(2);
+  });
+
+  test("_edgeEnabledIndex returns -1 when every entry is disabled", () => {
+    expect(_edgeEnabledIndex(3, "first", () => true)).toBe(-1);
+    expect(_edgeEnabledIndex(3, "last", () => true)).toBe(-1);
   });
 });
 

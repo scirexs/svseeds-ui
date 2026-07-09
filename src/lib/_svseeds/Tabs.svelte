@@ -84,7 +84,7 @@
   }
 
   import { untrack } from "svelte";
-  import { VARIANT, PARTS, _fnClass } from "./_core";
+  import { VARIANT, PARTS, _edgeEnabledIndex, _fnClass, _nextEnabledIndex } from "./_core";
   import type { Component, Snippet } from "svelte";
   import type { HTMLAttributes } from "svelte/elements";
   import type { SVSClass, SVSVariant } from "./_core";
@@ -136,19 +136,10 @@
     return firstSelectableIndex(tabs);
   }
   function nextSelectableIndex(start: number, step: 1 | -1): number {
-    if (!tabs.some((tab) => !tab.disabled)) return -1;
-    for (let offset = 1; offset <= tabs.length; offset += 1) {
-      const index = (start + step * offset + tabs.length) % tabs.length;
-      if (!tabs[index].disabled) return index;
-    }
-    return -1;
+    return _nextEnabledIndex(tabs.length, start, step, (i) => Boolean(tabs[i].disabled));
   }
   function edgeSelectableIndex(edge: "first" | "last"): number {
-    if (edge === "first") return tabs.findIndex((tab) => !tab.disabled);
-    for (let i = tabs.length - 1; i >= 0; i -= 1) {
-      if (!tabs[i].disabled) return i;
-    }
-    return -1;
+    return _edgeEnabledIndex(tabs.length, edge, (i) => Boolean(tabs[i].disabled));
   }
   function targetIndex(key: string, index: number): number {
     if (key === "Home") return edgeSelectableIndex("first");

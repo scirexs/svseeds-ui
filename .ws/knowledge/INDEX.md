@@ -29,6 +29,7 @@
 
 ## Runtime & Platform
 - css-flip-animation-spurious-pointerover.md — FLIP animation slides transformed boxes over the pointer, causing the browser to fire spurious `pointerover` on just-moved drag targets and reversing a committed reorder.
+- core-browser-helper-caller-guards-ssr.md — `_core.ts` helpers touching `window` (e.g. `_detectOverflow`) carry no internal SSR guard; the calling component keeps the `typeof window === "undefined"` check before invoking them.
 
 ## Integration & Data
 

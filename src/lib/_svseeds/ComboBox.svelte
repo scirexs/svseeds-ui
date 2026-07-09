@@ -72,7 +72,7 @@
   export const [_getComboBoxContext, _setComboBoxContext] = _createContext<ComboBoxContext>();
 
   import { tick } from "svelte";
-  import { VARIANT, PARTS, _fnClass, _createContext } from "./_core";
+  import { VARIANT, PARTS, _detectOverflow, _fnClass, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { SvelteSet } from "svelte/reactivity";
@@ -141,9 +141,7 @@
     overflow = { x: false, y: false };
     await tick();
     if (!listElem || typeof window === "undefined") return;
-    const rect = listElem.getBoundingClientRect();
-    overflow.x = window.innerWidth < rect.right;
-    overflow.y = window.innerHeight < rect.bottom;
+    overflow = _detectOverflow(listElem);
   }
   function apply() {
     if (!expanded) return;

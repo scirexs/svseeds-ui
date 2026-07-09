@@ -101,7 +101,7 @@
   export const [_getFileInputContext, _setFileInputContext] = _createContext<FileInputContext>();
 
   import { untrack } from "svelte";
-  import { VARIANT, PARTS, SR_ONLY, _fnClass, _createContext } from "./_core";
+  import { VARIANT, PARTS, SR_ONLY, _commitSubset, _fnClass, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLInputAttributes, MouseEventHandler, ChangeEventHandler, DragEventHandler, EventHandler } from "svelte/elements";
@@ -183,11 +183,7 @@
       else accepted.push(file);
     }
     const detail = { values: effFiles, added: accepted, rejected };
-    let committed = accepted;
-    const a = events?.onadd?.(detail);
-    if (a) committed = committed.filter((f) => a.includes(f));
-    const b = ctx?.events?.onadd?.(detail);
-    if (b) committed = committed.filter((f) => b.includes(f));
+    const committed = _commitSubset(accepted, detail, events?.onadd, ctx?.events?.onadd);
     const next = multiple ? [...current, ...committed] : committed.length ? committed : effFiles;
     if (!sameFileArray(effFiles, next)) setFiles(next);
     else syncInputFiles();
@@ -195,11 +191,7 @@
   }
   const remove = (file: File) => {
     const detail = { values: effFiles, removed: [file] };
-    let keep = [file];
-    const a = events?.onremove?.(detail);
-    if (a) keep = keep.filter((f) => a.includes(f));
-    const b = ctx?.events?.onremove?.(detail);
-    if (b) keep = keep.filter((f) => b.includes(f));
+    const keep = _commitSubset([file], detail, events?.onremove, ctx?.events?.onremove);
     if (!keep.length) return;
     const next = effFiles.filter((f) => f !== file);
     if (!sameFileArray(effFiles, next)) setFiles(next);

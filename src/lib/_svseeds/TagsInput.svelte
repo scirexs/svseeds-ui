@@ -99,7 +99,7 @@
 
   export const [_getTagsInputContext, _setTagsInputContext] = _createContext<TagsInputContext>();
 
-  import { VARIANT, PARTS, _fnClass, _createContext } from "./_core";
+  import { VARIANT, PARTS, _commitSubset, _fnClass, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLInputAttributes, KeyboardEventHandler, FormEventHandler, ClipboardEventHandler } from "svelte/elements";
@@ -141,12 +141,7 @@
 
   // *** Event Handlers *** //
   function commitAdd(values: string[], added: string[]): string[] {
-    let keep = added;
-    const a = events?.onadd?.({ values, added });
-    if (a) keep = keep.filter((x) => a.includes(x));
-    const b = ctx?.events?.onadd?.({ values, added });
-    if (b) keep = keep.filter((x) => b.includes(x));
-    return keep;
+    return _commitSubset(added, { values, added }, events?.onadd, ctx?.events?.onadd);
   }
   function addMany(cands: string[]) {
     let batch = cands;
@@ -167,12 +162,7 @@
     setValue(trailing);
   }
   function commitRemove(values: string[], removed: string[]): string[] {
-    let keep = removed;
-    const a = events?.onremove?.({ values, removed });
-    if (a) keep = keep.filter((x) => a.includes(x));
-    const b = ctx?.events?.onremove?.({ values, removed });
-    if (b) keep = keep.filter((x) => b.includes(x));
-    return keep;
+    return _commitSubset(removed, { values, removed }, events?.onremove, ctx?.events?.onremove);
   }
   function remove(index: number) {
     const target = effValues[index];

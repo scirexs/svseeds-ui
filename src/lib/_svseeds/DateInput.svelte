@@ -104,7 +104,7 @@
   export const _DATE_INPUT_PRESET = "svs-date-input";
 
   import { onDestroy, tick, untrack } from "svelte";
-  import { VARIANT, PARTS, _createContext, _fnClass, shouldReduceMotion } from "./_core";
+  import { VARIANT, PARTS, _createContext, _detectOverflow, _fnClass, shouldReduceMotion } from "./_core";
   import Calendar from "./Calendar.svelte";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
@@ -250,9 +250,7 @@
     overflow = { x: false, y: false };
     await tick();
     if (!overlayElem || typeof window === "undefined") return;
-    const rect = overlayElem.getBoundingClientRect();
-    overflow.x = window.innerWidth < rect.right;
-    overflow.y = window.innerHeight < rect.bottom;
+    overflow = _detectOverflow(overlayElem);
   }
   function stopListening() {
     if (typeof document === "undefined") return;

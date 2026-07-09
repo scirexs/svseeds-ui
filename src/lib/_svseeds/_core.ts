@@ -28,6 +28,10 @@ export {
   _isNeutral,
   _isUnsignedInteger,
   _verify,
+  _commitSubset,
+  _detectOverflow,
+  _nextEnabledIndex,
+  _edgeEnabledIndex,
   shouldReduceMotion,
   canHover,
   _omit,
@@ -261,6 +265,45 @@ function _verify<V, E extends HTMLElement>(el: E | undefined, validations: SVSFi
     if (msg) return target.setCustomValidity(msg);
   }
   target.setCustomValidity("");
+}
+/**
+ * Runs collection commit handlers in order, narrowing candidates by each returned subset.
+ */
+function _commitSubset<T, D>(candidates: T[], detail: D, ...handlers: (((detail: D) => T[] | void) | undefined)[]): T[] {
+  let keep = candidates;
+  for (const handler of handlers) {
+    const result = handler?.(detail);
+    if (Array.isArray(result)) keep = keep.filter((x) => result.includes(x));
+  }
+  return keep;
+}
+/**
+ * Detects whether an element overflows the viewport's right or bottom edge.
+ */
+function _detectOverflow(el: HTMLElement): { x: boolean; y: boolean } {
+  const rect = el.getBoundingClientRect();
+  return { x: window.innerWidth < rect.right, y: window.innerHeight < rect.bottom };
+}
+/**
+ * Finds the next non-disabled index from a start index, wrapping around the list.
+ */
+function _nextEnabledIndex(length: number, start: number, step: 1 | -1, isDisabled: (index: number) => boolean): number {
+  for (let offset = 1; offset <= length; offset += 1) {
+    const index = (start + step * offset + length) % length;
+    if (!isDisabled(index)) return index;
+  }
+  return -1;
+}
+/**
+ * Finds the first or last non-disabled index.
+ */
+function _edgeEnabledIndex(length: number, edge: "first" | "last", isDisabled: (index: number) => boolean): number {
+  if (edge === "first") {
+    for (let i = 0; i < length; i += 1) if (!isDisabled(i)) return i;
+  } else {
+    for (let i = length - 1; i >= 0; i -= 1) if (!isDisabled(i)) return i;
+  }
+  return -1;
 }
 /**
  * Creates a new object with specified keys omitted from the original object.
