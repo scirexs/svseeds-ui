@@ -95,6 +95,35 @@ describe("_Sortable rendering and API", () => {
     expect(item?.className).toBe(cls(PARTS.MAIN, VARIANT.ACTIVE));
   });
 
+  test("ariaLabel names the list", async () => {
+    const { container } = render(SortableBasic, { items: ["a"], ariaLabel: "Backlog" });
+    const list = container.querySelector("ul") as HTMLElement;
+
+    await expect.element(list).toHaveAttribute("aria-label", "Backlog");
+  });
+
+  test("omits aria-label when ariaLabel is unset", () => {
+    const { container } = render(SortableBasic, { items: ["a"] });
+    const list = container.querySelector("ul") as HTMLElement;
+
+    expect(list.hasAttribute("aria-label")).toBe(false);
+  });
+
+  test("passes list attributes and merges caller class", async () => {
+    const { container } = render(SortableBasic, {
+      items: ["a"],
+      ariaLabelledby: "sortable-label",
+      dataProbe: "list-probe",
+      listClass: "caller-list",
+    });
+    const list = container.querySelector("ul") as HTMLElement;
+
+    await expect.element(list).toHaveAttribute("aria-labelledby", "sortable-label");
+    await expect.element(list).toHaveAttribute("data-probe", "list-probe");
+    await expect.element(list).toHaveClass("svs-sortable", PARTS.WHOLE, VARIANT.NEUTRAL);
+    await expect.element(list).toHaveClass("caller-list");
+  });
+
   test("standalone renders are isolated", async () => {
     stubReducedMotion();
     const first = render(SortableBasic, { items: ["a", "b", "c"] });

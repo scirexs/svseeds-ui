@@ -15,7 +15,10 @@ has pre-existing formatting drift (e.g. `FileField.svelte`, `Tooltip.svelte`,
 its result. Test files under `tests/` carry their own pre-existing drift
 (e.g. multi-statement one-liners that prettier expands), so even a
 `BUN_FMT`-scoped `fmt:check` limited to edited test files may report failures
-that pre-date the task's changes.
+that pre-date the task's changes. Markdown files under `.ws/` (e.g.
+`overview.md`) are subject to the same issue: if the request's validation scope
+includes a markdown file, Prettier checks the entire file and will flag any
+pre-existing formatting outside the edited line range.
 
 ## Why it matters / how to apply
 For a scoped change, validate formatting with the **check-only** script narrowed

@@ -21,12 +21,13 @@ nesting typical of compound-component libraries (see
 `.ws/policy/compound-components.md`).
 
 Design principles (see `.ref/web-svseeds/src/md/concepts.sv.md`):
+
 - **Standards-first** — prefer semantic/native HTML over JS where it suffices;
   build on native elements when one exists (Disclosure → `details`/`summary`,
   Modal → `dialog`, SelectField → `select`), implement accessibility from
   scratch only when no native element fits.
 - **Headless** — no opinionated styles; styling freedom is the default.
-- **Library-as-files** — components are usable as an installed package *or*
+- **Library-as-files** — components are usable as an installed package _or_
   copied into a project as `.svelte` source via the external `svseeds-cli`
   tool, for deep customization.
 
@@ -49,7 +50,7 @@ shared module — there is no central runtime or app shell.
   **part** (`PARTS.*`) and **variant** (`VARIANT.*`). The consumer targets
   those classes from their own CSS.
 - Components compose in two ways: a **coordinator** parent shares state with an
-  explicitly-written child through a lightweight *optional* context — so the
+  explicitly-written child through a lightweight _optional_ context — so the
   child stays usable standalone — (e.g. Field components over their Input
   counterparts; Accordion over Disclosure), while a few self-contained
   **Composites** privately instantiate a fixed set of children (e.g. Calendar
@@ -63,13 +64,14 @@ shared module — there is no central runtime or app shell.
 ## Components / Modules
 
 Shared module:
+
 - **`_core.ts`** — shared styling engine (`_fnClass`, `_prepRule`,
   `_ruleClass`), the `BASE`/`VARIANT`/`PARTS` vocabulary, context helpers
   (`_createContext`), field-validation types (`SVSFieldValidation`,
   `SVSFieldConstraint`, `SVSContext`), and utilities (`_omit`, `_debounce`,
   `_throttle`, `shouldReduceMotion`, `canHover`, …).
 
-Components (42 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
+Components (43 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
 
 - **Field components** (label/validation wrapper around an input; structured
   whole→top/middle/bottom anatomy): TextField, NumberField, CheckField,
@@ -83,10 +85,12 @@ Components (42 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
 - **Date/time pickers**: Calendar, MonthPicker.
 - **Navigation & progress**: Tabs, ProgressTracker, Pagination.
 - **Layout** (resizable two-pane region): Splitter.
-- **Drag & drop**: Sortable, SortableGroup.
+- **Drag & drop**: Sortable, SortableGroup, ZSortableA11y (keyboard-DnD verification copy
+  of Sortable).
 - **Feedback & utility**: Toast, DarkToggle, HotkeyCapture, Image.
 
 **Composition / dependencies** (source of truth: the generated `dep.json`):
+
 - **Hard dependencies** — one component imports another, so the CLI copies them
   together: Calendar → MonthPicker → WheelPicker; MenuList → MenuSeparator;
   Pagination → ComboBox (Tooltip recurses into itself). Update when an

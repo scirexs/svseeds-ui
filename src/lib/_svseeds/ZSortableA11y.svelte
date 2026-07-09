@@ -1,19 +1,19 @@
 <!--
   @component
   ### Usage
-  Use standalone, or inside `SortableGroup` to connect lists.
+  Use standalone, or with a shared `createZSortableA11yGroup()` controller to connect lists.
   ```svelte
-  <Sortable {...props} />
+  <ZSortableA11y {...props} />
   ```
   ### Types
   default value: *`(value)`*
   ```ts
-  interface SortableProps<T = string> extends Omit<HTMLAttributes<HTMLUListElement>, "children" | "aria-label" | "onpointerdown" | "onpointerover" | "onpointerout" | "onpointerenter" | "onpointerup"> {
+  interface SortableProps<T = string> extends Omit<HTMLAttributes<HTMLUListElement>, "children" | "aria-label" | "onpointerdown" | "onpointerover" | "onpointerout" | "onpointerenter" | "onpointerup" | "onkeydown"> {
     items: T[]; // bindable plain array
     item: Snippet<[T, SVSVariant, Attachment]>; // Snippet<[value, variant, dragHandle]>
     key?: (item: T) => PropertyKey; // identity extractor; required for object items
     clone?: (item: T) => T; // required for object items in clone mode
-    group?: SortableGroupController; // shared controller from createSortableGroup()
+    group?: SortableGroupController; // shared controller from createZSortableA11yGroup()
     id?: string; // list id used by accept
     ghost?: Snippet<[T]>; // custom floating preview
     mode?: "move" | "clone" | "swap"; // ("move")
@@ -33,7 +33,7 @@
   ```
   Generic `T` is the item value type. Use `bind:items` with a plain array; mutations happen in place.
   For object items, provide `key={(item) => item.id}`. For `mode="clone"` with objects, also provide `clone`.
-  Connect lists by passing the same `group={createSortableGroup(undefined, { duration: 300, easing: cubicOut })}` or by wrapping them in `<SortableGroup>`.
+  Connect lists by passing the same `group={createZSortableA11yGroup(undefined, { duration: 300, easing: cubicOut })}`.
   The third `item` snippet argument is an attachment for a custom drag handle: `{@attach handle}`.
   Group motion defaults to `300ms` / `cubicOut`; reduced motion resolves duration to `0`.
 
@@ -41,7 +41,7 @@
   ```svelte
   <ul class="whole" aria-label {...rest}>
     {#each items as value (key(value))}
-      <li class="main">
+      <li class="main" tabindex aria-roledescription>
         {item(value, variant, handle)}
       </li>
     {/each}
@@ -51,14 +51,19 @@
 
   ### Exports
   ```ts
-  // Creates an isolated drag controller; pass it as `group` to connect multiple lists, or wrap them in <SortableGroup>.
-  function createSortableGroup(presentation?: { get variant(): SVSVariant; get styling(): SVSClass | undefined }, motion?: { duration?: number; easing?: EasingFunction }): SortableGroupController
+  // Creates an isolated keyboard-capable drag controller; pass it as `group` to connect multiple ZSortableA11y lists.
+  function createZSortableA11yGroup(presentation?: { get variant(): SVSVariant; get styling(): SVSClass | undefined }, motion?: { duration?: number; easing?: EasingFunction }): SortableGroupController
   ```
+  ### Behavior
+  Pointer drag behavior matches `Sortable`. Keyboard users move focus with ArrowUp/ArrowDown,
+  pick up the focused item with Space or Enter, move it with ArrowUp/ArrowDown, drop with Space
+  or Enter, and cancel with Escape. When `multiple` is true, Ctrl+Space toggles selection; a
+  selected group moves with the picked-up item. A polite live region announces keyboard actions.
 -->
 <script module lang="ts">
   export interface SortableProps<T = string> extends Omit<
     HTMLAttributes<HTMLUListElement>,
-    "children" | "aria-label" | "onpointerdown" | "onpointerover" | "onpointerout" | "onpointerenter" | "onpointerup"
+    "children" | "aria-label" | "onpointerdown" | "onpointerover" | "onpointerout" | "onpointerenter" | "onpointerup" | "onkeydown"
   > {
     items: T[];
     item: Snippet<[T, SVSVariant, Attachment]>;
@@ -88,6 +93,9 @@
     readonly dragging: boolean;
     readonly activeKey: string;
     readonly confirmKey: string;
+    readonly keyboardActive: boolean;
+    readonly message: string;
+    readonly messageOwnerId: string;
     readonly shadow: SortableShadowState;
     readonly send: TransitionFn;
     readonly receive: TransitionFn;
@@ -98,6 +106,11 @@
     move(ev: PointerEvent): void;
     commit(): void;
     cancel(): void;
+    grabKeyboard<T>(member: SortableMember<T>, key: string, followers: string[]): boolean;
+    stepKeyboard(dir: -1 | 1): string;
+    dropKeyboard(): void;
+    cancelKeyboard(): void;
+    announce(message: string, ownerId: string): void;
     over<T>(member: SortableMember<T>, key: string): void;
     leave(): void;
     enterGroup<T>(member: SortableMember<T>): void;
@@ -136,6 +149,11 @@
     followers: string[];
     pendingSwap?: { member: SortableMember; key: string };
   };
+  type ActiveKeyboard = {
+    source: SortableMember;
+    originKey: string;
+    snapshots: Map<SortableMember, unknown[]>;
+  };
   type SortableShadowState = {
     rendering: boolean;
     visible: boolean;
@@ -157,7 +175,7 @@
   const emptyAttachment: Attachment = () => {};
   const ondragstart = () => false;
 
-  export function createSortableGroup(
+  export function createZSortableA11yGroup(
     presentation?: {
       get variant(): SVSVariant;
       get styling(): SVSClass | undefined;
@@ -188,6 +206,7 @@
     #timer: ReturnType<typeof setTimeout> | undefined;
     #locks = new Map<string, ReturnType<typeof setTimeout>>();
     #active: ActiveDrag | undefined = $state.raw();
+    #keyboard: ActiveKeyboard | undefined = $state.raw();
     #standby:
       | {
           member: SortableMember;
@@ -202,6 +221,8 @@
     #dragging = $state(false);
     #activeKey = $state("");
     #confirmKey = $state("");
+    #message = $state("");
+    #messageOwnerId = $state("");
     shadow: SortableShadowState = $state({
       rendering: false,
       visible: false,
@@ -239,6 +260,15 @@
     }
     get confirmKey(): string {
       return this.#confirmKey;
+    }
+    get keyboardActive(): boolean {
+      return this.#keyboard !== undefined;
+    }
+    get message(): string {
+      return this.#message;
+    }
+    get messageOwnerId(): string {
+      return this.#messageOwnerId;
     }
     register<T>(member: SortableMember<T>): () => void {
       this.#members.set(member.id, member as SortableMember);
@@ -317,7 +347,77 @@
     }
     cancel(): void {
       this.#clearDelay();
+      if (this.#keyboard) this.#restoreKeyboard();
       this.#clearDrag();
+    }
+    grabKeyboard<T>(member: SortableMember<T>, key: string, followers: string[]): boolean {
+      this.cancel();
+      const index = findIndex(member, key);
+      if (index < 0) return false;
+      const item = member.items[index];
+      this.#active = {
+        source: member,
+        current: member,
+        sourceKey: key,
+        activeKey: key,
+        sourceIndex: index,
+        item,
+        mode: "move",
+        followers,
+      };
+      this.#keyboard = {
+        source: member,
+        originKey: key,
+        snapshots: this.#snapshot(),
+      };
+      this.#dragging = true;
+      this.#activeKey = key;
+      this.announce(
+        `Grabbed ${key}, position ${index + 1} of ${member.items.length}. Use arrow keys to move, space to drop, escape to cancel.`,
+        member.id,
+      );
+      return true;
+    }
+    stepKeyboard(dir: -1 | 1): string {
+      const active = this.#active;
+      if (!active || !this.#keyboard) return "";
+      const target = this.#keyboardTarget(dir);
+      if (!target || !this.#canSort(target.member)) {
+        const p = this.#position(active.current, active.activeKey);
+        this.announce(`At position ${p.index + 1} of ${p.total}.`, active.current.id);
+        return active.activeKey;
+      }
+      this.#moveTo(target.member, target.key);
+      const moved = this.#active;
+      if (!moved) return "";
+      const p = this.#position(moved.current, moved.activeKey);
+      this.announce(`Moved to position ${p.index + 1} of ${p.total}.`, moved.current.id);
+      return moved.activeKey;
+    }
+    dropKeyboard(): void {
+      const active = this.#active;
+      if (!active || !this.#keyboard) return;
+      this.#commitFollowers();
+      const p = this.#position(active.current, active.activeKey);
+      const owner = active.current.id;
+      this.#keyboard = undefined;
+      this.#clearDrag();
+      this.announce(`Dropped at position ${p.index + 1} of ${p.total}.`, owner);
+    }
+    cancelKeyboard(): void {
+      const active = this.#active;
+      const grab = this.#keyboard;
+      if (!active || !grab) return;
+      this.#restoreKeyboard();
+      const p = this.#position(grab.source, grab.originKey);
+      const owner = grab.source.id;
+      this.#keyboard = undefined;
+      this.#clearDrag();
+      this.announce(`Cancelled, returned to position ${p.index + 1} of ${p.total}.`, owner);
+    }
+    announce(message: string, ownerId: string): void {
+      this.#message = message;
+      this.#messageOwnerId = ownerId;
     }
     over<T>(member: SortableMember<T>, key: string): void {
       if (!this.#active || !this.#isAcceptable(member) || this.#guardSameTarget(member, key)) return;
@@ -374,6 +474,7 @@
       this.#clearLocks();
       this.#active = undefined;
       this.#standby = undefined;
+      this.#keyboard = undefined;
       this.#dragging = false;
       this.#activeKey = "";
       this.#confirmKey = "";
@@ -382,6 +483,39 @@
       this.shadow.ownerId = "";
       this.shadow.item = undefined;
       this.shadow.ghost = false;
+    }
+    #snapshot(): Map<SortableMember, unknown[]> {
+      return new Map([...this.#members.values()].map((member) => [member, [...member.items]]));
+    }
+    #restoreKeyboard() {
+      const grab = this.#keyboard;
+      if (!grab) return;
+      grab.snapshots.forEach((items, member) => {
+        member.items.splice(0, member.items.length, ...items);
+        member.touch();
+      });
+    }
+    #keyboardTarget(dir: -1 | 1): { member: SortableMember; key?: string } | undefined {
+      const active = this.#active;
+      if (!active) return undefined;
+      const member = active.current;
+      const index = findIndex(member, active.activeKey);
+      if (index < 0) return undefined;
+      const nextIndex = index + dir;
+      if (nextIndex >= 0 && nextIndex < member.items.length) {
+        return { member, key: stringifyKey(member.key(member.items[nextIndex])) };
+      }
+      const members = [...this.#members.values()];
+      const memberIndex = members.findIndex((m) => m.id === member.id);
+      const next = members[memberIndex + dir];
+      if (!next || !this.#isAcceptable(next)) return undefined;
+      if (next.items.length === 0) return { member: next };
+      const keyItem = dir < 0 ? next.items[next.items.length - 1] : next.items[0];
+      return { member: next, key: dir < 0 ? undefined : stringifyKey(next.key(keyItem)) };
+    }
+    #position(member: SortableMember, key: string): { index: number; total: number } {
+      const index = Math.max(0, findIndex(member, key));
+      return { index, total: member.items.length };
     }
     #sort(member: SortableMember, key: string) {
       if (!this.#active || !this.#canSort(member)) return;
@@ -646,7 +780,7 @@
     }
   }
 
-  import { onDestroy, untrack } from "svelte";
+  import { onDestroy, tick, untrack } from "svelte";
   import { on } from "svelte/events";
   import { SvelteSet } from "svelte/reactivity";
   import { crossfade } from "svelte/transition";
@@ -655,7 +789,7 @@
   import { VARIANT, PARTS, _fnClass, _throttle, _isNeutral, _resolveDuration, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
-  import type { HTMLAttributes } from "svelte/elements";
+  import type { HTMLAttributes, KeyboardEventHandler } from "svelte/elements";
   import type { EasingFunction } from "svelte/transition";
   import type { SVSClass, SVSVariant, SVSContext } from "./_core";
 </script>
@@ -666,7 +800,7 @@
 
   const context = _getSortableContext();
   // svelte-ignore state_referenced_locally
-  const controller = group ?? context ?? createSortableGroup();
+  const controller = group ?? context ?? createZSortableA11yGroup();
   const autoId = $props.id();
   // svelte-ignore state_referenced_locally
   const listId = id ?? autoId;
@@ -675,6 +809,7 @@
   const cls = $derived(_fnClass(_SORTABLE_PRESET, styling ?? controller.styling));
   const effVariant = $derived(!_isNeutral(variant) ? variant : controller.variant);
   const selected = new SvelteSet<string>();
+  let focusKey = $state("");
   let pendingSelect = $state("");
   let pendingDeselect = $state(false);
   let unregister: VoidFn | undefined;
@@ -719,9 +854,20 @@
     controller.dragging;
     untrack(() => (dragging = controller.dragging));
   });
+  $effect(() => {
+    items;
+    untrack(() => syncFocusKey());
+  });
 
   function keyString(value: T): string {
     return stringifyKey(itemKey(value));
+  }
+  function syncFocusKey() {
+    if (items.length === 0) {
+      focusKey = "";
+      return;
+    }
+    if (!items.some((value) => keyString(value) === focusKey)) focusKey = keyString(items[0]);
   }
   function handle(element: Element): void {
     if (!(element instanceof HTMLElement)) return;
@@ -787,6 +933,73 @@
     pendingSelect = "";
     pendingDeselect = false;
   }
+  function nextFocus(key: string, dir: -1 | 1): string {
+    const index = items.findIndex((value) => keyString(value) === key);
+    const next = items[index + dir];
+    return next === undefined ? key : keyString(next);
+  }
+  function toggleSelection(key: string) {
+    if (selected.has(key)) {
+      selected.delete(key);
+      controller.announce(`${key} deselected, ${selected.size} items selected.`, listId);
+    } else {
+      selected.add(key);
+      controller.announce(`${key} selected, ${selected.size} items selected.`, listId);
+    }
+  }
+  async function focusItem(key: string) {
+    await tick();
+    const owner = controller.messageOwnerId || listId;
+    const roots = [...document.querySelectorAll<HTMLElement>("[data-svs-list]")];
+    const root = roots.find((el) => el.dataset.svsList === owner);
+    const scope = root ?? document;
+    const li = [...scope.querySelectorAll<HTMLElement>("[data-svs-key]")].find((el) => el.dataset.svsKey === key);
+    li?.focus();
+  }
+  const hkeydown: KeyboardEventHandler<HTMLUListElement> = async (ev) => {
+    const target = ev.target;
+    if (!(target instanceof Element)) return;
+    const li = target.closest<HTMLElement>("[data-svs-key]");
+    if (!li || !ev.currentTarget.contains(li)) return;
+    const key = li.dataset.svsKey ?? "";
+    const space = ev.key === " " || ev.key === "Spacebar";
+    focusKey = key;
+    if (controller.dragging && !controller.keyboardActive) return;
+    if (ev.ctrlKey && space) {
+      if (!multiple || controller.keyboardActive) return;
+      ev.preventDefault();
+      toggleSelection(key);
+      return;
+    }
+    if (ev.key === "ArrowUp" || ev.key === "ArrowDown") {
+      ev.preventDefault();
+      const dir = ev.key === "ArrowUp" ? -1 : 1;
+      const next = controller.keyboardActive ? controller.stepKeyboard(dir) : nextFocus(key, dir);
+      if (next) {
+        focusKey = next;
+        await focusItem(next);
+      }
+      return;
+    }
+    if (space || ev.key === "Enter") {
+      ev.preventDefault();
+      if (controller.keyboardActive) {
+        controller.dropKeyboard();
+      } else {
+        const followers = multiple && selected.has(key) ? [...selected].filter((x) => x !== key) : [];
+        controller.grabKeyboard(member, key, followers);
+      }
+      await focusItem(key);
+      return;
+    }
+    if (ev.key === "Escape" && controller.keyboardActive) {
+      ev.preventDefault();
+      const activeKey = controller.activeKey || key;
+      controller.cancelKeyboard();
+      focusKey = activeKey;
+      await focusItem(activeKey);
+    }
+  };
 
   onDestroy(() => {
     unregister?.();
@@ -798,6 +1011,7 @@
 
 <ul
   class={[cls(PARTS.WHOLE, effVariant), c]}
+  data-svs-list={listId}
   aria-label={ariaLabel}
   {...rest}
   onpointerdown={onPointerDown}
@@ -805,23 +1019,34 @@
   onpointerout={onPointerOut}
   onpointerenter={onPointerEnter}
   onpointerup={onPointerUp}
+  onkeydown={hkeydown}
 >
   {#each items as value (keyString(value))}
     {@const k = keyString(value)}
     {@const itemVariant = controller.itemVariant(k, isSelected(k), effVariant)}
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
     <li
       class={cls(PARTS.MAIN, itemVariant)}
       data-svs-key={k}
+      tabindex={focusKey === k || controller.activeKey === k ? 0 : -1}
+      aria-roledescription="sortable item"
       in:controller.receive={{ key: k }}
       out:controller.send={{ key: k }}
       animate:flip={controller.tp}
       style="touch-action:none;"
+      onfocus={() => (focusKey = k)}
       {ondragstart}
     >
       {@render item(value, itemVariant, handle)}
     </li>
   {/each}
 </ul>
+<span
+  aria-live="polite"
+  style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;"
+>
+  {controller.messageOwnerId === listId ? controller.message : ""}
+</span>
 {#if controller.shadow.rendering && controller.shadow.ownerId === listId}
   {@const shadowStyle = `opacity: 0.5; pointer-events: none; position: fixed; left: ${controller.shadow.point.x}px; top: ${controller.shadow.point.y}px; visibility: ${controller.shadow.visible ? "visible" : "hidden"}; ${controller.shadow.cssSize}`}
   <ul style="display: contents;">

@@ -12,16 +12,35 @@
     appendable?: boolean;
     draggable?: boolean;
     dragging?: boolean;
+    ariaLabel?: string;
+    ariaLabelledby?: string;
+    dataProbe?: string;
+    listClass?: string;
     styling?: SVSClass;
     variant?: SVSVariant;
     noHandle?: boolean;
   }
 
   // prettier-ignore
-  let { items = $bindable(["a", "b", "c"]), mode = "move", sort = true, multiple = false, confirm = false, appendable = false, draggable = true, dragging = $bindable(false), styling, variant = VARIANT.NEUTRAL, noHandle = false }: Props = $props();
+  let { items = $bindable(["a", "b", "c"]), mode = "move", sort = true, multiple = false, confirm = false, appendable = false, draggable = true, dragging = $bindable(false), ariaLabel, ariaLabelledby, dataProbe, listClass, styling, variant = VARIANT.NEUTRAL, noHandle = false }: Props = $props();
 </script>
 
-<Sortable bind:items bind:dragging {mode} {sort} {multiple} {confirm} {appendable} {draggable} {styling} {variant}>
+<Sortable
+  bind:items
+  bind:dragging
+  {mode}
+  {sort}
+  {multiple}
+  {confirm}
+  {appendable}
+  {draggable}
+  {ariaLabel}
+  {styling}
+  {variant}
+  aria-labelledby={ariaLabelledby}
+  data-probe={dataProbe}
+  class={listClass}
+>
   {#snippet item(value: string, variant: string, handle: Attachment)}
     {#if noHandle}
       <span data-testid={"item-" + value} data-variant={variant}>{value}</span>

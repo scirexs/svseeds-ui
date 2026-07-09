@@ -53,6 +53,22 @@ describe("SortableGroup structure", () => {
 
     expect(group.className).toBe(cls(PARTS.WHOLE, VARIANT.NEUTRAL));
   });
+
+  test("passes group attributes and merges caller class on the wrapper", async () => {
+    const { container } = render(SortableGroupBasic, {
+      ariaLabel: "Sortable columns",
+      ariaLabelledby: "sort-label",
+      dataProbe: "group-probe",
+      groupClass: "caller-group",
+    });
+    const group = container.querySelector('[role="group"]') as HTMLElement;
+
+    await expect.element(group).toHaveAttribute("aria-label", "Sortable columns");
+    await expect.element(group).toHaveAttribute("aria-labelledby", "sort-label");
+    await expect.element(group).toHaveAttribute("data-probe", "group-probe");
+    await expect.element(group).toHaveClass("svs-sortable-group", PARTS.WHOLE, VARIANT.NEUTRAL);
+    await expect.element(group).toHaveClass("caller-group");
+  });
 });
 
 describe("SortableGroup motion", () => {

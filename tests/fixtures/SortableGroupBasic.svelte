@@ -16,13 +16,26 @@
     childVariant?: SVSVariant;
     duration?: number;
     easing?: EasingFunction;
+    ariaLabel?: string;
+    ariaLabelledby?: string;
+    dataProbe?: string;
+    groupClass?: string;
   }
 
   // prettier-ignore
-  let { a = $bindable(["a1", "a2"]), b = $bindable(["b1", "b2"]), mode = "move", acceptB, styling, childStyling, variant = VARIANT.NEUTRAL, childVariant = VARIANT.NEUTRAL, duration, easing }: Props = $props();
+  let { a = $bindable(["a1", "a2"]), b = $bindable(["b1", "b2"]), mode = "move", acceptB, styling, childStyling, variant = VARIANT.NEUTRAL, childVariant = VARIANT.NEUTRAL, duration, easing, ariaLabel, ariaLabelledby, dataProbe, groupClass }: Props = $props();
 </script>
 
-<SortableGroup {variant} {styling} {duration} {easing}>
+<SortableGroup
+  {variant}
+  {styling}
+  {duration}
+  {easing}
+  aria-label={ariaLabel}
+  aria-labelledby={ariaLabelledby}
+  data-probe={dataProbe}
+  class={groupClass}
+>
   <Sortable id="a" bind:items={a} {mode} styling={childStyling} variant={childVariant}>
     {#snippet item(value: string, variant: string, handle: Attachment)}
       <span data-testid={"item-" + value} data-variant={variant} {@attach handle}>{value}</span>
