@@ -154,6 +154,16 @@
     const start = first.subtract({ days: lead });
     return Array.from({ length: rows }, (_, r) => Array.from({ length: 7 }, (_, c) => start.add({ days: r * 7 + c })));
   });
+  const cellKeys = $derived.by(() => {
+    const shown = currentDisplay();
+    const keys = new Set<string>();
+    for (const week of weeks) {
+      for (const cell of week) {
+        if (outsideDays || sameMonth(cell, shown)) keys.add(cell.toString());
+      }
+    }
+    return keys;
+  });
   const reduced = $derived(typeof window !== "undefined" && shouldReduceMotion());
   const tfn = $derived(!reduced && transition?.fn ? transition.fn : noop);
   const tparams = $derived(transition?.params as any);
@@ -163,6 +173,10 @@
     display;
     value;
     untrack(() => syncFocus());
+  });
+  $effect.pre(() => {
+    cellKeys;
+    untrack(() => trimCells(cellKeys));
   });
 
   function syncFocus() {
@@ -247,6 +261,11 @@
   }
   function focusDate(d: Temporal.PlainDate) {
     cells[d.toString()]?.focus();
+  }
+  function trimCells(keys: Set<string>) {
+    for (const key of Object.keys(cells)) {
+      if (!keys.has(key)) delete cells[key];
+    }
   }
   function weekEdge(toEnd: boolean): Temporal.PlainDate {
     const offset = (weekdayOf(focused) - firstWeekday + 7) % 7;

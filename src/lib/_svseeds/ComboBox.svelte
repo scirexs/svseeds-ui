@@ -169,9 +169,9 @@
     onclick?.(ev);
     if (!expanded) open();
   };
-  const hinput: FormEventHandler<HTMLInputElement> = (ev) => {
+  const hinput: EventHandler<InputEvent, HTMLInputElement> = (ev) => {
     oninput?.(ev);
-    if ((ev as Parameters<EventHandler<InputEvent, HTMLInputElement>>[0]).isComposing) return;
+    if (ev.isComposing) return;
     typed = true;
     selected = effOptions?.has(effValue) ? view.indexOf(effValue) : NA;
   };
@@ -241,7 +241,7 @@
       onblur={hblur}
       onclick={hclick}
       onkeydown={hkeydown}
-      oninput={hinput}
+      oninput={hinput as FormEventHandler<HTMLInputElement>}
       {@attach attach}
     />
     {#if extra}

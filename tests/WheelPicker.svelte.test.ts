@@ -123,6 +123,20 @@ describe("Rendering and options", () => {
     await expect.element(getByTestId(`${labelid}-1`)).toHaveTextContent("feb:active:1");
     expect(label).toHaveBeenCalled();
   });
+
+  test("shrinking options trims rendered label refs", async () => {
+    const props = $state({ options: opts, value: "jan" });
+    const { container, rerender } = render(WheelPicker, props);
+
+    expect(labels(container)).toHaveLength(4);
+
+    props.options = opts.slice(0, 2);
+    await rerender(props);
+    await tick();
+
+    expect(labels(container)).toHaveLength(2);
+    expect(labels(container).map((label) => label.textContent)).toEqual(["January", "February"]);
+  });
 });
 
 describe("Default value and binding", () => {

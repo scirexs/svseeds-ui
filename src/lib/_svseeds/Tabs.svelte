@@ -110,6 +110,10 @@
       if (current !== selected) current = selected;
     });
   });
+  $effect.pre(() => {
+    tabs.length;
+    untrack(() => trimElems(tabs.length));
+  });
   $effect(() => {
     tabs;
     selectedIndex;
@@ -117,6 +121,9 @@
     const next = focusFallback();
     if (next !== focused) focused = next;
   });
+  function trimElems(length: number) {
+    if (elems.length > length) elems.length = length;
+  }
 
   // *** States *** //
   const tabId = (index: number) => `${uid}-tab-${index}`;

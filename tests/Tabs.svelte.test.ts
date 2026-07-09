@@ -123,6 +123,23 @@ describe("Key-string addressing and correction", async () => {
     expect(tabsIn(container.querySelector('[role="tablist"]') as HTMLDivElement)).toHaveLength(2);
   });
 
+  test("shrinking tabs leaves keyboard focus on live tabs", async () => {
+    const props = $state({ tabs: baseTabs(), current: "c" });
+    const { container, rerender } = render(Tabs, props);
+
+    props.tabs = baseTabs().slice(0, 2);
+    await rerender(props);
+    await tick();
+
+    const live = tabsIn(container.querySelector('[role="tablist"]') as HTMLDivElement);
+    expect(live).toHaveLength(2);
+    live[1].focus();
+    await userEvent.keyboard("{ArrowRight}");
+
+    await element(live[0]).toHaveFocus();
+    expect(props.current).toBe("a");
+  });
+
   test("10+ tabs keep input order", async () => {
     const tabs: TabItem[] = Array.from({ length: 12 }, (_, i) => ({
       value: String(i),

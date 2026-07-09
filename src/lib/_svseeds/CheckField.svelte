@@ -130,9 +130,16 @@
   // *** Reactive Handlers *** //
   const opts = $derived(Array.from(options, ([value, text]) => ({ value, text, checked: values.includes(value) })));
   $effect.pre(() => {
+    opts.length;
+    untrack(() => trimElements(opts.length));
+  });
+  $effect.pre(() => {
     values;
     untrack(() => validate(true));
   });
+  function trimElements(length: number) {
+    if (elements.length > length) elements.length = length;
+  }
   function validate(effect?: boolean) {
     if (effect && _isNeutral(variant)) return;
     verify();
@@ -151,7 +158,7 @@
         return;
       }
     }
-    values = elements.filter((el) => el.checked).map((el) => el.value);
+    values = elements.filter((el) => el?.checked).map((el) => el.value);
     validate();
   };
   const hinvalid: EventHandler<Event, HTMLInputElement> = (ev) => {

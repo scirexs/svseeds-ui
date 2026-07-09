@@ -4,6 +4,7 @@ import { userEvent } from "vitest/browser";
 import { createRawSnippet, tick } from "svelte";
 import CheckField from "#svs/CheckField.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import CheckFieldBindable from "./fixtures/CheckFieldBindable.svelte";
 
 const label = "label_text";
 const extra = "(optional)";
@@ -217,6 +218,36 @@ describe("Switching existence of elements", () => {
   test("w/ empty options", () => {
     const { queryByRole } = render(CheckField, { options: new Map() });
     expect(queryByRole("group")).toBeNull();
+  });
+
+  test("shrinking options trims bound elements and recomputes values", async () => {
+    const onchange = vi.fn();
+    const props = $state({
+      options,
+      initialValues: ["option1", "option3"],
+      onchange,
+    });
+    const { getAllByRole, getByTestId, rerender } = render(CheckFieldBindable, props);
+
+    await tick();
+    txt(getByTestId("elements"), "3");
+
+    props.options = new Map([
+      ["option1", "Option 1"],
+      ["option2", "Option 2"],
+    ]);
+    await rerender(props);
+    await tick();
+
+    txt(getByTestId("elements"), "2");
+
+    const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
+    checkboxes[1].checked = true;
+    await fireEvent(checkboxes[1], new Event("change", { bubbles: true }));
+    await tick();
+
+    expect(onchange).toHaveBeenCalled();
+    await vi.waitFor(() => txt(getByTestId("values"), "option1,option2"));
   });
 });
 

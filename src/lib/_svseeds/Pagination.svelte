@@ -128,16 +128,11 @@
     value;
     untrack(() => sync());
   });
-  $effect(() => {
-    value;
-    untrack(() => {
-      text = String(value);
-    });
-  });
 
   function sync() {
     const next = clamp(value);
     if (next !== value) value = next;
+    text = String(value);
   }
   function clamp(n: number): number {
     return Math.min(hi, Math.max(lo, Math.trunc(n)));

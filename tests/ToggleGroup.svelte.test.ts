@@ -50,6 +50,28 @@ describe("Switching existence of elements", () => {
     expect(buttons[2]).toHaveTextContent("Option 3");
   });
 
+  test("shrinking options trims bound elements", async () => {
+    const props = $state({
+      options,
+      elements: [] as HTMLButtonElement[],
+    });
+    const { getAllByRole, rerender } = render(ToggleGroup, props);
+
+    await tick();
+    expect(props.elements).toHaveLength(3);
+
+    props.options = new Map([
+      ["option1", "Option 1"],
+      ["option2", "Option 2"],
+    ]);
+    await rerender(props);
+    await tick();
+
+    expect(getAllByRole("checkbox")).toHaveLength(2);
+    expect(props.elements).toHaveLength(2);
+    expect(props.elements.every(Boolean)).toBe(true);
+  });
+
   test("single selection mode", () => {
     const { getByRole, getAllByRole } = render(ToggleGroup, { options, multiple: false });
     const group = getByRole("radiogroup") as HTMLSpanElement;

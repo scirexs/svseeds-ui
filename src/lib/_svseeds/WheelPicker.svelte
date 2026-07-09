@@ -164,6 +164,10 @@
     selected;
     untrack(() => sync());
   });
+  $effect.pre(() => {
+    shown.length;
+    untrack(() => trimLabelElems(shown.length));
+  });
 
   function measure() {
     tick().then(() => {
@@ -185,6 +189,9 @@
   function sync() {
     if (selected < 0 || program) return;
     animate(selected);
+  }
+  function trimLabelElems(length: number) {
+    if (labelElems.length > length) labelElems.length = length;
   }
 
   // *** Event Handlers *** //

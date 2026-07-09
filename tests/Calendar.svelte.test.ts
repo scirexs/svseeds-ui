@@ -261,6 +261,25 @@ describe("_Calendar keyboard and aria", () => {
     expect(screen.container.querySelector('[tabindex="0"]')?.textContent?.trim()).toBe("15");
   });
 
+  test("navigating to a shorter month keeps focus on current rendered cells", async () => {
+    const props = $state({ display: ym(2026, 8), value: date(2026, 8, 31) });
+    const screen = render(CalendarBindable, props);
+
+    expect(cells(screen.container)).toHaveLength(31);
+
+    props.display = ym(2026, 2);
+    await screen.rerender(props);
+    await tick();
+
+    expect(cells(screen.container)).toHaveLength(28);
+    expect(screen.container.querySelector('[tabindex="0"]')?.textContent?.trim()).toBe("1");
+
+    dayButton(screen.container, 1).focus();
+    await pressKey(grid(screen.container), "ArrowRight");
+
+    expect(document.activeElement?.textContent?.trim()).toBe("2");
+  });
+
   test("grid roles and aria attributes are present", () => {
     const today = Temporal.Now.plainDateISO();
     const screen = render(Calendar, { display: today.toPlainYearMonth(), value: today, min: today.add({ days: 1 }) });

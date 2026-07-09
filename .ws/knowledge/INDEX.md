@@ -5,7 +5,8 @@
 - ts-generic-htmlelement-excludes-constraint-validation.md — a generic `E extends HTMLElement` cannot access `validity`/`setCustomValidity` (declared per-concrete-interface, not on `HTMLElement`); narrow with a local cast internally instead of widening the public bound.
 
 ## Framework & Libraries
-- svelte-native-event-handler-typing.md — intrinsic-element `onload`/`onerror` type as a generic `EventHandler`; keep the public prop precise and cast the internal DOM handler narrowly.
+- svelte-native-event-handler-typing.md — intrinsic-element attrs (`onload`/`onerror`/`oninput`/…) type as a generic handler (not e.g. `EventHandler<InputEvent,…>`); keep the internal handler precisely typed and cast at the seam — narrow-cast inward for re-dispatch, widen-cast the handler at direct attribute assignment (e.g. `isComposing` access).
+- svelte-bindthis-array-trim-on-shrink.md — `bind:this={arr[i]}` never clears entries for rows removed from a shrinking `{#each}` source; trim the collection to the live count/key set in an `$effect.pre` keyed on that source list, not by clearing the whole collection.
 - svelte-rest-props-reemitted-aria-undefined-clobber.md — when rest-props include an attr the component re-emits as a computed value, destructure it out of rest; an explicit `undefined` after `{...rest}` silently erases the caller's attr.
 - svelte-two-level-component-rest-props-on-role-element.md — in two-level components (root wrapper + inner role element), spread `...rest` on the role-bearing element, not the root; coding-style §14's default breaks WAI-ARIA accessible naming when root ≠ role element.
 - sortable-commit-followers-remove-before-insert.md — `#commitFollowers` must splice followers out before calling `insertAfter`; `insertAfter` re-finds the leader by key so it re-derives the correct index after any preceding removals.

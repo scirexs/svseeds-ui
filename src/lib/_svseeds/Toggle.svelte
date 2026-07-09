@@ -71,7 +71,7 @@
   const cls = $derived(_fnClass(_TOGGLE_PRESET, styling));
   // Remembers the latest neutral (off-state) variant so OFF restores a caller custom neutral.
   let neutral = _isNeutral(variant) ? variant : VARIANT.NEUTRAL;
-  let state = $derived(
+  const state = $derived(
     role === "button" ? { "aria-pressed": value, "aria-checked": undefined } : { "aria-checked": value, "aria-pressed": undefined },
   );
 

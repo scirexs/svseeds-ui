@@ -80,6 +80,7 @@
 
   export const [_getToggleGroupContext, _setToggleGroupContext] = _createContext<ToggleGroupContext>();
 
+  import { untrack } from "svelte";
   import { VARIANT, PARTS, _commitSubset, _edgeEnabledIndex, _fnClass, _nextEnabledIndex, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
@@ -104,14 +105,14 @@
   const effAriaErrMsgId = $derived(ctx ? ctx.ariaErrMsgId : ariaErrMsgId);
 
   // *** Reactive Handlers *** //
-  let opts = $derived(
+  const opts = $derived(
     [...options].map(([value, def]) => {
       const { text, disabled, ...attrs } = typeof def === "string" ? { text: def } : def;
       return { value, text, disabled: disabled ?? false, attrs, checked: effValues.includes(value) };
     }),
   );
-  let invalid = $derived(effAriaErrMsgId ? true : undefined);
-  let activeIndex = $derived.by(() => {
+  const invalid = $derived(effAriaErrMsgId ? true : undefined);
+  const activeIndex = $derived.by(() => {
     if (multiple) return -1;
     const checked = opts.findIndex((o) => o.checked && !o.disabled);
     if (checked >= 0) return checked;
@@ -124,9 +125,16 @@
   $effect(() => {
     if (!multiple && effValues.length > 1) setValues(effValues.slice(0, 1));
   });
+  $effect.pre(() => {
+    opts.length;
+    untrack(() => trimElements(opts.length));
+  });
   $effect(() => {
     if (ctx) ctx.elements = elements;
   });
+  function trimElements(length: number) {
+    if (elements.length > length) elements.length = length;
+  }
 
   // *** Event Handlers *** //
   const update = $derived(

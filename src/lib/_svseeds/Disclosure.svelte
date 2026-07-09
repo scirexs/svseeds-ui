@@ -122,16 +122,19 @@
   }
 
   // *** Reactive Handlers *** //
+  const neutralInput = $derived(ctx ? ctx.variant : variant);
+  const desiredBaseVariant = $derived(ctx && !effOpen && !isInactive && prevVariant === undefined ? base : undefined);
+  const shouldStoreInactive = $derived(isInactive && _isNeutral(variant));
+
   // External variant writes are styling-only; preserve the neutral fallback without changing open state.
   $effect(() => {
-    neutral = ctx ? (_isNeutral(ctx.variant) ? ctx.variant : VARIANT.NEUTRAL) : _isNeutral(variant) ? variant : neutral;
+    neutralInput;
+    untrack(() => syncNeutral());
   });
   $effect(() => {
-    if (ctx && !effOpen && !isInactive && prevVariant === undefined) variant = base;
-  });
-  $effect(() => {
-    variant;
-    untrack(() => (isInactive && _isNeutral(variant) ? storeVariant() : undefined));
+    desiredBaseVariant;
+    shouldStoreInactive;
+    untrack(() => syncVariant());
   });
   $effect.pre(() => {
     effOpen;
@@ -142,6 +145,13 @@
     if (isInactive) return collapseInactive();
     restoreVariant();
     toggleOpen(effOpen);
+  }
+  function syncNeutral() {
+    neutral = _isNeutral(neutralInput) ? neutralInput : neutral;
+  }
+  function syncVariant() {
+    if (shouldStoreInactive) storeVariant();
+    else if (desiredBaseVariant !== undefined) variant = desiredBaseVariant;
   }
   function toggleOpen(isOpen: boolean) {
     guard.activate(dur);
