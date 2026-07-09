@@ -19,3 +19,4 @@
 20260709_qzv7t6	refactor: Replace self-owned document.querySelector lookups with bind:this in Calendar/DateInput; keep delegation/slotted/global-focus queries (ADR 005)
 20260709_z4tgp7	test: Stabilize deterministically-failing browser tests (DateField fixed-date drift, DarkToggle stale svg-swap assertions; investigate NumberInput external-value sync)
 20260709_5fnxky	feat: Cancel ZSortableA11y keyboard grab on focus loss and add connected-list keyboard test coverage
+20260709_nzvwpq	fix: Move Calendar's weekday header row inside the grid and drop role=application so column headers associate with day cells

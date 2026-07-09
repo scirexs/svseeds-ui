@@ -46,15 +46,17 @@
   ```
   ### Anatomy
   ```svelte
-  <div class="whole" role="application">
+  <div class="whole" role="group">
     <div class="top">
       <button class="left" />
       <button class="label" />
       <button class="right" />
     </div>
     <div class="middle">
-      <div class="aux" role="row">weekday headers</div>
-      <div class="main" role="grid">day cells</div>
+      <div class="main" role="grid">
+        <div class="aux" role="row">weekday headers</div>
+        day cells
+      </div>
       MonthPicker while picking
     </div>
     <div class="bottom" conditional>{bottom}</div>
@@ -274,7 +276,7 @@
 
 <!---------------------------------------->
 
-<div class={cls(PARTS.WHOLE, variant)} role="application" aria-label={appLabel} data-svs-calendar={uid}>
+<div class={cls(PARTS.WHOLE, variant)} role="group" aria-label={appLabel} data-svs-calendar={uid}>
   <div class={cls(PARTS.TOP, variant)}>
     <button class={cls(PARTS.LEFT, variant)} type="button" onclick={hprev}
       >{#if left}{@render left(variant)}{:else}Previous{/if}</button
@@ -299,14 +301,14 @@
     </div>
   {:else}
     <div class={cls(PARTS.MIDDLE, variant)} transition:tfn|local={tparams}>
-      <div class={cls(PARTS.AUX, variant)} role="row">
-        {#each weekdayLabels as wl}
-          <span class={cls(PARTS.EXTRA, VARIANT.NEUTRAL)} role="columnheader" data-weekday={wl.weekday} aria-label={wl.full}>
-            {#if weekday}{@render weekday(wl.weekday, variant)}{:else}{wl.text}{/if}
-          </span>
-        {/each}
-      </div>
       <div class={cls(PARTS.MAIN, variant)} role="grid" tabindex="-1" aria-labelledby={idCaption} onkeydown={hkeydown}>
+        <div class={cls(PARTS.AUX, variant)} role="row">
+          {#each weekdayLabels as wl}
+            <span class={cls(PARTS.EXTRA, VARIANT.NEUTRAL)} role="columnheader" data-weekday={wl.weekday} aria-label={wl.full}>
+              {#if weekday}{@render weekday(wl.weekday, variant)}{:else}{wl.text}{/if}
+            </span>
+          {/each}
+        </div>
         {#each weeks as week}
           <div role="row">
             {#each week as cell}

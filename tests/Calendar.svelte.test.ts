@@ -8,7 +8,8 @@ import { PARTS, VARIANT } from "#svs/core";
 const date = (year: number, month: number, day: number) => Temporal.PlainDate.from({ year, month, day });
 const ym = (year: number, month: number) => Temporal.PlainYearMonth.from({ year, month });
 const grid = (container: HTMLElement) => container.querySelector('[role="grid"]') as HTMLElement;
-const rows = (container: HTMLElement) => Array.from(grid(container).querySelectorAll('[role="row"]')) as HTMLElement[];
+const rows = (container: HTMLElement) =>
+  Array.from(grid(container).querySelectorAll('[role="row"]')).filter((row) => !row.classList.contains(PARTS.AUX)) as HTMLElement[];
 const cells = (container: HTMLElement) => Array.from(container.querySelectorAll('button[role="gridcell"]')) as HTMLButtonElement[];
 const dayButton = (container: HTMLElement, day: number) =>
   cells(container).find((b) => b.textContent?.trim() === String(day) && !b.hasAttribute("data-outside"))!;
@@ -263,8 +264,13 @@ describe("_Calendar keyboard and aria", () => {
   test("grid roles and aria attributes are present", () => {
     const today = Temporal.Now.plainDateISO();
     const screen = render(Calendar, { display: today.toPlainYearMonth(), value: today, min: today.add({ days: 1 }) });
-    expect(grid(screen.container)).toBeTruthy();
-    expect(screen.container.querySelectorAll('[role="columnheader"]')).toHaveLength(7);
+    const root = screen.container.querySelector("[data-svs-calendar]") as HTMLElement;
+    const main = grid(screen.container);
+    expect(root.getAttribute("role")).toBe("group");
+    expect(screen.container.querySelector('[role="application"]')).toBeNull();
+    expect(main).toBeTruthy();
+    expect(main.querySelectorAll('[role="columnheader"]')).toHaveLength(7);
+    expect(main.querySelector('[role="row"]')?.classList.contains(PARTS.AUX)).toBe(true);
     const selected = screen.container.querySelector("[data-selected]") as HTMLElement;
     expect(selected.getAttribute("aria-selected")).toBe("true");
     expect(selected.getAttribute("aria-current")).toBe("date");
