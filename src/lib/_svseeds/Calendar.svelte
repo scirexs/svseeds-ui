@@ -131,6 +131,7 @@
   // *** States *** //
   const initialDisplay = display as Temporal.PlainYearMonth;
   let focused = $state(value && sameMonth(value, initialDisplay) ? value : firstOf(initialDisplay));
+  let cells = $state<Record<string, HTMLElement>>({});
   const firstWeekday = $derived(normWeekday(firstDayOfWeek));
   const monthStart = $derived(firstOf(currentDisplay()));
   const captionText = $derived(monthStart.toLocaleString(locale, { year: "numeric", month: "long" }));
@@ -243,8 +244,7 @@
     tick().then(() => focusDate(d));
   }
   function focusDate(d: Temporal.PlainDate) {
-    const el = document.querySelector(`[data-svs-calendar="${uid}"] [data-date="${d.toString()}"]`) as HTMLElement | null;
-    el?.focus();
+    cells[d.toString()]?.focus();
   }
   function weekEdge(toEnd: boolean): Temporal.PlainDate {
     const offset = (weekdayOf(focused) - firstWeekday + 7) % 7;
@@ -320,6 +320,7 @@
                   type="button"
                   role="gridcell"
                   tabindex={cell.equals(focused) ? 0 : -1}
+                  bind:this={cells[cell.toString()]}
                   aria-selected={c.selected}
                   aria-disabled={c.disabled || undefined}
                   aria-current={c.today ? "date" : undefined}

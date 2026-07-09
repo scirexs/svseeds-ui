@@ -158,6 +158,7 @@
   let last = $state(format());
   let focused = $state(false);
   let overflow = $state({ x: false, y: false });
+  let root = $state<HTMLElement>();
   let overlayElem = $state<HTMLDivElement>();
   let returning = false;
 
@@ -243,8 +244,7 @@
     });
   }
   function focusCalendar() {
-    const el = document.querySelector(`[data-svs-dateinput="${uid}"] [data-svs-calendar] [tabindex="0"]`) as HTMLElement | null;
-    el?.focus();
+    overlayElem?.querySelector<HTMLElement>('[tabindex="0"]')?.focus();
   }
   async function observeOverflow() {
     overflow = { x: false, y: false };
@@ -295,7 +295,6 @@
     returnFocus();
   };
   const houtside = (ev: PointerEvent) => {
-    const root = document.querySelector(`[data-svs-dateinput="${uid}"]`);
     if (root?.contains(ev.target as Node)) return;
     hide();
   };
@@ -304,7 +303,7 @@
 
 <!---------------------------------------->
 
-<span class={cls(PARTS.WHOLE, effVariant)} data-svs-dateinput={uid} style="position:relative;">
+<span bind:this={root} class={cls(PARTS.WHOLE, effVariant)} data-svs-dateinput={uid} style="position:relative;">
   {#if left}
     <span class={cls(PARTS.LEFT, effVariant)}>{@render left(ctl, open, effVariant)}</span>
   {/if}

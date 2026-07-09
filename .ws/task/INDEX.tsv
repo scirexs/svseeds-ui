@@ -16,3 +16,4 @@
 20260708_itvs37 feat: Expose an accessible name for the Tabs tablist via rest-props passthrough
 20260708_qdxh75	feat: Give SortableGroup an accessible name and add a keyboard drag-and-drop verification copy (ZSortableA11y)
 20260709_5xy6cd	feat: Extend Pagination props from nav HTML attributes and consolidate aria button labels
+20260709_qzv7t6	refactor: Replace self-owned document.querySelector lookups with bind:this in Calendar/DateInput; keep delegation/slotted/global-focus queries (ADR 005)

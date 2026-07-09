@@ -18,9 +18,11 @@
 - bun-run-check-generates-svelte-kit-dir.md — `bun run check` runs `svelte-kit sync`, (re)generating a gitignored `.svelte-kit/` build dir; leave it in place, don't clean it up.
 - bun-no-native-npm-publish-dry-run.md — no native `npm` on PATH; use `bunx --bun npm pack --dry-run` to inspect the npm file set; `bunx --bun npm publish --dry-run` can still fail on registry/version state.
 - bun-run-fmt-rewrites-whole-src-lib.md — default `bun run fmt` runs `prettier --write` over the whole `./src/lib` tree; on a scoped task it picks up unrelated pre-existing formatting churn — validate with `BUN_FMT="<changed files>" bun run fmt:check` instead.
+- prettier-markdown-exact-body-conflict.md — Prettier's Markdown formatting doesn't preserve a hand-authored exact-body doc (e.g. an ADR); scope `fmt:check` to exclude such files rather than reformatting them.
 
 ## Testing
 - vitest-browser-userevent-skips-aria-disabled.md — `userEvent.click` is a no-op on `aria-disabled="true"` elements; dispatch a DOM `MouseEvent` directly to exercise a focusable aria-disabled handler.
+- dateinput-test-fixed-date-drift.md — a test with a hardcoded target date breaks permanently (not intermittently) once real "today" advances past it, when the component under test defaults empty state from `Temporal.Now.plainDateISO()`.
 
 ## Runtime & Platform
 - css-flip-animation-spurious-pointerover.md — FLIP animation slides transformed boxes over the pointer, causing the browser to fire spurious `pointerover` on just-moved drag targets and reversing a committed reorder.
