@@ -29,3 +29,4 @@
 20260709_xr344d	test: Add axe accessibility tests to overlay, menu, and picker components (batch 2)
 20260709_gr5iw5	test: Add axe accessibility tests to the remaining 13 components (batch 3): Calendar, MonthPicker, Tabs, ProgressTracker, Pagination, Splitter, Sortable, SortableGroup, ZSortableA11y, Toast, DarkToggle, HotkeyCapture, Image
 20260710_pr767a	refactor: Reduce-motion guard cleanup and Accordion inactive alignment (2 live API-consistency findings; ADR 008)
+20260710_yyefbw	test: Follow Calendar's data-header / aux-row markup change in its @component comment and tests

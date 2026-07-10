@@ -54,8 +54,10 @@
     </div>
     <div class="middle">
       <div class="main" role="grid">
-        <div class="aux" role="row">weekday headers</div>
-        day cells
+        <div class="aux" role="row" data-header>
+          <span class="extra" role="columnheader" data-header data-weekday />
+        </div>
+        <div class="aux" role="row">day cells</div>
       </div>
       MonthPicker while picking
     </div>
@@ -66,6 +68,7 @@
   - Prev/next page `display`; the label toggles an embedded `_MonthPicker`.
   - Enabled day clicks and Enter/Space select a single `Temporal.PlainDate`.
   - Day cells expose `data-today`, `data-selected`, `data-outside`, `data-disabled`, and `data-weekday`.
+  - The weekday-header row and its `columnheader` cells carry `data-header`; the day rows carry `data-*` only on their cells.
   - Arrow, Home/End, PageUp/PageDown, and Shift+PageUp/PageDown update roving focus.
 -->
 <script module lang="ts">
