@@ -42,10 +42,10 @@
     "svelte": "^5.29.0"
   },
   "scripts": {
-    "build": "bun run ./src/script/prep.ts && bunx @sveltejs/package && bun run ./src/script/post.ts",
+    "build": "bun ./src/script/prep.ts && bunx @sveltejs/package && bun ./src/script/post.ts",
     "check": "bunx svelte-kit sync && bunx svelte-check --tsconfig ./tsconfig.json",
-    "fmt": "bunx prettier --write ${BUN_FMT:-./src/lib}",
-    "fmt:check": "bunx prettier --check ${BUN_FMT:-./src/lib}",
+    "fmt": "bunx prettier --write ${BUN_FMT:-./src} ${BUN_TEST:-./tests}",
+    "fmt:check": "bunx prettier --check ${BUN_FMT:-./src} ${BUN_TEST:-./tests}",
     "test": "bunx vitest --run ${BUN_TEST:-./tests}",
     "update": "bun update && bunx playwright install chromium",
     "update:full": "bun update --latest && bunx playwright install-deps chromium"
