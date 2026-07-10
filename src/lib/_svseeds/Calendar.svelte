@@ -321,15 +321,15 @@
   {:else}
     <div class={cls(PARTS.MIDDLE, variant)} transition:tfn|local={tparams}>
       <div class={cls(PARTS.MAIN, variant)} role="grid" tabindex="-1" aria-labelledby={idCaption} onkeydown={hkeydown}>
-        <div class={cls(PARTS.AUX, variant)} role="row">
+        <div class={cls(PARTS.AUX, variant)} role="row" data-header>
           {#each weekdayLabels as wl}
-            <span class={cls(PARTS.EXTRA, VARIANT.NEUTRAL)} role="columnheader" data-weekday={wl.weekday} aria-label={wl.full}>
+            <span class={cls(PARTS.EXTRA, VARIANT.NEUTRAL)} role="columnheader" data-header data-weekday={wl.weekday} aria-label={wl.full}>
               {#if weekday}{@render weekday(wl.weekday, variant)}{:else}{wl.text}{/if}
             </span>
           {/each}
         </div>
         {#each weeks as week}
-          <div role="row">
+          <div class={cls(PARTS.AUX, variant)} role="row">
             {#each week as cell}
               {@const outside = !sameMonth(cell, currentDisplay())}
               {#if outside && !outsideDays}
