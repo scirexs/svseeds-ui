@@ -10,7 +10,7 @@ reading `window.innerWidth`/`innerHeight`) are written with **no internal
 `typeof window === "undefined"` guard** — they assume they are only ever called
 client-side. The guard lives in each calling component, before the helper is
 invoked (see `ComboBox.svelte`, `DateInput.svelte`, `DarkToggle.svelte`,
-`Toast.svelte`, `WheelPicker.svelte`, `Calendar.svelte`, `Disclosure.svelte`).
+`Toast.svelte`, `WheelPicker.svelte`).
 
 ## Why it matters / how to apply
 
@@ -21,8 +21,16 @@ does), keep the `typeof window === "undefined"` (or element-existence) guard
 **before** the call; the helper will not protect you and dropping the guard
 breaks SSR.
 
+**Exception:** `shouldReduceMotion()` self-guards internally (it returns
+`false` when `window` is undefined), unlike `_detectOverflow` and the other
+helpers above. Callers (Calendar, Disclosure, DateInput) derive `reduced`
+directly from `shouldReduceMotion()` with no outer guard. Before assuming a
+`_core.ts` helper needs a caller-side guard, check whether it already guards
+itself.
+
 ## References
 
 Surfaced while extracting `_detectOverflow` out of `ComboBox.svelte` /
 `DateInput.svelte`'s duplicated `observeOverflow` logic into `_core.ts`
-(task 20260709_czievh).
+(task 20260709_czievh). `shouldReduceMotion()` exception noted while removing
+the redundant caller-side guards around it (task 20260710_pr767a).

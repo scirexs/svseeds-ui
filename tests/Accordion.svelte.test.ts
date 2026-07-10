@@ -118,8 +118,8 @@ describe("Key-string addressing and correction", () => {
     expect(detailsIn(container).every((details) => !details.open)).toBe(true);
   });
 
-  test("disabled current normalizes to all closed", async () => {
-    const items = baseItems().map((item) => (item.value === "b" ? { ...item, disabled: true } : item));
+  test("inactive current normalizes to all closed", async () => {
+    const items = baseItems().map((item) => (item.value === "b" ? { ...item, inactive: true } : item));
     const props = $state({ items, current: "b" as string | undefined, disclosure });
     const { container } = render(Accordion, props);
 
@@ -249,9 +249,9 @@ describe("Exclusive behavior", () => {
   });
 });
 
-describe("Disabled", () => {
-  test("disabled item cannot open via click", async () => {
-    const items = baseItems().map((item) => (item.value === "b" ? { ...item, disabled: true } : item));
+describe("Inactive", () => {
+  test("inactive item cannot open via click", async () => {
+    const items = baseItems().map((item) => (item.value === "b" ? { ...item, inactive: true } : item));
     const props = $state({ items, current: "a" as string | undefined, disclosure });
     const { container } = render(Accordion, props);
 
@@ -261,8 +261,8 @@ describe("Disabled", () => {
     expect(props.current).toBe("a");
   });
 
-  test("disabled item exposes aria-disabled and inactive styling", () => {
-    const items = baseItems().map((item) => (item.value === "b" ? { ...item, disabled: true } : item));
+  test("inactive item exposes aria-disabled and inactive styling", () => {
+    const items = baseItems().map((item) => (item.value === "b" ? { ...item, inactive: true } : item));
     const { container } = render(Accordion, { items, disclosure });
     const details = detailsBySummaryText(container, "Section B");
 
@@ -270,8 +270,15 @@ describe("Disabled", () => {
     has(details, VARIANT.INACTIVE);
   });
 
+  test("inactive reason is announced through aria-description", () => {
+    const items = baseItems().map((item) => (item.value === "b" ? { ...item, inactive: "Unavailable until setup finishes" } : item));
+    const { container } = render(Accordion, { items, disclosure });
+
+    attr(bySummaryText(container, "Section B"), "aria-description", "Unavailable until setup finishes");
+  });
+
   test("enabled items still open and close in a mixed list", async () => {
-    const items = baseItems().map((item) => (item.value === "b" ? { ...item, disabled: true } : item));
+    const items = baseItems().map((item) => (item.value === "b" ? { ...item, inactive: true } : item));
     const props = $state({ items, current: undefined as string | undefined, disclosure });
     const { container } = render(Accordion, props);
 
@@ -281,13 +288,13 @@ describe("Disabled", () => {
     expect(props.current).toBe("c");
   });
 
-  test("disabling the current item reactively clears current and collapses it", async () => {
+  test("making the current item inactive reactively clears current and collapses it", async () => {
     const props = $state({ items: baseItems(), current: "b" as string | undefined, disclosure });
     const { container, rerender } = render(Accordion, props);
 
     await vi.waitFor(() => expect(detailsBySummaryText(container, "Section B").open).toBe(true));
 
-    props.items = props.items.map((item) => (item.value === "b" ? { ...item, disabled: true } : item));
+    props.items = props.items.map((item) => (item.value === "b" ? { ...item, inactive: true } : item));
     await rerender(props);
 
     await vi.waitFor(() => {
@@ -366,8 +373,8 @@ describe("Accessibility", () => {
     summariesIn(container).forEach((summary) => expect(summary.tagName).toBe("SUMMARY"));
   });
 
-  test("disabled item remains discoverable in the DOM", () => {
-    const items = baseItems().map((item) => (item.value === "b" ? { ...item, disabled: true } : item));
+  test("inactive item remains discoverable in the DOM", () => {
+    const items = baseItems().map((item) => (item.value === "b" ? { ...item, inactive: true } : item));
     const { container } = render(Accordion, { items, disclosure });
 
     expect(container.contains(bySummaryText(container, "Section B"))).toBe(true);
@@ -483,9 +490,9 @@ describe("Edge cases", () => {
     expect(new Set(items.map((item) => item.value)).size).not.toBe(items.length);
   });
 
-  test("all disabled items cannot open and current normalizes", async () => {
+  test("all inactive items cannot open and current normalizes", async () => {
     const props = $state({
-      items: baseItems().map((item) => ({ ...item, disabled: true })),
+      items: baseItems().map((item) => ({ ...item, inactive: true })),
       current: "a" as string | undefined,
       disclosure,
     });

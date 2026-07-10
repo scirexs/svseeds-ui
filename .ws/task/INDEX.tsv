@@ -28,3 +28,4 @@
 20260709_ssu33x	test: Add axe accessibility tests (default + a primary alternate state) to 15 Field and core Input component browser test files, as batch 1 of a 3-batch a11y-test rollout across all 43 components.
 20260709_xr344d	test: Add axe accessibility tests to overlay, menu, and picker components (batch 2)
 20260709_gr5iw5	test: Add axe accessibility tests to the remaining 13 components (batch 3): Calendar, MonthPicker, Tabs, ProgressTracker, Pagination, Splitter, Sortable, SortableGroup, ZSortableA11y, Toast, DarkToggle, HotkeyCapture, Image
+20260710_pr767a	refactor: Reduce-motion guard cleanup and Accordion inactive alignment (2 live API-consistency findings; ADR 008)

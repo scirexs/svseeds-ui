@@ -164,7 +164,7 @@
     }
     return keys;
   });
-  const reduced = $derived(typeof window !== "undefined" && shouldReduceMotion());
+  const reduced = $derived(shouldReduceMotion());
   const tfn = $derived(!reduced && transition?.fn ? transition.fn : noop);
   const tparams = $derived(transition?.params as any);
 

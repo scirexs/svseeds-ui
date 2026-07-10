@@ -128,7 +128,7 @@
   const effId = $derived(ctx ? ctx.id : idProp);
   const effDescribedby = $derived(ctx ? ctx.describedby : ariaDescribedbyProp);
   const fmt = $derived.by(() => formatProp ?? ((d: Temporal.PlainDate) => d.toLocaleString(locale, { dateStyle: "medium" })));
-  const reduced = $derived(typeof window !== "undefined" && shouldReduceMotion());
+  const reduced = $derived(shouldReduceMotion());
   const tfn = $derived(!reduced && transition?.fn ? transition.fn : noop);
   const tparams = $derived(transition?.params as any);
 

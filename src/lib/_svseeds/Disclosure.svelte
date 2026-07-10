@@ -95,7 +95,7 @@
 
   // *** Initialize *** //
   const cls = $derived(_fnClass(_DISCLOSURE_PRESET, styling ?? ctx?.styling));
-  const reduced = $derived(typeof window !== "undefined" && shouldReduceMotion());
+  const reduced = $derived(shouldReduceMotion());
   const dur = $derived(_resolveDuration(duration));
   const tfn = $derived(reduced ? noop : (transition?.fn ?? slide));
   const tparams = $derived(transition?.params ?? { duration: dur });

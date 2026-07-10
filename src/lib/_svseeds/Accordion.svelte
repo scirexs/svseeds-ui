@@ -24,7 +24,7 @@
     value: string; // REQUIRED, unique within `items`. Addresses `current`.
     label: string | Snippet<[boolean, string]> | AccordionComponent;
     panel: Snippet<[string]> | AccordionComponent;
-    disabled?: boolean; // (false)
+    inactive?: string | boolean; // (false) reason string OR true; forwarded to Disclosure
   };
   ```
   `value`s must be unique within `items`. Accordion is exclusive: at most one item is open at a time.
@@ -36,7 +36,7 @@
       {children}
     {:else}
       {#each items as item}
-        <Disclosure id={item.value} label={item.label} inactive={item.disabled || undefined}>
+        <Disclosure id={item.value} label={item.label} inactive={item.inactive}>
           {item.panel}
         </Disclosure>
       {/each}
@@ -63,13 +63,16 @@
     value: string; // REQUIRED, unique within `items`. Addresses `current`.
     label: string | Snippet<[boolean, string]> | AccordionComponent;
     panel: Snippet<[string]> | AccordionComponent;
-    disabled?: boolean; // (false)
+    inactive?: string | boolean; // (false) reason string OR true; forwarded to Disclosure
   };
 
   export const _ACCORDION_PRESET = "svs-accordion";
 
   function isComponent(x: unknown): x is AccordionComponent {
     return typeof x === "object" && x !== null && "component" in x;
+  }
+  function isInactive(x?: string | boolean) {
+    return x === true || (typeof x === "string" && x.trim().length > 0);
   }
 
   import { untrack } from "svelte";
@@ -104,7 +107,9 @@
     },
   };
   _setDisclosureContext(ctx);
-  const selected = $derived(children || !items ? current : items.some((it) => it.value === current && !it.disabled) ? current : undefined);
+  const selected = $derived(
+    children || !items ? current : items.some((it) => it.value === current && !isInactive(it.inactive)) ? current : undefined,
+  );
 
   // *** Initialize Child Props *** //
   const childProps = $derived({
@@ -133,7 +138,7 @@
       {#snippet panel(variant: string)}
         {@render panelContent(item.panel, variant)}
       {/snippet}
-      <Disclosure id={item.value} {label} children={panel} inactive={item.disabled || undefined} {variant} {...childProps} />
+      <Disclosure id={item.value} {label} children={panel} inactive={item.inactive} {variant} {...childProps} />
     {/each}
   </div>
 {/if}
