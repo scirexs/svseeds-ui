@@ -1,6 +1,6 @@
 # 003. Keyboard drag-and-drop developed in a Z-prefixed verification copy
 
-**Status:** Accepted
+**Status:** Superseded by 009-sortable-unified-keyboard-dnd.md
 **Supersedes:** none
 **Date:** 2026-07-08
 **Affects:** public package surface (new exported component `ZSortableA11y` +

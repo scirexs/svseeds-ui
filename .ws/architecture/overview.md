@@ -72,7 +72,7 @@ Shared module:
   message/aria derivation, validation verify loop), and utilities (`_omit`,
   `_debounce`, `_throttle`, `shouldReduceMotion`, `canHover`, …).
 
-Components (43 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
+Components (42 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
 
 - **Field components** (label/validation wrapper around an input; structured
   whole→top/middle/bottom anatomy): TextField, NumberField, CheckField,
@@ -86,8 +86,7 @@ Components (43 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
 - **Date/time pickers**: Calendar, MonthPicker.
 - **Navigation & progress**: Tabs, ProgressTracker, Pagination.
 - **Layout** (resizable two-pane region): Splitter.
-- **Drag & drop**: Sortable, SortableGroup, ZSortableA11y (keyboard-DnD verification copy
-  of Sortable).
+- **Drag & drop**: Sortable (pointer + keyboard DnD), SortableGroup.
 - **Feedback & utility**: Toast, DarkToggle, HotkeyCapture, Image.
 
 **Composition / dependencies** (source of truth: the generated `dep.json`):
