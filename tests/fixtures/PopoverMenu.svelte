@@ -4,7 +4,13 @@
   import MenuItem from "#svs/MenuItem.svelte";
   import { createRawSnippet } from "svelte";
 
-  let { open = $bindable(false), onselect, hover = false, styling, variant = "neutral" }: { open?: boolean; onselect?: (ev: MouseEvent) => void; hover?: boolean; styling?: any; variant?: string } = $props();
+  let {
+    open = $bindable(false),
+    onselect,
+    hover = false,
+    styling,
+    variant = "neutral",
+  }: { open?: boolean; onselect?: (ev: MouseEvent) => void; hover?: boolean; styling?: any; variant?: string } = $props();
   const txt = (t: string) => createRawSnippet(() => ({ render: () => `<span>${t}</span>` }));
 </script>
 

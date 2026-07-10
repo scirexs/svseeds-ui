@@ -14,21 +14,31 @@
     appendableB?: boolean;
   }
 
-  let { a = $bindable(["a1", "a2"]), b = $bindable(["b1", "b2"]), c = $bindable(["c1"]), mode = "move", acceptB, sortA = true, sortB = true, multiple = false, appendableB = false }: Props = $props();
+  let {
+    a = $bindable(["a1", "a2"]),
+    b = $bindable(["b1", "b2"]),
+    c = $bindable(["c1"]),
+    mode = "move",
+    acceptB,
+    sortA = true,
+    sortB = true,
+    multiple = false,
+    appendableB = false,
+  }: Props = $props();
   const group = createSortableGroup();
 </script>
 
-<Sortable group={group} id="a" bind:items={a} {mode} sort={sortA} {multiple}>
+<Sortable {group} id="a" bind:items={a} {mode} sort={sortA} {multiple}>
   {#snippet item(value: string, variant: string, handle: Attachment)}
     <span data-testid={"item-" + value} data-variant={variant} {@attach handle}>{value}</span>
   {/snippet}
 </Sortable>
-<Sortable group={group} id="b" bind:items={b} {mode} accept={acceptB} sort={sortB} appendable={appendableB}>
+<Sortable {group} id="b" bind:items={b} {mode} accept={acceptB} sort={sortB} appendable={appendableB}>
   {#snippet item(value: string, variant: string, handle: Attachment)}
     <span data-testid={"item-" + value} data-variant={variant} {@attach handle}>{value}</span>
   {/snippet}
 </Sortable>
-<Sortable group={group} id="c" bind:items={c} {mode}>
+<Sortable {group} id="c" bind:items={c} {mode}>
   {#snippet item(value: string, variant: string, handle: Attachment)}
     <span data-testid={"item-" + value} data-variant={variant} {@attach handle}>{value}</span>
   {/snippet}

@@ -16,41 +16,23 @@ const ariaLabel = "toggle_label";
 const mainid = "test-main";
 const leftid = "test-left";
 const rightid = "test-right";
-const mainfn = createRawSnippet(
-  (
-    variant: () => string,
-    value: () => boolean,
-    element: () => ToggleElement,
-  ) => {
-    const text = () => `${variant()}-${value()}-${element()?.tagName}`;
-    return {
-      render: () => `<span data-testid="${mainid}">${text()}</span>`,
-      setup: (node: Element) => {
-        $effect(() => {
-          node.textContent = text();
-        });
-      },
-    };
-  },
-);
-const leftfn = createRawSnippet(
-  (
-    variant: () => string,
-    value: () => boolean,
-    element: () => ToggleElement,
-  ) => {
-    return { render: () => `<span data-testid="${leftid}">${variant()}-${value()}-${element()?.tagName}</span>` };
-  },
-);
-const rightfn = createRawSnippet(
-  (
-    variant: () => string,
-    value: () => boolean,
-    element: () => ToggleElement,
-  ) => {
-    return { render: () => `<span data-testid="${rightid}">${variant()}-${value()}-${element()?.tagName}</span>` };
-  },
-);
+const mainfn = createRawSnippet((variant: () => string, value: () => boolean, element: () => ToggleElement) => {
+  const text = () => `${variant()}-${value()}-${element()?.tagName}`;
+  return {
+    render: () => `<span data-testid="${mainid}">${text()}</span>`,
+    setup: (node: Element) => {
+      $effect(() => {
+        node.textContent = text();
+      });
+    },
+  };
+});
+const leftfn = createRawSnippet((variant: () => string, value: () => boolean, element: () => ToggleElement) => {
+  return { render: () => `<span data-testid="${leftid}">${variant()}-${value()}-${element()?.tagName}</span>` };
+});
+const rightfn = createRawSnippet((variant: () => string, value: () => boolean, element: () => ToggleElement) => {
+  return { render: () => `<span data-testid="${rightid}">${variant()}-${value()}-${element()?.tagName}</span>` };
+});
 
 describe("Switching existence of elements", () => {
   const attachfn = () => {};

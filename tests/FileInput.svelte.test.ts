@@ -113,7 +113,16 @@ describe("_FileInput rendering", () => {
 
 describe("_FileInput self-validation", () => {
   test("rejects by accept, maxSize, maxFiles, and collects mixed reasons", async () => {
-    const props = $state({ files: [] as File[], rejectBy: [] as FileRejectReason[], multiple: true, accept: ".png,image/*", maxSize: 1_000_000, maxFiles: 2, droppable: true, children: zone });
+    const props = $state({
+      files: [] as File[],
+      rejectBy: [] as FileRejectReason[],
+      multiple: true,
+      accept: ".png,image/*",
+      maxSize: 1_000_000,
+      maxFiles: 2,
+      droppable: true,
+      children: zone,
+    });
     const { container } = render(FileInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
     const good = mkFile("a.png", "image/png");
@@ -165,7 +174,14 @@ describe("_FileInput events and context", () => {
     const veto = mkFile("veto.png", "image/png");
     const rejected = mkFile("bad.txt", "text/plain");
     const onadd = vi.fn(({ added }: { added: File[] }) => [added[0]]);
-    const props = $state({ files: [] as File[], rejectBy: [] as FileRejectReason[], multiple: true, accept: ".png", events: { onadd }, children: zone });
+    const props = $state({
+      files: [] as File[],
+      rejectBy: [] as FileRejectReason[],
+      multiple: true,
+      accept: ".png",
+      events: { onadd },
+      children: zone,
+    });
     const { container } = render(FileInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
 
@@ -184,7 +200,14 @@ describe("_FileInput events and context", () => {
     const first = mkFile("first.png", "image/png");
     const second = mkFile("second.png", "image/png");
     const onadd = vi.fn(() => []);
-    const props = $state({ files: [] as File[], rejectBy: [] as FileRejectReason[], multiple: true, accept: ".png", events: { onadd }, children: zone });
+    const props = $state({
+      files: [] as File[],
+      rejectBy: [] as FileRejectReason[],
+      multiple: true,
+      accept: ".png",
+      events: { onadd },
+      children: zone,
+    });
     const { container } = render(FileInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
 
@@ -198,7 +221,14 @@ describe("_FileInput events and context", () => {
     const first = mkFile("first.png", "image/png");
     const second = mkFile("second.png", "image/png");
     const onadd = vi.fn();
-    const props = $state({ files: [] as File[], rejectBy: [] as FileRejectReason[], multiple: true, accept: ".png", events: { onadd }, children: zone });
+    const props = $state({
+      files: [] as File[],
+      rejectBy: [] as FileRejectReason[],
+      multiple: true,
+      accept: ".png",
+      events: { onadd },
+      children: zone,
+    });
     const { container } = render(FileInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
 
@@ -212,7 +242,13 @@ describe("_FileInput events and context", () => {
     const existing = mkFile("existing.png", "image/png");
     const next = mkFile("next.png", "image/png");
     const onadd = vi.fn();
-    const props = $state({ files: [existing] as File[], rejectBy: [] as FileRejectReason[], accept: ".png", events: { onadd }, children: zone });
+    const props = $state({
+      files: [existing] as File[],
+      rejectBy: [] as FileRejectReason[],
+      accept: ".png",
+      events: { onadd },
+      children: zone,
+    });
     const { container } = render(FileInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
 
@@ -226,7 +262,13 @@ describe("_FileInput events and context", () => {
     const existing = mkFile("existing.png", "image/png");
     const incoming = mkFile("incoming.png", "image/png");
     const onadd = vi.fn(() => []);
-    const props = $state({ files: [existing] as File[], rejectBy: [] as FileRejectReason[], accept: ".png", events: { onadd }, children: zone });
+    const props = $state({
+      files: [existing] as File[],
+      rejectBy: [] as FileRejectReason[],
+      accept: ".png",
+      events: { onadd },
+      children: zone,
+    });
     const { container } = render(FileInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
 
@@ -240,7 +282,13 @@ describe("_FileInput events and context", () => {
     const existing = mkFile("existing.png", "image/png");
     const rejected = mkFile("bad.txt", "text/plain");
     const onadd = vi.fn();
-    const props = $state({ files: [existing] as File[], rejectBy: [] as FileRejectReason[], accept: ".png", events: { onadd }, children: zone });
+    const props = $state({
+      files: [existing] as File[],
+      rejectBy: [] as FileRejectReason[],
+      accept: ".png",
+      events: { onadd },
+      children: zone,
+    });
     const { container } = render(FileInput, { props });
     const input = container.querySelector("input") as HTMLInputElement;
 
@@ -296,7 +344,14 @@ describe("_FileInput events and context", () => {
     const { container, getByTestId } = render(FileInputCtxProvider, {
       state,
       hooks: { events: { onadd: () => [keep, propVeto] }, onchange: ctxChange, oninvalid: ctxInvalid },
-      input: { files: [propFile], multiple: true, events: { onadd: () => [keep, ctxVeto] }, onchange: propChange, oninvalid: propInvalid, children },
+      input: {
+        files: [propFile],
+        multiple: true,
+        events: { onadd: () => [keep, ctxVeto] },
+        onchange: propChange,
+        oninvalid: propInvalid,
+        children,
+      },
     });
     const input = container.querySelector("input") as HTMLInputElement;
 
@@ -321,10 +376,15 @@ describe("_FileInput events and context", () => {
     const b = mkFile("b.png", "image/png");
     const onremove = vi.fn(() => []);
     const aux = createRawSnippet((files: () => File[], remove: () => (file: File) => void) => ({
-      render: () => `<button type="button" data-testid="remove">${files().map((f) => f.name).join(",")}</button>`,
+      render: () =>
+        `<button type="button" data-testid="remove">${files()
+          .map((f) => f.name)
+          .join(",")}</button>`,
       setup: (node: Element) => {
         $effect(() => {
-          node.textContent = files().map((f) => f.name).join(",");
+          node.textContent = files()
+            .map((f) => f.name)
+            .join(",");
           (node as HTMLButtonElement).onclick = () => {
             const file = files()[0];
             if (file) remove()(file);
@@ -346,10 +406,15 @@ describe("_FileInput events and context", () => {
     const b = mkFile("b.png", "image/png");
     const onremove = vi.fn();
     const aux = createRawSnippet((files: () => File[], remove: () => (file: File) => void) => ({
-      render: () => `<button type="button" data-testid="remove">${files().map((f) => f.name).join(",")}</button>`,
+      render: () =>
+        `<button type="button" data-testid="remove">${files()
+          .map((f) => f.name)
+          .join(",")}</button>`,
       setup: (node: Element) => {
         $effect(() => {
-          node.textContent = files().map((f) => f.name).join(",");
+          node.textContent = files()
+            .map((f) => f.name)
+            .join(",");
           (node as HTMLButtonElement).onclick = () => {
             const file = files()[0];
             if (file) remove()(file);
@@ -371,10 +436,15 @@ describe("_FileInput events and context", () => {
     const b = mkFile("b.png", "image/png");
     const onremove = vi.fn(() => [a]);
     const aux = createRawSnippet((files: () => File[], remove: () => (file: File) => void) => ({
-      render: () => `<button type="button" data-testid="remove">${files().map((f) => f.name).join(",")}</button>`,
+      render: () =>
+        `<button type="button" data-testid="remove">${files()
+          .map((f) => f.name)
+          .join(",")}</button>`,
       setup: (node: Element) => {
         $effect(() => {
-          node.textContent = files().map((f) => f.name).join(",");
+          node.textContent = files()
+            .map((f) => f.name)
+            .join(",");
           (node as HTMLButtonElement).onclick = () => {
             const file = files()[0];
             if (file) remove()(file);
@@ -397,10 +467,15 @@ describe("_FileInput events and context", () => {
     const ownOnremove = vi.fn(() => []);
     const ctxOnremove = vi.fn(() => [a]);
     const aux = createRawSnippet((files: () => File[], remove: () => (file: File) => void) => ({
-      render: () => `<button type="button" data-testid="remove">${files().map((f) => f.name).join(",")}</button>`,
+      render: () =>
+        `<button type="button" data-testid="remove">${files()
+          .map((f) => f.name)
+          .join(",")}</button>`,
       setup: (node: Element) => {
         $effect(() => {
-          node.textContent = files().map((f) => f.name).join(",");
+          node.textContent = files()
+            .map((f) => f.name)
+            .join(",");
           (node as HTMLButtonElement).onclick = () => {
             const file = files()[0];
             if (file) remove()(file);
@@ -464,7 +539,14 @@ describe("_FileInput drop zone and a11y", () => {
     expect(absent.files).toEqual([]);
     expect(absent.rejectBy).toEqual([]);
 
-    const explicit = $state({ files: [] as File[], rejectBy: [] as FileRejectReason[], accept: ".png", multiple: true, droppable: false, children: zone });
+    const explicit = $state({
+      files: [] as File[],
+      rejectBy: [] as FileRejectReason[],
+      accept: ".png",
+      multiple: true,
+      droppable: false,
+      children: zone,
+    });
     const explicitView = render(FileInput, explicit);
     const explicitLabel = explicitView.container.querySelector(`label.${PARTS.MIDDLE}`) as HTMLLabelElement;
 
@@ -531,7 +613,10 @@ describe("_FileInput drop zone and a11y", () => {
     const a = mkFile("a.png", "image/png");
     const b = mkFile("b.png", "image/png");
     const aux = createRawSnippet((files: () => File[], remove: () => (file: File) => void, variant: () => string) => {
-      const text = () => `${files().map((f) => f.name).join(",")}:${variant()}`;
+      const text = () =>
+        `${files()
+          .map((f) => f.name)
+          .join(",")}:${variant()}`;
       return {
         render: () => `<button type="button" data-testid="remove">${text()}</button>`,
         setup: (node: Element) => {

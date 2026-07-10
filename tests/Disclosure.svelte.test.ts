@@ -42,7 +42,8 @@ const render = (component: Parameters<typeof browserRender>[0], props?: Paramete
   const screen = browserRender(component, props);
   return {
     ...screen,
-    getByRole: (role: string) => (role === "group" ? screen.container.querySelector("details") : screen.container.querySelector(`[role="${role}"]`)) as HTMLElement,
+    getByRole: (role: string) =>
+      (role === "group" ? screen.container.querySelector("details") : screen.container.querySelector(`[role="${role}"]`)) as HTMLElement,
     getByText: (text: string) => byText(screen.container, text),
     getByTestId: (id: string) => screen.container.querySelector(`[data-testid="${id}"]`) as HTMLElement,
   };

@@ -17,7 +17,8 @@ declare module "vitest" {
 const children = createRawSnippet<[string]>((variant) => ({ render: () => `<span>Child ${variant()}</span>` }));
 const root = (c: HTMLElement) => c.querySelector('[role="menu"]') as HTMLDivElement;
 const items = (c: HTMLElement) => [...c.querySelectorAll<HTMLElement>('[role="menuitem"]')];
-const byText = (c: HTMLElement, text: string) => [...c.querySelectorAll("*")].find((e) => e.textContent?.trim() === text) as HTMLElement | undefined;
+const byText = (c: HTMLElement, text: string) =>
+  [...c.querySelectorAll("*")].find((e) => e.textContent?.trim() === text) as HTMLElement | undefined;
 const itemByText = (c: HTMLElement, text: string) => items(c).find((el) => el.textContent?.trim() === text)!;
 const key = async (el: HTMLElement, init: KeyboardEventInit) => {
   const ev = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init });

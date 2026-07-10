@@ -50,7 +50,8 @@ const fireDrag = async (el: HTMLElement, type: "dragenter" | "dragover" | "dragl
 };
 const group = (container: HTMLElement) => container.querySelector('[role="group"]') as HTMLElement;
 const alert = (container: HTMLElement) => container.querySelector('[role="alert"]') as HTMLElement | null;
-const byText = (container: HTMLElement, text: string) => Array.from(container.querySelectorAll("*")).find((e) => e.textContent?.trim() === text) as HTMLElement;
+const byText = (container: HTMLElement, text: string) =>
+  Array.from(container.querySelectorAll("*")).find((e) => e.textContent?.trim() === text) as HTMLElement;
 const has = (el: Element, ...names: string[]) => expect([...el.classList]).toEqual(expect.arrayContaining(names));
 
 describe("FileField layout and default child", () => {
@@ -149,12 +150,21 @@ describe("FileField constraints", () => {
     });
     const countRender = render(FileField, countProps);
     await tick();
-    await setFiles(countRender.container.querySelector("input") as HTMLInputElement, [mkFile("a.png", "image/png"), mkFile("b.png", "image/png")]);
+    await setFiles(countRender.container.querySelector("input") as HTMLInputElement, [
+      mkFile("a.png", "image/png"),
+      mkFile("b.png", "image/png"),
+    ]);
     expect(names(countProps.files)).toEqual(["a.png"]);
     expect(countProps.variant).toBe(VARIANT.INACTIVE);
     expect(alert(countRender.container)?.textContent).toBe("count");
 
-    const silentProps = $state({ files: [] as File[], variant: VARIANT.NEUTRAL, content, constraints: [] as FileFieldConstraint[], fileInput: { accept: ".png" } });
+    const silentProps = $state({
+      files: [] as File[],
+      variant: VARIANT.NEUTRAL,
+      content,
+      constraints: [] as FileFieldConstraint[],
+      fileInput: { accept: ".png" },
+    });
     const silentRender = render(FileField, silentProps);
     await tick();
     await setFiles(silentRender.container.querySelector("input") as HTMLInputElement, [mkFile("a.txt", "text/plain")]);

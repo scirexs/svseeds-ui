@@ -13,12 +13,12 @@
   const group = createSortableGroup();
 </script>
 
-<Sortable group={group} id="a" bind:items={a} mode="clone" key={(card) => card.id} clone={(card) => ({ ...card, id: card.id + "*" })}>
+<Sortable {group} id="a" bind:items={a} mode="clone" key={(card) => card.id} clone={(card) => ({ ...card, id: card.id + "*" })}>
   {#snippet item(card: Card, variant: string, handle: Attachment)}
     <span data-testid={"item-" + card.id} data-variant={variant} {@attach handle}>{card.id}</span>
   {/snippet}
 </Sortable>
-<Sortable group={group} id="b" bind:items={b} mode="clone" key={(card) => card.id} clone={(card) => ({ ...card, id: card.id + "*" })}>
+<Sortable {group} id="b" bind:items={b} mode="clone" key={(card) => card.id} clone={(card) => ({ ...card, id: card.id + "*" })}>
   {#snippet item(card: Card, variant: string, handle: Attachment)}
     <span data-testid={"item-" + card.id} data-variant={variant} {@attach handle}>{card.id}</span>
   {/snippet}

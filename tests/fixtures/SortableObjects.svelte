@@ -9,7 +9,14 @@
     mode?: SortableMode;
   }
 
-  let { cards = $bindable([{ id: "a", text: "Alpha" }, { id: "b", text: "Beta" }, { id: "c", text: "Gamma" }]), mode = "move" }: Props = $props();
+  let {
+    cards = $bindable([
+      { id: "a", text: "Alpha" },
+      { id: "b", text: "Beta" },
+      { id: "c", text: "Gamma" },
+    ]),
+    mode = "move",
+  }: Props = $props();
 </script>
 
 <Sortable bind:items={cards} {mode} key={(card) => card.id} clone={(card) => ({ ...card, id: card.id + "*" })}>

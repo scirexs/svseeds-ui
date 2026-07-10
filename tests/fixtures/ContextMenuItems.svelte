@@ -5,7 +5,13 @@
   import MenuSeparator from "#svs/MenuSeparator.svelte";
   import { createRawSnippet } from "svelte";
 
-  let { onselect, open = $bindable(false), lock = false, styling, variant = "neutral" }: { onselect?: (ev: MouseEvent) => void; open?: boolean; lock?: boolean; styling?: any; variant?: string } = $props();
+  let {
+    onselect,
+    open = $bindable(false),
+    lock = false,
+    styling,
+    variant = "neutral",
+  }: { onselect?: (ev: MouseEvent) => void; open?: boolean; lock?: boolean; styling?: any; variant?: string } = $props();
   const txt = (t: string) => createRawSnippet(() => ({ render: () => `<span>${t}</span>` }));
 </script>
 

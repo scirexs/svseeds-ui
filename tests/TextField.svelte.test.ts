@@ -18,33 +18,15 @@ const bottom = "bottom_text";
 const auxid = "test-aux";
 const leftid = "test-left";
 const rightid = "test-right";
-const auxfn = createRawSnippet(
-  (
-    value: () => string,
-    variant: () => string,
-    element: () => TextFieldElement,
-  ) => {
-    return { render: () => `<span data-testid="${auxid}">${value().length},${variant.length},${element?.toString()}</span>` };
-  },
-);
-const leftfn = createRawSnippet(
-  (
-    value: () => string,
-    variant: () => string,
-    element: () => TextFieldElement,
-  ) => {
-    return { render: () => `<span data-testid="${leftid}">${value().length},${variant.length},${element?.toString()}</span>` };
-  },
-);
-const rightfn = createRawSnippet(
-  (
-    value: () => string,
-    variant: () => string,
-    element: () => TextFieldElement,
-  ) => {
-    return { render: () => `<span data-testid="${rightid}">${value().length},${variant.length},${element?.toString()}</span>` };
-  },
-);
+const auxfn = createRawSnippet((value: () => string, variant: () => string, element: () => TextFieldElement) => {
+  return { render: () => `<span data-testid="${auxid}">${value().length},${variant.length},${element?.toString()}</span>` };
+});
+const leftfn = createRawSnippet((value: () => string, variant: () => string, element: () => TextFieldElement) => {
+  return { render: () => `<span data-testid="${leftid}">${value().length},${variant.length},${element?.toString()}</span>` };
+});
+const rightfn = createRawSnippet((value: () => string, variant: () => string, element: () => TextFieldElement) => {
+  return { render: () => `<span data-testid="${rightid}">${value().length},${variant.length},${element?.toString()}</span>` };
+});
 
 const byRole = (container: HTMLElement, role: string) => {
   const selectors: Record<string, string> = {
@@ -57,8 +39,7 @@ const byRole = (container: HTMLElement, role: string) => {
   };
   return Array.from(container.querySelectorAll(selectors[role] ?? `[role="${role}"]`)) as HTMLElement[];
 };
-const byTestId = (container: ParentNode, id: string) =>
-  Array.from(container.querySelectorAll(`[data-testid="${id}"]`)) as HTMLElement[];
+const byTestId = (container: ParentNode, id: string) => Array.from(container.querySelectorAll(`[data-testid="${id}"]`)) as HTMLElement[];
 const byText = (container: ParentNode, text: string) => {
   const nodes = Array.from(container.querySelectorAll("*")) as HTMLElement[];
   const node = [...nodes].reverse().find((element) => {
@@ -451,9 +432,7 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(props.variant).toBe(VARIANT.NEUTRAL);
     await user.tab();
     expect(mockValidation).toHaveBeenCalled();
-    expect(mockValidation).toHaveBeenLastCalledWith(
-      expect.objectContaining({ value: "a", validity: expect.anything(), element: main }),
-    );
+    expect(mockValidation).toHaveBeenLastCalledWith(expect.objectContaining({ value: "a", validity: expect.anything(), element: main }));
     expect(props.variant).toBe(VARIANT.INACTIVE);
     getByRole("alert") as HTMLDivElement;
     expect(main).toHaveAttribute("aria-invalid", "true");
@@ -888,18 +867,12 @@ describe("a11y, structure & textarea attrs", () => {
     let valueArg: (() => string) | undefined;
     let variantArg: (() => string) | undefined;
     let elementArg: (() => TextFieldElement) | undefined;
-    const statefn = createRawSnippet(
-      (
-        value: () => string,
-        variant: () => string,
-        element: () => TextFieldElement,
-      ) => {
-        valueArg = value;
-        variantArg = variant;
-        elementArg = element;
-        return { render: () => `<span data-testid="${stateid}">${value().length},${variant()},${element()?.tagName}</span>` };
-      },
-    );
+    const statefn = createRawSnippet((value: () => string, variant: () => string, element: () => TextFieldElement) => {
+      valueArg = value;
+      variantArg = variant;
+      elementArg = element;
+      return { render: () => `<span data-testid="${stateid}">${value().length},${variant()},${element()?.tagName}</span>` };
+    });
     const props = $state({ left: statefn, value: "", variant: VARIANT.NEUTRAL });
     const user = userEvent;
     const { getByRole, getByTestId } = render(TextField, props);
