@@ -16,6 +16,7 @@
     group?: SortableGroupController; // reuse an externally created controller
     duration?: number; // (300) group motion duration
     easing?: EasingFunction; // (cubicOut) group motion easing
+    messages?: Partial<SortableMessages>; // live-region announcement formatters
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
     // other div attributes are passed to the group <div> via ...rest; `class` is merged
@@ -25,7 +26,7 @@
   `SortableGroup` is children-only: render two or more `<Sortable>` children inside it.
   Descendant Sortables without a `group` prop resolve the shared controller from context.
   When `group` is omitted, `variant` and `styling` are inherited by neutral descendants.
-  When `group` is provided, that external controller's own presentation is used.
+  When `group` is provided, that external controller's own presentation and messages are used.
   Group motion defaults to `300ms` / `cubicOut`; reduced motion resolves duration to `0`.
 
   ### Anatomy
@@ -41,6 +42,7 @@
     group?: SortableGroupController;
     duration?: number;
     easing?: EasingFunction;
+    messages?: Partial<SortableMessages>;
     styling?: SVSClass;
     variant?: SVSVariant;
   }
@@ -55,12 +57,12 @@
   import type { HTMLAttributes } from "svelte/elements";
   import type { EasingFunction } from "svelte/transition";
   import type { SVSClass, SVSVariant } from "./_core";
-  import type { SortableGroupController } from "./Sortable.svelte";
+  import type { SortableGroupController, SortableMessages } from "./Sortable.svelte";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { children, group, duration, easing, styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: SortableGroupProps = $props();
+  let { children, group, duration, easing, messages, styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: SortableGroupProps = $props();
 
   const cls = $derived(_fnClass(_SORTABLE_GROUP_PRESET, styling));
   const ctxVariant = $derived(variant);
@@ -78,6 +80,7 @@
         },
       },
       { duration, easing },
+      messages,
     );
 
   _setSortableContext(controller);

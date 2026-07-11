@@ -534,6 +534,22 @@ describe("_Sortable keyboard drag and drop", () => {
     expect(props.items).toEqual(["b", "a", "c"]);
   });
 
+  test("custom keyboard messages override supplied formatters and keep defaults for the rest", async () => {
+    const { container } = render(SortableBasic, {
+      items: ["a", "b", "c"],
+      messages: {
+        grabbed: (key, index, total) => `Picked up ${key} at ${index}/${total}`,
+      },
+    });
+    const first = items(container)[0];
+
+    first.focus();
+    await press(first, " ");
+    await expect.element(live(container)).toHaveTextContent("Picked up a at 1/3");
+    await press(first, "ArrowDown");
+    await expect.element(live(container)).toHaveTextContent("Moved to position 2 of 3");
+  });
+
   test("grabbed arrow move respects sort false within the list", async () => {
     const { container } = render(SortableBasic, { items: ["a", "b", "c"], sort: false });
     const first = items(container)[0];
@@ -562,6 +578,24 @@ describe("_Sortable keyboard drag and drop", () => {
     await expect.element(el(container, "value-readout")).toHaveTextContent("a,b,c");
     await expect.element(live(container)).toHaveTextContent("Cancelled, returned to position 1 of 3");
     expect(props.items).toEqual(["a", "b", "c"]);
+  });
+
+  test("custom selection messages override select and deselect announcements", async () => {
+    const { container } = render(SortableBasic, {
+      items: ["a", "b"],
+      multiple: true,
+      messages: {
+        selected: (key, count) => `Added ${key}; ${count} selected`,
+        deselected: (key, count) => `Removed ${key}; ${count} selected`,
+      },
+    });
+    const first = items(container)[0];
+
+    first.focus();
+    await press(first, " ", { ctrlKey: true });
+    await expect.element(live(container)).toHaveTextContent("Added a; 1 selected");
+    await press(first, " ", { ctrlKey: true });
+    await expect.element(live(container)).toHaveTextContent("Removed a; 0 selected");
   });
 
   test("ctrl+space toggles selection and keyboard drop moves followers", async () => {

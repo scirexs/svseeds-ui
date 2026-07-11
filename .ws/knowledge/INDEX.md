@@ -20,7 +20,7 @@
 ## Build, Tooling & Dependencies
 - bun-run-check-generates-svelte-kit-dir.md — `bun run check` runs `svelte-kit sync`, (re)generating a gitignored `.svelte-kit/` build dir; leave it in place, don't clean it up.
 - bun-no-native-npm-publish-dry-run.md — no native `npm` on PATH; use `bunx --bun npm pack --dry-run` to inspect the npm file set; `bunx --bun npm publish --dry-run` can still fail on registry/version state.
-- bun-run-fmt-rewrites-whole-src-lib.md — default `bun run fmt` runs `prettier --write` over the whole `./src/lib` tree; on a scoped task it picks up unrelated pre-existing formatting churn — validate with `BUN_FMT="<changed files>" bun run fmt:check` instead.
+- bun-run-fmt-rewrites-whole-src-lib.md — default `bun run fmt`/`fmt:check` walks both `${BUN_FMT:-./src}` and `${BUN_TEST:-./tests}` independently; scoping only `BUN_FMT` still checks all of `./tests` — set both vars to the changed files.
 - prettier-markdown-exact-body-conflict.md — Prettier's Markdown formatting doesn't preserve a hand-authored exact-body doc (e.g. an ADR); scope `fmt:check` to exclude such files rather than reformatting them.
 - git-scope-creep-baseline-differs-per-file-after-dev-merge.md — once `dev` has merged into a task branch, a file whose source *and* test were both touched by the same upstream commit needs that commit (not `main`) as its additions-only baseline; other files in the same task may still need `main`.
 

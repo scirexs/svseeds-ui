@@ -1,9 +1,11 @@
 <script lang="ts">
   import SortableGroup from "#svs/SortableGroup.svelte";
-  import Sortable, { type SortableMode } from "#svs/Sortable.svelte";
-  import { type Attachment } from "svelte/attachments";
+  import Sortable from "#svs/Sortable.svelte";
+  import { VARIANT } from "#svs/core";
+  import type { Attachment } from "svelte/attachments";
   import type { EasingFunction } from "svelte/transition";
-  import { VARIANT, type SVSClass, type SVSVariant } from "#svs/core";
+  import type { SVSClass, SVSVariant } from "#svs/core";
+  import type { SortableMode, SortableMessages } from "#svs/Sortable.svelte";
 
   interface Props {
     a?: string[];
@@ -16,6 +18,7 @@
     childVariant?: SVSVariant;
     duration?: number;
     easing?: EasingFunction;
+    messages?: Partial<SortableMessages>;
     ariaLabel?: string;
     ariaLabelledby?: string;
     dataProbe?: string;
@@ -23,7 +26,7 @@
   }
 
   // prettier-ignore
-  let { a = $bindable(["a1", "a2"]), b = $bindable(["b1", "b2"]), mode = "move", acceptB, styling, childStyling, variant = VARIANT.NEUTRAL, childVariant = VARIANT.NEUTRAL, duration, easing, ariaLabel, ariaLabelledby, dataProbe, groupClass }: Props = $props();
+  let { a = $bindable(["a1", "a2"]), b = $bindable(["b1", "b2"]), mode = "move", acceptB, styling, childStyling, variant = VARIANT.NEUTRAL, childVariant = VARIANT.NEUTRAL, duration, easing, messages, ariaLabel, ariaLabelledby, dataProbe, groupClass }: Props = $props();
 </script>
 
 <SortableGroup
@@ -31,6 +34,7 @@
   {styling}
   {duration}
   {easing}
+  {messages}
   aria-label={ariaLabel}
   aria-labelledby={ariaLabelledby}
   data-probe={dataProbe}

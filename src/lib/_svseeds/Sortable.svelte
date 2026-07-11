@@ -24,6 +24,7 @@
     appendable?: boolean; // append when entering the list area (false)
     confirm?: boolean; // hover delay before committing (false)
     dragging?: boolean; // bindable group drag activity
+    messages?: Partial<SortableMessages>; // live-region announcement formatters
     ariaLabel?: string;
     ariaRoleDescription?: string; // ("Sortable Item")
     styling?: SVSClass;
@@ -53,14 +54,15 @@
   ### Exports
   ```ts
   // Creates an isolated keyboard-capable drag controller; pass it as `group` to connect multiple Sortable lists.
-  function createSortableGroup(presentation?: { get variant(): SVSVariant; get styling(): SVSClass | undefined }, motion?: { duration?: number; easing?: EasingFunction }): SortableGroupController
+  function createSortableGroup(presentation?: { get variant(): SVSVariant; get styling(): SVSClass | undefined }, motion?: { duration?: number; easing?: EasingFunction }, messages?: Partial<SortableMessages>): SortableGroupController
   ```
   ### Behavior
   Pointer users drag items directly or through an attached handle. Keyboard users move focus with
   ArrowUp/ArrowDown, pick up the focused item with Space or Enter, move it with ArrowUp/ArrowDown,
   drop with Space or Enter, and cancel with Escape. When `multiple` is true, Ctrl+Space toggles
   selection; a selected group moves with the picked-up item. A polite live region announces
-  keyboard actions.
+  keyboard actions. When `group` or `SortableGroup` context supplies a controller, that
+  controller's messages are used and this component's `messages` prop is ignored.
 -->
 <script module lang="ts">
   export interface SortableProps<T = string> extends Omit<
@@ -82,6 +84,7 @@
     appendable?: boolean;
     confirm?: boolean;
     dragging?: boolean;
+    messages?: Partial<SortableMessages>;
     ariaLabel?: string;
     ariaRoleDescription?: string;
     styling?: SVSClass;
@@ -90,6 +93,15 @@
   export type SortableReqdProps = "items" | "item";
   export type SortableBindProps = "items" | "dragging";
   export type SortableMode = "move" | "clone" | "swap";
+  export interface SortableMessages {
+    grabbed(key: string, index: number, total: number): string;
+    atPosition(index: number, total: number): string;
+    moved(index: number, total: number): string;
+    dropped(index: number, total: number): string;
+    cancelled(index: number, total: number): string;
+    selected(key: string, count: number): string;
+    deselected(key: string, count: number): string;
+  }
 
   export interface SortableGroupController extends SVSContext {
     readonly identity: symbol;
@@ -99,6 +111,7 @@
     readonly keyboardActive: boolean;
     readonly message: string;
     readonly messageOwnerId: string;
+    readonly messages: SortableMessages;
     readonly shadow: SortableShadowState;
     readonly send: TransitionFn;
     readonly receive: TransitionFn;
@@ -177,6 +190,16 @@
   export const _SORTABLE_PRESET = "svs-sortable";
   const emptyAttachment: Attachment = () => {};
   const ondragstart = () => false;
+  const defaultSortableMessages: SortableMessages = {
+    grabbed: (key, index, total) =>
+      `Grabbed ${key}, position ${index} of ${total}. Use arrow keys to move, space to drop, escape to cancel.`,
+    atPosition: (index, total) => `At position ${index} of ${total}.`,
+    moved: (index, total) => `Moved to position ${index} of ${total}.`,
+    dropped: (index, total) => `Dropped at position ${index} of ${total}.`,
+    cancelled: (index, total) => `Cancelled, returned to position ${index} of ${total}.`,
+    selected: (key, count) => `${key} selected, ${count} items selected.`,
+    deselected: (key, count) => `${key} deselected, ${count} items selected.`,
+  };
 
   export function createSortableGroup(
     presentation?: {
@@ -187,13 +210,17 @@
       duration?: number;
       easing?: EasingFunction;
     },
+    messages?: Partial<SortableMessages>,
   ): SortableGroupController {
     const tp: TransitionParams = {
       duration: _resolveDuration(motion?.duration, 300),
       easing: motion?.easing ?? cubicOut,
     };
     const [send, receive] = crossfade(tp);
-    return new SortableController(Symbol("svs-sortable-group"), send, receive, presentation, tp);
+    return new SortableController(Symbol("svs-sortable-group"), send, receive, presentation, tp, {
+      ...defaultSortableMessages,
+      ...messages,
+    });
   }
 
   class SortableController implements SortableGroupController {
@@ -202,6 +229,7 @@
     readonly receive;
     readonly tp;
     #presentation;
+    #messages: SortableMessages;
     #members = new Map<string, SortableMember>();
     #listeners: VoidFn[] = [];
     #pointer = new PointerVector(minDistance);
@@ -242,12 +270,14 @@
       receive: TransitionFn,
       presentation: { get variant(): SVSVariant; get styling(): SVSClass | undefined } | undefined,
       tp: TransitionParams,
+      messages: SortableMessages,
     ) {
       this.identity = identity;
       this.send = send;
       this.receive = receive;
       this.tp = tp;
       this.#presentation = presentation;
+      this.#messages = messages;
     }
     get variant(): SVSVariant {
       return this.#presentation?.variant ?? VARIANT.NEUTRAL;
@@ -272,6 +302,9 @@
     }
     get messageOwnerId(): string {
       return this.#messageOwnerId;
+    }
+    get messages(): SortableMessages {
+      return this.#messages;
     }
     register<T>(member: SortableMember<T>): () => void {
       this.#members.set(member.id, member as SortableMember);
@@ -376,10 +409,7 @@
       };
       this.#dragging = true;
       this.#activeKey = key;
-      this.announce(
-        `Grabbed ${key}, position ${index + 1} of ${member.items.length}. Use arrow keys to move, space to drop, escape to cancel.`,
-        member.id,
-      );
+      this.announce(this.messages.grabbed(key, index + 1, member.items.length), member.id);
       return true;
     }
     stepKeyboard(dir: -1 | 1): string {
@@ -388,14 +418,14 @@
       const target = this.#keyboardTarget(dir);
       if (!target || !this.#canSort(target.member)) {
         const p = this.#position(active.current, active.activeKey);
-        this.announce(`At position ${p.index + 1} of ${p.total}.`, active.current.id);
+        this.announce(this.messages.atPosition(p.index + 1, p.total), active.current.id);
         return active.activeKey;
       }
       this.#moveTo(target.member, target.key);
       const moved = this.#active;
       if (!moved) return "";
       const p = this.#position(moved.current, moved.activeKey);
-      this.announce(`Moved to position ${p.index + 1} of ${p.total}.`, moved.current.id);
+      this.announce(this.messages.moved(p.index + 1, p.total), moved.current.id);
       return moved.activeKey;
     }
     dropKeyboard(): void {
@@ -407,7 +437,7 @@
       const owner = active.current.id;
       this.#keyboard = undefined;
       this.#clearDrag();
-      this.announce(`Dropped at position ${p.index + 1} of ${p.total}.`, owner);
+      this.announce(this.messages.dropped(p.index + 1, p.total), owner);
     }
     cancelKeyboard(): void {
       const active = this.#active;
@@ -418,7 +448,7 @@
       const owner = grab.source.id;
       this.#keyboard = undefined;
       this.#clearDrag();
-      this.announce(`Cancelled, returned to position ${p.index + 1} of ${p.total}.`, owner);
+      this.announce(this.messages.cancelled(p.index + 1, p.total), owner);
     }
     announce(message: string, ownerId: string): void {
       this.#message = message;
@@ -801,11 +831,11 @@
 
 <script lang="ts" generics="T = string">
   // prettier-ignore
-  let { items = $bindable(), item, key, clone, group, id, ghost, mode = "move", accept, sort = true, multiple = false, draggable = true, appendable = false, confirm = false, dragging = $bindable(false), ariaLabel, ariaRoleDescription = "Sortable Item", styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: SortableProps<T> = $props();
+  let { items = $bindable(), item, key, clone, group, id, ghost, mode = "move", accept, sort = true, multiple = false, draggable = true, appendable = false, confirm = false, dragging = $bindable(false), messages, ariaLabel, ariaRoleDescription = "Sortable Item", styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: SortableProps<T> = $props();
 
   const context = _getSortableContext();
   // svelte-ignore state_referenced_locally
-  const controller = group ?? context ?? createSortableGroup();
+  const controller = group ?? context ?? createSortableGroup(undefined, undefined, messages);
   const autoId = $props.id();
   // svelte-ignore state_referenced_locally
   const listId = id ?? autoId;
@@ -950,10 +980,10 @@
   function toggleSelection(key: string) {
     if (selected.has(key)) {
       selected.delete(key);
-      controller.announce(`${key} deselected, ${selected.size} items selected.`, listId);
+      controller.announce(controller.messages.deselected(key, selected.size), listId);
     } else {
       selected.add(key);
-      controller.announce(`${key} selected, ${selected.size} items selected.`, listId);
+      controller.announce(controller.messages.selected(key, selected.size), listId);
     }
   }
   async function focusItem(key: string) {

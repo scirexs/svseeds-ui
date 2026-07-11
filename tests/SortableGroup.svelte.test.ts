@@ -15,6 +15,7 @@ declare module "vitest" {
 }
 
 const el = (container: HTMLElement, id: string) => container.querySelector(`[data-testid="${id}"]`) as HTMLElement;
+const live = (container: HTMLElement) => container.querySelector('[aria-live="polite"]') as HTMLElement;
 
 function stubReducedMotion() {
   vi.stubGlobal("matchMedia", (query: string) => ({
@@ -35,6 +36,12 @@ async function drag(origin: HTMLElement, over: HTMLElement | null, opts?: { up?:
   window.dispatchEvent(new PointerEvent("pointermove", { buttons: 1, clientX: 20, clientY: 20, bubbles: true }));
   if (over) over.dispatchEvent(new PointerEvent("pointerover", { buttons: 1, bubbles: true }));
   if (opts?.up ?? true) window.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+  await tick();
+}
+
+async function press(target: HTMLElement, key: string, init?: KeyboardEventInit) {
+  target.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...init }));
+  await tick();
   await tick();
 }
 
@@ -122,6 +129,20 @@ describe("SortableGroup context wiring", () => {
     await expect.element(el(container, "readout-b")).toHaveTextContent("a1,b1");
     expect(props.a).toEqual(["a2"]);
     expect(props.b).toEqual(["a1", "b1"]);
+  });
+
+  test("messages passed to SortableGroup reach context-resolved children", async () => {
+    const { container } = render(SortableGroupBasic, {
+      messages: {
+        grabbed: (key, index, total) => `Group grabbed ${key} at ${index}/${total}`,
+      },
+    });
+    const item = el(container, "item-a1").closest("[data-svs-key]") as HTMLElement;
+
+    item.focus();
+    await press(item, " ");
+
+    await expect.element(live(container)).toHaveTextContent("Group grabbed a1 at 1/2");
   });
 
   test("accept and swap still apply inside the wrapper", async () => {

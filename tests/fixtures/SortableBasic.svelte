@@ -1,7 +1,9 @@
 <script lang="ts">
-  import Sortable, { type SortableMode } from "#svs/Sortable.svelte";
-  import { type Attachment } from "svelte/attachments";
-  import { VARIANT, type SVSClass, type SVSVariant } from "#svs/core";
+  import Sortable from "#svs/Sortable.svelte";
+  import { VARIANT } from "#svs/core";
+  import type { Attachment } from "svelte/attachments";
+  import type { SVSClass, SVSVariant } from "#svs/core";
+  import type { SortableMode, SortableMessages } from "#svs/Sortable.svelte";
 
   interface Props {
     items?: string[];
@@ -12,6 +14,7 @@
     appendable?: boolean;
     draggable?: boolean;
     dragging?: boolean;
+    messages?: Partial<SortableMessages>;
     ariaLabel?: string;
     ariaRoleDescription?: string;
     ariaLabelledby?: string;
@@ -23,7 +26,7 @@
   }
 
   // prettier-ignore
-  let { items = $bindable(["a", "b", "c"]), mode = "move", sort = true, multiple = false, confirm = false, appendable = false, draggable = true, dragging = $bindable(false), ariaLabel, ariaRoleDescription, ariaLabelledby, dataProbe, listClass, styling, variant = VARIANT.NEUTRAL, noHandle = false }: Props = $props();
+  let { items = $bindable(["a", "b", "c"]), mode = "move", sort = true, multiple = false, confirm = false, appendable = false, draggable = true, dragging = $bindable(false), messages, ariaLabel, ariaRoleDescription, ariaLabelledby, dataProbe, listClass, styling, variant = VARIANT.NEUTRAL, noHandle = false }: Props = $props();
 </script>
 
 <Sortable
@@ -35,6 +38,7 @@
   {confirm}
   {appendable}
   {draggable}
+  {messages}
   {ariaLabel}
   {ariaRoleDescription}
   {styling}
