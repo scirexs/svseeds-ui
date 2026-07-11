@@ -13,6 +13,7 @@
     min?: number;
     max?: number;
     step?: number; // (1)
+    any?: boolean; // (false)
     spin?: "none" | "split" | "stack"; // ("none")
     left?: Snippet<[string]>; // Snippet<[variant]>
     right?: Snippet<[string]>; // Snippet<[variant]>
@@ -50,6 +51,7 @@
     min?: number;
     max?: number;
     step?: number; // (1)
+    any?: boolean; // (false)
     spin?: "none" | "split" | "stack"; // ("none")
     left?: Snippet<[string]>; // Snippet<[variant]>
     right?: Snippet<[string]>; // Snippet<[variant]>
@@ -89,7 +91,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { value = $bindable(), min, max, step = 1, inputmode = "decimal", spin = "none", options, ariaDecLabel = "Decrement", ariaIncLabel = "Increment", left, right, onchange: onchangeProp, oninvalid: oninvalidProp, onkeydown, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, id: idProp, "aria-describedby": ariaDescribedbyProp, class: c, "aria-invalid": ariaInvalid, ...rest }: NumberInputProps = $props();
+  let { value = $bindable(), min, max, step = 1, any = false, inputmode = "decimal", spin = "none", options, ariaDecLabel = "Decrement", ariaIncLabel = "Increment", left, right, onchange: onchangeProp, oninvalid: oninvalidProp, onkeydown, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, id: idProp, "aria-describedby": ariaDescribedbyProp, class: c, "aria-invalid": ariaInvalid, ...rest }: NumberInputProps = $props();
   const ctx = _getNumberInputContext();
 
   // *** Initialize *** //
@@ -233,6 +235,11 @@
   }
   function bumpValue(dir: 1 | -1): number {
     const base = effValue ?? min ?? 0;
+    if (any) {
+      const u = unit();
+      const d = Math.max(decimals(base), decimals(u));
+      return clampSnap(Number((base + dir * u).toFixed(d)));
+    }
     return clampSnap(base + dir * unit());
   }
   function stop() {
@@ -263,6 +270,7 @@
   }
   function alignedMax(): number {
     if (max === undefined) return Infinity;
+    if (any) return max;
     const u = unit();
     const base = min ?? 0;
     const d = Math.max(decimals(base), decimals(u));
@@ -270,11 +278,12 @@
     return Number((base + steps * u).toFixed(d));
   }
   function clampSnap(n: number): number {
+    const lo = min ?? -Infinity;
+    const hi = alignedMax();
+    if (any) return Math.min(hi, Math.max(lo, n));
     const u = unit();
     const base = min ?? 0;
     const d = Math.max(decimals(base), decimals(u));
-    const lo = min ?? -Infinity;
-    const hi = alignedMax();
     const v = Number((base + Math.round((n - base) / u) * u).toFixed(d));
     return Math.min(hi, Math.max(lo, v));
   }

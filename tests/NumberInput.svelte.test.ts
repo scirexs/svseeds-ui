@@ -160,6 +160,47 @@ describe("_NumberInput value and commit behavior", () => {
     await expect.element(decAlignedInput).toHaveValue("0.7");
   });
 
+  test("any keeps arbitrary precision, clamps to bounds, and spins by step", async () => {
+    const props = $state({
+      value: undefined as number | undefined,
+      any: true,
+      min: 0,
+      max: 10,
+      step: 0.5,
+      spin: "split" as NumberInputSpin,
+    });
+    const { container } = render(NumberInput, props);
+    const el = input(container);
+
+    // Off-grid decimal is preserved on blur (no snap), only clamped to bounds.
+    await userEvent.type(el, "3.14159");
+    el.blur();
+    await tick();
+    expect(props.value).toBe(3.14159);
+    await expect.element(el).toHaveValue("3.14159");
+
+    // Spin adds step (0.5) while keeping the fractional remainder, no FP noise.
+    await userEvent.click(button(container, "Increment"));
+    expect(props.value).toBe(3.64159);
+    await expect.element(el).toHaveValue("3.64159");
+
+    // Clamp still applies at the raw max (no step alignment).
+    await userEvent.clear(el);
+    await userEvent.type(el, "99.99");
+    el.blur();
+    await tick();
+    expect(props.value).toBe(10);
+
+    // Lower bound clamps too, still without snapping.
+    const lower = $state({ value: undefined as number | undefined, any: true, min: 5, step: 0.5 });
+    const lowerRender = render(NumberInput, lower);
+    const lowerInput = input(lowerRender.container);
+    await userEvent.type(lowerInput, "3.7");
+    lowerInput.blur();
+    await tick();
+    expect(lower.value).toBe(5);
+  });
+
   test("syncs external value only while not focused", async () => {
     const props = $state({ value: 1 as number | undefined });
     const { container } = render(NumberInput, props);
