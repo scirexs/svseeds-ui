@@ -50,8 +50,12 @@ const setWheel = async (select: HTMLSelectElement, value: string) => {
 const wheel = (el: HTMLElement, deltaY = 1) => {
   el.dispatchEvent(new WheelEvent("wheel", { deltaY, bubbles: true, cancelable: true }));
 };
-const point = (el: HTMLElement, type: string, clientY: number) => {
-  el.dispatchEvent(new PointerEvent(type, { clientY, pointerId: 1, bubbles: true }));
+const point = (el: HTMLElement, type: string, clientY: number, clientX = 0) => {
+  el.dispatchEvent(new PointerEvent(type, { clientX, clientY, pointerId: 1, bubbles: true }));
+};
+const tap = (el: HTMLElement, x: number, y: number) => {
+  point(el, "pointerdown", y, x);
+  point(el, "pointerup", y, x);
 };
 const rotateX = (el: HTMLElement) => Number(el.getAttribute("style")?.match(/rotateX\((-?\d+(?:\.\d+)?)deg\)/)?.[1]);
 const translateYPx = (el: HTMLElement) => {
@@ -379,6 +383,95 @@ describe("Geometry observers", () => {
 });
 
 describe("Drum layout, pointer and animation (browser)", () => {
+  test("tap selects a visible non-selected row", async () => {
+    const style = document.createElement("style");
+    style.textContent = `.wheel-tap .${PARTS.MIDDLE} { height: 160px; } .wheel-tap .${PARTS.AUX}, .wheel-tap .${PARTS.EXTRA} { pointer-events: none; }`;
+    document.head.append(style);
+    try {
+      const props = $state({ options: opts, value: "jan" });
+      const { container } = render(WheelPicker, props);
+      whole(container).classList.add("wheel-tap");
+      await waitForMeasure(container);
+      const rect = labels(container)[1].getBoundingClientRect();
+
+      tap(middle(container), rect.left + rect.width / 2, rect.top + rect.height / 2);
+
+      await vi.waitFor(() => expect(props.value).toBe("feb"));
+      expect(labels(container)[1].classList.contains(VARIANT.ACTIVE)).toBe(true);
+    } finally {
+      style.remove();
+    }
+  });
+
+  test("tap on a disabled row selects the nearest enabled option", async () => {
+    const style = document.createElement("style");
+    style.textContent = `.wheel-tap .${PARTS.MIDDLE} { height: 160px; } .wheel-tap .${PARTS.AUX}, .wheel-tap .${PARTS.EXTRA} { pointer-events: none; }`;
+    document.head.append(style);
+    try {
+      const props = $state({ options: opts, value: "jan" });
+      const { container } = render(WheelPicker, props);
+      whole(container).classList.add("wheel-tap");
+      await waitForMeasure(container);
+      const rect = labels(container)[2].getBoundingClientRect();
+
+      tap(middle(container), rect.left + rect.width / 2, rect.top + rect.height / 2);
+
+      await vi.waitFor(() => expect(props.value).toBe("feb"));
+      expect(labels(container)[1].classList.contains(VARIANT.ACTIVE)).toBe(true);
+      expect(labels(container)[2].classList.contains(VARIANT.ACTIVE)).toBe(false);
+    } finally {
+      style.remove();
+    }
+  });
+
+  test("tap on the selected center row is a no-op", async () => {
+    const style = document.createElement("style");
+    style.textContent = `.wheel-tap .${PARTS.MIDDLE} { height: 160px; } .wheel-tap .${PARTS.AUX}, .wheel-tap .${PARTS.EXTRA} { pointer-events: none; }`;
+    document.head.append(style);
+    try {
+      const onchange = vi.fn();
+      const props = $state({ options: opts, value: "feb", onchange });
+      const { container } = render(WheelPicker, props);
+      whole(container).classList.add("wheel-tap");
+      await waitForMeasure(container);
+      const rect = labels(container)[1].getBoundingClientRect();
+
+      tap(middle(container), rect.left + rect.width / 2, rect.top + rect.height / 2);
+
+      expect(props.value).toBe("feb");
+      expect(onchange).not.toHaveBeenCalled();
+    } finally {
+      style.remove();
+    }
+  });
+
+  test("tap on the selected row with tiny travel still snaps visually", async () => {
+    const style = document.createElement("style");
+    style.textContent = `.wheel-tap .${PARTS.MIDDLE} { height: 160px; } .wheel-tap .${PARTS.AUX}, .wheel-tap .${PARTS.EXTRA} { pointer-events: none; }`;
+    document.head.append(style);
+    try {
+      const props = $state({ options: opts, value: "feb" });
+      const { container } = render(WheelPicker, props);
+      whole(container).classList.add("wheel-tap");
+      await waitForMeasure(container);
+      await vi.waitFor(() => expect(translateYPx(labels(container)[1])).toBe(0));
+      vi.spyOn(document, "elementFromPoint").mockReturnValue(labels(container)[1]);
+      const rect = labels(container)[1].getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+
+      point(middle(container), "pointerdown", y, x);
+      point(middle(container), "pointermove", y + 4, x);
+      point(middle(container), "pointerup", y + 4, x);
+
+      expect(props.value).toBe("feb");
+      await tick();
+      expect(translateYPx(labels(container)[1])).toBe(0);
+    } finally {
+      style.remove();
+    }
+  });
+
   test("pointer-drag to snap", async () => {
     const props = $state({ options: opts, value: "jan" });
     const { container } = render(WheelPicker, props);

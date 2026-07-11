@@ -16,6 +16,7 @@
 - sveltejs-package-output-layout.md — `@sveltejs/package` passes `.svelte` through, compiles `_core.ts`→`_core.js`/`.d.ts` (dropping `_core.ts`), and emits no `package.json`; the post-build step must supply those.
 - svseeds-object-styling-no-part-literal-class.md — object-form `styling` emits only user classes, not the literal part-name token; `querySelector('.label')` returns null in object mode — use `bind:this` instead.
 - svelte-state-prop-initializer-warning.md — `$state` directly capturing a prop variable in its initializer triggers a Svelte warning; wrap the initial read in a tiny helper to suppress it while preserving one-time seed behavior.
+- wheelpicker-snap-dispatches-change-jump-does-not.md — `WheelPicker`'s `snap()` always dispatches native `change`; use `jump(index)` to re-settle the drum visually without firing `change` (e.g. a no-op selected-row tap).
 
 ## Build, Tooling & Dependencies
 - bun-run-check-generates-svelte-kit-dir.md — `bun run check` runs `svelte-kit sync`, (re)generating a gitignored `.svelte-kit/` build dir; leave it in place, don't clean it up.
@@ -30,6 +31,7 @@
 - svelte-rerender-then-mutate-state-props-loses-reactivity.md — calling `rerender(props)` once then later mutating the same `$state` props object directly can break reactive tracking (`track_reactivity_loss`); pick one props-driving mechanism per test.
 - vitest-axe-browser-use-axe-core-directly.md — `vitest-axe`'s `axe()` helper breaks in browser mode (`createRequire` is Node-only); run `axe-core`'s `axe.run()` directly and pass the result to the `toHaveNoViolations` matcher.
 - vitest-axe-matchers-need-module-augmentation.md — `vitest-axe`'s `toHaveNoViolations` matcher type targets the old `Vi` namespace and is invisible to `svelte-check` under Vitest 4; augment `vitest`'s `Assertion` interface with `AxeMatchers` locally in each spec file.
+- svelte-pointer-gesture-test-needs-tick-after-synthetic-events.md — synthetic pointer-event dispatch doesn't wait for Svelte's DOM flush; `await tick()` before asserting post-gesture visual state or the assertion can pass against pre-update DOM.
 
 ## Runtime & Platform
 - css-flip-animation-spurious-pointerover.md — FLIP animation slides transformed boxes over the pointer, causing the browser to fire spurious `pointerover` on just-moved drag targets and reversing a committed reorder.

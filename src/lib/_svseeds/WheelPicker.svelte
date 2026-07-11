@@ -51,6 +51,8 @@
     `name` submission stay native; it remains focusable through clip-based hiding.
   - `.middle` is the decorative drum: it is `aria-hidden`, pointer/wheel gestures write
     `selectedIndex` to the select, item height is measured, and visible row count is derived.
+  - Tapping a visible drum row selects it, or the nearest enabled option if that row is
+    disabled; this relies on `.aux` / `.extra` staying `pointer-events: none`.
   - `loop` wraps `selectedIndex` modularly with seam clones; the `<select>` itself never loops.
   - `cssvar` mirrors named keys onto `.whole` only.
 -->
@@ -106,6 +108,7 @@
   const itemVariant = (i: number): string => (i === selected ? VARIANT.ACTIVE : options[i]?.disabled ? VARIANT.INACTIVE : variant);
   const snapSoon = _debounce(120, () => snap());
   const POINTER_RATE = 15;
+  const TAP_SLOP = 8;
 
   // *** States *** //
   let whole: HTMLDivElement | undefined = $state();
@@ -219,6 +222,13 @@
     if (!dragging) return;
     dragging = false;
     ev.currentTarget.releasePointerCapture?.(ev.pointerId);
+    if (ev.type !== "pointercancel" && Math.abs(ev.clientY - startY) <= TAP_SLOP) {
+      const index = tapIndex(ev.clientX, ev.clientY);
+      if (index != null) {
+        if (index !== selected) return pick(index);
+        return jump(index);
+      }
+    }
     snap();
   };
   const hwheel: WheelEventHandler<HTMLDivElement> = (ev) => {
@@ -259,6 +269,19 @@
     element.selectedIndex = index;
     element.dispatchEvent(new Event("change", { bubbles: true }));
     program = false;
+  }
+  function tapIndex(x: number, y: number): number | undefined {
+    if (typeof document === "undefined") return;
+    const hit = document.elementFromPoint(x, y);
+    if (!hit) return;
+    const i = labelElems.findIndex((el) => el && (el === hit || el.contains(hit)));
+    if (i < 0) return;
+    return nearest(shown[i].virtual);
+  }
+  function pick(index: number) {
+    if (!element) return;
+    element.selectedIndex = index;
+    element.dispatchEvent(new Event("change", { bubbles: true }));
   }
   function nearest(raw: number): number | undefined {
     if (!options.length) return;
