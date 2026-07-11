@@ -84,7 +84,7 @@
   export const [_getNumberInputContext, _setNumberInputContext] = _createContext<NumberInputContext>();
 
   import { onDestroy, untrack } from "svelte";
-  import { VARIANT, PARTS, _fnClass, _createContext } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _createContext, _SVG_ATTR } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { SvelteSet } from "svelte/reactivity";
@@ -351,7 +351,7 @@
     {#if left}
       {@render left(effVariant)}
     {:else}
-      <svg style="width:100%;height:100%;" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+      <svg {..._SVG_ATTR}>
         <path d="M0 7h16v2H0z" />
       </svg>
     {/if}
@@ -372,7 +372,7 @@
     {#if right}
       {@render right(effVariant)}
     {:else}
-      <svg style="width:100%;height:100%;" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+      <svg {..._SVG_ATTR}>
         <path d="M7 0h2v16H7z" />
         <path d="M0 7h16v2H0z" />
       </svg>

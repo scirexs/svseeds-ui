@@ -71,7 +71,7 @@
   export const _PAGINATION_PRESET = "svs-pagination";
 
   import { untrack } from "svelte";
-  import { VARIANT, PARTS, _fnClass } from "./_core";
+  import { VARIANT, PARTS, _fnClass, _SVG_ATTR } from "./_core";
   import ComboBox, { _COMBO_BOX_PRESET, _setComboBoxContext } from "./ComboBox.svelte";
   import type { Snippet } from "svelte";
   import type { HTMLAttributes, MouseEventHandler } from "svelte/elements";
@@ -196,7 +196,7 @@
     {#if top}
       {@render top(value, variant)}
     {:else}
-      {@render glyphLeftDouble()}
+      {@render svgLeftDouble()}
     {/if}
   </button>
   <button
@@ -209,7 +209,7 @@
     {#if left}
       {@render left(value, variant)}
     {:else}
-      {@render glyphLeft()}
+      {@render svgLeft()}
     {/if}
   </button>
   {#if children}
@@ -227,7 +227,7 @@
     {#if right}
       {@render right(value, variant)}
     {:else}
-      {@render glyphRight()}
+      {@render svgRight()}
     {/if}
   </button>
   <button
@@ -240,29 +240,29 @@
     {#if bottom}
       {@render bottom(value, variant)}
     {:else}
-      {@render glyphRightDouble()}
+      {@render svgRightDouble()}
     {/if}
   </button>
 </nav>
 
-{#snippet glyphLeft()}
-  <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="12" height="12">
-    <path d="M10.5 2 4.5 8l6 6 1.4-1.4L7.3 8l4.6-4.6z" />
+{#snippet svgLeft()}
+  <svg {..._SVG_ATTR}>
+    <path d="m10.5 2-6 6 6 6 1.4-1.4L7.3 8l4.6-4.6z" />
   </svg>
 {/snippet}
-{#snippet glyphLeftDouble()}
-  <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="12" height="12">
-    <path d="M7.5 2 1.5 8l6 6 1.4-1.4L4.3 8l4.6-4.6z" />
-    <path d="M13.5 2 7.5 8l6 6 1.4-1.4L10.3 8l4.6-4.6z" />
+{#snippet svgLeftDouble()}
+  <svg {..._SVG_ATTR}>
+    <path d="m7.5 2-6 6 6 6 1.4-1.4L4.3 8l4.6-4.6z" />
+    <path d="m13.5 2-6 6 6 6 1.4-1.4L10.3 8l4.6-4.6z" />
   </svg>
 {/snippet}
-{#snippet glyphRight()}
-  <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="12" height="12">
+{#snippet svgRight()}
+  <svg {..._SVG_ATTR}>
     <path d="m5.5 2 6 6-6 6-1.4-1.4L8.7 8 4.1 3.4z" />
   </svg>
 {/snippet}
-{#snippet glyphRightDouble()}
-  <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="12" height="12">
+{#snippet svgRightDouble()}
+  <svg {..._SVG_ATTR}>
     <path d="m2.5 2 6 6-6 6-1.4-1.4L5.7 8 1.1 3.4z" />
     <path d="m8.5 2 6 6-6 6-1.4-1.4L11.7 8 7.1 3.4z" />
   </svg>

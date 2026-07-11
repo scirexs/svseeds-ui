@@ -99,7 +99,7 @@
 
   export const [_getTagsInputContext, _setTagsInputContext] = _createContext<TagsInputContext>();
 
-  import { VARIANT, PARTS, _commitSubset, _fnClass, _createContext } from "./_core";
+  import { VARIANT, PARTS, _commitSubset, _fnClass, _createContext, _SVG_ATTR } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { HTMLInputAttributes, KeyboardEventHandler, FormEventHandler, ClipboardEventHandler } from "svelte/elements";
@@ -238,8 +238,8 @@
             {#if extra}
               {@render extra(text, effVariant)}
             {:else}
-              <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="10" height="10">
-                <path d="M16 2 14 0 8 6 2 0 0 2 6 8 0 14 2 16 8 10 14 16 16 14 10 8z" />
+              <svg {..._SVG_ATTR}>
+                <path d="m16 2-2-2-6 6-6-6-2 2 6 6-6 6 2 2 6-6 6 6 2-2-6-6z" />
               </svg>
             {/if}
           </button>

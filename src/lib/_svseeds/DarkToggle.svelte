@@ -247,7 +247,7 @@
   const theme = new Theme();
 
   import { untrack } from "svelte";
-  import { VARIANT } from "./_core";
+  import { VARIANT, _SVG_ATTR } from "./_core";
   import Toggle, { _TOGGLE_PRESET } from "./Toggle.svelte";
   import type { ToggleProps } from "./Toggle.svelte";
 </script>
@@ -301,12 +301,12 @@
   {/if}
 {/snippet}
 {#snippet svgDark()}
-  <svg style="width:100%;height:100%;" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+  <svg {..._SVG_ATTR} viewBox="0 0 24 24">
+    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9" />
   </svg>
 {/snippet}
 {#snippet svgLight()}
-  <svg style="width:100%;height:100%;" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" aria-hidden="true">
+  <svg {..._SVG_ATTR} viewBox="0 0 24 24" stroke-width="2">
     <circle cx="12" cy="12" r="5" />
     <path d="M12 0v4M12 20v4M0 12h4M20 12h4M6.4 6.4l-2.9-2.9M17.6 6.4l2.9-2.9M6.4 17.6l-2.9 2.9M17.6 17.6l2.9 2.9" />
   </svg>
