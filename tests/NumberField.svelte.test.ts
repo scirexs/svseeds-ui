@@ -85,10 +85,10 @@ describe("NumberField chrome", () => {
 });
 
 describe("NumberField default child and binding", () => {
-  test("forwards numeric configuration, snippets, stack, and children replacement", async () => {
+  test("forwards input configuration, snippets, stack, and children replacement", async () => {
     const configured = render(NumberField, {
       name: "qty",
-      numberInput: { integer: true, spin: "split", options: new Set([1, 2]), ariaDecLabel: "Less", ariaIncLabel: "More" },
+      numberInput: { inputmode: "numeric", spin: "split", options: new Set([1, 2]), ariaDecLabel: "Less", ariaIncLabel: "More" },
     });
     const el = input(configured.container);
     const list = configured.container.querySelector("datalist") as HTMLDataListElement;

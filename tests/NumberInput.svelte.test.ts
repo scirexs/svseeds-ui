@@ -32,24 +32,19 @@ describe("_NumberInput rendering", () => {
     expect([...list.querySelectorAll("option")]).toHaveLength(3);
     expect(container.querySelector(`.${PARTS.WHOLE}`)?.tagName).toBe("SPAN");
 
-    await rerender({ integer: true });
+    await rerender({ inputmode: "numeric" });
     await expect.element(el).toHaveAttribute("inputmode", "numeric");
   });
 });
 
 describe("_NumberInput character blocking", () => {
-  test("rejects letters, disallowed decimals, repeated dots, and disallowed minus signs", async () => {
+  test("rejects letters, repeated dots, and disallowed minus signs", async () => {
     const { container, rerender } = render(NumberInput);
     const el = input(container);
 
     await userEvent.type(el, "12a3");
     await expect.element(el).toHaveValue("123");
     await userEvent.clear(el);
-    await rerender({ integer: true });
-    await userEvent.type(el, "1.5");
-    await expect.element(el).toHaveValue("15");
-    await userEvent.clear(el);
-    await rerender({ integer: false });
     await userEvent.type(el, "1.5.2");
     await expect.element(el).toHaveValue("1.52");
     await userEvent.clear(el);
@@ -99,6 +94,20 @@ describe("_NumberInput value and commit behavior", () => {
     await rerender(props);
     el = input(container);
     await expect.element(el).toHaveValue("5");
+  });
+
+  test("snaps decimal input to the default step on blur", async () => {
+    const props = $state({ value: undefined as number | undefined });
+    const { container } = render(NumberInput, props);
+    const el = input(container);
+
+    await userEvent.type(el, "1.5");
+    await expect.element(el).toHaveValue("1.5");
+    expect(props.value).toBe(1.5);
+    el.blur();
+    await tick();
+    expect(props.value).toBe(2);
+    await expect.element(el).toHaveValue("2");
   });
 
   test("clamps negative values, rounds decimal steps, and uses an aligned max", async () => {

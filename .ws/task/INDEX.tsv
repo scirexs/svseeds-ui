@@ -35,3 +35,4 @@
 20260711_kg2wt5	feat: Make Sortable live-region announcements customizable via a SortableMessages formatter-function API
 20260711_vskfho	fix: Unify WheelPicker drag rotation direction so 3D (perspective) mode matches the intuitive flat-mode mapping
 20260711_avyar4	feat: WheelPicker: tap a visible option to select it
+20260711_b4wf33	refactor: Remove the NumberInput `integer` prop; expose `inputmode` as a caller-settable passthrough (default "decimal") and rely on the default `step=1` for the integer value constraint.

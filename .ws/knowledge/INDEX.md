@@ -26,6 +26,7 @@
 - git-scope-creep-baseline-differs-per-file-after-dev-merge.md — once `dev` has merged into a task branch, a file whose source *and* test were both touched by the same upstream commit needs that commit (not `main`) as its additions-only baseline; other files in the same task may still need `main`.
 
 ## Testing
+- svelte-prop-removal-breaks-consumer-test-fixtures.md — removing a public prop can fail `bun run check` in a consumer's *test* fixtures even when the consumer's source never sets that prop; check consumer test files too, not just source, before ruling a sibling component out of scope.
 - vitest-browser-userevent-skips-aria-disabled.md — `userEvent.click` is a no-op on `aria-disabled="true"` elements; dispatch a DOM `MouseEvent` directly to exercise a focusable aria-disabled handler.
 - dateinput-test-fixed-date-drift.md — a test with a hardcoded target date breaks permanently (not intermittently) once real "today" advances past it, when the component under test defaults empty state from `Temporal.Now.plainDateISO()`.
 - svelte-rerender-then-mutate-state-props-loses-reactivity.md — calling `rerender(props)` once then later mutating the same `$state` props object directly can break reactive tracking (`track_reactivity_loss`); pick one props-driving mechanism per test.

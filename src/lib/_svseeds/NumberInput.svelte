@@ -8,12 +8,11 @@
   ### Types
   default value: *`(value)`*
   ```ts
-  interface NumberInputProps extends Omit<HTMLInputAttributes, "type" | "value" | "min" | "max" | "step" | "inputmode" | "pattern" | "list"> {
+  interface NumberInputProps extends Omit<HTMLInputAttributes, "type" | "value" | "min" | "max" | "step" | "pattern" | "list"> {
     value?: number; // bindable; undefined = empty
     min?: number;
     max?: number;
     step?: number; // (1)
-    integer?: boolean; // (false)
     spin?: "none" | "split" | "stack"; // ("none")
     left?: Snippet<[string]>; // Snippet<[variant]>
     right?: Snippet<[string]>; // Snippet<[variant]>
@@ -31,7 +30,7 @@
   ```svelte
   <span class="whole">
     <button class="left" type="button" conditional: spin === "split">{left}</button>
-    <input class="main" type="text" inputmode="numeric|decimal" />
+    <input class="main" type="text" inputmode="decimal" />
     <span class="aux" conditional: spin === "stack">
       <button class="right" type="button">{right}</button>
       <button class="left" type="button">{left}</button>
@@ -46,15 +45,11 @@
   ```
 -->
 <script module lang="ts">
-  export interface NumberInputProps extends Omit<
-    HTMLInputAttributes,
-    "type" | "value" | "min" | "max" | "step" | "inputmode" | "pattern" | "list"
-  > {
+  export interface NumberInputProps extends Omit<HTMLInputAttributes, "type" | "value" | "min" | "max" | "step" | "pattern" | "list"> {
     value?: number; // bindable; undefined = empty
     min?: number;
     max?: number;
     step?: number; // (1)
-    integer?: boolean; // (false)
     spin?: "none" | "split" | "stack"; // ("none")
     left?: Snippet<[string]>; // Snippet<[variant]>
     right?: Snippet<[string]>; // Snippet<[variant]>
@@ -94,7 +89,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { value = $bindable(), min, max, step = 1, integer = false, spin = "none", options, ariaDecLabel = "Decrement", ariaIncLabel = "Increment", left, right, onchange: onchangeProp, oninvalid: oninvalidProp, onkeydown, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, id: idProp, "aria-describedby": ariaDescribedbyProp, class: c, "aria-invalid": ariaInvalid, ...rest }: NumberInputProps = $props();
+  let { value = $bindable(), min, max, step = 1, inputmode = "decimal", spin = "none", options, ariaDecLabel = "Decrement", ariaIncLabel = "Increment", left, right, onchange: onchangeProp, oninvalid: oninvalidProp, onkeydown, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, id: idProp, "aria-describedby": ariaDescribedbyProp, class: c, "aria-invalid": ariaInvalid, ...rest }: NumberInputProps = $props();
   const ctx = _getNumberInputContext();
 
   // *** Initialize *** //
@@ -107,7 +102,6 @@
   const effId = $derived(ctx ? ctx.id : idProp);
   const effDescribedby = $derived(ctx ? ctx.describedby : ariaDescribedbyProp);
   const allowNeg = $derived(min === undefined || min < 0);
-  const mode = $derived(integer ? "numeric" : "decimal");
   const disabled = $derived(Boolean(rest.disabled));
   const decDisabled = $derived(disabled || (min !== undefined && (effValue ?? min) <= min));
   const incDisabled = $derived(disabled || (max !== undefined && (effValue ?? min ?? 0) >= alignedMax()));
@@ -249,7 +243,7 @@
   }
   function legal(v: string): boolean {
     const neg = allowNeg ? "-?" : "";
-    const dec = integer ? "" : "(\\.\\d*)?";
+    const dec = "(\\.\\d*)?";
     return new RegExp(`^${neg}\\d*${dec}$`).test(v);
   }
   function parse(v: string): number | undefined {
@@ -281,8 +275,7 @@
     const d = Math.max(decimals(base), decimals(u));
     const lo = min ?? -Infinity;
     const hi = alignedMax();
-    let v = Number((base + Math.round((n - base) / u) * u).toFixed(d));
-    if (integer) v = Math.round(v);
+    const v = Number((base + Math.round((n - base) / u) * u).toFixed(d));
     return Math.min(hi, Math.max(lo, v));
   }
   onDestroy(stop);
@@ -302,7 +295,7 @@
     type="text"
     id={effId}
     list={idList}
-    inputmode={mode}
+    {inputmode}
     role={spin !== "none" ? "spinbutton" : undefined}
     aria-valuenow={spin !== "none" ? effValue : undefined}
     aria-valuemin={spin !== "none" ? min : undefined}
