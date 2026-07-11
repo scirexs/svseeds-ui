@@ -290,7 +290,7 @@
     const radians = (step * Math.PI) / 180;
     const radius = itemH && radians ? itemH / (2 * Math.tan(radians / 2)) : 0;
     const hidden = Math.abs(d * step) > maxAngle ? " opacity: 0; visibility: hidden;" : "";
-    return `${base} transform: translateY(-50%) rotateX(${angle}deg) translateZ(${radius}px);${hidden}`;
+    return `${base} transform: translateY(-50%) rotateX(${-angle}deg) translateZ(${radius}px);${hidden}`;
   }
 </script>
 

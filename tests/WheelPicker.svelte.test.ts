@@ -451,7 +451,8 @@ describe("Drum layout, pointer and animation (browser)", () => {
     const radius = Number(selected.match(/translateZ\((-?\d+(?:\.\d+)?)px\)/)?.[1]);
 
     expect(radius).toBeGreaterThan(0);
-    expect(Math.abs(rotateX(rows[0]))).toBeGreaterThan(0);
+    expect(rotateX(rows[0])).toBeGreaterThan(0);
+    expect(rotateX(rows[2])).toBeLessThan(0);
   });
 
   test("measured item-height cssvar is a real px value", async () => {
