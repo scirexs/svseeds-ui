@@ -25,6 +25,7 @@
     confirm?: boolean; // hover delay before committing (false)
     dragging?: boolean; // bindable group drag activity
     ariaLabel?: string;
+    ariaRoleDescription?: string; // ("Sortable Item")
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
     // other ul attributes are passed to <ul> via ...rest; `class` is merged onto the list
@@ -82,6 +83,7 @@
     confirm?: boolean;
     dragging?: boolean;
     ariaLabel?: string;
+    ariaRoleDescription?: string;
     styling?: SVSClass;
     variant?: SVSVariant;
   }
@@ -125,7 +127,6 @@
   };
   type TransitionFn = ReturnType<typeof crossfade>[number];
   type TriggerButton = "main" | "sub" | "middle" | "back" | "forward" | "ctrl" | "alt" | "shift" | "meta";
-  type Point = { x: number; y: number };
   type VoidFn = () => void;
   type SortableMember<T = unknown> = {
     id: string;
@@ -138,6 +139,7 @@
     get multiple(): boolean;
     get confirm(): boolean;
     touch(): void;
+    deselect(): void;
   };
   type ActiveDrag<T = unknown> = {
     source: SortableMember<T>;
@@ -160,7 +162,7 @@
     visible: boolean;
     ownerId: string;
     item: unknown;
-    point: Point;
+    point: Vector;
     cssSize: string;
     ghost: boolean;
   };
@@ -216,7 +218,7 @@
           followers: string[];
           item: unknown;
           ghost: boolean;
-          anchor: Point;
+          anchor: Vector;
         }
       | undefined = $state.raw();
     #dragging = $state(false);
@@ -343,6 +345,7 @@
       if (this.#active) {
         this.#commitSwap();
         this.#commitFollowers();
+        this.#active.source.deselect();
       }
       this.#clearDrag();
     }
@@ -399,6 +402,7 @@
       const active = this.#active;
       if (!active || !this.#keyboard) return;
       this.#commitFollowers();
+      active.source.deselect();
       const p = this.#position(active.current, active.activeKey);
       const owner = active.current.id;
       this.#keyboard = undefined;
@@ -702,7 +706,7 @@
     const index = findIndex(member, key);
     member.items.splice(index < 0 ? member.items.length : index + 1, 0, ...values);
   }
-  function point(x: number, y: number): Point {
+  function point(x: number, y: number): Vector {
     return { x, y };
   }
   function stringifyKey(key: PropertyKey): string {
@@ -758,8 +762,8 @@
 
   class PointerVector {
     #tolerance;
-    #initial: Point = point(0, 0);
-    #current: Point = point(0, 0);
+    #initial: Vector = point(0, 0);
+    #current: Vector = point(0, 0);
 
     constructor(tolerance: number) {
       this.#tolerance = tolerance;
@@ -772,7 +776,7 @@
       this.#refresh(ev);
       return Math.hypot(this.#current.x - this.#initial.x, this.#current.y - this.#initial.y) > this.#tolerance;
     }
-    vector(ev: PointerEvent): Point {
+    vector(ev: PointerEvent): Vector {
       this.#refresh(ev);
       return point(this.#current.x - this.#initial.x, this.#current.y - this.#initial.y);
     }
@@ -787,17 +791,17 @@
   import { crossfade } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import { flip } from "svelte/animate";
-  import { VARIANT, PARTS, _fnClass, _throttle, _isNeutral, _resolveDuration, _createContext } from "./_core";
+  import { VARIANT, PARTS, SR_ONLY, _fnClass, _throttle, _isNeutral, _resolveDuration, _createContext } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
-  import type { EventHandler, HTMLAttributes, KeyboardEventHandler } from "svelte/elements";
+  import type { EventHandler, HTMLAttributes, KeyboardEventHandler, PointerEventHandler } from "svelte/elements";
   import type { EasingFunction } from "svelte/transition";
-  import type { SVSClass, SVSVariant, SVSContext } from "./_core";
+  import type { SVSClass, SVSVariant, SVSContext, Vector } from "./_core";
 </script>
 
 <script lang="ts" generics="T = string">
   // prettier-ignore
-  let { items = $bindable(), item, key, clone, group, id, ghost, mode = "move", accept, sort = true, multiple = false, draggable = true, appendable = false, confirm = false, dragging = $bindable(false), ariaLabel, styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: SortableProps<T> = $props();
+  let { items = $bindable(), item, key, clone, group, id, ghost, mode = "move", accept, sort = true, multiple = false, draggable = true, appendable = false, confirm = false, dragging = $bindable(false), ariaLabel, ariaRoleDescription = "Sortable Item", styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: SortableProps<T> = $props();
 
   const context = _getSortableContext();
   // svelte-ignore state_referenced_locally
@@ -845,6 +849,9 @@
     touch() {
       items = items;
     },
+    deselect() {
+      selected.clear();
+    },
     get appendable() {
       return appendable;
     },
@@ -879,7 +886,7 @@
   function isSelected(key: string): boolean {
     return selected.has(key);
   }
-  function onPointerDown(ev: PointerEvent) {
+  const hpointerdown: PointerEventHandler<HTMLUListElement> = (ev) => {
     const target = ev.target;
     if (!(target instanceof Element) || !(ev.currentTarget instanceof HTMLElement)) return;
     const li = target.closest<HTMLElement>("[data-svs-key]");
@@ -907,8 +914,8 @@
     if (controller.prepare(member, key, ev, li, followers)) {
       controller.setGhost?.(ghost !== undefined, ev);
     }
-  }
-  function onPointerOver(ev: PointerEvent) {
+  };
+  const hpointerover: PointerEventHandler<HTMLUListElement> = (ev) => {
     if (!controller.dragging) return;
     const target = ev.target;
     if (!(target instanceof Element) || !(ev.currentTarget instanceof HTMLElement)) return;
@@ -918,23 +925,23 @@
       return;
     }
     controller.over(member, li.dataset.svsKey ?? "");
-  }
-  function onPointerOut(ev: PointerEvent) {
+  };
+  const hpointerout: PointerEventHandler<HTMLUListElement> = (ev) => {
     if (!controller.dragging) return;
     const current = ev.currentTarget;
     const related = ev.relatedTarget;
     if (current instanceof Element && related instanceof Node && current.contains(related)) return;
     controller.leave();
-  }
-  function onPointerEnter() {
+  };
+  const hpointerenter: PointerEventHandler<HTMLUListElement> = () => {
     controller.enterGroup(member);
-  }
-  function onPointerUp() {
+  };
+  const hpointerup: PointerEventHandler<HTMLUListElement> = () => {
     if (!multiple || controller.dragging || !pendingSelect) return;
     pendingDeselect ? selected.delete(pendingSelect) : selected.add(pendingSelect);
     pendingSelect = "";
     pendingDeselect = false;
-  }
+  };
   function nextFocus(key: string, dir: -1 | 1): string {
     const index = items.findIndex((value) => keyString(value) === key);
     const next = items[index + dir];
@@ -1035,11 +1042,11 @@
   data-svs-list={listId}
   aria-label={ariaLabel}
   {...rest}
-  onpointerdown={onPointerDown}
-  onpointerover={onPointerOver}
-  onpointerout={onPointerOut}
-  onpointerenter={onPointerEnter}
-  onpointerup={onPointerUp}
+  onpointerdown={hpointerdown}
+  onpointerover={hpointerover}
+  onpointerout={hpointerout}
+  onpointerenter={hpointerenter}
+  onpointerup={hpointerup}
   onkeydown={hkeydown}
 >
   {#each items as value (keyString(value))}
@@ -1050,7 +1057,7 @@
       class={cls(PARTS.MAIN, itemVariant)}
       data-svs-key={k}
       tabindex={focusKey === k || controller.activeKey === k ? 0 : -1}
-      aria-roledescription="sortable item"
+      aria-roledescription={ariaRoleDescription}
       in:controller.receive={{ key: k }}
       out:controller.send={{ key: k }}
       animate:flip={controller.tp}
@@ -1063,10 +1070,7 @@
     </li>
   {/each}
 </ul>
-<span
-  aria-live="polite"
-  style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;"
->
+<span aria-live="polite" style={SR_ONLY}>
   {controller.messageOwnerId === listId ? controller.message : ""}
 </span>
 {#if controller.shadow.rendering && controller.shadow.ownerId === listId}

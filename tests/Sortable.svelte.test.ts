@@ -124,6 +124,14 @@ describe("_Sortable rendering and API", () => {
     expect(list.hasAttribute("aria-label")).toBe(false);
   });
 
+  test("item aria-roledescription defaults and can be overridden", () => {
+    const standard = render(SortableBasic, { items: ["a"] });
+    const custom = render(SortableBasic, { items: ["a"], ariaRoleDescription: "Backlog card" });
+
+    expect(items(standard.container)[0].getAttribute("aria-roledescription")).toBe("Sortable Item");
+    expect(items(custom.container)[0].getAttribute("aria-roledescription")).toBe("Backlog card");
+  });
+
   test("passes list attributes and merges caller class", async () => {
     const { container } = render(SortableBasic, {
       items: ["a"],
@@ -384,6 +392,8 @@ describe("_Sortable multiple, confirm, append, and dragging", () => {
 
     await expect.element(el(container, "readout-a")).toHaveTextContent("a3");
     await expect.element(el(container, "readout-b")).toHaveTextContent("a1,a2,b1");
+    expect(el(container, "item-a1").getAttribute("data-variant")).not.toBe(VARIANT.ACTIVE);
+    expect(el(container, "item-a2").getAttribute("data-variant")).not.toBe(VARIANT.ACTIVE);
   });
 
   test("same-list multi-select move relocates the whole selection to the drop target", async () => {
@@ -397,6 +407,31 @@ describe("_Sortable multiple, confirm, append, and dragging", () => {
     await drag(el(container, "item-two"), el(container, "item-four"));
 
     await expect.element(el(container, "value-readout")).toHaveTextContent("three,four,two,one");
+    expect(el(container, "item-one").getAttribute("data-variant")).not.toBe(VARIANT.ACTIVE);
+    expect(el(container, "item-two").getAttribute("data-variant")).not.toBe(VARIANT.ACTIVE);
+  });
+
+  test("plain click-to-select survives pointerup", async () => {
+    const { container } = render(SortableBasic, { items: ["a", "b"], multiple: true });
+
+    el(container, "item-a").dispatchEvent(new PointerEvent("pointerdown", { button: 0, buttons: 1, bubbles: true }));
+    el(container, "item-a").dispatchEvent(new PointerEvent("pointerup", { button: 0, buttons: 0, bubbles: true }));
+    await tick();
+
+    await expect.element(el(container, "item-a")).toHaveAttribute("data-variant", VARIANT.ACTIVE);
+  });
+
+  test("pointer cancel preserves multi-select selection", async () => {
+    const { container } = render(SortableBasic, { items: ["a", "b"], multiple: true });
+
+    el(container, "item-a").dispatchEvent(new PointerEvent("pointerdown", { button: 0, buttons: 1, bubbles: true }));
+    el(container, "item-a").dispatchEvent(new PointerEvent("pointerup", { button: 0, buttons: 0, bubbles: true }));
+    await tick();
+    await drag(el(container, "item-a"), null, { up: false });
+    window.dispatchEvent(new PointerEvent("pointercancel", { bubbles: true }));
+    await tick();
+
+    await expect.element(el(container, "item-a")).toHaveAttribute("data-variant", VARIANT.ACTIVE);
   });
 
   test("confirm shows a pending highlight before committing", async () => {
@@ -549,6 +584,8 @@ describe("_Sortable keyboard drag and drop", () => {
     await press(document.activeElement as HTMLElement, " ");
 
     await expect.element(el(container, "value-readout")).toHaveTextContent("c,a,b,d");
+    expect(el(container, "item-a").getAttribute("data-variant")).not.toBe(VARIANT.ACTIVE);
+    expect(el(container, "item-b").getAttribute("data-variant")).not.toBe(VARIANT.ACTIVE);
   });
 
   test("focus loss cancels an active keyboard grab without restoring focus", async () => {

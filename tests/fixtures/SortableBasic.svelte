@@ -13,6 +13,7 @@
     draggable?: boolean;
     dragging?: boolean;
     ariaLabel?: string;
+    ariaRoleDescription?: string;
     ariaLabelledby?: string;
     dataProbe?: string;
     listClass?: string;
@@ -22,7 +23,7 @@
   }
 
   // prettier-ignore
-  let { items = $bindable(["a", "b", "c"]), mode = "move", sort = true, multiple = false, confirm = false, appendable = false, draggable = true, dragging = $bindable(false), ariaLabel, ariaLabelledby, dataProbe, listClass, styling, variant = VARIANT.NEUTRAL, noHandle = false }: Props = $props();
+  let { items = $bindable(["a", "b", "c"]), mode = "move", sort = true, multiple = false, confirm = false, appendable = false, draggable = true, dragging = $bindable(false), ariaLabel, ariaRoleDescription, ariaLabelledby, dataProbe, listClass, styling, variant = VARIANT.NEUTRAL, noHandle = false }: Props = $props();
 </script>
 
 <Sortable
@@ -35,6 +36,7 @@
   {appendable}
   {draggable}
   {ariaLabel}
+  {ariaRoleDescription}
   {styling}
   {variant}
   aria-labelledby={ariaLabelledby}
