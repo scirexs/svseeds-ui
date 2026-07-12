@@ -28,22 +28,18 @@
   ### Anatomy
   ```svelte
   <div class="whole">
-    &lt;!-- sr-only; source of truth --&gt;
-    <select class="main" {...rest}>
+    <select class="main" style="sr-only" {...rest}>
       {#each options as o}
         <option value={o.value} disabled={o.disabled}>{o.text}</option>
       {/each}
     </select>
-    &lt;!-- perspective / clip container --&gt;
-    <div class="middle" aria-hidden="true">
+    <div class="middle" aria-hidden="true"> // perspective / clip container
       {#each options as o, i}
         <div class="label">{label ?? o.text}</div>
       {/each}
     </div>
-    &lt;!-- center selection band --&gt;
-    <div class="aux" aria-hidden="true"></div>
-    &lt;!-- top+bottom fade --&gt;
-    <div class="extra" aria-hidden="true"></div>
+    <div class="aux" aria-hidden="true"></div> // center selection band
+    <div class="extra" aria-hidden="true"></div> // top+bottom fade
   </div>
   ```
   ### Behavior
