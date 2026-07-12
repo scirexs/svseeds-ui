@@ -152,8 +152,6 @@
     options;
     untrack(() => measure());
   });
-  onMount(() => observe());
-  onDestroy(cleanup);
   $effect.pre(() => {
     selected;
     untrack(() => sync());
@@ -306,6 +304,8 @@
     const hidden = Math.abs(d * step) > maxAngle ? " opacity: 0; visibility: hidden;" : "";
     return `${base} transform: translateY(-50%) rotateX(${-angle}deg) translateZ(${radius}px);${hidden}`;
   }
+  onMount(() => observe());
+  onDestroy(cleanup);
 </script>
 
 <!---------------------------------------->
