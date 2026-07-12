@@ -73,7 +73,7 @@
 
   export const _WHEELPICKER_PRESET = "svs-wheelpicker";
 
-  import { tick, untrack } from "svelte";
+  import { onDestroy, onMount, tick, untrack } from "svelte";
   import { VARIANT, PARTS, SR_ONLY, _debounce, _fnClass, shouldReduceMotion, _throttle, _cssVarStyle } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
@@ -152,13 +152,8 @@
     options;
     untrack(() => measure());
   });
-  $effect(() => {
-    whole;
-    return untrack(() => observe());
-  });
-  $effect(() => {
-    return () => cleanup();
-  });
+  onMount(() => observe());
+  onDestroy(cleanup);
   $effect.pre(() => {
     selected;
     untrack(() => sync());
