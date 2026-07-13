@@ -44,7 +44,7 @@
     easing?: EasingFunction;
     messages?: Partial<SortableMessages>;
     styling?: SVSClass;
-    variant?: SVSVariant;
+    variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
   export type SortableGroupReqdProps = "children";
   export type SortableGroupBindProps = never;

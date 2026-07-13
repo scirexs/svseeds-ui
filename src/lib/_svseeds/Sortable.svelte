@@ -88,7 +88,7 @@
     ariaLabel?: string;
     ariaRoleDescription?: string;
     styling?: SVSClass;
-    variant?: SVSVariant;
+    variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
   export type SortableReqdProps = "items" | "item";
   export type SortableBindProps = "items" | "dragging";

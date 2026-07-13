@@ -30,7 +30,7 @@
     native?: boolean;
     element?: HTMLInputElement;
     styling?: SVSClass;
-    variant?: SVSVariant;
+    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
     dateInput?: Omit<DateInputProps, DateInputReqdProps | DateInputBindProps | "name" | "min" | "max" | "required" | "disabled" | "variant" | "styling">;
     children?: Snippet;
   }
@@ -79,7 +79,7 @@
     native?: boolean;
     element?: HTMLInputElement;
     styling?: SVSClass;
-    variant?: SVSVariant;
+    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
     dateInput?: Omit<
       DateInputProps,
       DateInputReqdProps | DateInputBindProps | "name" | "min" | "max" | "required" | "disabled" | "variant" | "styling"

@@ -64,7 +64,7 @@
     attach?: Attachment<HTMLImageElement>;
     element?: HTMLImageElement;
     styling?: SVSClass;
-    variant?: SVSVariant;
+    variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
   }
   export interface ImageSource {
     srcset: string;

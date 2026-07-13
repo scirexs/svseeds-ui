@@ -62,7 +62,7 @@
     delay?: number;
     cursor?: boolean;
     styling?: SVSClass;
-    variant?: SVSVariant;
+    variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
   export type TooltipDefaults = Omit<TooltipParams, "text" | "content">;
 

@@ -55,7 +55,7 @@
     year?: Omit<WheelPickerProps, "options" | "value" | "variant">;
     month?: Omit<WheelPickerProps, "options" | "value" | "variant">;
     styling?: SVSClass;
-    variant?: SVSVariant;
+    variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
   export type MonthPickerReqdProps = never;
   export type MonthPickerBindProps = "value";

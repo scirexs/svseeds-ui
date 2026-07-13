@@ -65,7 +65,7 @@
     attach?: Attachment<HTMLSelectElement>;
     element?: HTMLSelectElement;
     styling?: SVSClass;
-    variant?: SVSVariant;
+    variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
   export type WheelPickerReqdProps = "options";
   export type WheelPickerBindProps = "value" | "element";

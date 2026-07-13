@@ -39,3 +39,4 @@
 20260711_v2j32e	refactor: Convert WheelPicker's two teardown-only $effects to onMount/onDestroy (no leak found; clarity refactor)
 20260712_ao6i63	fix: Add a default position:relative to WheelPicker's .whole element so its .aux/.extra children position correctly without caller CSS
 20260713_l56kvf	fix: Add default position:absolute;pointer-events:none; inline style to WheelPicker's .aux and .extra overlay divs; keep .extra
+20260713_e4nkcg	docs: unify the variant prop comment annotations (bindable/default) across components

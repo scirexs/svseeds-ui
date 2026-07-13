@@ -75,7 +75,7 @@
     attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement;
     styling?: SVSClass;
-    variant?: SVSVariant;
+    variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
   export type DateInputCtl = {
     toggle: () => void;

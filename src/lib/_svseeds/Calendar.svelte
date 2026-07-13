@@ -92,7 +92,7 @@
     monthPicker?: Omit<MonthPickerProps, "value" | "min" | "max" | "variant">;
     transition?: TransitionProp;
     styling?: SVSClass;
-    variant?: SVSVariant;
+    variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
   export type DayCtx = {
     date: Temporal.PlainDate;
