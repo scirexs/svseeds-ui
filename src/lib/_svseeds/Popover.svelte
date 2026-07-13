@@ -40,11 +40,11 @@
     {label}
   </button>
   <div class="whole" popover role style data-svs-placement>
-    <div class="top" aria-hidden conditional: arrow, placement=bottom></div>
-    <div class="left" aria-hidden conditional: arrow, placement=right></div>
+    <div class="top" style aria-hidden conditional: arrow, placement=bottom></div>
+    <div class="left" style aria-hidden conditional: arrow, placement=right></div>
     <div class="main">{children}</div>
-    <div class="bottom" aria-hidden conditional: arrow, placement=top></div>
-    <div class="right" aria-hidden conditional: arrow, placement=left></div>
+    <div class="bottom" style aria-hidden conditional: arrow, placement=top></div>
+    <div class="right" style aria-hidden conditional: arrow, placement=left></div>
   </div>
   ```
   ### Behavior
@@ -82,6 +82,12 @@
     left: { start: "left span-bottom", center: "left center", end: "left span-top" },
   } as const;
   const GAP_SIDE = { top: "margin-bottom", right: "margin-left", bottom: "margin-top", left: "margin-right" } as const;
+  const CARET_STYLE = {
+    bottom: "position:absolute;left:50%;top:0;translate:-50% -50%",
+    top: "position:absolute;left:50%;bottom:0;translate:-50% 50%",
+    right: "position:absolute;top:50%;left:0;translate:-50% -50%",
+    left: "position:absolute;top:50%;right:0;translate:50% -50%",
+  } as const;
 
   import { untrack } from "svelte";
   import { VARIANT, PARTS, _fnClass, canHover } from "./_core";
@@ -131,7 +137,6 @@
   let shown = false;
 
   // *** Reactive Handlers *** //
-  const arrowAxis = $derived(position === "left" || position === "right" ? "row" : "column");
   const panelStyle = $derived(
     [
       `position-anchor:${anchor}`,
@@ -139,11 +144,11 @@
       offset ? `${GAP_SIDE[position]}:${offset}px` : "",
       matchWidth ? "min-width:anchor-size(width)" : "",
       autoFlip ? "position-try-fallbacks:flip-block, flip-inline" : "",
-      arrow ? `display:flex;flex-direction:${arrowAxis};align-items:center` : "",
     ]
       .filter(Boolean)
       .join(";"),
   );
+  const caretStyle = $derived(CARET_STYLE[placement]);
   const hasPopup = $derived(ariaRole ?? "true");
 
   $effect(() => {
@@ -253,9 +258,9 @@
   onpointerleave={hoverEnabled ? panelleave : undefined}
   onfocusout={hoverEnabled ? panelfocusout : undefined}
 >
-  {#if arrow && placement === "bottom"}<div class={cls(PARTS.TOP, variant)} aria-hidden="true"></div>{/if}
-  {#if arrow && placement === "right"}<div class={cls(PARTS.LEFT, variant)} aria-hidden="true"></div>{/if}
+  {#if arrow && placement === "bottom"}<div class={cls(PARTS.TOP, variant)} style={caretStyle} aria-hidden="true"></div>{/if}
+  {#if arrow && placement === "right"}<div class={cls(PARTS.LEFT, variant)} style={caretStyle} aria-hidden="true"></div>{/if}
   <div class={cls(PARTS.MAIN, variant)}>{@render children(variant)}</div>
-  {#if arrow && placement === "top"}<div class={cls(PARTS.BOTTOM, variant)} aria-hidden="true"></div>{/if}
-  {#if arrow && placement === "left"}<div class={cls(PARTS.RIGHT, variant)} aria-hidden="true"></div>{/if}
+  {#if arrow && placement === "top"}<div class={cls(PARTS.BOTTOM, variant)} style={caretStyle} aria-hidden="true"></div>{/if}
+  {#if arrow && placement === "left"}<div class={cls(PARTS.RIGHT, variant)} style={caretStyle} aria-hidden="true"></div>{/if}
 </div>
