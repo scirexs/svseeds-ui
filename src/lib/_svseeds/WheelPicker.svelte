@@ -345,6 +345,6 @@
     {/each}
   </div>
 
-  <div class={cls(PARTS.AUX, variant)} aria-hidden="true"></div>
-  <div class={cls(PARTS.EXTRA, variant)} aria-hidden="true"></div>
+  <div class={cls(PARTS.AUX, variant)} aria-hidden="true" style="position: absolute; pointer-events: none;"></div>
+  <div class={cls(PARTS.EXTRA, variant)} aria-hidden="true" style="position: absolute; pointer-events: none;"></div>
 </div>

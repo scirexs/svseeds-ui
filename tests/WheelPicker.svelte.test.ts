@@ -116,6 +116,10 @@ describe("Rendering and options", () => {
     expect(main.getAttribute("style")).toContain("clip-path: inset(50%)");
     expect(main.getAttribute("style")).not.toContain("clip:");
     expect(main.getAttribute("style")).toContain("pointer-events: none");
+    expect(aux.getAttribute("style")).toContain("position: absolute");
+    expect(aux.getAttribute("style")).toContain("pointer-events: none");
+    expect(extra.getAttribute("style")).toContain("position: absolute");
+    expect(extra.getAttribute("style")).toContain("pointer-events: none");
   });
 
   test("drum text is not selectable", () => {
