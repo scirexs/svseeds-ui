@@ -75,6 +75,13 @@ updates it; you never reassign it). Never write `let x = $derived(...)`.
 
 ## 5. `$effect` / `$effect.pre`
 
+Setup / teardown that can be expressed with `onMount` / `onDestroy` uses those
+rather than `$effect` (e.g. an `$effect` returning a cleanup function). Reserve
+`$effect` for genuinely reactive synchronization.
+
+Place `onMount` / `onDestroy` at the **end** of the instance `<script>` — after
+all `// *** … *** //` sections. See `WheelPicker.svelte`.
+
 If the body is more than one line, extract a named function and call it inside
 `untrack(() => …)`, reading only the intended reactive dependencies *outside*
 `untrack`. This makes the reactive surface explicit and excludes unintended
@@ -104,6 +111,9 @@ Canonical labels, in order:
 
 Specialized labels exist where needed (`Initialize Context`, `Menu Helpers`, …),
 but reuse a canonical label whenever it fits.
+
+`onMount` / `onDestroy` come after the Event Handlers section, at the end of the
+instance `<script>` (§5).
 
 ## 8. Event handlers vs control functions
 
