@@ -41,3 +41,4 @@
 20260713_l56kvf	fix: Add default position:absolute;pointer-events:none; inline style to WheelPicker's .aux and .extra overlay divs; keep .extra
 20260713_e4nkcg	docs: unify the variant prop comment annotations (bindable/default) across components
 20260713_hqhi33	docs: Sync each component's exported Props interface trailing // annotations with its @component Types block (verbatim identical per line; fuller wording wins on divergence)
+20260713_nqqeqr	feat: Calendar: add an opt-in pageTransition prop that slides the grid on month change (library-injected direction), and make the bottom snippet's setToday close the MonthPicker

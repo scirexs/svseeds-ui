@@ -27,6 +27,7 @@
     bottom?: Snippet<[string, () => void]>;
     monthPicker?: Omit<MonthPickerProps, "value" | "min" | "max" | "variant">;
     transition?: TransitionProp;
+    pageTransition?: TransitionProp;
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
@@ -53,7 +54,7 @@
       <button class="right" />
     </div>
     <div class="middle">
-      <div class="main" role="grid">
+      <div class="main" role="grid" transition>
         <div class="aux" role="row" data-header>
           <span class="extra" role="columnheader" data-header data-weekday />
         </div>
@@ -70,6 +71,9 @@
   - Day cells expose `data-today`, `data-selected`, `data-outside`, `data-disabled`, and `data-weekday`.
   - The weekday-header row and its `columnheader` cells carry `data-header`; the day rows carry `data-*` only on their cells.
   - Arrow, Home/End, PageUp/PageDown, and Shift+PageUp/PageDown update roving focus.
+  - The grid re-keys when `display` changes; opt-in `pageTransition` slides the page and receives `params.dir` (`-1` previous, `+1` next, `0` none). Reduced motion falls back to no animation.
+  - A cross-slide transition that overlays the leaving grid (`position: absolute`) requires the grid container to provide `position: relative; overflow: hidden`.
+  - The `bottom` snippet's `setToday` selects today, jumps to its month, and closes the MonthPicker.
 -->
 <script module lang="ts">
   export interface CalendarProps {
@@ -91,6 +95,7 @@
     bottom?: Snippet<[string, () => void]>;
     monthPicker?: Omit<MonthPickerProps, "value" | "min" | "max" | "variant">;
     transition?: TransitionProp;
+    pageTransition?: TransitionProp;
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
@@ -123,7 +128,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { value = $bindable(), display = $bindable(), picking = $bindable(false), min, max, isDisabled, outsideDays = false, fixedWeeks = false, firstDayOfWeek = 0, locale, label, left, right, weekday, day, bottom, monthPicker, transition, styling, variant = VARIANT.NEUTRAL }: CalendarProps = $props();
+  let { value = $bindable(), display = $bindable(), picking = $bindable(false), min, max, isDisabled, outsideDays = false, fixedWeeks = false, firstDayOfWeek = 0, locale, label, left, right, weekday, day, bottom, monthPicker, transition, pageTransition, styling, variant = VARIANT.NEUTRAL }: CalendarProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(_fnClass(_CALENDAR_PRESET, styling));
@@ -135,6 +140,8 @@
 
   // *** States *** //
   const initialDisplay = display as Temporal.PlainYearMonth;
+  let dir = $state(0);
+  let prevYm = initialDisplay;
   let focused = $state(value && sameMonth(value, initialDisplay) ? value : firstOf(initialDisplay));
   let cells = $state<Record<string, HTMLElement>>({});
   const firstWeekday = $derived(normWeekday(firstDayOfWeek));
@@ -170,18 +177,28 @@
   const reduced = $derived(shouldReduceMotion());
   const tfn = $derived(!reduced && transition?.fn ? transition.fn : noop);
   const tparams = $derived(transition?.params as any);
+  const pfn = $derived(!reduced && pageTransition?.fn ? pageTransition.fn : noop);
+  const pparams = $derived({ ...((pageTransition?.params ?? {}) as object), dir });
 
   // *** Reactive Handlers *** //
   $effect.pre(() => {
     display;
     value;
-    untrack(() => syncFocus());
+    untrack(() => sync());
   });
   $effect.pre(() => {
     cellKeys;
     untrack(() => trimCells(cellKeys));
   });
 
+  function sync() {
+    const cur = currentDisplay();
+    if (!cur.equals(prevYm)) {
+      dir = Temporal.PlainYearMonth.compare(cur, prevYm);
+      prevYm = cur;
+    }
+    syncFocus();
+  }
   function syncFocus() {
     const shown = currentDisplay();
     if (sameMonth(focused, shown)) return;
@@ -256,6 +273,7 @@
   function setToday() {
     displayOf(today);
     select(today);
+    picking = false;
   }
   function move(d: Temporal.PlainDate) {
     focused = d;
@@ -323,48 +341,63 @@
     </div>
   {:else}
     <div class={cls(PARTS.MIDDLE, variant)} transition:tfn|local={tparams}>
-      <div class={cls(PARTS.MAIN, variant)} role="grid" tabindex="-1" aria-labelledby={idCaption} onkeydown={hkeydown}>
-        <div class={cls(PARTS.AUX, variant)} role="row" data-header>
-          {#each weekdayLabels as wl}
-            <span class={cls(PARTS.EXTRA, VARIANT.NEUTRAL)} role="columnheader" data-header data-weekday={wl.weekday} aria-label={wl.full}>
-              {#if weekday}{@render weekday(wl.weekday, variant)}{:else}{wl.text}{/if}
-            </span>
-          {/each}
-        </div>
-        {#each weeks as week}
-          <div class={cls(PARTS.AUX, variant)} role="row">
-            {#each week as cell}
-              {@const outside = !sameMonth(cell, currentDisplay())}
-              {#if outside && !outsideDays}
-                <span class={cls(PARTS.EXTRA, VARIANT.NEUTRAL)} role="gridcell" aria-hidden="true"></span>
-              {:else}
-                {@const c = ctx(cell)}
-                <button
-                  class={cls(PARTS.EXTRA, c.variant)}
-                  type="button"
-                  role="gridcell"
-                  tabindex={cell.equals(focused) ? 0 : -1}
-                  bind:this={cells[cell.toString()]}
-                  aria-selected={c.selected}
-                  aria-disabled={c.disabled || undefined}
-                  aria-current={c.today ? "date" : undefined}
-                  aria-label={labelOf(cell)}
-                  data-date={cell.toString()}
-                  data-today={c.today || undefined}
-                  data-selected={c.selected || undefined}
-                  data-outside={c.outside || undefined}
-                  data-disabled={c.disabled || undefined}
-                  data-weekday={c.weekday}
-                  onfocus={() => (focused = cell)}
-                  onclick={() => select(cell)}
-                >
-                  {#if day}{@render day(c)}{:else}{cell.day}{/if}
-                </button>
-              {/if}
+      {#key currentDisplay().toString()}
+        <div
+          class={cls(PARTS.MAIN, variant)}
+          role="grid"
+          tabindex="-1"
+          aria-labelledby={idCaption}
+          onkeydown={hkeydown}
+          transition:pfn|local={pparams}
+        >
+          <div class={cls(PARTS.AUX, variant)} role="row" data-header>
+            {#each weekdayLabels as wl}
+              <span
+                class={cls(PARTS.EXTRA, VARIANT.NEUTRAL)}
+                role="columnheader"
+                data-header
+                data-weekday={wl.weekday}
+                aria-label={wl.full}
+              >
+                {#if weekday}{@render weekday(wl.weekday, variant)}{:else}{wl.text}{/if}
+              </span>
             {/each}
           </div>
-        {/each}
-      </div>
+          {#each weeks as week}
+            <div class={cls(PARTS.AUX, variant)} role="row">
+              {#each week as cell}
+                {@const outside = !sameMonth(cell, currentDisplay())}
+                {#if outside && !outsideDays}
+                  <span class={cls(PARTS.EXTRA, VARIANT.NEUTRAL)} role="gridcell" aria-hidden="true"></span>
+                {:else}
+                  {@const c = ctx(cell)}
+                  <button
+                    class={cls(PARTS.EXTRA, c.variant)}
+                    type="button"
+                    role="gridcell"
+                    tabindex={cell.equals(focused) ? 0 : -1}
+                    bind:this={cells[cell.toString()]}
+                    aria-selected={c.selected}
+                    aria-disabled={c.disabled || undefined}
+                    aria-current={c.today ? "date" : undefined}
+                    aria-label={labelOf(cell)}
+                    data-date={cell.toString()}
+                    data-today={c.today || undefined}
+                    data-selected={c.selected || undefined}
+                    data-outside={c.outside || undefined}
+                    data-disabled={c.disabled || undefined}
+                    data-weekday={c.weekday}
+                    onfocus={() => (focused = cell)}
+                    onclick={() => select(cell)}
+                  >
+                    {#if day}{@render day(c)}{:else}{cell.day}{/if}
+                  </button>
+                {/if}
+              {/each}
+            </div>
+          {/each}
+        </div>
+      {/key}
     </div>
   {/if}
 

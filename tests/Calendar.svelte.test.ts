@@ -28,6 +28,11 @@ const setWheel = async (select: HTMLSelectElement, value: string) => {
   select.dispatchEvent(new Event("change", { bubbles: true }));
   await tick();
 };
+const hasTransitionDir = (fn: ReturnType<typeof vi.fn>, dir: number, marker?: string) =>
+  fn.mock.calls.some(([, params]) => {
+    const p = params as { dir?: number; marker?: string };
+    return p.dir === dir && (marker === undefined || p.marker === marker);
+  });
 const snippet0 = (id: string, text: string) =>
   createRawSnippet(() => ({
     render: () => `<span data-testid="${id}">${text}</span>`,
@@ -173,6 +178,17 @@ describe("_Calendar selection and constraints", () => {
     await blocked.getByTestId("today").click();
     await expect.element(blocked.getByTestId("display")).toHaveTextContent(`${today.year}-${today.month}`);
     await expect.element(blocked.getByTestId("value")).toHaveTextContent("");
+  });
+
+  test("setToday closes the embedded MonthPicker", async () => {
+    const today = Temporal.Now.plainDateISO();
+    const screen = render(CalendarBindable, { display: ym(2026, 6), picking: true, bottom: bottomSnippet });
+
+    await screen.getByTestId("today").click();
+
+    await expect.element(screen.getByTestId("picking")).toHaveTextContent("false");
+    await expect.element(screen.getByTestId("display")).toHaveTextContent(`${today.year}-${today.month}`);
+    expect(screen.container.querySelector('[role="grid"]')).toBeTruthy();
   });
 
   test("setToday moves roving tabindex to today when it selects", async () => {
@@ -374,6 +390,69 @@ describe("_Calendar rendering variants and snippets", () => {
     (screen.container.querySelector(`.${PARTS.LABEL}`) as HTMLButtonElement).click();
     await tick();
     expect(fn).toHaveBeenCalled();
+  });
+
+  test("pageTransition fn is invoked with dir on visible month changes", async () => {
+    const fn = vi.fn((_node: HTMLElement, _params: unknown) => ({ duration: 0 }));
+    const screen = render(CalendarBindable, {
+      display: ym(2026, 6),
+      outsideDays: true,
+      pageTransition: { fn, params: { marker: "page" } },
+    });
+    fn.mockClear();
+
+    (screen.container.querySelector(`.${PARTS.RIGHT}`) as HTMLButtonElement).click();
+    await tick();
+    expect(hasTransitionDir(fn, 1, "page")).toBe(true);
+
+    fn.mockClear();
+    (screen.container.querySelector(`.${PARTS.LEFT}`) as HTMLButtonElement).click();
+    await tick();
+    expect(hasTransitionDir(fn, -1, "page")).toBe(true);
+  });
+
+  test("pageTransition covers keyboard, date-select, and external display month changes", async () => {
+    const fn = vi.fn((_node: HTMLElement, _params: unknown) => ({ duration: 0 }));
+    const props = $state({ display: ym(2026, 6), outsideDays: true, pageTransition: { fn } });
+    const screen = render(CalendarBindable, props);
+    fn.mockClear();
+
+    dayButton(screen.container, 1).focus();
+    await pressKey(grid(screen.container), "ArrowLeft");
+    expect(hasTransitionDir(fn, -1)).toBe(true);
+
+    fn.mockClear();
+    const outside = cells(screen.container).find((b) => b.hasAttribute("data-outside") && b.textContent?.trim() === "1")!;
+    outside.click();
+    await tick();
+    expect(hasTransitionDir(fn, 1)).toBe(true);
+
+    fn.mockClear();
+    props.display = ym(2027, 1);
+    await screen.rerender(props);
+    await tick();
+    expect(hasTransitionDir(fn, 1)).toBe(true);
+  });
+
+  test("pageTransition does not run for MonthPicker-originated month changes", async () => {
+    const fn = vi.fn((_node: HTMLElement, _params: unknown) => ({ duration: 0 }));
+    const screen = render(CalendarBindable, {
+      display: ym(2026, 6),
+      min: date(2020, 1, 1),
+      max: date(2030, 12, 31),
+      pageTransition: { fn },
+    });
+    (screen.container.querySelector(`.${PARTS.LABEL}`) as HTMLButtonElement).click();
+    await tick();
+    fn.mockClear();
+
+    const selects = Array.from(screen.container.querySelectorAll("select")) as HTMLSelectElement[];
+    await setWheel(selects[1], "9");
+    (screen.container.querySelector(`.${PARTS.LABEL}`) as HTMLButtonElement).click();
+    await tick();
+
+    expect(fn).not.toHaveBeenCalled();
+    await expect.element(screen.getByTestId("display")).toHaveTextContent("2026-9");
   });
 });
 
