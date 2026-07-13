@@ -1,6 +1,6 @@
 {
   "name": "svseeds",
-  "version": "0.8.3",
+  "version": "0.8.4",
   "description": "Simple headless components for Svelte.",
   "type": "module",
   "main": "./index.js",
