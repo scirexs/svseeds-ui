@@ -23,3 +23,9 @@ state the format-check scope excludes it.
 Task `20260709_qzv7t6`: `.ws/decision/005-bind-this-vs-dom-query.md` has an
 exact-body contract; `request.md`'s Validation section scopes `BUN_FMT` to only
 the two changed `.svelte` files for this reason.
+
+Task `20260713_nqqeqr`: recurred with `.ws/decision/011-calendar-page-transition.md`.
+`request.md` already scoped `BUN_FMT`/`BUN_TEST` to the changed product files and
+stated the ADR is excluded, but `review` manually widened `BUN_FMT` to include the
+ADR anyway and reported the resulting failure as blocking; `analyze` ruled it a
+review over-scope, not a defect — the request-scoped command passed as stated.

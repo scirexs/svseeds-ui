@@ -17,6 +17,7 @@
 - svseeds-object-styling-no-part-literal-class.md — object-form `styling` emits only user classes, not the literal part-name token; `querySelector('.label')` returns null in object mode — use `bind:this` instead.
 - svelte-state-prop-initializer-warning.md — `$state` directly capturing a prop variable in its initializer triggers a Svelte warning; wrap the initial read in a tiny helper to suppress it while preserving one-time seed behavior.
 - wheelpicker-snap-dispatches-change-jump-does-not.md — `WheelPicker`'s `snap()` always dispatches native `change`; use `jump(index)` to re-settle the drum visually without firing `change` (e.g. a no-op selected-row tap).
+- svelte-branch-transition-skips-unmounted-changes.md — a keyed `transition:fn|local` on an element living in only one `{#if}/{:else}` branch can't capture a value change made while that branch is unmounted; centrally detecting the change doesn't make it visually transition if the target isn't mounted for that path.
 
 ## Build, Tooling & Dependencies
 - bun-run-check-generates-svelte-kit-dir.md — `bun run check` runs `svelte-kit sync`, (re)generating a gitignored `.svelte-kit/` build dir; leave it in place, don't clean it up.
