@@ -49,6 +49,7 @@
     `selectedIndex` to the select, item height is measured, and visible row count is derived.
   - Tapping a visible drum row selects it, or the nearest enabled option if that row is
     disabled; this relies on `.aux` / `.extra` staying `pointer-events: none`.
+  - `.whole` is `position: relative` by default so `.aux` / `.extra` position against it.
   - `loop` wraps `selectedIndex` modularly with seam clones; the `<select>` itself never loops.
   - `cssvar` mirrors named keys onto `.whole` only.
 -->
@@ -134,6 +135,7 @@
       { name: cssvar?.maxAngle, value: maxAngle == null ? undefined : `${maxAngle}deg` },
     ]);
   });
+  const wholeStyle = $derived(mirror ? `position: relative; ${mirror}` : "position: relative;");
   const shown = $derived.by(() => {
     const base = options.map((option, index) => ({ option, index, virtual: index, key: `main-${option.value}-${index}` }));
     if (!loop || options.length < 2) return base;
@@ -310,7 +312,7 @@
 
 <!---------------------------------------->
 
-<div bind:this={whole} class={[cls(PARTS.WHOLE, variant), c]} style={mirror}>
+<div bind:this={whole} class={[cls(PARTS.WHOLE, variant), c]} style={wholeStyle}>
   <select
     bind:value
     bind:this={element}

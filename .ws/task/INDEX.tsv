@@ -37,3 +37,4 @@
 20260711_avyar4	feat: WheelPicker: tap a visible option to select it
 20260711_b4wf33	refactor: Remove the NumberInput `integer` prop; expose `inputmode` as a caller-settable passthrough (default "decimal") and rely on the default `step=1` for the integer value constraint.
 20260711_v2j32e	refactor: Convert WheelPicker's two teardown-only $effects to onMount/onDestroy (no leak found; clarity refactor)
+20260712_ao6i63	fix: Add a default position:relative to WheelPicker's .whole element so its .aux/.extra children position correctly without caller CSS

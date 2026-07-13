@@ -234,9 +234,15 @@ describe("Variant and styling", () => {
 });
 
 describe("cssvar mirror", () => {
-  test("omits whole style when cssvar is absent", () => {
+  test("whole carries only position relative when cssvar is absent", () => {
     const { container } = render(WheelPicker, { options: opts });
-    expect(whole(container).getAttribute("style") ?? "").toBe("");
+    const style = whole(container).style;
+
+    expect(style.position).toBe("relative");
+    expect(style.getPropertyValue("--row-h")).toBe("");
+    expect(style.getPropertyValue("--n")).toBe("");
+    expect(style.getPropertyValue("--depth")).toBe("");
+    expect(style.getPropertyValue("--ang")).toBe("");
   });
 
   test("mirrors only named perspective and maxAngle properties", () => {
