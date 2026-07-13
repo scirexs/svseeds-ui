@@ -6,7 +6,7 @@
   <FileInput {...props}>Drop files</FileInput>
   ```
   ### Types
-  default value: *`(files, dragover, variant)`*
+  default value: *`(value)`*
   ```ts
   interface FileInputProps extends Omit<HTMLInputAttributes, "type" | "value" | "files" | "size" | "multiple" | "accept" | "children"> {
     children: Snippet<[File[], boolean, string]>; // required; Snippet<[files,dragover,variant]>; zone content, presentational only

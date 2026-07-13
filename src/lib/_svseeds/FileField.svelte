@@ -10,7 +10,7 @@
   </FileField>
   ```
   ### Types
-  default value: *`(files, variant, element)`*
+  default value: *`(value)`*
   ```ts
   interface FileFieldProps {
     content?: Snippet<[File[], boolean, string]>; // Snippet<[files,dragover,variant]>; zone content, presentational only
