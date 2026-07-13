@@ -17,7 +17,7 @@
     step?: number | "any"; // (1)
     options?: SvelteSet<number> | Set<number>;
     fillRange?: Range; // ({ min: 5, max: 95 }); linear-gradient rate limit of slider's track
-    cssvar?: Partial<Record<SliderCssVar, string>>;
+    cssvar?: Partial<Record<SliderCssVar, string>>; // custom-property names the track gradient reads; absent key uses default name
     attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
@@ -63,7 +63,7 @@
   export type SliderReqdProps = "min" | "max";
   export type SliderBindProps = "value" | "element";
   export type Range = { min: number; max: number };
-  export type SliderCssVar = "active" | "inactive";
+  export type SliderCssVar = "active" | "inactive"; // cssvar values are full --names the gradient reads; default --color-active / --color-inactive
 
   export const _SLIDER_PRESET = "svs-slider";
 

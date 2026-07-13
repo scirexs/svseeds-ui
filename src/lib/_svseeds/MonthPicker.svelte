@@ -42,16 +42,16 @@
 -->
 <script module lang="ts">
   export interface MonthPickerProps {
-    value?: Temporal.PlainYearMonth;
-    min?: Temporal.PlainYearMonth;
-    max?: Temporal.PlainYearMonth;
-    order?: ("year" | "month")[];
+    value?: Temporal.PlainYearMonth; // bindable; current year-month (Temporal.Now)
+    min?: Temporal.PlainYearMonth; // lower bound (value.year - 100, month 1)
+    max?: Temporal.PlainYearMonth; // upper bound (value.year + 100, month 12)
+    order?: ("year" | "month")[]; // (["year","month"])
     locale?: string;
     monthLabel?: (month: number) => string;
     yearLabel?: (year: number) => string;
-    left?: Snippet<[string]>;
-    middle?: Snippet<[string]>;
-    right?: Snippet<[string]>;
+    left?: Snippet<[string]>; // Snippet<[variant]>
+    middle?: Snippet<[string]>; // Snippet<[variant]>
+    right?: Snippet<[string]>; // Snippet<[variant]>
     year?: Omit<WheelPickerProps, "options" | "value" | "variant">;
     month?: Omit<WheelPickerProps, "options" | "value" | "variant">;
     styling?: SVSClass;

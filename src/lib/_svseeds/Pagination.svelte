@@ -17,12 +17,12 @@
     value?: number; // bindable; current page (1)
     min?: number; // first page (1)
     max?: number; // last page (max(min, value))
-    options?: number[]; // shortcut list shown in the ComboBox
+    options?: number[]; // shortcut list shown in the ComboBox (magnitude-thinned min..max)
     top?: Snippet<[number, string]>; // Snippet<[value,variant]>; FIRST button content
     left?: Snippet<[number, string]>; // Snippet<[value,variant]>; PREV button content
     right?: Snippet<[number, string]>; // Snippet<[value,variant]>; NEXT button content
     bottom?: Snippet<[number, string]>; // Snippet<[value,variant]>; LAST button content
-    ariaLabel?: string; // ("Pagination")
+    ariaLabel?: string; // nav landmark label ("Pagination")
     buttonLabels?: PaginationLabel; // ({top:"First page",left:"Previous page",right:"Next page",bottom:"Last page"})
     comboBox?: Omit<ComboBoxProps, ComboBoxReqdProps | ComboBoxBindProps | "options" | "variant" | "styling">;
     styling?: SVSClass;

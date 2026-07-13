@@ -13,7 +13,7 @@
   default value: *`(files, variant, element)`*
   ```ts
   interface FileFieldProps {
-    content: Snippet<[File[], boolean, string]>; // Snippet<[files,dragover,variant]>
+    content: Snippet<[File[], boolean, string]>; // Snippet<[files,dragover,variant]>; zone content, presentational only
     label?: string;
     extra?: string;
     aux?: Snippet<[File[], string, HTMLInputElement | undefined]>; // Snippet<[files,variant,element]>
@@ -75,7 +75,7 @@
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
-    fileInput?: Omit<FileInputProps, FileInputReqdProps | FileInputBindProps | "multiple" | "name" | "variant" | "events">;
+    fileInput?: Omit<FileInputProps, FileInputReqdProps | FileInputBindProps | "multiple" | "name" | "variant" | "events">; // default <FileInput/> props
     children?: Snippet;
   }
   export type FileFieldReqdProps = "content";

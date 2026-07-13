@@ -66,7 +66,7 @@
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
-    numberInput?: Omit<NumberInputProps, NumberInputReqdProps | NumberInputBindProps | "name" | "variant">;
+    numberInput?: Omit<NumberInputProps, NumberInputReqdProps | NumberInputBindProps | "name" | "variant">; // default <NumberInput/> props
     children?: Snippet;
   }
   export type NumberFieldReqdProps = never;

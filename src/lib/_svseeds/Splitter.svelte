@@ -19,7 +19,7 @@
     step?: number; // (1)
     snap?: number[]; // pointer-drag snap targets, within 3 percentage points
     label?: string;
-    cssvar?: Partial<Record<SplitterCssVar, string>>;
+    cssvar?: Partial<Record<SplitterCssVar, string>>; // custom-property name emitted with the first-pane percentage
     attach?: Attachment<HTMLDivElement>;
     element?: HTMLDivElement; // bindable
     styling?: SVSClass;
@@ -62,7 +62,7 @@
   }
   export type SplitterReqdProps = "left" | "right";
   export type SplitterBindProps = "value" | "element";
-  export type SplitterCssVar = "position";
+  export type SplitterCssVar = "position"; // cssvar value is the full --name emitted with the first-pane percentage; default --svs-splitter
 
   export const _SPLITTER_PRESET = "svs-splitter";
 

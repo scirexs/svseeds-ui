@@ -39,10 +39,10 @@
 <script module lang="ts">
   export interface SortableGroupProps extends Omit<HTMLAttributes<HTMLDivElement>, "children" | "role"> {
     children: Snippet;
-    group?: SortableGroupController;
-    duration?: number;
-    easing?: EasingFunction;
-    messages?: Partial<SortableMessages>;
+    group?: SortableGroupController; // reuse an externally created controller
+    duration?: number; // (300) group motion duration
+    easing?: EasingFunction; // (cubicOut) group motion easing
+    messages?: Partial<SortableMessages>; // live-region announcement formatters
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }

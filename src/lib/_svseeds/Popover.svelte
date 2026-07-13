@@ -55,15 +55,15 @@
     label: string | Snippet<[boolean, string]>; // trigger; Snippet<[open, variant]>
     children: Snippet<[string]>; // panel content; Snippet<[variant]>; usually renders a MenuList
     open?: boolean; // bindable (false); observe + control
-    hover?: boolean; // (false); hover-capable pointers only
+    hover?: boolean; // (false); open on pointerenter / focusin where the primary pointer can hover
     position?: Position; // ("bottom")
     align?: Align; // ("start")
-    offset?: number; // (0)
-    autoFlip?: boolean; // (true)
-    matchWidth?: boolean; // (false)
-    ariaRole?: PopoverRole;
-    manual?: boolean; // (false)
-    arrow?: boolean; // (false); resolved placement caret part + data-svs-placement
+    offset?: number; // (0); gap from the anchor edge, px
+    autoFlip?: boolean; // (true); native fallback placement
+    matchWidth?: boolean; // (false); panel min-width = anchor width
+    ariaRole?: PopoverRole; // panel role
+    manual?: boolean; // (false); popover="manual" disables light-dismiss
+    arrow?: boolean; // (false); render the resolved placement caret part (`top`/`bottom`/`left`/`right`) and `data-svs-placement`
     attach?: Attachment<HTMLButtonElement>;
     element?: HTMLButtonElement; // bindable
     styling?: SVSClass;

@@ -56,7 +56,7 @@
     HTMLInputAttributes,
     "type" | "value" | "files" | "size" | "multiple" | "accept" | "children"
   > {
-    children: Snippet<[File[], boolean, string]>; // Snippet<[files,dragover,variant]>
+    children: Snippet<[File[], boolean, string]>; // required; Snippet<[files,dragover,variant]>; zone content, presentational only
     files?: File[]; // bindable
     multiple?: boolean; // (false)
     accept?: string;
@@ -64,8 +64,8 @@
     maxFiles?: number;
     droppable?: boolean; // (false)
     rejectBy?: FileRejectReason[]; // bindable
-    flip?: boolean; // (false)
-    aux?: Snippet<[File[], (file: File) => void, string]>; // Snippet<[files,remove,variant]>
+    flip?: boolean; // (false) - render aux before the zone instead of after
+    aux?: Snippet<[File[], (file: File) => void, string]>; // Snippet<[files,remove,variant]>; rendered outside the label
     events?: FileInputEvents;
     attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable

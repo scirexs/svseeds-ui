@@ -70,7 +70,7 @@
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
-    tagsInput?: Omit<TagsInputProps, TagsInputReqdProps | TagsInputBindProps | "ariaErrMsgId" | "variant" | "events">;
+    tagsInput?: Omit<TagsInputProps, TagsInputReqdProps | TagsInputBindProps | "ariaErrMsgId" | "variant" | "events">; // default <TagsInput/> props
     children?: Snippet;
   }
   export type TagsInputFieldReqdProps = never;

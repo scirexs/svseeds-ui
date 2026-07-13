@@ -69,24 +69,24 @@
     HTMLAttributes<HTMLUListElement>,
     "children" | "aria-label" | "onpointerdown" | "onpointerover" | "onpointerout" | "onpointerenter" | "onpointerup" | "onkeydown"
   > {
-    items: T[];
-    item: Snippet<[T, SVSVariant, Attachment]>;
-    key?: (item: T) => PropertyKey;
-    clone?: (item: T) => T;
-    group?: SortableGroupController;
-    id?: string;
-    ghost?: Snippet<[T]>;
-    mode?: SortableMode;
-    accept?: SortableAccept;
-    sort?: boolean;
-    multiple?: boolean;
-    draggable?: boolean;
-    appendable?: boolean;
-    confirm?: boolean;
-    dragging?: boolean;
-    messages?: Partial<SortableMessages>;
+    items: T[]; // bindable plain array
+    item: Snippet<[T, SVSVariant, Attachment]>; // Snippet<[value, variant, dragHandle]>
+    key?: (item: T) => PropertyKey; // identity extractor; required for object items
+    clone?: (item: T) => T; // required for object items in clone mode
+    group?: SortableGroupController; // shared controller from createSortableGroup()
+    id?: string; // list id used by accept
+    ghost?: Snippet<[T]>; // custom floating preview
+    mode?: SortableMode; // ("move")
+    accept?: SortableAccept; // undefined=any in group, []=none
+    sort?: boolean; // enable sorting within the same list (true)
+    multiple?: boolean; // enable multi-select followers (false)
+    draggable?: boolean; // whole item is draggable when no handle is attached (true)
+    appendable?: boolean; // append when entering the list area (false)
+    confirm?: boolean; // hover delay before committing (false)
+    dragging?: boolean; // bindable group drag activity
+    messages?: Partial<SortableMessages>; // live-region announcement formatters
     ariaLabel?: string;
-    ariaRoleDescription?: string;
+    ariaRoleDescription?: string; // ("Sortable Item")
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }

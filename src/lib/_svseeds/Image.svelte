@@ -54,15 +54,15 @@
 <script module lang="ts">
   export interface ImageProps extends Omit<HTMLImgAttributes, "src" | "alt" | "onload" | "onerror"> {
     src: string;
-    alt: string;
-    sources?: ImageSource[];
-    placeholder?: string;
-    firstView?: boolean;
-    preload?: boolean;
+    alt: string; // empty string is valid for decorative images
+    sources?: ImageSource[]; // alternate <source> candidates
+    placeholder?: string; // CSS background shown until load
+    firstView?: boolean; // (false); sets eager/high/default preload unless overridden
+    preload?: boolean; // (firstView ?? false)
     onload?: EventHandler<Event, HTMLImageElement> | null;
     onerror?: EventHandler<Event, HTMLImageElement> | null;
     attach?: Attachment<HTMLImageElement>;
-    element?: HTMLImageElement;
+    element?: HTMLImageElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // bindable (VARIANT.NEUTRAL)
   }

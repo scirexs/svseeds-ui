@@ -73,15 +73,15 @@
 -->
 <script module lang="ts">
   export interface CalendarProps {
-    value?: Temporal.PlainDate;
-    display?: Temporal.PlainYearMonth;
-    picking?: boolean;
+    value?: Temporal.PlainDate; // bindable; selected date
+    display?: Temporal.PlainYearMonth; // bindable; shown month
+    picking?: boolean; // bindable (false)
     min?: Temporal.PlainDate;
     max?: Temporal.PlainDate;
     isDisabled?: (d: Temporal.PlainDate) => boolean;
-    outsideDays?: boolean;
-    fixedWeeks?: boolean;
-    firstDayOfWeek?: number;
+    outsideDays?: boolean; // (false)
+    fixedWeeks?: boolean; // (false)
+    firstDayOfWeek?: number; // (0=Sun)
     locale?: string;
     label?: Snippet<[Temporal.PlainYearMonth, string, boolean]>;
     left?: Snippet<[string]>;

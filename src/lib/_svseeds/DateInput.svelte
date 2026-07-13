@@ -57,8 +57,8 @@
 -->
 <script module lang="ts">
   export interface DateInputProps extends Omit<HTMLInputAttributes, "type" | "value" | "min" | "max" | "readonly" | "list" | "name"> {
-    value?: Temporal.PlainDate;
-    open?: boolean;
+    value?: Temporal.PlainDate; // bindable; undefined = empty
+    open?: boolean; // bindable (false)
     min?: Temporal.PlainDate;
     max?: Temporal.PlainDate;
     isDisabled?: (d: Temporal.PlainDate) => boolean;
@@ -66,14 +66,14 @@
     format?: (d: Temporal.PlainDate) => string;
     locale?: string;
     name?: string;
-    openOnFocus?: boolean;
-    closeOnSelect?: boolean;
+    openOnFocus?: boolean; // (false)
+    closeOnSelect?: boolean; // (true)
     left?: Snippet<[DateInputCtl, boolean, string]>;
     right?: Snippet<[DateInputCtl, boolean, string]>;
     transition?: TransitionProp;
     calendar?: Omit<CalendarProps, "value" | "display" | "min" | "max" | "isDisabled" | "variant">;
     attach?: Attachment<HTMLInputElement>;
-    element?: HTMLInputElement;
+    element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }

@@ -56,14 +56,14 @@
 <script module lang="ts">
   export interface WheelPickerProps extends Omit<HTMLSelectAttributes, "value" | "multiple" | "size" | "style"> {
     options: WheelOption[];
-    value?: string;
-    loop?: boolean;
-    perspective?: number;
-    maxAngle?: number;
-    label?: Snippet<[WheelOption, string, number]>;
+    value?: string; // bindable (first enabled option's value)
+    loop?: boolean; // (false) visual-only circular scroll
+    perspective?: number; // px
+    maxAngle?: number; // deg (60)
+    label?: Snippet<[WheelOption, string, number]>; // Snippet<[option,variant,index]>
     cssvar?: Partial<Record<WheelCssVar, string>>;
     attach?: Attachment<HTMLSelectElement>;
-    element?: HTMLSelectElement;
+    element?: HTMLSelectElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }

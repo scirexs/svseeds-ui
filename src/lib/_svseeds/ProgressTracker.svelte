@@ -44,7 +44,7 @@
     children?: Snippet<[number, string, string]>; // Snippet<[index,label,variant]>
     aux?: Snippet<[number, string, string]>; // Snippet<[index,label,variant]>
     extra?: boolean | Snippet<[number, string, string]>; // (true) Snippet<[index,label,variant]>
-    statusLabels?: Partial<Record<string, string>>;
+    statusLabels?: Partial<Record<string, string>>; // variant -> screen-reader suffix
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
     eachVariant?: SvelteMap<number, string> | Map<number, string>;
