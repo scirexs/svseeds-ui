@@ -17,7 +17,6 @@
     maxFiles?: number;
     droppable?: boolean; // (false)
     rejectBy?: ("accept" | "maxSize" | "maxFiles")[]; // bindable
-    flip?: boolean; // (false) - render aux before the zone instead of after
     aux?: Snippet<[File[], (file: File) => void, string]>; // Snippet<[files,remove,variant]>; rendered outside the label
     events?: FileInputEvents;
     attach?: Attachment<HTMLInputElement>;
@@ -38,12 +37,11 @@
   ### Anatomy
   ```svelte
   <div class="whole">
-    <div class="aux" if={aux && flip}>{aux}</div>
     <label class="middle" data-dragover>
       <input class="main" {...rest} type="file" style="sr-only" aria-invalid aria-errormessage />
       {children}
     </label>
-    <div class="aux" if={aux && !flip}>{aux}</div>
+    <div class="aux" conditional: aux>{aux}</div>
   </div>
   ```
 
@@ -64,7 +62,6 @@
     maxFiles?: number;
     droppable?: boolean; // (false)
     rejectBy?: FileRejectReason[]; // bindable
-    flip?: boolean; // (false) - render aux before the zone instead of after
     aux?: Snippet<[File[], (file: File) => void, string]>; // Snippet<[files,remove,variant]>; rendered outside the label
     events?: FileInputEvents;
     attach?: Attachment<HTMLInputElement>;
@@ -110,7 +107,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { files = $bindable([]), multiple = false, accept, maxSize, maxFiles, droppable = false, rejectBy = $bindable([]), flip = false, children, aux, events, variant = VARIANT.NEUTRAL, element = $bindable(), class: c, id: idProp, "aria-describedby": ariaDescribedbyProp, "aria-invalid": ariaInvalid, onchange: onchangeProp, oninvalid: oninvalidProp, onclick: onclickProp, attach, styling, ...rest }: FileInputProps = $props();
+  let { files = $bindable([]), multiple = false, accept, maxSize, maxFiles, droppable = false, rejectBy = $bindable([]), children, aux, events, variant = VARIANT.NEUTRAL, element = $bindable(), class: c, id: idProp, "aria-describedby": ariaDescribedbyProp, "aria-invalid": ariaInvalid, onchange: onchangeProp, oninvalid: oninvalidProp, onclick: onclickProp, attach, styling, ...rest }: FileInputProps = $props();
   const ctx = _getFileInputContext();
 
   // *** States *** //
@@ -234,9 +231,6 @@
 <!---------------------------------------->
 
 <div class={cls(PARTS.WHOLE, effVariant)}>
-  {#if aux && flip}
-    <div class={cls(PARTS.AUX, effVariant)}>{@render aux(effFiles, remove, effVariant)}</div>
-  {/if}
   <label
     class={cls(PARTS.MIDDLE, effVariant)}
     data-dragover={dragover || undefined}
@@ -265,7 +259,7 @@
     />
     {@render children(effFiles, dragover, effVariant)}
   </label>
-  {#if aux && !flip}
+  {#if aux}
     <div class={cls(PARTS.AUX, effVariant)}>{@render aux(effFiles, remove, effVariant)}</div>
   {/if}
 </div>

@@ -646,17 +646,12 @@ describe("_FileInput drop zone and a11y", () => {
     expect(names([...(input.files ?? [])])).toEqual(["b.png"]);
   });
 
-  test("flip controls aux and label DOM order", () => {
+  test("aux renders after the label", () => {
     const aux = createRawSnippet(() => ({ render: () => "<span>aux</span>" }));
-    const normal = render(FileInput, { children: zone, aux });
-    let items = [...(normal.container.firstElementChild as HTMLDivElement).children];
+    const { container } = render(FileInput, { children: zone, aux });
+    const items = [...(container.firstElementChild as HTMLDivElement).children];
     expect([...items[0].classList]).toEqual(expect.arrayContaining([PARTS.MIDDLE]));
     expect([...items[1].classList]).toEqual(expect.arrayContaining([PARTS.AUX]));
-
-    const flipped = render(FileInput, { children: zone, aux, flip: true });
-    items = [...(flipped.container.firstElementChild as HTMLDivElement).children];
-    expect([...items[0].classList]).toEqual(expect.arrayContaining([PARTS.AUX]));
-    expect([...items[1].classList]).toEqual(expect.arrayContaining([PARTS.MIDDLE]));
   });
 
   test("standalone and context a11y attributes are wired", () => {
