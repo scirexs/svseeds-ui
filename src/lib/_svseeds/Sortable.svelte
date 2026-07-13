@@ -472,6 +472,10 @@
     }
     enterGroup<T>(member: SortableMember<T>): void {
       if (!this.#active || !this.#isAcceptable(member)) return;
+      // Append only when entering from outside; once the item is in this list,
+      // #sort/over owns its position. Re-appending would clobber item hover
+      // placement and can thrash during FLIP-induced blank-area pointerover.
+      if (this.#active.current.id === member.id) return;
       if (member.items.length > 0 && !memberIsAppendable(member)) return;
       const run = () => this.#append(member);
       if (member.confirm) {

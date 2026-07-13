@@ -45,3 +45,4 @@
 20260713_annxzq	refactor: Remove the flip prop from FileInput; aux always renders after the zone and callers reorder visually with CSS order. Records ADR 012.
 20260713_jrhk4n	feat: Make FileField's content prop optional so the FileInput-wrapper usage need not pass a throwaway content
 20260713_s4f5qm	fix: Fix Popover arrow: drop the inline display that kept the closed panel visible and absolutely position the caret so it protrudes toward the trigger
+20260713_x5mal6	fix: Fix grouped Sortable inserting a cross-list drop at the list end instead of the hovered item's position

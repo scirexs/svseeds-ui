@@ -474,6 +474,22 @@ describe("_Sortable multiple, confirm, append, and dragging", () => {
     await expect.element(el(empty.container, "readout-b")).toHaveTextContent("a1");
   });
 
+  test("appendable list keeps item hover position after group enter", async () => {
+    const { container } = render(SortableConnected, { a: ["a1"], b: ["b1"], appendableB: true });
+    const targetList = container.querySelectorAll("ul")[1] as HTMLUListElement;
+
+    await drag(el(container, "item-a1"), null, { up: false });
+    el(container, "item-b1").dispatchEvent(new PointerEvent("pointerover", { buttons: 1, bubbles: true }));
+    await tick();
+    targetList.dispatchEvent(new PointerEvent("pointerenter", { buttons: 1, bubbles: true }));
+    await tick();
+    window.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+    await tick();
+
+    await expect.element(el(container, "readout-a")).toHaveTextContent("");
+    await expect.element(el(container, "readout-b")).toHaveTextContent("a1,b1");
+  });
+
   test("dragging bindable tracks active drag", async () => {
     const props = $state({ items: ["a", "b"], dragging: false });
     const { container } = render(SortableBasic, props);
