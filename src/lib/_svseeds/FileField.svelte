@@ -13,7 +13,7 @@
   default value: *`(files, variant, element)`*
   ```ts
   interface FileFieldProps {
-    content: Snippet<[File[], boolean, string]>; // Snippet<[files,dragover,variant]>; zone content, presentational only
+    content?: Snippet<[File[], boolean, string]>; // Snippet<[files,dragover,variant]>; zone content, presentational only
     label?: string;
     extra?: string;
     aux?: Snippet<[File[], string, HTMLInputElement | undefined]>; // Snippet<[files,variant,element]>
@@ -36,7 +36,9 @@
   type FileFieldValidation = SVSFieldValidation<File[]>;
   // When reason is set, the primitive already rejected the file and the constraint supplies a message only.
   // When reason is undefined, a returned message also vetoes that candidate before commit.
+  // `content` is the default control's zone content only; when `children` is provided it is ignored.
   // `fileInput` configures the default `<FileInput/>` only; when `children` is provided the bag is ignored and the child control owns its own props.
+  // When neither `content` nor `children` is given, the default control is not rendered.
   ```
   ### Anatomy
   ```svelte
@@ -50,7 +52,7 @@
     </div>
     <div class="middle">
       <span class="left" conditional>{left}</span>
-      {#if children}{@render children()}{:else}<FileInput />{/if}
+      {#if children}{@render children()}{:else if content}<FileInput />{/if}
       <span class="right" conditional>{right}</span>
     </div>
     <div class="bottom" conditional: has text, or always when reserve; role="alert only on error">{bottom}</div>
@@ -59,7 +61,7 @@
 -->
 <script module lang="ts">
   export interface FileFieldProps {
-    content: Snippet<[File[], boolean, string]>; // Snippet<[files,dragover,variant]>; zone content, presentational only
+    content?: Snippet<[File[], boolean, string]>; // Snippet<[files,dragover,variant]>; zone content, presentational only
     label?: string;
     extra?: string;
     aux?: Snippet<[File[], string, HTMLInputElement | undefined]>; // Snippet<[files,variant,element]>
@@ -78,7 +80,7 @@
     fileInput?: Omit<FileInputProps, FileInputReqdProps | FileInputBindProps | "multiple" | "name" | "variant" | "events">; // default <FileInput/> props
     children?: Snippet;
   }
-  export type FileFieldReqdProps = "content";
+  export type FileFieldReqdProps = never;
   export type FileFieldBindProps = "files" | "variant" | "element";
   export type FileFieldConstraint = (ctx: {
     file: File;
@@ -253,7 +255,7 @@
     {@render side(PARTS.LEFT, left)}
     {#if children}
       {@render children()}
-    {:else}
+    {:else if content}
       <FileInput {...fileInput} {multiple} {name} children={content} />
     {/if}
     {@render side(PARTS.RIGHT, right)}

@@ -94,6 +94,15 @@ describe("FileField layout and default child", () => {
     expect(forwarded.container.querySelector('[data-testid="content"]')?.textContent).toBe(`0:false:${VARIANT.NEUTRAL}`);
   });
 
+  test("renders children without a content prop", () => {
+    const children = createRawSnippet(() => ({ render: () => "<span data-testid='replacement'>custom</span>" }));
+    const { container, getByTestId } = render(FileField, { children });
+
+    expect(getByTestId("replacement")).toBeTruthy();
+    expect(container.querySelector("input")).toBeNull();
+    expect(container.querySelector('[data-testid="content"]')).toBeNull();
+  });
+
   test("name reaches the file input and no hidden inputs are rendered", () => {
     const { container } = render(FileField, { name: "docs", content });
     const input = container.querySelector("input") as HTMLInputElement;

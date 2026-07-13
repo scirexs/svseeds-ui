@@ -43,3 +43,4 @@
 20260713_hqhi33	docs: Sync each component's exported Props interface trailing // annotations with its @component Types block (verbatim identical per line; fuller wording wins on divergence)
 20260713_nqqeqr	feat: Calendar: add an opt-in pageTransition prop that slides the grid on month change (library-injected direction), and make the bottom snippet's setToday close the MonthPicker
 20260713_annxzq	refactor: Remove the flip prop from FileInput; aux always renders after the zone and callers reorder visually with CSS order. Records ADR 012.
+20260713_jrhk4n	feat: Make FileField's content prop optional so the FileInput-wrapper usage need not pass a throwaway content
