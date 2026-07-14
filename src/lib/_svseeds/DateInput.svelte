@@ -20,7 +20,7 @@
     format?: (d: Temporal.PlainDate) => string;
     locale?: string;
     name?: string;
-    openOnFocus?: boolean; // (false)
+    openOnFocus?: boolean; // (true)
     closeOnSelect?: boolean; // (true)
     left?: Snippet<[DateInputCtl, boolean, string]>;
     right?: Snippet<[DateInputCtl, boolean, string]>;
@@ -74,7 +74,7 @@
     format?: (d: Temporal.PlainDate) => string;
     locale?: string;
     name?: string;
-    openOnFocus?: boolean; // (false)
+    openOnFocus?: boolean; // (true)
     closeOnSelect?: boolean; // (true)
     left?: Snippet<[DateInputCtl, boolean, string]>;
     right?: Snippet<[DateInputCtl, boolean, string]>;
@@ -120,14 +120,20 @@
   import Calendar, { _setCalendarContext } from "./Calendar.svelte";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
-  import type { FocusEventHandler, FormEventHandler, HTMLInputAttributes, KeyboardEventHandler } from "svelte/elements";
+  import type {
+    FocusEventHandler,
+    FormEventHandler,
+    HTMLInputAttributes,
+    KeyboardEventHandler,
+    PointerEventHandler,
+  } from "svelte/elements";
   import type { SVSClass, SVSContext, SVSVariant } from "./_core";
   import type { CalendarContext, CalendarProps } from "./Calendar.svelte";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { value = $bindable(), open = $bindable(false), min, max, isDisabled, parse, format: formatProp, locale, name, openOnFocus = false, closeOnSelect = true, left, right, transition, children, calendar, cssvar, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, onchange: onchangeProp, oninvalid: oninvalidProp, oninput: oninputProp, onfocus: onfocusProp, onblur: onblurProp, onkeydown: onkeydownProp, id: idProp, "aria-describedby": ariaDescribedbyProp, "aria-invalid": ariaInvalid, class: c, ...rest }: DateInputProps = $props();
+  let { value = $bindable(), open = $bindable(false), min, max, isDisabled, parse, format: formatProp, locale, name, openOnFocus = true, closeOnSelect = true, left, right, transition, children, calendar, cssvar, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, onchange: onchangeProp, oninvalid: oninvalidProp, oninput: oninputProp, onfocus: onfocusProp, onblur: onblurProp, onkeydown: onkeydownProp, onpointerdown: onpointerdownProp, id: idProp, "aria-describedby": ariaDescribedbyProp, "aria-invalid": ariaInvalid, class: c, ...rest }: DateInputProps = $props();
   const ctx = _getDateInputContext();
 
   // *** Initialize *** //
@@ -313,6 +319,10 @@
     onfocusProp?.(ev);
     if (openOnFocus && !returned) show();
   };
+  const hpointerdown: PointerEventHandler<HTMLInputElement> = (ev) => {
+    onpointerdownProp?.(ev);
+    if (openOnFocus && !open) show();
+  };
   const hinvalid: FormEventHandler<HTMLInputElement> = (ev) => {
     oninvalidProp?.(ev);
     ctx?.oninvalid?.(ev);
@@ -357,6 +367,7 @@
     onchange={hchange}
     onblur={hblur}
     onfocus={hfocus}
+    onpointerdown={hpointerdown}
     onkeydown={hkeydown}
     oninvalid={hinvalid}
     {@attach attach}

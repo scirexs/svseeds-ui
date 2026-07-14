@@ -100,6 +100,7 @@ describe("_DateInput display and typing", () => {
       parse: (text: string) => d(text),
       format: (date: Temporal.PlainDate) => `D:${date}`,
       name: "date",
+      openOnFocus: false,
       onchange,
     });
     const { container } = render(DateInput, props);
@@ -132,6 +133,7 @@ describe("_DateInput display and typing", () => {
       min: d("2026-06-20"),
       max: d("2026-06-21"),
       isDisabled: (date: Temporal.PlainDate) => date.equals(d("2026-06-21")),
+      openOnFocus: false,
     });
     const { container } = render(DateInput, props);
     const el = input(container);
@@ -245,6 +247,9 @@ describe("_DateInput calendar and dismissal", () => {
     await tick();
     expect(props.open).toBe(false);
     expect(document.activeElement).toBe(el);
+    el.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    await tick();
+    expect(props.open).toBe(true);
 
     props.open = true;
     await tick();
@@ -255,6 +260,27 @@ describe("_DateInput calendar and dismissal", () => {
     await tick();
     expect(props.value).toBeUndefined();
     await expect.element(el).toHaveValue("");
+  });
+
+  test("keeps pointerdown gated by openOnFocus and composes the caller handler", async () => {
+    const onpointerdown = vi.fn();
+    const closed = $state({ open: false, openOnFocus: false, onpointerdown });
+    const closedRender = render(DateInputBindable, closed);
+    const closedInput = input(closedRender.container);
+
+    closedInput.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    await tick();
+    expect(closed.open).toBe(false);
+    expect(onpointerdown).toHaveBeenCalledTimes(1);
+
+    const openProps = $state({ open: true, onpointerdown });
+    const openRender = render(DateInputBindable, openProps);
+    const openInput = input(openRender.container);
+
+    openInput.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    await tick();
+    expect(openProps.open).toBe(true);
+    expect(onpointerdown).toHaveBeenCalledTimes(2);
   });
 });
 
