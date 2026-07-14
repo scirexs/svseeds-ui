@@ -39,6 +39,7 @@
 - vitest-axe-matchers-need-module-augmentation.md — `vitest-axe`'s `toHaveNoViolations` matcher type targets the old `Vi` namespace and is invisible to `svelte-check` under Vitest 4; augment `vitest`'s `Assertion` interface with `AxeMatchers` locally in each spec file.
 - svelte-pointer-gesture-test-needs-tick-after-synthetic-events.md — synthetic pointer-event dispatch doesn't wait for Svelte's DOM flush; `await tick()` before asserting post-gesture visual state or the assertion can pass against pre-update DOM.
 - createrawsnippet-fixture-reactivity-needs-effect.md — `createRawSnippet`'s `render()` runs once; wrap reactive-argument reads in `$effect` inside `setup` to keep the fixture's rendered DOM synced with later argument changes.
+- browser-style-attribute-serializes-with-spaces.md — reading a `style` attribute back via `getAttribute("style")` in a real browser re-serializes it with a space after each colon; assert `"overflow: visible"`, not the authored `"overflow:visible"`.
 
 ## Runtime & Platform
 - css-flip-animation-spurious-pointerover.md — FLIP animation slides transformed boxes over the pointer, causing the browser to fire spurious `pointerover` on just-moved drag targets and reversing a committed reorder.

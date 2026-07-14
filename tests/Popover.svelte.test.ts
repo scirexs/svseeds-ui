@@ -139,10 +139,12 @@ describe("Popover structure, a11y, and positioning", () => {
     expect(pop.getAttribute("style")).toContain("margin-bottom: 8px");
     expect(pop.getAttribute("style")).toContain("min-width: anchor-size(width)");
     expect(pop.getAttribute("style")).toContain("position-try-fallbacks: flip-block, flip-inline");
+    expect(pop.getAttribute("style")).toContain("overflow: visible");
     const fixed = render(Popover, { label: "Open", children, position: "right", align: "end", autoFlip: false });
     expect(panel(fixed.container).getAttribute("style")).toContain("position-area: right span-top");
     expect(panel(fixed.container).getAttribute("style")).not.toContain("position-try-fallbacks");
     expect(panel(fixed.container).getAttribute("style")).not.toContain("min-width: anchor-size(width)");
+    expect(panel(fixed.container).getAttribute("style")).not.toContain("overflow");
     const defaults = render(Popover, { label: "Open", children });
     expect(trigger(defaults.container).getAttribute("style")).toContain("anchor-name: --svs-popover");
     expect(panel(defaults.container).getAttribute("style")).toContain("position-area: span-right bottom");

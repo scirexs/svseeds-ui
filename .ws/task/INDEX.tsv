@@ -49,3 +49,4 @@
 20260714_uuo4qa	feat: Extend Calendar's bottom snippet with a CalendarCtl object (setToday/clear) plus the picking state
 20260714_cz6ub4	feat: Add an onchange page-change hook to Pagination, firing a native change Event on user-initiated page switches
 20260714_rzuyue	fix: Fix unstable Sortable cross-list drag animation where the dragged item slides out of the target frame before snapping into place
+20260714_rctuws	fix: Make the Popover panel overflow visible when `arrow` is enabled so the out-of-frame caret is not clipped by the UA `[popover]` overflow:auto

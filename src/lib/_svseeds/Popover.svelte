@@ -144,6 +144,7 @@
       offset ? `${GAP_SIDE[position]}:${offset}px` : "",
       matchWidth ? "min-width:anchor-size(width)" : "",
       autoFlip ? "position-try-fallbacks:flip-block, flip-inline" : "",
+      arrow ? "overflow:visible" : "",
     ]
       .filter(Boolean)
       .join(";"),
