@@ -53,3 +53,4 @@
 20260714_bo54jd	fix: Split Calendar pageTransition grid directive into in:/out: so callers get direction in/out for the overlay slide
 20260714_ng2abi	feat: Add a children prop to Calendar by making Calendar<->MonthPicker a context coordinator
 20260714_vljzm5	feat: Add a DateInput children prop so a declarative Calendar child self-wires through a new Calendar context coordinator
+20260714_ldfnuf	feat: DateInput: default the calendar overlay below the input with caller-overridable placement (cssvar x/y offsets + data-svs-flip-* state), and register document listeners via svelte on()

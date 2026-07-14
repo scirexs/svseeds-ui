@@ -27,6 +27,7 @@
     transition?: TransitionProp;
     children?: Snippet;
     calendar?: Omit<CalendarProps, "value" | "display" | "min" | "max" | "isDisabled" | "variant">;
+    cssvar?: Partial<Record<DateInputCssVar, string>>; // custom-property names for the overlay x/y offsets; absent key uses default name
     attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
@@ -42,6 +43,7 @@
     fn?: (node: HTMLElement, params: any, options: { direction: "in" | "out" | "both" }) => import("svelte/transition").TransitionConfig;
     params?: unknown;
   };
+  type DateInputCssVar = "x" | "y";
   ```
   ### Anatomy
   ```svelte
@@ -50,7 +52,7 @@
     <input class="main" type="text" role aria-* {...rest} />
     <span class="right" conditional>{right}</span>
     <input type="hidden" conditional: name />
-    <div class="bottom" conditional: open transition:...>{#if children}{children}{:else}<Calendar />{/if}</div>
+    <div class="bottom" conditional: open data-* style transition:...>{#if children}{children}{:else}<Calendar />{/if}</div>
   </span>
   ```
   ### Behavior
@@ -59,6 +61,7 @@
   - A declarative `Calendar` child self-wires `value`, `min`, `max`, `isDisabled`, and `variant` through context and wins over the `calendar` bag.
   - `name` is assigned only to a hidden input whose value is ISO (`Temporal.PlainDate.toString()`), not the locale-formatted control.
   - `format` and `parse` are caller-coordinated; the default locale display is not necessarily parseable by a supplied parser.
+  - The overlay defaults below/left, flips per axis above/right on viewport overflow, exposes `data-svs-flip-x` / `data-svs-flip-y` on flipped axes, and reads its offsets from `cssvar` x/y custom properties (defaults `--svs-position-x` / `--svs-position-y`).
 -->
 <script module lang="ts">
   export interface DateInputProps extends Omit<HTMLInputAttributes, "type" | "value" | "min" | "max" | "readonly" | "list" | "name"> {
@@ -78,6 +81,7 @@
     transition?: TransitionProp;
     children?: Snippet;
     calendar?: Omit<CalendarProps, "value" | "display" | "min" | "max" | "isDisabled" | "variant">;
+    cssvar?: Partial<Record<DateInputCssVar, string>>; // custom-property names for the overlay x/y offsets; absent key uses default name
     attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
@@ -93,6 +97,7 @@
     fn?: (node: HTMLElement, params: any, options: { direction: "in" | "out" | "both" }) => import("svelte/transition").TransitionConfig;
     params?: unknown;
   };
+  export type DateInputCssVar = "x" | "y";
   export type DateInputReqdProps = never;
   export type DateInputBindProps = "value" | "open" | "element";
 
@@ -109,8 +114,9 @@
   export const [_getDateInputContext, _setDateInputContext] = _createContext<DateInputContext>();
   export const _DATE_INPUT_PRESET = "svs-date-input";
 
-  import { onDestroy, tick, untrack } from "svelte";
-  import { VARIANT, PARTS, _createContext, _detectOverflow, _fnClass, shouldReduceMotion } from "./_core";
+  import { tick, untrack } from "svelte";
+  import { on } from "svelte/events";
+  import { VARIANT, PARTS, _createContext, _cssVar, _detectOverflow, _fnClass, shouldReduceMotion } from "./_core";
   import Calendar, { _setCalendarContext } from "./Calendar.svelte";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
@@ -121,7 +127,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { value = $bindable(), open = $bindable(false), min, max, isDisabled, parse, format: formatProp, locale, name, openOnFocus = false, closeOnSelect = true, left, right, transition, children, calendar, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, onchange: onchangeProp, oninvalid: oninvalidProp, oninput: oninputProp, onfocus: onfocusProp, onblur: onblurProp, onkeydown: onkeydownProp, id: idProp, "aria-describedby": ariaDescribedbyProp, "aria-invalid": ariaInvalid, class: c, ...rest }: DateInputProps = $props();
+  let { value = $bindable(), open = $bindable(false), min, max, isDisabled, parse, format: formatProp, locale, name, openOnFocus = false, closeOnSelect = true, left, right, transition, children, calendar, cssvar, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, onchange: onchangeProp, oninvalid: oninvalidProp, oninput: oninputProp, onfocus: onfocusProp, onblur: onblurProp, onkeydown: onkeydownProp, id: idProp, "aria-describedby": ariaDescribedbyProp, "aria-invalid": ariaInvalid, class: c, ...rest }: DateInputProps = $props();
   const ctx = _getDateInputContext();
 
   // *** Initialize *** //
@@ -193,7 +199,11 @@
   let returning = false;
 
   // *** Reactive Handlers *** //
-  const overlayStyle = $derived(`position:absolute;${overflow.x ? "right:0%;" : ""}${overflow.y ? "bottom:100%;" : ""}`);
+  const xVar = $derived(_cssVar(cssvar, "x", "--svs-position-x"));
+  const yVar = $derived(_cssVar(cssvar, "y", "--svs-position-y"));
+  const overlayStyle = $derived(
+    `position:absolute;${overflow.y ? "bottom" : "top"}:var(${yVar},100%);${overflow.x ? "right" : "left"}:var(${xVar},0%);`,
+  );
   $effect(() => {
     effValue;
     focused;
@@ -204,11 +214,10 @@
   });
   $effect(() => {
     if (!open) return;
-    document.addEventListener("pointerdown", houtside);
-    document.addEventListener("keydown", hkey);
+    const off = [on(document, "pointerdown", houtside), on(document, "keydown", hkey)];
     observeOverflow();
     tick().then(() => focusCalendar());
-    return stopListening;
+    return () => off.forEach((x) => x());
   });
 
   function active(): boolean {
@@ -282,12 +291,6 @@
     if (!overlayElem || typeof window === "undefined") return;
     overflow = _detectOverflow(overlayElem);
   }
-  function stopListening() {
-    if (typeof document === "undefined") return;
-    document.removeEventListener("pointerdown", houtside);
-    document.removeEventListener("keydown", hkey);
-  }
-  onDestroy(stopListening);
 
   // *** Event Handlers *** //
   const hinput: FormEventHandler<HTMLInputElement> = (ev) => {
@@ -365,7 +368,15 @@
     <input type="hidden" {name} value={effValue?.toString() ?? ""} />
   {/if}
   {#if open}
-    <div id={idOverlay} class={cls(PARTS.BOTTOM, effVariant)} bind:this={overlayElem} style={overlayStyle} transition:tfn|local={tparams}>
+    <div
+      id={idOverlay}
+      class={cls(PARTS.BOTTOM, effVariant)}
+      bind:this={overlayElem}
+      style={overlayStyle}
+      data-svs-flip-x={overflow.x ? "" : undefined}
+      data-svs-flip-y={overflow.y ? "" : undefined}
+      transition:tfn|local={tparams}
+    >
       {#if children}
         {@render children()}
       {:else}

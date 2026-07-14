@@ -297,6 +297,16 @@ describe("_DateInput declarative Calendar child", () => {
 
 describe("_DateInput overlay overflow flip", () => {
   const overlay = (container: HTMLElement) => container.querySelector(`.${PARTS.BOTTOM}`) as HTMLDivElement;
+  const overlayStyle = (container: HTMLElement) => overlay(container).getAttribute("style") ?? "";
+  const expectDefaultAnchor = (container: HTMLElement) => {
+    const style = overlayStyle(container);
+    expect(style).toMatch(/top:\s*var\(--svs-position-y/);
+    expect(style).toMatch(/left:\s*var\(--svs-position-x/);
+    expect(style).not.toMatch(/(?:^|;)\s*bottom\s*:/);
+    expect(style).not.toMatch(/(?:^|;)\s*right\s*:/);
+    expect(overlay(container).hasAttribute("data-svs-flip-x")).toBe(false);
+    expect(overlay(container).hasAttribute("data-svs-flip-y")).toBe(false);
+  };
 
   test("keeps the default anchor when the overlay does not overflow", async () => {
     const props = $state({ open: true });
@@ -304,7 +314,7 @@ describe("_DateInput overlay overflow flip", () => {
 
     await tick();
     await tick();
-    expect(overlay(container).getAttribute("style")).toMatch(/^position:\s*absolute;$/);
+    expectDefaultAnchor(container);
   });
 
   test("flips both axes when the overlay overflows at the bottom-right", async () => {
@@ -317,8 +327,10 @@ describe("_DateInput overlay overflow flip", () => {
 
     await tick();
     await tick();
-    expect(overlay(container).getAttribute("style")).toMatch(/right:\s*0%/);
-    expect(overlay(container).getAttribute("style")).toMatch(/bottom:\s*100%/);
+    expect(overlayStyle(container)).toMatch(/right:\s*var\(--svs-position-x/);
+    expect(overlayStyle(container)).toMatch(/bottom:\s*var\(--svs-position-y/);
+    expect(overlay(container).hasAttribute("data-svs-flip-x")).toBe(true);
+    expect(overlay(container).hasAttribute("data-svs-flip-y")).toBe(true);
   });
 
   test("flips only the y axis when the overlay overflows at the bottom", async () => {
@@ -331,8 +343,12 @@ describe("_DateInput overlay overflow flip", () => {
 
     await tick();
     await tick();
-    expect(overlay(container).getAttribute("style")).not.toMatch(/right:\s*0%/);
-    expect(overlay(container).getAttribute("style")).toMatch(/bottom:\s*100%/);
+    expect(overlayStyle(container)).toMatch(/bottom:\s*var\(--svs-position-y/);
+    expect(overlayStyle(container)).not.toMatch(/(?:^|;)\s*top\s*:/);
+    expect(overlayStyle(container)).not.toMatch(/(?:^|;)\s*right\s*:/);
+    expect(overlayStyle(container)).toMatch(/left:\s*var\(--svs-position-x/);
+    expect(overlay(container).hasAttribute("data-svs-flip-y")).toBe(true);
+    expect(overlay(container).hasAttribute("data-svs-flip-x")).toBe(false);
   });
 
   test("re-measures from the default anchor when re-opened", async () => {
@@ -344,8 +360,10 @@ describe("_DateInput overlay overflow flip", () => {
     props.open = true;
     await tick();
     await tick();
-    expect(overlay(container).getAttribute("style")).toMatch(/right:\s*0%/);
-    expect(overlay(container).getAttribute("style")).toMatch(/bottom:\s*100%/);
+    expect(overlayStyle(container)).toMatch(/right:\s*var\(--svs-position-x/);
+    expect(overlayStyle(container)).toMatch(/bottom:\s*var\(--svs-position-y/);
+    expect(overlay(container).hasAttribute("data-svs-flip-x")).toBe(true);
+    expect(overlay(container).hasAttribute("data-svs-flip-y")).toBe(true);
 
     props.open = false;
     await tick();
@@ -354,7 +372,7 @@ describe("_DateInput overlay overflow flip", () => {
     props.open = true;
     await tick();
     await tick();
-    expect(overlay(container).getAttribute("style")).toMatch(/^position:\s*absolute;$/);
+    expectDefaultAnchor(container);
   });
 
   test("does not close or re-measure on scroll or resize", async () => {
@@ -366,7 +384,7 @@ describe("_DateInput overlay overflow flip", () => {
     props.open = true;
     await tick();
     await tick();
-    expect(overlay(container).getAttribute("style")).toMatch(/^position:\s*absolute;$/);
+    expectDefaultAnchor(container);
 
     container.style.left = `${window.innerWidth - 16}px`;
     container.style.top = `${window.innerHeight - 16}px`;
@@ -375,7 +393,7 @@ describe("_DateInput overlay overflow flip", () => {
     await tick();
     expect(props.open).toBe(true);
     expect(overlay(container)).toBeTruthy();
-    expect(overlay(container).getAttribute("style")).toMatch(/^position:\s*absolute;$/);
+    expectDefaultAnchor(container);
   });
 
   test("opens, closes, and re-opens without errors", async () => {
