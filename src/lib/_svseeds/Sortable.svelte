@@ -139,7 +139,13 @@
     duration: number;
     easing: EasingFunction;
   };
-  type TransitionFn = ReturnType<typeof crossfade>[number];
+  type RawTransitionFn = ReturnType<typeof crossfade>[number];
+  type TransitionFn = (node: Element, params: SortableTransitionParams) => () => TransitionConfig;
+  type TransitionDirection = "send" | "receive";
+  type SortableTransitionParams = CrossfadeParams & {
+    key: PropertyKey;
+    memberId?: string;
+  };
   type TriggerButton = "main" | "sub" | "middle" | "back" | "forward" | "ctrl" | "alt" | "shift" | "meta";
   type VoidFn = () => void;
   type SortableMember<T = unknown> = {
@@ -175,6 +181,7 @@
     fromId: string;
     toId: string;
     key: string;
+    pointer: boolean;
   };
   type SortableShadowState = {
     rendering: boolean;
@@ -231,9 +238,9 @@
 
   class SortableController implements SortableGroupController {
     readonly identity;
-    readonly send;
-    readonly receive;
     readonly tp;
+    readonly send: TransitionFn;
+    readonly receive: TransitionFn;
     #noFlip;
     #presentation;
     #messages: SortableMessages;
@@ -274,16 +281,16 @@
 
     constructor(
       identity: symbol,
-      send: TransitionFn,
-      receive: TransitionFn,
+      send: RawTransitionFn,
+      receive: RawTransitionFn,
       presentation: { get variant(): SVSVariant; get styling(): SVSClass | undefined } | undefined,
       tp: TransitionParams,
       messages: SortableMessages,
     ) {
       this.identity = identity;
-      this.send = send;
-      this.receive = receive;
       this.tp = tp;
+      this.send = (node, params) => (this.#suppressCrossfade("send", params) ? this.#inertTransition() : send(node, params));
+      this.receive = (node, params) => (this.#suppressCrossfade("receive", params) ? this.#inertTransition() : receive(node, params));
       this.#noFlip = { ...tp, duration: 0 };
       this.#presentation = presentation;
       this.#messages = messages;
@@ -530,6 +537,7 @@
       this.#active = undefined;
       this.#standby = undefined;
       this.#keyboard = undefined;
+      this.#crossing = undefined;
       this.#dragging = false;
       this.#activeKey = "";
       this.#confirmKey = "";
@@ -619,7 +627,7 @@
       member.touch();
       active.current = member;
       active.activeKey = stringifyKey(member.key(value));
-      if (from.id !== member.id) this.#skipFlip(from.id, member.id, active.activeKey);
+      if (from.id !== member.id) this.#skipFlip(from.id, member.id, active.activeKey, this.#keyboard === undefined);
       this.#activeKey = active.activeKey;
       this.shadow.item = value;
     }
@@ -653,16 +661,25 @@
       member.touch();
       active.current = member;
       active.activeKey = stringifyKey(member.key(value));
-      this.#skipFlip(active.source.id, member.id, active.activeKey);
+      this.#skipFlip(active.source.id, member.id, active.activeKey, this.#keyboard === undefined);
       this.#activeKey = active.activeKey;
       this.shadow.item = value;
     }
-    #skipFlip(fromId: string, toId: string, key: string) {
-      const crossing = { fromId, toId, key };
+    #skipFlip(fromId: string, toId: string, key: string, pointer: boolean) {
+      const crossing = { fromId, toId, key, pointer };
       this.#crossing = crossing;
       setTimeout(() => {
         if (this.#crossing === crossing) this.#crossing = undefined;
       });
+    }
+    #suppressCrossfade(direction: TransitionDirection, params: SortableTransitionParams): boolean {
+      const crossing = this.#crossing;
+      if (!crossing?.pointer || params.memberId === undefined) return false;
+      if (stringifyKey(params.key) !== crossing.key || this.#activeKey !== crossing.key) return false;
+      return direction === "send" ? params.memberId === crossing.fromId : params.memberId === crossing.toId;
+    }
+    #inertTransition(): ReturnType<TransitionFn> {
+      return () => ({ duration: 0 });
     }
     #commitSwap() {
       const active = this.#active;
@@ -854,7 +871,7 @@
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { EventHandler, HTMLAttributes, KeyboardEventHandler, PointerEventHandler } from "svelte/elements";
-  import type { EasingFunction } from "svelte/transition";
+  import type { CrossfadeParams, EasingFunction, TransitionConfig } from "svelte/transition";
   import type { SVSClass, SVSVariant, SVSContext, Vector } from "./_core";
 </script>
 
@@ -1117,8 +1134,8 @@
       data-svs-key={k}
       tabindex={focusKey === k || controller.activeKey === k ? 0 : -1}
       aria-roledescription={ariaRoleDescription}
-      in:controller.receive={{ key: k }}
-      out:controller.send={{ key: k }}
+      in:controller.receive={{ key: k, memberId: listId }}
+      out:controller.send={{ key: k, memberId: listId }}
       animate:flip={controller.flip(listId, k)}
       style="touch-action:none;"
       onfocus={() => (focusKey = k)}

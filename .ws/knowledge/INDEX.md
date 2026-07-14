@@ -22,6 +22,7 @@
 - svelte-crossfade-fallback-needs-explicit-params.md — `crossfade({ ...defaults, fallback })` doesn't auto-pass `defaults` (duration/easing) into the fallback; pass the same params explicitly inside the fallback callback (e.g. `fallback: (node) => fade(node, tp)`).
 - svelte-animate-flip-skips-if-node-already-animating.md — `animate:flip` skips its FLIP positioning when the node already has a running transition (both write `transform`); don't let crossfade and FLIP own the same moving node — resolve a zero-duration flip param for nodes mid another transition.
 - svelte-bidirectional-transition-direction-both.md — a single bidirectional `transition:fn|local` always passes `direction: "both"` to both the entering and leaving keyed element; split into `in:fn|local` + `out:fn|local` when the caller must treat enter and leave differently (e.g. overlay only the leaving element).
+- svelte-transition-directive-wrapper-widens-params.md — a component-owned `in:`/`out:` transition wrapper only needs directive call-site compatibility, not the wrapped library function's own param type; type the wrapper's params as a superset and delegate to the raw (narrower-typed) function internally.
 
 ## Build, Tooling & Dependencies
 - bun-run-check-generates-svelte-kit-dir.md — `bun run check` runs `svelte-kit sync`, (re)generating a gitignored `.svelte-kit/` build dir; leave it in place, don't clean it up.

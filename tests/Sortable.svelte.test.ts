@@ -34,6 +34,19 @@ function stubReducedMotion() {
   }));
 }
 
+function stubNormalMotion() {
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener() {},
+    removeEventListener() {},
+    addListener() {},
+    removeListener() {},
+    dispatchEvent: () => false,
+  }));
+}
+
 async function drag(origin: HTMLElement, over: HTMLElement | null, opts?: { up?: boolean }) {
   origin.dispatchEvent(new PointerEvent("pointerdown", { button: 0, buttons: 1, clientX: 0, clientY: 0, bubbles: true, cancelable: true }));
   await tick();
@@ -327,6 +340,46 @@ describe("_Sortable connected lists", () => {
     await expect.element(el(container, "readout-b")).toHaveTextContent("a1,b1,b2");
     expect(props.a).toEqual(["a2"]);
     expect(props.b).toEqual(["a1", "b1", "b2"]);
+  });
+
+  test("pointer cross-list move leaves the active real item only in the target list during drag", async () => {
+    stubNormalMotion();
+    const props = $state({ a: ["a1", "a2"], b: ["b1", "b2"] });
+    const { container } = render(SortableConnected, props);
+    const origin = el(container, "item-a1");
+    const target = el(container, "item-b1");
+
+    origin.dispatchEvent(
+      new PointerEvent("pointerdown", { button: 0, buttons: 1, clientX: 0, clientY: 0, bubbles: true, cancelable: true }),
+    );
+    await tick();
+    window.dispatchEvent(new PointerEvent("pointermove", { buttons: 1, clientX: 20, clientY: 20, bubbles: true }));
+    target.dispatchEvent(new PointerEvent("pointerover", { buttons: 1, bubbles: true }));
+    await tick();
+
+    const nodes = [...container.querySelectorAll<HTMLElement>('li[data-svs-key="a1"]')];
+    const visible = nodes.filter((node) => {
+      const style = getComputedStyle(node);
+      return node.isConnected && style.display !== "none" && style.visibility !== "hidden";
+    });
+    const owners = visible.map((node) => node.closest<HTMLElement>("[data-svs-list]")?.dataset.svsList);
+    const targetActive = visible.some(
+      (node) =>
+        node.closest<HTMLElement>("[data-svs-list]")?.dataset.svsList === "b" &&
+        node.querySelector<HTMLElement>('[data-testid="item-a1"]')?.dataset.variant === VARIANT.ACTIVE,
+    );
+
+    await expect.element(el(container, "readout-a")).toHaveTextContent("a2");
+    await expect.element(el(container, "readout-b")).toHaveTextContent("a1,b1,b2");
+    expect(props.a).toEqual(["a2"]);
+    expect(props.b).toEqual(["a1", "b1", "b2"]);
+    expect(container.querySelector('[style*="position: fixed"]')).not.toBe(null);
+    expect(owners).toContain("b");
+    expect(owners).not.toContain("a");
+    expect(targetActive).toBe(true);
+
+    window.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+    await tick();
   });
 
   test("clone with object items keeps source and inserts cloned key", async () => {
