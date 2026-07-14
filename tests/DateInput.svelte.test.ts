@@ -5,6 +5,7 @@ import { render } from "vitest-browser-svelte";
 import { createRawSnippet, tick } from "svelte";
 import DateInput from "#svs/DateInput.svelte";
 import DateInputBindable from "./fixtures/DateInputBindable.svelte";
+import DateInputCalendarChild from "./fixtures/DateInputCalendarChild.svelte";
 import DateInputCtxProvider from "./fixtures/DateInputCtxProvider.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 import type { AxeMatchers } from "vitest-axe/matchers";
@@ -254,6 +255,43 @@ describe("_DateInput calendar and dismissal", () => {
     await tick();
     expect(props.value).toBeUndefined();
     await expect.element(el).toHaveValue("");
+  });
+});
+
+describe("_DateInput declarative Calendar child", () => {
+  test("renders the child Calendar in the overlay and ignores the calendar bag", async () => {
+    const props = $state({
+      value: d("2026-06-20") as Temporal.PlainDate | undefined,
+      open: true,
+      calendar: { outsideDays: true, styling: { whole: "bag-cal" } },
+      childCalendar: { styling: { whole: "child-cal" } },
+    });
+    const { container } = render(DateInputCalendarChild, props);
+    await tick();
+
+    expect(container.querySelector(".child-cal")).toBeTruthy();
+    expect(container.querySelector(".bag-cal")).toBeNull();
+    expect(container.querySelector("button[data-outside]")).toBeNull();
+  });
+
+  test("picking from the child Calendar sets value, emits change, and closes", async () => {
+    const onchange = vi.fn();
+    const props = $state({
+      value: d("2026-06-20") as Temporal.PlainDate | undefined,
+      open: true,
+      closeOnSelect: true,
+      onchange,
+    });
+    const { container } = render(DateInputCalendarChild, props);
+
+    await userEvent.click(day(container));
+    await tick();
+
+    await expect.element(container.querySelector('[data-testid="value"]') as HTMLElement).toHaveTextContent("2026-06-21");
+    await expect.element(container.querySelector('[data-testid="open"]') as HTMLElement).toHaveTextContent("false");
+    await expect.element(input(container)).toHaveValue(d("2026-06-21").toLocaleString(undefined, { dateStyle: "medium" }));
+    expect(onchange).toHaveBeenCalledTimes(1);
+    expect(onchange.mock.calls[0][0]).toMatchObject({ type: "change" });
   });
 });
 

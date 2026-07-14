@@ -52,3 +52,4 @@
 20260714_rctuws	fix: Make the Popover panel overflow visible when `arrow` is enabled so the out-of-frame caret is not clipped by the UA `[popover]` overflow:auto
 20260714_bo54jd	fix: Split Calendar pageTransition grid directive into in:/out: so callers get direction in/out for the overlay slide
 20260714_ng2abi	feat: Add a children prop to Calendar by making Calendar<->MonthPicker a context coordinator
+20260714_vljzm5	feat: Add a DateInput children prop so a declarative Calendar child self-wires through a new Calendar context coordinator

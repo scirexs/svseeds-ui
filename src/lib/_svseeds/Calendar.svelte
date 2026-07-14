@@ -1,9 +1,12 @@
 <!--
   @component
   ### Usage
-  Use standalone, with an optional declarative `MonthPicker` child.
+  Use standalone, embedded in a coordinator such as `DateInput`, or with an optional declarative `MonthPicker` child.
   ```svelte
   <Calendar {...props} />
+  <DateInput>
+    <Calendar {...props} />
+  </DateInput>
   <Calendar>
     <MonthPicker {...props} />
   </Calendar>
@@ -75,6 +78,7 @@
   ```
   ### Behavior
   - Prev/next page `display`; the label toggles the picking slot.
+  - When embedded, `value`, `min`, `max`, `isDisabled`, `variant`, and `styling` come from parent context and value writes route back to it; standalone behavior is unchanged.
   - While picking, `children` renders in the middle slot and wins over `monthPicker`; otherwise the internal MonthPicker renders.
   - An embedded MonthPicker self-wires `display`/`min`/`max`/`variant` through context.
   - Enabled day clicks and Enter/Space select a single `Temporal.PlainDate`.
@@ -130,32 +134,48 @@
   export type CalendarReqdProps = never;
   export type CalendarBindProps = "value" | "display" | "picking";
 
+  export interface CalendarContext extends SVSContext {
+    get value(): Temporal.PlainDate | undefined;
+    set value(v: Temporal.PlainDate | undefined);
+    get min(): Temporal.PlainDate | undefined;
+    get max(): Temporal.PlainDate | undefined;
+    get isDisabled(): ((d: Temporal.PlainDate) => boolean) | undefined;
+  }
+  export const [_getCalendarContext, _setCalendarContext] = _createContext<CalendarContext>();
+
   export const _CALENDAR_PRESET = "svs-calendar";
 
   import { tick, untrack } from "svelte";
-  import { VARIANT, PARTS, _fnClass, shouldReduceMotion } from "./_core";
+  import { VARIANT, PARTS, _createContext, _fnClass, shouldReduceMotion } from "./_core";
   import MonthPicker, { _setMonthPickerContext } from "./MonthPicker.svelte";
   import type { Snippet } from "svelte";
   import type { KeyboardEventHandler, MouseEventHandler } from "svelte/elements";
-  import type { SVSClass, SVSVariant } from "./_core";
+  import type { SVSClass, SVSContext, SVSVariant } from "./_core";
   import type { MonthPickerContext, MonthPickerProps } from "./MonthPicker.svelte";
 </script>
 
 <script lang="ts">
   // prettier-ignore
   let { value = $bindable(), display = $bindable(), picking = $bindable(false), min, max, isDisabled, outsideDays = false, fixedWeeks = false, firstDayOfWeek = 0, locale, label, left, right, weekday, day, bottom, children, monthPicker, transition, pageTransition, styling, variant = VARIANT.NEUTRAL }: CalendarProps = $props();
+  const ctx = _getCalendarContext();
 
   // *** Initialize *** //
-  const cls = $derived(_fnClass(_CALENDAR_PRESET, styling));
+  const effValue = $derived(ctx ? ctx.value : value);
+  const effMin = $derived(ctx ? ctx.min : min);
+  const effMax = $derived(ctx ? ctx.max : max);
+  const effIsDisabled = $derived(ctx ? ctx.isDisabled : isDisabled);
+  const effVariant = $derived(ctx ? ctx.variant : variant);
+  const cls = $derived(_fnClass(_CALENDAR_PRESET, styling ?? ctx?.styling));
   const uid = $props.id();
   const idCaption = `${uid}-caption`;
   // svelte-ignore state_referenced_locally
-  if (display === undefined) display = (value ?? Temporal.Now.plainDateISO()).toPlainYearMonth();
+  if (display === undefined) display = (ctx?.value ?? value ?? Temporal.Now.plainDateISO()).toPlainYearMonth();
   const initialDisplay = display as Temporal.PlainYearMonth;
+  // svelte-ignore state_referenced_locally
+  const initialValue = ctx?.value ?? value;
   const today = $derived(Temporal.Now.plainDateISO());
-  const ctxMin = $derived(min?.toPlainYearMonth());
-  const ctxMax = $derived(max?.toPlainYearMonth());
-  const ctxVariant = $derived(variant);
+  const ctxMin = $derived(effMin?.toPlainYearMonth());
+  const ctxMax = $derived(effMax?.toPlainYearMonth());
   const mpCtx: MonthPickerContext = {
     get value() {
       return currentDisplay();
@@ -170,7 +190,7 @@
       return ctxMax;
     },
     get variant() {
-      return ctxVariant;
+      return effVariant;
     },
     get styling() {
       return undefined;
@@ -181,7 +201,7 @@
   // *** States *** //
   let dir = $state(0);
   let prevYm = initialDisplay;
-  let focused = $state(value && sameMonth(value, initialDisplay) ? value : firstOf(initialDisplay));
+  let focused = $state(initialValue && sameMonth(initialValue, initialDisplay) ? initialValue : firstOf(initialDisplay));
   let cells = $state<Record<string, HTMLElement>>({});
   const firstWeekday = $derived(normWeekday(firstDayOfWeek));
   const monthStart = $derived(firstOf(currentDisplay()));
@@ -222,7 +242,7 @@
   // *** Reactive Handlers *** //
   $effect.pre(() => {
     display;
-    value;
+    effValue;
     untrack(() => sync());
   });
   $effect.pre(() => {
@@ -241,7 +261,7 @@
   function syncFocus() {
     const shown = currentDisplay();
     if (sameMonth(focused, shown)) return;
-    focused = value && sameMonth(value, shown) ? value : firstOf(shown);
+    focused = effValue && sameMonth(effValue, shown) ? effValue : firstOf(shown);
   }
   function currentDisplay(): Temporal.PlainYearMonth {
     return display ?? initialDisplay;
@@ -265,22 +285,22 @@
     return new Date(Date.UTC(2023, 0, 1 + weekday));
   }
   function inRange(d: Temporal.PlainDate): boolean {
-    if (min && Temporal.PlainDate.compare(d, min) < 0) return false;
-    if (max && Temporal.PlainDate.compare(d, max) > 0) return false;
+    if (effMin && Temporal.PlainDate.compare(d, effMin) < 0) return false;
+    if (effMax && Temporal.PlainDate.compare(d, effMax) > 0) return false;
     return true;
   }
   function disabled(d: Temporal.PlainDate): boolean {
-    return !inRange(d) || !!isDisabled?.(d);
+    return !inRange(d) || !!effIsDisabled?.(d);
   }
   function selected(d: Temporal.PlainDate): boolean {
-    return !!value?.equals(d);
+    return !!effValue?.equals(d);
   }
   function variantOf(d: Temporal.PlainDate): string {
     if (disabled(d)) return VARIANT.INACTIVE;
     if (selected(d)) return VARIANT.ACTIVE;
     return VARIANT.NEUTRAL;
   }
-  function ctx(d: Temporal.PlainDate): DayCtx {
+  function dayCtx(d: Temporal.PlainDate): DayCtx {
     return {
       date: d,
       variant: variantOf(d),
@@ -305,7 +325,7 @@
   }
   function select(d: Temporal.PlainDate) {
     if (disabled(d)) return;
-    value = d;
+    setValue(d);
     focused = d;
     if (!sameMonth(d, currentDisplay())) displayOf(d);
   }
@@ -315,7 +335,11 @@
     picking = false;
   }
   function clear() {
-    value = undefined;
+    setValue(undefined);
+  }
+  function setValue(v: Temporal.PlainDate | undefined) {
+    if (ctx) ctx.value = v;
+    else value = v;
   }
   function move(d: Temporal.PlainDate) {
     focused = d;
@@ -359,28 +383,28 @@
 
 <!---------------------------------------->
 
-<div class={cls(PARTS.WHOLE, variant)} role="group" aria-label={appLabel} data-svs-calendar={uid}>
-  <div class={cls(PARTS.TOP, variant)}>
-    <button class={cls(PARTS.LEFT, variant)} type="button" onclick={hprev}
-      >{#if left}{@render left(variant)}{:else}Previous{/if}</button
+<div class={cls(PARTS.WHOLE, effVariant)} role="group" aria-label={appLabel} data-svs-calendar={uid}>
+  <div class={cls(PARTS.TOP, effVariant)}>
+    <button class={cls(PARTS.LEFT, effVariant)} type="button" onclick={hprev}
+      >{#if left}{@render left(effVariant)}{:else}Previous{/if}</button
     >
-    <button id={idCaption} class={cls(PARTS.LABEL, variant)} type="button" aria-expanded={picking} onclick={hlabel}>
-      {#if label}{@render label(currentDisplay(), variant, picking)}{:else}{captionText}{/if}
+    <button id={idCaption} class={cls(PARTS.LABEL, effVariant)} type="button" aria-expanded={picking} onclick={hlabel}>
+      {#if label}{@render label(currentDisplay(), effVariant, picking)}{:else}{captionText}{/if}
     </button>
-    <button class={cls(PARTS.RIGHT, variant)} type="button" onclick={hnext}
-      >{#if right}{@render right(variant)}{:else}Next{/if}</button
+    <button class={cls(PARTS.RIGHT, effVariant)} type="button" onclick={hnext}
+      >{#if right}{@render right(effVariant)}{:else}Next{/if}</button
     >
   </div>
 
   {#if picking}
-    <div class={cls(PARTS.MIDDLE, variant)} transition:tfn|local={tparams}>
+    <div class={cls(PARTS.MIDDLE, effVariant)} transition:tfn|local={tparams}>
       {#if children}{@render children()}{:else}<MonthPicker {...monthPicker} />{/if}
     </div>
   {:else}
-    <div class={cls(PARTS.MIDDLE, variant)} transition:tfn|local={tparams}>
+    <div class={cls(PARTS.MIDDLE, effVariant)} transition:tfn|local={tparams}>
       {#key currentDisplay().toString()}
         <div
-          class={cls(PARTS.MAIN, variant)}
+          class={cls(PARTS.MAIN, effVariant)}
           role="grid"
           tabindex="-1"
           aria-labelledby={idCaption}
@@ -388,7 +412,7 @@
           in:pfn|local={pparams}
           out:pfn|local={pparams}
         >
-          <div class={cls(PARTS.AUX, variant)} role="row" data-header>
+          <div class={cls(PARTS.AUX, effVariant)} role="row" data-header>
             {#each weekdayLabels as wl}
               <span
                 class={cls(PARTS.EXTRA, VARIANT.NEUTRAL)}
@@ -397,18 +421,18 @@
                 data-weekday={wl.weekday}
                 aria-label={wl.full}
               >
-                {#if weekday}{@render weekday(wl.weekday, variant)}{:else}{wl.text}{/if}
+                {#if weekday}{@render weekday(wl.weekday, effVariant)}{:else}{wl.text}{/if}
               </span>
             {/each}
           </div>
           {#each weeks as week}
-            <div class={cls(PARTS.AUX, variant)} role="row">
+            <div class={cls(PARTS.AUX, effVariant)} role="row">
               {#each week as cell}
                 {@const outside = !sameMonth(cell, currentDisplay())}
                 {#if outside && !outsideDays}
                   <span class={cls(PARTS.EXTRA, VARIANT.NEUTRAL)} role="gridcell" aria-hidden="true"></span>
                 {:else}
-                  {@const c = ctx(cell)}
+                  {@const c = dayCtx(cell)}
                   <button
                     class={cls(PARTS.EXTRA, c.variant)}
                     type="button"
@@ -440,6 +464,6 @@
   {/if}
 
   {#if bottom}
-    <div class={cls(PARTS.BOTTOM, variant)}>{@render bottom(ctl, picking, variant)}</div>
+    <div class={cls(PARTS.BOTTOM, effVariant)}>{@render bottom(ctl, picking, effVariant)}</div>
   {/if}
 </div>

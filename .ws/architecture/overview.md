@@ -99,7 +99,7 @@ Components (42 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
 - **Coordinator pairings** — the child can be written explicitly and self-wires
   to the parent through an optional context, staying usable
   standalone: each Field over its input control, Accordion over Disclosure,
-  Pagination over ComboBox, Calendar over MonthPicker.
+  Pagination over ComboBox, Calendar over MonthPicker, DateInput over Calendar.
   These are composition relationships; packaging dependencies are determined by
   hard imports.
 

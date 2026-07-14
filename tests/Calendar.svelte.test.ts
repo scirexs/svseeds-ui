@@ -4,6 +4,7 @@ import { render } from "vitest-browser-svelte";
 import { createRawSnippet, tick } from "svelte";
 import Calendar from "#svs/Calendar.svelte";
 import CalendarBindable from "./fixtures/CalendarBindable.svelte";
+import CalendarCtxProvider from "./fixtures/CalendarCtxProvider.svelte";
 import CalendarMonthPickerChild from "./fixtures/CalendarMonthPickerChild.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 import type { CalendarCtl, DayCtx } from "#svs/Calendar.svelte";
@@ -198,6 +199,37 @@ describe("_Calendar children slot", () => {
     await tick();
     await setWheel(selects(screen.container)[1], "10");
     await expect.element(screen.getByTestId("display")).toHaveTextContent("2026-10");
+  });
+});
+
+describe("_Calendar context", () => {
+  test("embedded Calendar reads context values and writes selection back through context", async () => {
+    const screen = render(CalendarCtxProvider, {
+      value: date(2026, 6, 15),
+      display: ym(2026, 6),
+      min: date(2026, 6, 10),
+      max: date(2026, 6, 20),
+      variant: VARIANT.ACTIVE,
+      ownValue: date(2026, 6, 10),
+      ownMin: date(2026, 6, 1),
+      ownMax: date(2026, 6, 30),
+      ownVariant: VARIANT.INACTIVE,
+    });
+    const root = screen.container.querySelector("[data-svs-calendar]") as HTMLElement;
+    const selected = dayButton(screen.container, 15);
+    const ownSelected = dayButton(screen.container, 10);
+
+    expect(root.className).toContain(VARIANT.ACTIVE);
+    expect(selected.hasAttribute("data-selected")).toBe(true);
+    expect(ownSelected.hasAttribute("data-selected")).toBe(false);
+    await expect.element(dayButton(screen.container, 9)).toHaveAttribute("data-disabled", "true");
+    await expect.element(dayButton(screen.container, 21)).toHaveAttribute("data-disabled", "true");
+
+    dayButton(screen.container, 16).click();
+    await tick();
+
+    await expect.element(screen.getByTestId("ctx-value")).toHaveTextContent("2026-06-16");
+    await expect.element(screen.getByTestId("own-value")).toHaveTextContent("2026-06-10");
   });
 });
 

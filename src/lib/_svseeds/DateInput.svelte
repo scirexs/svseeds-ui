@@ -1,9 +1,12 @@
 <!--
   @component
   ### Usage
-  Use standalone; it owns a private `Calendar` for date selection and can later be coordinated by `DateField`.
+  Use standalone, with an optional declarative `Calendar` child, or coordinated by `DateField`.
   ```svelte
   <DateInput {...props} />
+  <DateInput>
+    <Calendar {...props} />
+  </DateInput>
   ```
   ### Types
   ```ts
@@ -22,6 +25,7 @@
     left?: Snippet<[DateInputCtl, boolean, string]>;
     right?: Snippet<[DateInputCtl, boolean, string]>;
     transition?: TransitionProp;
+    children?: Snippet;
     calendar?: Omit<CalendarProps, "value" | "display" | "min" | "max" | "isDisabled" | "variant">;
     attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
@@ -46,12 +50,13 @@
     <input class="main" type="text" role aria-* {...rest} />
     <span class="right" conditional>{right}</span>
     <input type="hidden" conditional: name />
-    <div class="bottom" conditional: open transition:...><Calendar /></div>
+    <div class="bottom" conditional: open transition:...>{#if children}{children}{:else}<Calendar />{/if}</div>
   </span>
   ```
   ### Behavior
   - Without `parse`, the visible control is readonly and the private calendar is the only value entry path.
   - With `parse`, draft text commits on change or blur; invalid, disabled, and out-of-range dates revert.
+  - A declarative `Calendar` child self-wires `value`, `min`, `max`, `isDisabled`, and `variant` through context and wins over the `calendar` bag.
   - `name` is assigned only to a hidden input whose value is ISO (`Temporal.PlainDate.toString()`), not the locale-formatted control.
   - `format` and `parse` are caller-coordinated; the default locale display is not necessarily parseable by a supplied parser.
 -->
@@ -71,6 +76,7 @@
     left?: Snippet<[DateInputCtl, boolean, string]>;
     right?: Snippet<[DateInputCtl, boolean, string]>;
     transition?: TransitionProp;
+    children?: Snippet;
     calendar?: Omit<CalendarProps, "value" | "display" | "min" | "max" | "isDisabled" | "variant">;
     attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
@@ -105,17 +111,17 @@
 
   import { onDestroy, tick, untrack } from "svelte";
   import { VARIANT, PARTS, _createContext, _detectOverflow, _fnClass, shouldReduceMotion } from "./_core";
-  import Calendar from "./Calendar.svelte";
+  import Calendar, { _setCalendarContext } from "./Calendar.svelte";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { FocusEventHandler, FormEventHandler, HTMLInputAttributes, KeyboardEventHandler } from "svelte/elements";
   import type { SVSClass, SVSContext, SVSVariant } from "./_core";
-  import type { CalendarProps } from "./Calendar.svelte";
+  import type { CalendarContext, CalendarProps } from "./Calendar.svelte";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { value = $bindable(), open = $bindable(false), min, max, isDisabled, parse, format: formatProp, locale, name, openOnFocus = false, closeOnSelect = true, left, right, transition, calendar, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, onchange: onchangeProp, oninvalid: oninvalidProp, oninput: oninputProp, onfocus: onfocusProp, onblur: onblurProp, onkeydown: onkeydownProp, id: idProp, "aria-describedby": ariaDescribedbyProp, "aria-invalid": ariaInvalid, class: c, ...rest }: DateInputProps = $props();
+  let { value = $bindable(), open = $bindable(false), min, max, isDisabled, parse, format: formatProp, locale, name, openOnFocus = false, closeOnSelect = true, left, right, transition, children, calendar, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, onchange: onchangeProp, oninvalid: oninvalidProp, oninput: oninputProp, onfocus: onfocusProp, onblur: onblurProp, onkeydown: onkeydownProp, id: idProp, "aria-describedby": ariaDescribedbyProp, "aria-invalid": ariaInvalid, class: c, ...rest }: DateInputProps = $props();
   const ctx = _getDateInputContext();
 
   // *** Initialize *** //
@@ -131,6 +137,30 @@
   const reduced = $derived(shouldReduceMotion());
   const tfn = $derived(!reduced && transition?.fn ? transition.fn : noop);
   const tparams = $derived(transition?.params as any);
+  const calCtx: CalendarContext = {
+    get value() {
+      return effValue;
+    },
+    set value(v) {
+      onPick(v);
+    },
+    get min() {
+      return min;
+    },
+    get max() {
+      return max;
+    },
+    get isDisabled() {
+      return isDisabled;
+    },
+    get variant() {
+      return effVariant;
+    },
+    get styling() {
+      return undefined;
+    },
+  };
+  _setCalendarContext(calCtx);
 
   function format(v = effValue): string {
     return v === undefined ? "" : fmt(v);
@@ -336,15 +366,19 @@
   {/if}
   {#if open}
     <div id={idOverlay} class={cls(PARTS.BOTTOM, effVariant)} bind:this={overlayElem} style={overlayStyle} transition:tfn|local={tparams}>
-      <Calendar
-        {...calendar}
-        bind:value={() => effValue, onPick}
-        locale={calendar?.locale ?? locale}
-        {min}
-        {max}
-        {isDisabled}
-        variant={effVariant}
-      />
+      {#if children}
+        {@render children()}
+      {:else}
+        <Calendar
+          {...calendar}
+          bind:value={() => effValue, onPick}
+          locale={calendar?.locale ?? locale}
+          {min}
+          {max}
+          {isDisabled}
+          variant={effVariant}
+        />
+      {/if}
     </div>
   {/if}
 </span>
