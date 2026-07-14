@@ -116,6 +116,7 @@
     readonly send: TransitionFn;
     readonly receive: TransitionFn;
     readonly tp: TransitionParams;
+    flip(memberId: string, key: string): TransitionParams;
     register<T>(member: SortableMember<T>): () => void;
     prepare<T>(member: SortableMember<T>, key: string, ev: PointerEvent, el: HTMLElement, followers: string[]): boolean;
     setGhost(ghost: boolean, ev?: PointerEvent): void;
@@ -170,6 +171,11 @@
     originKey: string;
     snapshots: Map<SortableMember, unknown[]>;
   };
+  type Crossing = {
+    fromId: string;
+    toId: string;
+    key: string;
+  };
   type SortableShadowState = {
     rendering: boolean;
     visible: boolean;
@@ -216,7 +222,7 @@
       duration: _resolveDuration(motion?.duration, 300),
       easing: motion?.easing ?? cubicOut,
     };
-    const [send, receive] = crossfade(tp);
+    const [send, receive] = crossfade({ ...tp, fallback: (node) => fade(node, tp) });
     return new SortableController(Symbol("svs-sortable-group"), send, receive, presentation, tp, {
       ...defaultSortableMessages,
       ...messages,
@@ -228,6 +234,7 @@
     readonly send;
     readonly receive;
     readonly tp;
+    #noFlip;
     #presentation;
     #messages: SortableMessages;
     #members = new Map<string, SortableMember>();
@@ -238,6 +245,7 @@
     #locks = new Map<string, ReturnType<typeof setTimeout>>();
     #active: ActiveDrag | undefined = $state.raw();
     #keyboard: ActiveKeyboard | undefined = $state.raw();
+    #crossing: Crossing | undefined = $state.raw();
     #standby:
       | {
           member: SortableMember;
@@ -276,6 +284,7 @@
       this.send = send;
       this.receive = receive;
       this.tp = tp;
+      this.#noFlip = { ...tp, duration: 0 };
       this.#presentation = presentation;
       this.#messages = messages;
     }
@@ -305,6 +314,13 @@
     }
     get messages(): SortableMessages {
       return this.#messages;
+    }
+    flip(memberId: string, key: string): TransitionParams {
+      const crossing = this.#crossing;
+      if (crossing && (memberId === crossing.fromId || memberId === crossing.toId) && key === crossing.key) {
+        return this.#noFlip;
+      }
+      return this.tp;
     }
     register<T>(member: SortableMember<T>): () => void {
       this.#members.set(member.id, member as SortableMember);
@@ -603,6 +619,7 @@
       member.touch();
       active.current = member;
       active.activeKey = stringifyKey(member.key(value));
+      if (from.id !== member.id) this.#skipFlip(from.id, member.id, active.activeKey);
       this.#activeKey = active.activeKey;
       this.shadow.item = value;
     }
@@ -636,8 +653,16 @@
       member.touch();
       active.current = member;
       active.activeKey = stringifyKey(member.key(value));
+      this.#skipFlip(active.source.id, member.id, active.activeKey);
       this.#activeKey = active.activeKey;
       this.shadow.item = value;
+    }
+    #skipFlip(fromId: string, toId: string, key: string) {
+      const crossing = { fromId, toId, key };
+      this.#crossing = crossing;
+      setTimeout(() => {
+        if (this.#crossing === crossing) this.#crossing = undefined;
+      });
     }
     #commitSwap() {
       const active = this.#active;
@@ -822,7 +847,7 @@
   import { onDestroy, tick, untrack } from "svelte";
   import { on } from "svelte/events";
   import { SvelteSet } from "svelte/reactivity";
-  import { crossfade } from "svelte/transition";
+  import { crossfade, fade } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import { flip } from "svelte/animate";
   import { VARIANT, PARTS, SR_ONLY, _fnClass, _throttle, _isNeutral, _resolveDuration, _createContext } from "./_core";
@@ -1094,7 +1119,7 @@
       aria-roledescription={ariaRoleDescription}
       in:controller.receive={{ key: k }}
       out:controller.send={{ key: k }}
-      animate:flip={controller.tp}
+      animate:flip={controller.flip(listId, k)}
       style="touch-action:none;"
       onfocus={() => (focusKey = k)}
       onblur={hblur}

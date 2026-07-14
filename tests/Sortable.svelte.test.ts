@@ -62,6 +62,17 @@ describe("_Sortable rendering and API", () => {
     expect(controller.tp.easing).toBe(easing);
   });
 
+  test("createSortableGroup fades unmatched crossfade items with shared motion params", () => {
+    const node = document.createElement("li");
+    const easing = (t: number) => t;
+    const controller = createSortableGroup(undefined, { duration: 120, easing });
+    const transition = controller.receive(node, { key: "missing" })();
+
+    expect(transition.duration).toBe(120);
+    expect(transition.easing).toBe(easing);
+    expect(transition.css?.(0.5, 0.5)).toContain("opacity");
+  });
+
   test("createSortableGroup resolves reduced motion duration", () => {
     vi.stubGlobal("matchMedia", (query: string) => ({
       matches: true,

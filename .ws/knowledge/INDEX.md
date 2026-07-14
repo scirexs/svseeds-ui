@@ -19,6 +19,8 @@
 - svelte-state-prop-initializer-warning.md — `$state` directly capturing a prop variable in its initializer triggers a Svelte warning; wrap the initial read in a tiny helper to suppress it while preserving one-time seed behavior.
 - wheelpicker-snap-dispatches-change-jump-does-not.md — `WheelPicker`'s `snap()` always dispatches native `change`; use `jump(index)` to re-settle the drum visually without firing `change` (e.g. a no-op selected-row tap).
 - svelte-branch-transition-skips-unmounted-changes.md — a keyed `transition:fn|local` on an element living in only one `{#if}/{:else}` branch can't capture a value change made while that branch is unmounted; centrally detecting the change doesn't make it visually transition if the target isn't mounted for that path.
+- svelte-crossfade-fallback-needs-explicit-params.md — `crossfade({ ...defaults, fallback })` doesn't auto-pass `defaults` (duration/easing) into the fallback; pass the same params explicitly inside the fallback callback (e.g. `fallback: (node) => fade(node, tp)`).
+- svelte-animate-flip-skips-if-node-already-animating.md — `animate:flip` skips its FLIP positioning when the node already has a running transition (both write `transform`); don't let crossfade and FLIP own the same moving node — resolve a zero-duration flip param for nodes mid another transition.
 
 ## Build, Tooling & Dependencies
 - bun-run-check-generates-svelte-kit-dir.md — `bun run check` runs `svelte-kit sync`, (re)generating a gitignored `.svelte-kit/` build dir; leave it in place, don't clean it up.
