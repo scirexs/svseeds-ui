@@ -4,6 +4,7 @@ import { render } from "vitest-browser-svelte";
 import { createRawSnippet, tick } from "svelte";
 import MonthPicker from "#svs/MonthPicker.svelte";
 import MonthPickerBindable from "./fixtures/MonthPickerBindable.svelte";
+import MonthPickerCtxProvider from "./fixtures/MonthPickerCtxProvider.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 import type { AxeMatchers } from "vitest-axe/matchers";
 
@@ -85,6 +86,43 @@ describe("_MonthPicker value coordination", () => {
     await setWheel(selects(screen.container)[0], "2022");
     await setWheel(selects(screen.container)[1], "12");
     await expect.element(screen.getByTestId("ym")).toHaveTextContent("2022-4");
+  });
+});
+
+describe("_MonthPicker embedded (context)", () => {
+  test("value/min/max/variant come from context and own props are ignored", () => {
+    const screen = render(MonthPickerCtxProvider, {
+      value: ym(2024, 5),
+      min: ym(2024, 3),
+      max: ym(2024, 7),
+      variant: VARIANT.ACTIVE,
+      ownValue: ym(1999, 1),
+      ownMin: ym(1990, 1),
+      ownMax: ym(1990, 12),
+      ownVariant: VARIANT.INACTIVE,
+    });
+    const wheels = selects(screen.container);
+    expect(wheels[0].value).toBe("2024");
+    expect(wheels[1].value).toBe("5");
+    expect(opts(wheels[0]).map((o) => o.value)).toEqual(["2024"]);
+    const months = opts(wheels[1]);
+    expect(months.slice(0, 2).every((o) => o.disabled)).toBe(true);
+    expect(months.slice(2, 7).every((o) => !o.disabled)).toBe(true);
+    expect(months.slice(7).every((o) => o.disabled)).toBe(true);
+    expect(screen.container.querySelector(`.${PARTS.WHOLE}`)?.className).toContain(VARIANT.ACTIVE);
+  });
+
+  test("wheel changes write through context without mutating the own value prop", async () => {
+    const screen = render(MonthPickerCtxProvider, {
+      value: ym(2021, 6),
+      min: ym(2020, 1),
+      max: ym(2025, 12),
+      ownValue: ym(1999, 1),
+    });
+    await setWheel(selects(screen.container)[1], "9");
+    await setWheel(selects(screen.container)[0], "2024");
+    await expect.element(screen.getByTestId("ctx-ym")).toHaveTextContent("2024-9");
+    await expect.element(screen.getByTestId("own-ym")).toHaveTextContent("1999-1");
   });
 });
 

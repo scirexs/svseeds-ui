@@ -52,9 +52,10 @@ shared module — there is no central runtime or app shell.
 - Components compose in two ways: a **coordinator** parent shares state with an
   explicitly-written child through a lightweight _optional_ context — so the
   child stays usable standalone — (e.g. Field components over their Input
-  counterparts; Accordion over Disclosure), while a few self-contained
-  **Composites** privately instantiate a fixed set of children (e.g. Calendar
-  over MonthPicker). Either way the intra-library dependency is extracted into
+  counterparts; Accordion over Disclosure; Calendar over MonthPicker), while a
+  few self-contained **Composites** privately instantiate a fixed set of
+  children (e.g. MonthPicker over its two WheelPickers). Either way the
+  intra-library dependency is extracted into
   `dep.json` at build time so the CLI can copy a component together with
   everything it needs. See `.ws/policy/compound-components.md` for the conventions.
 - The public package surface (`index.js`/`index.d.ts`) is **generated** from
@@ -95,11 +96,12 @@ Components (42 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
   together: Calendar → MonthPicker → WheelPicker; MenuList → MenuSeparator;
   Pagination → ComboBox (Tooltip recurses into itself). Update when an
   intra-library import is added or removed.
-- **Coordinator pairings** — no import; the child is written explicitly and
-  self-wires to the parent through an optional context, staying usable
+- **Coordinator pairings** — the child can be written explicitly and self-wires
+  to the parent through an optional context, staying usable
   standalone: each Field over its input control, Accordion over Disclosure,
-  Pagination over ComboBox.
-  These are composition relationships, not packaging dependencies.
+  Pagination over ComboBox, Calendar over MonthPicker.
+  These are composition relationships; packaging dependencies are determined by
+  hard imports.
 
 ## Directory Layout
 
@@ -140,7 +142,7 @@ redirects users to npm — see the generated `mod.ts`):
   `action`, and snippet "parts" (`left`/`right`/…). Composed children are
   configured directly on the explicitly-written child; a Composite's private
   children are configured through per-child namespaced `Omit` bags (e.g.
-  Calendar's `monthPicker`). See `.ref/web-svseeds/src/md/customization.sv.md`
+  MonthPicker's `year` / `month`). See `.ref/web-svseeds/src/md/customization.sv.md`
   and `.ws/policy/compound-components.md`.
 - **Internal subpath imports** (dev/tests only, via `package.json` `imports`):
   `#svs/core` → `_svseeds/_core.ts`, `#svs/*` → `_svseeds/*`.

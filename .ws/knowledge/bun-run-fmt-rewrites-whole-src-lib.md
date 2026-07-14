@@ -48,4 +48,7 @@ the default `bun run fmt:check` only for an intentional repo-wide check, and the
 20260629_quy35s (review verified formatting with a scoped `prettier --check`);
 `feedback-implementer.md` and `feedback-reviewer.md` of task 20260711_kg2wt5
 (confirmed `BUN_TEST` is a second, independent default that `BUN_FMT` alone
-does not scope).
+does not scope); `feedback-implementer.md` of task 20260714_ng2abi (request's
+own `Validation` section set only `BUN_FMT`, intending to exclude touched test
+files from the format gate — the literal command still walked all of
+`./tests` via the `BUN_TEST` default).

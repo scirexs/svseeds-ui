@@ -4,6 +4,7 @@ import { render } from "vitest-browser-svelte";
 import { createRawSnippet, tick } from "svelte";
 import Calendar from "#svs/Calendar.svelte";
 import CalendarBindable from "./fixtures/CalendarBindable.svelte";
+import CalendarMonthPickerChild from "./fixtures/CalendarMonthPickerChild.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 import type { CalendarCtl, DayCtx } from "#svs/Calendar.svelte";
 import type { AxeMatchers } from "vitest-axe/matchers";
@@ -29,6 +30,9 @@ const setWheel = async (select: HTMLSelectElement, value: string) => {
   select.dispatchEvent(new Event("change", { bubbles: true }));
   await tick();
 };
+const selects = (container: HTMLElement) => Array.from(container.querySelectorAll("select")) as HTMLSelectElement[];
+const opts = (select: HTMLSelectElement) => Array.from(select.options);
+const monthPickerRoot = (container: HTMLElement) => container.querySelector(".svs-monthpicker") as HTMLElement;
 const hasTransitionDir = (fn: ReturnType<typeof vi.fn>, dir: number, marker?: string) =>
   fn.mock.calls.some(([, params]) => {
     const p = params as { dir?: number; marker?: string };
@@ -137,6 +141,63 @@ describe("_Calendar paging and picking", () => {
     await setWheel(selects[1], "9");
     await expect.element(screen.getByTestId("display")).toHaveTextContent("2027-9");
     await expect.element(screen.getByTestId("value")).toHaveTextContent("2026-6-15");
+  });
+});
+
+describe("_Calendar children slot", () => {
+  test("children render in the picking slot instead of the default MonthPicker", async () => {
+    const screen = render(Calendar, { display: ym(2026, 6), children: snippet0("calendar-child", "child") });
+    (screen.container.querySelector(`.${PARTS.LABEL}`) as HTMLButtonElement).click();
+    await tick();
+    await expect.element(screen.getByTestId("calendar-child")).toBeVisible();
+    expect(screen.container.querySelector("select")).toBeNull();
+    expect(screen.container.querySelector('[role="grid"]')).toBeNull();
+  });
+
+  test("children win over the monthPicker bag", async () => {
+    const screen = render(Calendar, {
+      display: ym(2026, 6),
+      children: snippet0("calendar-child", "child"),
+      monthPicker: { year: { styling: { whole: "bag-year" } } },
+    });
+    (screen.container.querySelector(`.${PARTS.LABEL}`) as HTMLButtonElement).click();
+    await tick();
+    await expect.element(screen.getByTestId("calendar-child")).toBeVisible();
+    expect(screen.container.querySelector("select")).toBeNull();
+    expect(screen.container.querySelector(".bag-year")).toBeNull();
+  });
+
+  test("declarative MonthPicker child reflects display/min/max/variant and updates display", async () => {
+    const screen = render(CalendarMonthPickerChild, {
+      display: ym(2026, 6),
+      min: date(2024, 3, 1),
+      max: date(2028, 7, 31),
+      variant: VARIANT.ACTIVE,
+    });
+    (screen.container.querySelector(`.${PARTS.LABEL}`) as HTMLButtonElement).click();
+    await tick();
+    const wheels = selects(screen.container);
+    expect(wheels[0].value).toBe("2026");
+    expect(wheels[1].value).toBe("6");
+    expect(opts(wheels[0]).map((o) => o.value)).toEqual(["2024", "2025", "2026", "2027", "2028"]);
+    expect(monthPickerRoot(screen.container).className).toContain(VARIANT.ACTIVE);
+
+    await setWheel(wheels[0], "2027");
+    await setWheel(wheels[1], "9");
+
+    await expect.element(screen.getByTestId("display")).toHaveTextContent("2027-9");
+  });
+
+  test("default no-children picking path still self-wires the internal MonthPicker", async () => {
+    const screen = render(CalendarBindable, {
+      display: ym(2026, 6),
+      min: date(2020, 1, 1),
+      max: date(2030, 12, 31),
+    });
+    (screen.container.querySelector(`.${PARTS.LABEL}`) as HTMLButtonElement).click();
+    await tick();
+    await setWheel(selects(screen.container)[1], "10");
+    await expect.element(screen.getByTestId("display")).toHaveTextContent("2026-10");
   });
 });
 

@@ -1,9 +1,12 @@
 <!--
   @component
   ### Usage
-  Use standalone.
+  Use standalone, with an optional declarative `MonthPicker` child.
   ```svelte
   <Calendar {...props} />
+  <Calendar>
+    <MonthPicker {...props} />
+  </Calendar>
   ```
   ### Types
   default value: *`(value)`*
@@ -25,6 +28,7 @@
     weekday?: Snippet<[number, string]>;
     day?: Snippet<[DayCtx]>;
     bottom?: Snippet<[CalendarCtl, boolean, string]>;
+    children?: Snippet;
     monthPicker?: Omit<MonthPickerProps, "value" | "min" | "max" | "variant">;
     transition?: TransitionProp;
     pageTransition?: TransitionProp;
@@ -64,13 +68,15 @@
         </div>
         <div class="aux" role="row">day cells</div>
       </div>
-      MonthPicker while picking
+      {#if picking}{children or MonthPicker}{:else}grid{/if}
     </div>
     <div class="bottom" conditional>{bottom}</div>
   </div>
   ```
   ### Behavior
-  - Prev/next page `display`; the label toggles an embedded `_MonthPicker`.
+  - Prev/next page `display`; the label toggles the picking slot.
+  - While picking, `children` renders in the middle slot and wins over `monthPicker`; otherwise the internal MonthPicker renders.
+  - An embedded MonthPicker self-wires `display`/`min`/`max`/`variant` through context.
   - Enabled day clicks and Enter/Space select a single `Temporal.PlainDate`.
   - Day cells expose `data-today`, `data-selected`, `data-outside`, `data-disabled`, and `data-weekday`.
   - The weekday-header row and its `columnheader` cells carry `data-header`; the day rows carry `data-*` only on their cells.
@@ -97,6 +103,7 @@
     weekday?: Snippet<[number, string]>;
     day?: Snippet<[DayCtx]>;
     bottom?: Snippet<[CalendarCtl, boolean, string]>;
+    children?: Snippet;
     monthPicker?: Omit<MonthPickerProps, "value" | "min" | "max" | "variant">;
     transition?: TransitionProp;
     pageTransition?: TransitionProp;
@@ -127,16 +134,16 @@
 
   import { tick, untrack } from "svelte";
   import { VARIANT, PARTS, _fnClass, shouldReduceMotion } from "./_core";
-  import MonthPicker from "./MonthPicker.svelte";
+  import MonthPicker, { _setMonthPickerContext } from "./MonthPicker.svelte";
   import type { Snippet } from "svelte";
   import type { KeyboardEventHandler, MouseEventHandler } from "svelte/elements";
   import type { SVSClass, SVSVariant } from "./_core";
-  import type { MonthPickerProps } from "./MonthPicker.svelte";
+  import type { MonthPickerContext, MonthPickerProps } from "./MonthPicker.svelte";
 </script>
 
 <script lang="ts">
   // prettier-ignore
-  let { value = $bindable(), display = $bindable(), picking = $bindable(false), min, max, isDisabled, outsideDays = false, fixedWeeks = false, firstDayOfWeek = 0, locale, label, left, right, weekday, day, bottom, monthPicker, transition, pageTransition, styling, variant = VARIANT.NEUTRAL }: CalendarProps = $props();
+  let { value = $bindable(), display = $bindable(), picking = $bindable(false), min, max, isDisabled, outsideDays = false, fixedWeeks = false, firstDayOfWeek = 0, locale, label, left, right, weekday, day, bottom, children, monthPicker, transition, pageTransition, styling, variant = VARIANT.NEUTRAL }: CalendarProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(_fnClass(_CALENDAR_PRESET, styling));
@@ -144,10 +151,34 @@
   const idCaption = `${uid}-caption`;
   // svelte-ignore state_referenced_locally
   if (display === undefined) display = (value ?? Temporal.Now.plainDateISO()).toPlainYearMonth();
+  const initialDisplay = display as Temporal.PlainYearMonth;
   const today = $derived(Temporal.Now.plainDateISO());
+  const ctxMin = $derived(min?.toPlainYearMonth());
+  const ctxMax = $derived(max?.toPlainYearMonth());
+  const ctxVariant = $derived(variant);
+  const mpCtx: MonthPickerContext = {
+    get value() {
+      return currentDisplay();
+    },
+    set value(v: Temporal.PlainYearMonth | undefined) {
+      if (v) display = v;
+    },
+    get min() {
+      return ctxMin;
+    },
+    get max() {
+      return ctxMax;
+    },
+    get variant() {
+      return ctxVariant;
+    },
+    get styling() {
+      return undefined;
+    },
+  };
+  _setMonthPickerContext(mpCtx);
 
   // *** States *** //
-  const initialDisplay = display as Temporal.PlainYearMonth;
   let dir = $state(0);
   let prevYm = initialDisplay;
   let focused = $state(value && sameMonth(value, initialDisplay) ? value : firstOf(initialDisplay));
@@ -343,13 +374,7 @@
 
   {#if picking}
     <div class={cls(PARTS.MIDDLE, variant)} transition:tfn|local={tparams}>
-      <MonthPicker
-        {...monthPicker}
-        bind:value={() => currentDisplay(), (v) => (display = v)}
-        min={min?.toPlainYearMonth()}
-        max={max?.toPlainYearMonth()}
-        {variant}
-      />
+      {#if children}{@render children()}{:else}<MonthPicker {...monthPicker} />{/if}
     </div>
   {:else}
     <div class={cls(PARTS.MIDDLE, variant)} transition:tfn|local={tparams}>

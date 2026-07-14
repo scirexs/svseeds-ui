@@ -31,7 +31,7 @@ If no, it is *Composite*. If yes, it is *Flat pass-through* (a thin 1:1 decorato
   (value/min/max/variant). **No context** — the children are never caller-facing, so there is
   nothing to reconcile between standalone and embedded use. Use only when the child's structural
   role is fixed; if the caller should be able to swap or extend children, use a context
-  coordinator instead. (e.g. MonthPicker over two WheelPickers, Calendar over MonthPicker)
+  coordinator instead (as Calendar does over MonthPicker). (e.g. MonthPicker over two WheelPickers)
 
 ### Out of scope
 Components that do not wrap another svseeds component's props or state are not governed here —
