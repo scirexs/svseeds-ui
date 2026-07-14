@@ -24,7 +24,7 @@
     right?: Snippet<[string]>;
     weekday?: Snippet<[number, string]>;
     day?: Snippet<[DayCtx]>;
-    bottom?: Snippet<[string, () => void]>;
+    bottom?: Snippet<[CalendarCtl, boolean, string]>;
     monthPicker?: Omit<MonthPickerProps, "value" | "min" | "max" | "variant">;
     transition?: TransitionProp;
     pageTransition?: TransitionProp;
@@ -39,6 +39,10 @@
     selected: boolean;
     outside: boolean;
     disabled: boolean;
+  };
+  type CalendarCtl = {
+    setToday: () => void;
+    clear: () => void;
   };
   type TransitionProp = {
     fn?: (node: HTMLElement, params: any, options: { direction: "in" | "out" | "both" }) => import("svelte/transition").TransitionConfig;
@@ -73,7 +77,7 @@
   - Arrow, Home/End, PageUp/PageDown, and Shift+PageUp/PageDown update roving focus.
   - The grid re-keys when `display` changes; opt-in `pageTransition` slides the page and receives `params.dir` (`-1` previous, `+1` next, `0` none). Reduced motion falls back to no animation.
   - A cross-slide transition that overlays the leaving grid (`position: absolute`) requires the grid container to provide `position: relative; overflow: hidden`.
-  - The `bottom` snippet's `setToday` selects today, jumps to its month, and closes the MonthPicker.
+  - The `bottom` snippet receives `CalendarCtl` (`setToday`, `clear`), `picking`, and `variant`; `setToday` selects today, jumps to its month, and closes the MonthPicker, while `clear` resets `value` to `undefined`.
 -->
 <script module lang="ts">
   export interface CalendarProps {
@@ -92,7 +96,7 @@
     right?: Snippet<[string]>;
     weekday?: Snippet<[number, string]>;
     day?: Snippet<[DayCtx]>;
-    bottom?: Snippet<[string, () => void]>;
+    bottom?: Snippet<[CalendarCtl, boolean, string]>;
     monthPicker?: Omit<MonthPickerProps, "value" | "min" | "max" | "variant">;
     transition?: TransitionProp;
     pageTransition?: TransitionProp;
@@ -107,6 +111,10 @@
     selected: boolean;
     outside: boolean;
     disabled: boolean;
+  };
+  export type CalendarCtl = {
+    setToday: () => void;
+    clear: () => void;
   };
   export type TransitionProp = {
     fn?: (node: HTMLElement, params: any, options: { direction: "in" | "out" | "both" }) => import("svelte/transition").TransitionConfig;
@@ -275,6 +283,9 @@
     select(today);
     picking = false;
   }
+  function clear() {
+    value = undefined;
+  }
   function move(d: Temporal.PlainDate) {
     focused = d;
     if (!sameMonth(d, currentDisplay())) displayOf(d);
@@ -312,6 +323,7 @@
     ev.preventDefault();
     if (next) move(next);
   };
+  const ctl: CalendarCtl = { setToday, clear };
 </script>
 
 <!---------------------------------------->
@@ -402,6 +414,6 @@
   {/if}
 
   {#if bottom}
-    <div class={cls(PARTS.BOTTOM, variant)}>{@render bottom(variant, setToday)}</div>
+    <div class={cls(PARTS.BOTTOM, variant)}>{@render bottom(ctl, picking, variant)}</div>
   {/if}
 </div>

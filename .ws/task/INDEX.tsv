@@ -46,3 +46,4 @@
 20260713_jrhk4n	feat: Make FileField's content prop optional so the FileInput-wrapper usage need not pass a throwaway content
 20260713_s4f5qm	fix: Fix Popover arrow: drop the inline display that kept the closed panel visible and absolutely position the caret so it protrudes toward the trigger
 20260713_x5mal6	fix: Fix grouped Sortable inserting a cross-list drop at the list end instead of the hovered item's position
+20260714_uuo4qa	feat: Extend Calendar's bottom snippet with a CalendarCtl object (setToday/clear) plus the picking state

@@ -2,9 +2,10 @@ import axe from "axe-core";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import { createRawSnippet, tick } from "svelte";
-import Calendar, { type DayCtx } from "#svs/Calendar.svelte";
+import Calendar from "#svs/Calendar.svelte";
 import CalendarBindable from "./fixtures/CalendarBindable.svelte";
 import { PARTS, VARIANT } from "#svs/core";
+import type { CalendarCtl, DayCtx } from "#svs/Calendar.svelte";
 import type { AxeMatchers } from "vitest-axe/matchers";
 
 declare module "vitest" {
@@ -48,10 +49,17 @@ const labelSnippet = createRawSnippet((display: () => Temporal.PlainYearMonth, _
 const daySnippet = createRawSnippet((ctx: () => DayCtx) => ({
   render: () => `<span data-testid="day-${ctx().date.day}">d${ctx().date.day}</span>`,
 }));
-const bottomSnippet = createRawSnippet((_variant: () => string, setToday: () => () => void) => ({
-  render: () => `<button type="button" data-testid="today">Today</button>`,
+const bottomSnippet = createRawSnippet((ctl: () => CalendarCtl, picking: () => boolean, _variant: () => string) => ({
+  render: () =>
+    `<span data-testid="bottom"><button type="button" data-testid="today">Today</button><button type="button" data-testid="clear">Clear</button><span data-testid="bottom-picking">${picking()}</span></span>`,
   setup: (node) => {
-    node.addEventListener("click", () => setToday()());
+    const root = node as HTMLElement;
+    root.querySelector('[data-testid="today"]')?.addEventListener("click", () => ctl().setToday());
+    root.querySelector('[data-testid="clear"]')?.addEventListener("click", () => ctl().clear());
+    const state = root.querySelector('[data-testid="bottom-picking"]') as HTMLElement;
+    $effect(() => {
+      state.textContent = String(picking());
+    });
   },
 }));
 
@@ -217,6 +225,14 @@ describe("_Calendar selection and constraints", () => {
     await expect.element(screen.getByTestId("value")).toHaveTextContent(`${other.year}-${other.month}-${other.day}`);
     expect(screen.container.querySelector('[tabindex="0"]')?.textContent?.trim()).toBe(String(other.day));
   });
+
+  test("bottom clear resets value to undefined", async () => {
+    const screen = render(CalendarBindable, { display: ym(2026, 6), value: date(2026, 6, 15), bottom: bottomSnippet });
+
+    await screen.getByTestId("clear").click();
+
+    await expect.element(screen.getByTestId("value")).toHaveTextContent("");
+  });
 });
 
 describe("_Calendar keyboard and aria", () => {
@@ -371,9 +387,11 @@ describe("_Calendar rendering variants and snippets", () => {
     await expect.element(screen.getByTestId("weekday-0")).toBeVisible();
     await expect.element(screen.getByTestId("day-1")).toBeVisible();
     await expect.element(screen.getByTestId("today")).toBeVisible();
+    await expect.element(screen.getByTestId("bottom-picking")).toHaveTextContent("false");
     (screen.container.querySelector(`.${PARTS.LABEL}`) as HTMLButtonElement).click();
     await tick();
     await expect.element(screen.getByTestId("label-snippet")).toHaveTextContent("2026-6-true");
+    await expect.element(screen.getByTestId("bottom-picking")).toHaveTextContent("true");
   });
 
   test("toggling picking swaps grid and MonthPicker without a transition prop", async () => {
