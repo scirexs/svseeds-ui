@@ -179,6 +179,118 @@ describe("Pagination value and options", () => {
   });
 });
 
+describe("Pagination onchange", () => {
+  test("fires once per moving nav button after value updates", async () => {
+    type Call = { event: Event; value: number };
+    const calls: Call[] = [];
+    const props = $state({
+      min: 1,
+      max: 10,
+      value: 5,
+      onchange: (event: Event) => calls.push({ event, value: props.value }),
+    });
+    const { getButton } = render(Pagination, props);
+
+    await fireEvent.click(getButton("Previous page"));
+    await fireEvent.click(getButton("First page"));
+    await fireEvent.click(getButton("Next page"));
+    await fireEvent.click(getButton("Last page"));
+
+    expect(calls).toHaveLength(4);
+    expect(calls.map((call) => call.event.type)).toEqual(["change", "change", "change", "change"]);
+    expect(calls.every((call) => call.event instanceof Event)).toBe(true);
+    expect(calls.map((call) => call.value)).toEqual([4, 1, 2, 10]);
+    expect(props.value).toBe(10);
+  });
+
+  test("fires when ComboBox commit lands on a different page", async () => {
+    type Call = { event: Event; value: number };
+    const calls: Call[] = [];
+    const props = $state({
+      min: 1,
+      max: 10,
+      value: 5,
+      onchange: (event: Event) => calls.push({ event, value: props.value }),
+    });
+    const { getByRole } = render(Pagination, props);
+    const combobox = getByRole("combobox") as HTMLInputElement;
+
+    await userEvent.click(combobox);
+    await userEvent.clear(combobox);
+    await userEvent.keyboard("7");
+    await userEvent.keyboard("{Enter}");
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0].event.type).toBe("change");
+    expect(calls[0].event).toBeInstanceOf(Event);
+    expect(calls[0].value).toBe(7);
+    expect(props.value).toBe(7);
+  });
+
+  test("does not fire for at-bound nav button clicks", async () => {
+    const calls: Event[] = [];
+    const low = render(Pagination, { min: 1, max: 2, value: 1, onchange: (event: Event) => calls.push(event) });
+    await fireEvent.click(low.getButton("First page"));
+    await fireEvent.click(low.getButton("Previous page"));
+
+    const high = render(Pagination, { min: 1, max: 2, value: 2, onchange: (event: Event) => calls.push(event) });
+    await fireEvent.click(high.getButton("Next page"));
+    await fireEvent.click(high.getButton("Last page"));
+
+    expect(calls).toHaveLength(0);
+  });
+
+  test("does not fire for unchanged or invalid ComboBox commits", async () => {
+    const calls: Event[] = [];
+    const props = $state({ min: 1, max: 10, value: 5, onchange: (event: Event) => calls.push(event) });
+    const { getByRole } = render(Pagination, props);
+    const combobox = getByRole("combobox") as HTMLInputElement;
+
+    await userEvent.click(combobox);
+    await userEvent.clear(combobox);
+    await userEvent.keyboard("5");
+    await userEvent.keyboard("{Enter}");
+    expect(props.value).toBe(5);
+
+    await userEvent.clear(combobox);
+    await userEvent.keyboard("bad");
+    await fireEvent.blur(combobox);
+    expect(props.value).toBe(5);
+    val(combobox, "5");
+
+    expect(calls).toHaveLength(0);
+  });
+
+  test("does not fire for programmatic value changes or bound clamping", async () => {
+    const programmaticCalls: Event[] = [];
+    const onchange = (event: Event) => programmaticCalls.push(event);
+    const { getByRole, rerender } = render(Pagination, { min: 1, max: 10, value: 5, onchange });
+    const combobox = getByRole("combobox") as HTMLInputElement;
+
+    await rerender({ min: 1, max: 10, value: 6, onchange });
+    await tick();
+    val(combobox, "6");
+    expect(programmaticCalls).toHaveLength(0);
+
+    const clampCalls: Event[] = [];
+    const props = $state({ min: 1, max: 10, value: 50, onchange: (event: Event) => clampCalls.push(event) });
+    const clamping = render(Pagination, props);
+    const clampingCombobox = clamping.getByRole("combobox") as HTMLInputElement;
+
+    await tick();
+    expect(props.value).toBe(10);
+    val(clampingCombobox, "10");
+
+    props.max = 4;
+    await clamping.rerender(props);
+    await tick();
+    expect(props.value).toBe(4);
+    val(clampingCombobox, "4");
+
+    expect(clampCalls).toHaveLength(0);
+  });
+});
+
 describe("Pagination ComboBox composition", () => {
   test("forwards the comboBox bag in generated-child mode", () => {
     const { getByRole } = render(Pagination, { min: 1, max: 10, value: 3, comboBox: { placeholder: "Page" } });

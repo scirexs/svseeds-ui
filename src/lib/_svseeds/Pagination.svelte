@@ -46,6 +46,7 @@
   - Buttons use `aria-disabled`, stay focusable at bounds, and suppress their action while at-bound.
   - Part names map by position: TOP=first, LEFT=prev, RIGHT=next, BOTTOM=last.
   - Embedded `ComboBox` is wired through context; `comboBox` is ignored when `children` is supplied.
+  - `onchange` receives a native `change` Event after user-initiated page changes from nav buttons or ComboBox commits; read the new page from bound `value`. Programmatic value changes and bound clamping do not fire it.
   - The default shortcut list is centered on the current page. A caller-provided `options` list can follow the page with `bind:value={page}` and `const opts = $derived(...)`; no change event is needed.
 -->
 <script module lang="ts">
@@ -81,7 +82,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { children, value = $bindable(1), min = 1, max, options, top, left, right, bottom, ariaLabel = "Pagination", buttonLabels, comboBox, styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: PaginationProps = $props();
+  let { children, value = $bindable(1), min = 1, max, options, top, left, right, bottom, ariaLabel = "Pagination", buttonLabels, comboBox, styling, variant = VARIANT.NEUTRAL, onchange: onchangeProp, class: c, ...rest }: PaginationProps = $props();
 
   // *** Initialize *** //
   const cls = $derived(_fnClass(_PAGINATION_PRESET, styling));
@@ -143,10 +144,15 @@
     const n = Number(t);
     return Number.isInteger(n) ? n : undefined;
   }
+  function emitChange() {
+    onchangeProp?.(new Event("change") as any);
+  }
   function commit() {
+    const prev = value;
     const next = parse(text);
     if (next !== undefined) value = clamp(next);
     text = String(value);
+    if (value !== prev) emitChange();
   }
   function thin(min: number, max: number, value: number): number[] {
     const v = Math.trunc(value);
@@ -167,19 +173,27 @@
   // *** Event Handlers *** //
   const htop: MouseEventHandler<HTMLButtonElement> = () => {
     if (atMin) return;
+    const prev = value;
     value = lo;
+    if (value !== prev) emitChange();
   };
   const hleft: MouseEventHandler<HTMLButtonElement> = () => {
     if (atMin) return;
+    const prev = value;
     value = clamp(value - 1);
+    if (value !== prev) emitChange();
   };
   const hright: MouseEventHandler<HTMLButtonElement> = () => {
     if (atMax) return;
+    const prev = value;
     value = clamp(value + 1);
+    if (value !== prev) emitChange();
   };
   const hbottom: MouseEventHandler<HTMLButtonElement> = () => {
     if (atMax) return;
+    const prev = value;
     value = hi;
+    if (value !== prev) emitChange();
   };
 </script>
 
