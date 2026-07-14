@@ -58,7 +58,7 @@
       <button class="right" />
     </div>
     <div class="middle">
-      <div class="main" role="grid" transition>
+      <div class="main" role="grid" in out>
         <div class="aux" role="row" data-header>
           <span class="extra" role="columnheader" data-header data-weekday />
         </div>
@@ -75,7 +75,7 @@
   - Day cells expose `data-today`, `data-selected`, `data-outside`, `data-disabled`, and `data-weekday`.
   - The weekday-header row and its `columnheader` cells carry `data-header`; the day rows carry `data-*` only on their cells.
   - Arrow, Home/End, PageUp/PageDown, and Shift+PageUp/PageDown update roving focus.
-  - The grid re-keys when `display` changes; opt-in `pageTransition` slides the page and receives `params.dir` (`-1` previous, `+1` next, `0` none). Reduced motion falls back to no animation.
+  - The grid re-keys when `display` changes; opt-in `pageTransition` slides the page. Its `fn` receives `params.dir` (`-1` previous, `+1` next, `0` none) and, because the grid uses split `in:`/`out:` directives, `direction` is `"in"` for the entering grid and `"out"` for the leaving grid, so the caller can overlay only the leaving grid. Reduced motion falls back to no animation.
   - A cross-slide transition that overlays the leaving grid (`position: absolute`) requires the grid container to provide `position: relative; overflow: hidden`.
   - The `bottom` snippet receives `CalendarCtl` (`setToday`, `clear`), `picking`, and `variant`; `setToday` selects today, jumps to its month, and closes the MonthPicker, while `clear` resets `value` to `undefined`.
 -->
@@ -360,7 +360,8 @@
           tabindex="-1"
           aria-labelledby={idCaption}
           onkeydown={hkeydown}
-          transition:pfn|local={pparams}
+          in:pfn|local={pparams}
+          out:pfn|local={pparams}
         >
           <div class={cls(PARTS.AUX, variant)} role="row" data-header>
             {#each weekdayLabels as wl}

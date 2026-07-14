@@ -1,6 +1,6 @@
 # 011. Calendar month-page slide transition
 
-**Status:** Accepted
+**Status:** Superseded by 014-calendar-page-slide-split-directives.md
 **Supersedes:** none
 **Date:** 2026-07-13
 **Affects:** public API (Calendar `pageTransition` prop), Calendar.svelte grid anatomy

@@ -34,6 +34,8 @@ const hasTransitionDir = (fn: ReturnType<typeof vi.fn>, dir: number, marker?: st
     const p = params as { dir?: number; marker?: string };
     return p.dir === dir && (marker === undefined || p.marker === marker);
   });
+const hasDirection = (fn: ReturnType<typeof vi.fn>, direction: string) =>
+  fn.mock.calls.some(([, , opts]) => (opts as { direction?: string })?.direction === direction);
 const snippet0 = (id: string, text: string) =>
   createRawSnippet(() => ({
     render: () => `<span data-testid="${id}">${text}</span>`,
@@ -427,6 +429,19 @@ describe("_Calendar rendering variants and snippets", () => {
     (screen.container.querySelector(`.${PARTS.LEFT}`) as HTMLButtonElement).click();
     await tick();
     expect(hasTransitionDir(fn, -1, "page")).toBe(true);
+  });
+
+  test("pageTransition split runs in/out per grid, never both", async () => {
+    const fn = vi.fn((_node: HTMLElement, _params: unknown) => ({ duration: 0 }));
+    const screen = render(CalendarBindable, { display: ym(2026, 6), pageTransition: { fn } });
+    fn.mockClear();
+
+    (screen.container.querySelector(`.${PARTS.RIGHT}`) as HTMLButtonElement).click();
+    await tick();
+
+    expect(hasDirection(fn, "in")).toBe(true);
+    expect(hasDirection(fn, "out")).toBe(true);
+    expect(hasDirection(fn, "both")).toBe(false);
   });
 
   test("pageTransition covers keyboard, date-select, and external display month changes", async () => {
