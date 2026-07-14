@@ -243,6 +243,7 @@ describe("_DateInput calendar and dismissal", () => {
     el.focus();
     await tick();
     expect(props.open).toBe(true);
+    expect((container.querySelector(`.${PARTS.BOTTOM}`) as HTMLDivElement).contains(document.activeElement)).toBe(true);
     el.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     await tick();
     expect(props.open).toBe(false);
@@ -260,6 +261,36 @@ describe("_DateInput calendar and dismissal", () => {
     await tick();
     expect(props.value).toBeUndefined();
     await expect.element(el).toHaveValue("");
+  });
+
+  test("keeps focus in the editable input when opening on focus", async () => {
+    const props = $state({ open: false, parse: (text: string) => d(text) });
+    const { container } = render(DateInputBindable, props);
+    const el = input(container);
+
+    el.focus();
+    await tick();
+
+    expect(props.open).toBe(true);
+    expect(container.querySelector(`.${PARTS.BOTTOM}`)).toBeTruthy();
+    expect(document.activeElement).toBe(el);
+  });
+
+  test("ArrowDown opens and moves focus into the calendar", async () => {
+    const props = $state({ open: false, parse: (text: string) => d(text) });
+    const { container } = render(DateInputBindable, props);
+    const el = input(container);
+
+    el.focus();
+    props.open = false;
+    await tick();
+    el.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    await tick();
+
+    const overlay = container.querySelector(`.${PARTS.BOTTOM}`) as HTMLDivElement;
+    expect(props.open).toBe(true);
+    expect(overlay).toBeTruthy();
+    expect(overlay.contains(document.activeElement)).toBe(true);
   });
 
   test("keeps pointerdown gated by openOnFocus and composes the caller handler", async () => {

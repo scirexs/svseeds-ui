@@ -58,6 +58,7 @@
   ### Behavior
   - Without `parse`, the visible control is readonly and the private calendar is the only value entry path.
   - With `parse`, draft text commits on change or blur; invalid, disabled, and out-of-range dates revert.
+  - With `parse`, opening keeps focus in the input for typing; press ArrowDown to move focus into the calendar. Without `parse`, opening moves focus into the calendar.
   - A declarative `Calendar` child self-wires `value`, `min`, `max`, `isDisabled`, and `variant` through context and wins over the `calendar` bag.
   - `name` is assigned only to a hidden input whose value is ISO (`Temporal.PlainDate.toString()`), not the locale-formatted control.
   - `format` and `parse` are caller-coordinated; the default locale display is not necessarily parseable by a supplied parser.
@@ -222,7 +223,9 @@
     if (!open) return;
     const off = [on(document, "pointerdown", houtside), on(document, "keydown", hkey)];
     observeOverflow();
-    tick().then(() => focusCalendar());
+    tick().then(() => {
+      if (!parse) focusCalendar();
+    });
     return () => off.forEach((x) => x());
   });
 
@@ -327,7 +330,13 @@
     oninvalidProp?.(ev);
     ctx?.oninvalid?.(ev);
   };
-  const hkeydown: KeyboardEventHandler<HTMLInputElement> = (ev) => onkeydownProp?.(ev);
+  const hkeydown: KeyboardEventHandler<HTMLInputElement> = (ev) => {
+    onkeydownProp?.(ev);
+    if (ev.key !== "ArrowDown" || ev.isComposing) return;
+    ev.preventDefault();
+    if (!open) show();
+    tick().then(() => focusCalendar());
+  };
   const hkey = (ev: KeyboardEvent) => {
     if (ev.key !== "Escape") return;
     ev.preventDefault();

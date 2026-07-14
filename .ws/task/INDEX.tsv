@@ -57,3 +57,4 @@
 20260714_i4d55q	refactor: Refactor Popover's window scroll/resize listeners in watch() to use svelte's on() helper
 20260714_jyqtkv	fix: Fix pointer cross-list Sortable animation so the active item does not visibly crossfade from the source list while the drag shadow is active.
 20260714_dd4y4o	feat: DateInput: reopen the calendar overlay on a pointerdown of the already-focused input (post-Escape / post-pick-return states), and change the openOnFocus default from false to true.
+20260714_xiaenh	fix: Keep focus in the editable DateInput field on open; add ArrowDown to enter the calendar
