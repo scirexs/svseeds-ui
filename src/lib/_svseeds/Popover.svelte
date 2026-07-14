@@ -90,6 +90,7 @@
   } as const;
 
   import { untrack } from "svelte";
+  import { on } from "svelte/events";
   import { VARIANT, PARTS, _fnClass, canHover } from "./_core";
   import { _setMenuContainerContext } from "./MenuList.svelte";
   import type { Snippet } from "svelte";
@@ -184,12 +185,10 @@
         measure();
       });
     };
-    window.addEventListener("scroll", onmove, { capture: true, passive: true });
-    window.addEventListener("resize", onmove, { passive: true });
+    const off = [on(window, "scroll", onmove, { capture: true, passive: true }), on(window, "resize", onmove, { passive: true })];
     return () => {
       if (raf) cancelAnimationFrame(raf);
-      window.removeEventListener("scroll", onmove, { capture: true });
-      window.removeEventListener("resize", onmove);
+      off.forEach((x) => x());
     };
   }
   function maybeClose(ev: PointerEvent | FocusEvent) {
