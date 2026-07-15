@@ -54,10 +54,61 @@
   export interface MenuItemContext extends SVSContext {
     close(): void;
     orientation?: "horizontal" | "vertical";
+    level?: _MenuLevel;
   }
   export const [_getMenuItemContext, _setMenuItemContext] = _createContext<MenuItemContext>();
 
   export const _MENU_ITEM_PRESET = "svs-menu-item";
+  const SAFE_DELAY = 300;
+
+  export class _MenuLevel {
+    #close: (() => void) | undefined;
+    #timer: ReturnType<typeof setTimeout> | undefined;
+    #live = false;
+    #pend: (() => void) | undefined;
+
+    open(close: () => void) {
+      if (this.#close && this.#close !== close) this.#close();
+      this.#close = close;
+    }
+    close(close: () => void) {
+      if (this.#close !== close) return;
+      this.#close = undefined;
+      this.settle();
+    }
+    want(open: () => void) {
+      if (this.#live) this.#pend = open;
+      else open();
+    }
+    guard(expire: () => void) {
+      this.#live = true;
+      clearTimeout(this.#timer);
+      this.#timer = setTimeout(() => {
+        this.#live = false;
+        this.#timer = undefined;
+        expire();
+        this.#flush();
+      }, SAFE_DELAY);
+    }
+    settle() {
+      this.#drop();
+      this.#pend = undefined;
+    }
+    release() {
+      this.#drop();
+      this.#flush();
+    }
+    #drop() {
+      this.#live = false;
+      clearTimeout(this.#timer);
+      this.#timer = undefined;
+    }
+    #flush() {
+      const p = this.#pend;
+      this.#pend = undefined;
+      p?.();
+    }
+  }
 
   import { VARIANT, PARTS, _fnClass, _createContext } from "./_core";
   import type { Snippet } from "svelte";

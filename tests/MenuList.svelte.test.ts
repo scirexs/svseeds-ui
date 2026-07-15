@@ -7,6 +7,7 @@ import MenuList, { type MenuItemData } from "#svs/MenuList.svelte";
 import { PARTS, VARIANT } from "#svs/core";
 import MenuListCtxProvider from "./fixtures/MenuListCtxProvider.svelte";
 import MenuListGroupedItems from "./fixtures/MenuListGroupedItems.svelte";
+import MenuListWithOpenSubmenu from "./fixtures/MenuListWithOpenSubmenu.svelte";
 
 import type { AxeMatchers } from "vitest-axe/matchers";
 
@@ -20,6 +21,8 @@ const items = (c: HTMLElement) => [...c.querySelectorAll<HTMLElement>('[role="me
 const byText = (c: HTMLElement, text: string) =>
   [...c.querySelectorAll("*")].find((e) => e.textContent?.trim() === text) as HTMLElement | undefined;
 const itemByText = (c: HTMLElement, text: string) => items(c).find((el) => el.textContent?.trim() === text)!;
+const ownItems = (menu: HTMLElement) =>
+  [...menu.querySelectorAll<HTMLElement>('[role="menuitem"]')].filter((el) => el.closest('[role="menu"]') === menu);
 const key = async (el: HTMLElement, init: KeyboardEventInit) => {
   const ev = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init });
   el.dispatchEvent(ev);
@@ -61,6 +64,12 @@ describe("MenuList rendering and semantics", () => {
 
     await expect.element(menu).toHaveAttribute("aria-label", "Actions");
     await expect.element(menu).toHaveAttribute("data-id", "x");
+  });
+
+  test("preserves caller aria-labelledby when no container label is supplied", async () => {
+    const { container } = render(MenuList, { children, "aria-labelledby": "external-label" });
+
+    await expect.element(root(container)).toHaveAttribute("aria-labelledby", "external-label");
   });
 });
 
@@ -258,6 +267,59 @@ describe("MenuList navigation", () => {
     const ev = await key(root(container), { key: " " });
 
     expect(ev.defaultPrevented).toBe(false);
+  });
+
+  test("navigation and typeahead stay scoped to the outer level when a submenu is open", async () => {
+    const { container } = render(MenuListWithOpenSubmenu);
+    const menu = root(container);
+    await tick();
+    itemByText(container, "Zulu").focus();
+
+    await key(menu, { key: "ArrowDown" });
+    await expect.element(itemByText(container, "Alpha")).toHaveFocus();
+
+    await key(menu, { key: "End" });
+    await expect.element(itemByText(container, "Zulu")).toHaveFocus();
+
+    await key(menu, { key: "Home" });
+    await expect.element(itemByText(container, "Alpha")).toHaveFocus();
+
+    await key(menu, { key: "i" });
+    expect(document.activeElement?.textContent).not.toContain("Inner");
+    expect(ownItems(menu).map((el) => el.textContent?.trim())).toEqual(["Alpha", "More", "Zulu"]);
+  });
+
+  test("keydown events from a submenu stay scoped to the submenu level", async () => {
+    const { container } = render(MenuListWithOpenSubmenu);
+    await tick();
+    itemByText(container, "Inner One").focus();
+
+    await key(itemByText(container, "Inner One"), { key: "ArrowDown" });
+    await expect.element(itemByText(container, "Inner Two")).toHaveFocus();
+
+    itemByText(container, "Inner One").focus();
+    await key(itemByText(container, "Inner One"), { key: "z" });
+    await expect.element(itemByText(container, "Inner One")).toHaveFocus();
+    await expect.element(itemByText(container, "Zulu")).not.toHaveFocus();
+  });
+
+  test("ArrowDown from a focused disabled item lands on the following enabled item", async () => {
+    const { container } = render(MenuListCtxProvider, { open: true });
+    await expect.element(itemByText(container, "Cut")).toHaveFocus();
+    itemByText(container, "Paste").focus();
+
+    await key(root(container), { key: "ArrowDown" });
+
+    await expect.element(itemByText(container, "Delete")).toHaveFocus();
+  });
+
+  test("ArrowUp from the menu root lands on the last enabled item", async () => {
+    const { container } = render(MenuListCtxProvider);
+    root(container).focus();
+
+    await key(root(container), { key: "ArrowUp" });
+
+    await expect.element(itemByText(container, "Delete")).toHaveFocus();
   });
 });
 

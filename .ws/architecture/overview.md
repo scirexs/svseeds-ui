@@ -73,7 +73,7 @@ Shared module:
   message/aria derivation, validation verify loop), and utilities (`_omit`,
   `_debounce`, `_throttle`, `shouldReduceMotion`, `canHover`, …).
 
-Components (42 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
+Components (43 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
 
 - **Field components** (label/validation wrapper around an input; structured
   whole→top/middle/bottom anatomy): TextField, NumberField, CheckField,
@@ -83,7 +83,7 @@ Components (42 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
   ComboBox, WheelPicker.
 - **Overlays & disclosure**: Modal, Drawer, Popover, Tooltip, ContextMenu,
   Disclosure, Accordion.
-- **Menu primitives**: MenuList, MenuGroup, MenuItem, MenuSeparator.
+- **Menu primitives**: MenuList, MenuGroup, MenuItem, MenuSeparator, MenuSub.
 - **Date/time pickers**: Calendar, MonthPicker.
 - **Navigation & progress**: Tabs, ProgressTracker, Pagination.
 - **Layout** (resizable two-pane region): Splitter.
@@ -93,13 +93,15 @@ Components (42 `.svelte` files in `src/lib/_svseeds/`), grouped by role:
 **Composition / dependencies** (source of truth: the generated `dep.json`):
 
 - **Hard dependencies** — one component imports another, so the CLI copies them
-  together: Calendar → MonthPicker → WheelPicker; MenuList → MenuSeparator;
-  Pagination → ComboBox (Tooltip recurses into itself). Update when an
+  together: Calendar → MonthPicker → WheelPicker; MenuList → MenuItem,
+  MenuSeparator; MenuSub → MenuList, MenuItem; Pagination → ComboBox (Tooltip
+  recurses into itself). Update when an
   intra-library import is added or removed.
 - **Coordinator pairings** — the child can be written explicitly and self-wires
   to the parent through an optional context, staying usable
   standalone: each Field over its input control, Accordion over Disclosure,
-  Pagination over ComboBox, Calendar over MonthPicker, DateInput over Calendar.
+  Pagination over ComboBox, Calendar over MonthPicker, DateInput over Calendar,
+  MenuSub over MenuList.
   These are composition relationships; packaging dependencies are determined by
   hard imports.
 
@@ -172,9 +174,8 @@ redirects users to npm — see the generated `mod.ts`):
 
 ## Key Decisions
 
-No ADRs recorded under `.ws/decision/` yet. The authoritative rationale for the
-current architecture lives in the concept docs:
+Architecture decisions are recorded under `.ws/decision/`. The authoritative
+rationale for the founding architecture also lives in the concept docs:
 `.ref/web-svseeds/src/md/concepts.sv.md` (design philosophy / headless /
 functionality-vs-styling split), `customization.sv.md` (prop & CLI
-customization model), `form-controls.sv.md` (Field anatomy & validation). As
-architecture-level choices are made, capture them as ADRs here and link them.
+customization model), `form-controls.sv.md` (Field anatomy & validation).

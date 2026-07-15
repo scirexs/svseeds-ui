@@ -23,6 +23,7 @@
   }
   interface MenuContainerContext extends SVSContext {
     get open(): boolean;
+    labelledby?: string;
     close(): void;
   }
   type MenuSeparatorData = { separator: true };
@@ -56,7 +57,7 @@
   const _MENU_LIST_PRESET
   ```
   ### Behavior
-  Reusable `role="menu"` body. It reads an optional `MenuContainerContext` for `open`, `close`, `variant`, and `styling`; standalone usage still renders and navigates, while `close()` is a no-op without a container. When the container opens, the first enabled item is focused after `tick()`.
+  Reusable `role="menu"` body. It reads an optional `MenuContainerContext` for `open`, `close`, `variant`, `styling`, and `labelledby`; standalone usage still renders and navigates, while `close()` is a no-op without a container. When the container opens, the first enabled item at this menu level is focused after `tick()`.
 -->
 <script module lang="ts">
   export interface MenuListProps extends Omit<HTMLAttributes<HTMLDivElement>, "children" | "role"> {
@@ -73,6 +74,7 @@
 
   export interface MenuContainerContext extends SVSContext {
     get open(): boolean;
+    labelledby?: string;
     close(): void;
   }
   export const [_getMenuContainerContext, _setMenuContainerContext] = _createContext<MenuContainerContext>();
@@ -92,8 +94,8 @@
   }
 
   import { tick } from "svelte";
-  import { VARIANT, PARTS, _fnClass, _createContext } from "./_core";
-  import MenuItem, { _setMenuItemContext } from "./MenuItem.svelte";
+  import { VARIANT, PARTS, _edgeEnabledIndex, _fnClass, _nextEnabledIndex, _createContext } from "./_core";
+  import MenuItem, { _MenuLevel, _setMenuItemContext } from "./MenuItem.svelte";
   import MenuSeparator from "./MenuSeparator.svelte";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
@@ -104,13 +106,14 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { children, items, orientation = "vertical", attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, ...rest }: MenuListProps = $props();
+  let { children, items, orientation = "vertical", attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, "aria-labelledby": albl, class: c, ...rest }: MenuListProps = $props();
   const ctx = _getMenuContainerContext();
 
   // *** Initialize *** //
   const effVariant = $derived(ctx ? ctx.variant : variant);
   const effStyling = $derived(styling ?? ctx?.styling);
   const cls = $derived(_fnClass(_MENU_LIST_PRESET, effStyling));
+  const level = new _MenuLevel();
   const itemCtx: MenuItemContext = {
     get variant() {
       return effVariant;
@@ -121,6 +124,7 @@
     get orientation() {
       return orientation;
     },
+    level,
     close() {
       ctx?.close();
     },
@@ -138,15 +142,20 @@
   // *** Menu Helpers *** //
   function menuItems(): HTMLElement[] {
     if (!element) return [];
-    return [...element.querySelectorAll<HTMLElement>('[role="menuitem"]')].filter((el) => el.getAttribute("aria-disabled") !== "true");
+    return [...element.querySelectorAll<HTMLElement>('[role="menuitem"]')].filter((el) => el.closest('[role="menu"]') === element);
   }
-  function focusAt(i: number) {
-    const list = menuItems();
-    if (!list.length) return;
-    list[(i + list.length) % list.length].focus();
+  function disabledAt(list: HTMLElement[], i: number): boolean {
+    return list[i].getAttribute("aria-disabled") === "true";
+  }
+  function focusAt(list: HTMLElement[], i: number) {
+    if (i >= 0) list[i]?.focus();
   }
   function focusFirst() {
-    menuItems()[0]?.focus();
+    const list = menuItems();
+    focusAt(
+      list,
+      _edgeEnabledIndex(list.length, "first", (i) => disabledAt(list, i)),
+    );
   }
   function typeahead(ev: KeyboardEvent) {
     if (ev.key === " " || ev.key.length !== 1 || ev.ctrlKey || ev.metaKey || ev.altKey) return;
@@ -154,31 +163,35 @@
     typeBuf += ev.key.toLowerCase();
     clearTimeout(typeTimer);
     typeTimer = setTimeout(() => (typeBuf = ""), 500);
-    const hit = menuItems().find((el) => (el.textContent ?? "").trim().toLowerCase().startsWith(typeBuf));
+    const hit = menuItems().find(
+      (el) => el.getAttribute("aria-disabled") !== "true" && (el.textContent ?? "").trim().toLowerCase().startsWith(typeBuf),
+    );
     hit?.focus();
   }
 
   // *** Event Handlers *** //
   const hkeydown: KeyboardEventHandler<HTMLDivElement> = (ev) => {
+    if ((ev.target as HTMLElement | null)?.closest('[role="menu"]') !== element) return;
     const list = menuItems();
     const cur = list.indexOf(document.activeElement as HTMLElement);
+    const dis = (i: number) => disabledAt(list, i);
     const [nextKey, prevKey] = orientation === "horizontal" ? ["ArrowRight", "ArrowLeft"] : ["ArrowDown", "ArrowUp"];
     switch (ev.key) {
       case nextKey:
         ev.preventDefault();
-        focusAt(cur + 1);
+        focusAt(list, cur < 0 ? _edgeEnabledIndex(list.length, "first", dis) : _nextEnabledIndex(list.length, cur, 1, dis));
         return;
       case prevKey:
         ev.preventDefault();
-        focusAt(cur - 1);
+        focusAt(list, cur < 0 ? _edgeEnabledIndex(list.length, "last", dis) : _nextEnabledIndex(list.length, cur, -1, dis));
         return;
       case "Home":
         ev.preventDefault();
-        focusAt(0);
+        focusAt(list, _edgeEnabledIndex(list.length, "first", dis));
         return;
       case "End":
         ev.preventDefault();
-        focusAt(list.length - 1);
+        focusAt(list, _edgeEnabledIndex(list.length, "last", dis));
         return;
       case "Tab":
         ev.preventDefault();
@@ -198,6 +211,7 @@
   {...rest}
   role="menu"
   tabindex="-1"
+  aria-labelledby={ctx?.labelledby ?? albl}
   aria-orientation={orientation}
   onkeydown={hkeydown}
   {@attach attach}
