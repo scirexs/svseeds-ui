@@ -64,9 +64,20 @@ async function clickDocument() {
   await tick();
 }
 
+async function pointer(target: Document | HTMLElement, type: string, init: PointerEventInit = {}) {
+  await tick();
+  target.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerType: "touch", isPrimary: true, ...init }));
+  await tick();
+}
+
 async function keyDocument(key: string) {
   await tick();
   document.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+  await tick();
+}
+
+async function afterLongPress() {
+  await new Promise((resolve) => setTimeout(resolve, 750));
   await tick();
 }
 
@@ -186,6 +197,101 @@ describe("ContextMenu event handling", () => {
     await keyDocument("Escape");
     expect(opened.open).toBe(true);
   });
+
+  test("opens on touch long-press at the press point", async () => {
+    const props = $state({ children: childrenSnippet, open: false });
+    const { container } = render(ContextMenu, props);
+    const wrapper = root(container);
+
+    await pointer(document, "pointerdown", { clientX: 320, clientY: 180 });
+
+    await waitFor(() => expect(props.open).toBe(true), { timeout: 1200 });
+    style(wrapper, "left: 320px");
+    style(wrapper, "top: 180px");
+  });
+
+  test("does not start long-press from non-touch or non-primary pointerdown", async () => {
+    const props = $state({ children: childrenSnippet, open: false });
+    render(ContextMenu, props);
+
+    await pointer(document, "pointerdown", { pointerType: "mouse", clientX: 10, clientY: 20 });
+    await pointer(document, "pointerdown", { isPrimary: false, clientX: 30, clientY: 40 });
+    await afterLongPress();
+
+    expect(props.open).toBe(false);
+  });
+
+  test("cancels pending long-press on pointerup and movement beyond the threshold", async () => {
+    const props = $state({ children: childrenSnippet, open: false });
+    const { container } = render(ContextMenu, props);
+    const wrapper = root(container);
+
+    await pointer(document, "pointerdown", { clientX: 100, clientY: 100 });
+    await pointer(document, "pointerup", { clientX: 100, clientY: 100 });
+    await afterLongPress();
+    expect(props.open).toBe(false);
+
+    await pointer(document, "pointerdown", { clientX: 100, clientY: 100 });
+    await pointer(document, "pointermove", { clientX: 100, clientY: 111 });
+    await afterLongPress();
+    expect(props.open).toBe(false);
+
+    await pointer(document, "pointerdown", { clientX: 100, clientY: 100 });
+    await pointer(document, "pointermove", { clientX: 106, clientY: 108 });
+
+    await waitFor(() => expect(props.open).toBe(true), { timeout: 1200 });
+    style(wrapper, "left: 100px");
+    style(wrapper, "top: 100px");
+  });
+
+  test("lock is rechecked when the long-press timer fires", async () => {
+    const props = $state({ children: childrenSnippet, open: false, lock: false });
+    render(ContextMenu, props);
+
+    await pointer(document, "pointerdown", { clientX: 100, clientY: 100 });
+    props.lock = true;
+    await afterLongPress();
+
+    expect(props.open).toBe(false);
+  });
+
+  test("native contextmenu during touch press opens once and cancels the fallback timer", async () => {
+    const props = $state({ children: childrenSnippet, open: false });
+    const { container } = render(ContextMenu, props);
+    const wrapper = root(container);
+
+    await pointer(document, "pointerdown", { clientX: 10, clientY: 20 });
+    await contextmenu(document, { clientX: 200, clientY: 300 });
+
+    expect(props.open).toBe(true);
+    style(wrapper, "left: 200px");
+    style(wrapper, "top: 300px");
+
+    await afterLongPress();
+
+    style(wrapper, "left: 200px");
+    style(wrapper, "top: 300px");
+  });
+
+  test("swallows only the trailing click from a touch-opened menu", async () => {
+    const props = $state({ children: childrenSnippet, open: false });
+    const { container } = render(ContextMenu, props);
+
+    await pointer(document, "pointerdown", { clientX: 100, clientY: 100 });
+    await waitFor(() => expect(props.open).toBe(true), { timeout: 1200 });
+
+    await pointer(document, "pointerup", { clientX: 100, clientY: 100 });
+    await clickDocument();
+    expect(props.open).toBe(true);
+    style(root(container), "visibility: visible");
+
+    await pointer(document, "pointerdown", { clientX: 120, clientY: 120 });
+    await pointer(document, "pointerup", { clientX: 120, clientY: 120 });
+    await clickDocument();
+
+    expect(props.open).toBe(false);
+    style(root(container), "visibility: hidden");
+  });
 });
 
 describe("ContextMenu with target", () => {
@@ -248,6 +354,27 @@ describe("ContextMenu with target", () => {
 
     await openMenu(newTarget);
     style(wrapper, "visibility: visible");
+  });
+
+  test("target long-press swallows the trailing click and allows the next outside tap to close", async () => {
+    const target = appendTarget();
+    const props = $state({ children: childrenSnippet, open: false, target });
+    const { container } = render(ContextMenu, { props });
+
+    await pointer(target, "pointerdown", { clientX: 100, clientY: 100 });
+    await waitFor(() => expect(props.open).toBe(true), { timeout: 1200 });
+
+    await pointer(target, "pointerup", { clientX: 100, clientY: 100 });
+    await clickDocument();
+    expect(props.open).toBe(true);
+    style(root(container), "visibility: visible");
+
+    await pointer(document, "pointerdown", { clientX: 120, clientY: 120 });
+    await pointer(document, "pointerup", { clientX: 120, clientY: 120 });
+    await clickDocument();
+
+    expect(props.open).toBe(false);
+    style(root(container), "visibility: hidden");
   });
 });
 

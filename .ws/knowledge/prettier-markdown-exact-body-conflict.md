@@ -29,3 +29,9 @@ Task `20260713_nqqeqr`: recurred with `.ws/decision/011-calendar-page-transition
 stated the ADR is excluded, but `review` manually widened `BUN_FMT` to include the
 ADR anyway and reported the resulting failure as blocking; `analyze` ruled it a
 review over-scope, not a defect — the request-scoped command passed as stated.
+
+Task `20260714_mts25u`: recurred with `.ws/decision/017-contextmenu-touch-long-press.md`
+(a long Markdown header line specifically). This time `request.md`'s Validation
+section scoped both `BUN_FMT` and `BUN_TEST` to only the changed source/test file
+from the start and neither `impl` nor `review` widened it — the guidance above was
+followed correctly and produced no findings, only a repeat knowledge candidate.
