@@ -43,11 +43,13 @@
 - svelte-pointer-gesture-test-needs-tick-after-synthetic-events.md — synthetic pointer-event dispatch doesn't wait for Svelte's DOM flush; `await tick()` before asserting post-gesture visual state or the assertion can pass against pre-update DOM.
 - createrawsnippet-fixture-reactivity-needs-effect.md — `createRawSnippet`'s `render()` runs once; wrap reactive-argument reads in `$effect` inside `setup` to keep the fixture's rendered DOM synced with later argument changes.
 - browser-style-attribute-serializes-with-spaces.md — reading a `style` attribute back via `getAttribute("style")` in a real browser re-serializes it with a space after each colon; assert `"overflow: visible"`, not the authored `"overflow:visible"`.
+- vitest-browser-userevent-click-includes-pointer-movement.md — `userEvent.click` in browser mode also synthesizes pointer movement; a single click on a hover-opened element can both trigger the hover-open path and the click's own toggle in the same sequence.
 
 ## Runtime & Platform
 - css-flip-animation-spurious-pointerover.md — FLIP animation slides transformed boxes over the pointer, causing the browser to fire spurious `pointerover` on just-moved drag targets and reversing a committed reorder.
 - core-browser-helper-caller-guards-ssr.md — `_core.ts` helpers touching `window` (e.g. `_detectOverflow`) carry no internal SSR guard; the calling component keeps the `typeof window === "undefined"` check before invoking them. Exception: `shouldReduceMotion()` self-guards, so callers need no outer guard.
 - browser-ul-default-margin-defeats-absolute-anchor.md — browser default UA stylesheet margin on `<ul>`/`<ol>` offsets an absolutely-positioned overlay even when the containing block and anchor percentage are both correct; reset `margin:0` on the overlay list itself.
+- nested-role-menu-keydown-must-ignore-descendant-bubbles.md — a nested `role="menu"` level's keydown event bubbles to ancestor menu handlers; an ancestor handler must ignore events whose closest `[role="menu"]` isn't itself, or it re-runs the key against its own items after the inner level already handled it.
 
 ## Integration & Data
 
