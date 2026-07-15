@@ -182,7 +182,7 @@
   }
 
   // *** Reactive Handlers *** //
-  $effect.pre(() => {
+  $effect(() => {
     files;
     untrack(() => validate());
   });

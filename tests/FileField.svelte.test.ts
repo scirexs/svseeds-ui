@@ -22,15 +22,18 @@ function names(files: File[]): string[] {
 const label = "Attachments";
 const extra = "(optional)";
 const bottom = "Choose files";
-const aux = createRawSnippet((files: () => File[], variant: () => string, element: () => HTMLInputElement | undefined) => ({
-  render: () => `<span data-testid="aux">${files().length}:${variant()}:${element() ? "element" : "none"}</span>`,
-}));
-const left = createRawSnippet((files: () => File[], variant: () => string, element: () => HTMLInputElement | undefined) => ({
-  render: () => `<span data-testid="left">${files().length}:${variant()}:${element() ? "element" : "none"}</span>`,
-}));
-const right = createRawSnippet((files: () => File[], variant: () => string, element: () => HTMLInputElement | undefined) => ({
-  render: () => `<span data-testid="right">${files().length}:${variant()}:${element() ? "element" : "none"}</span>`,
-}));
+const sideSnippet = (id: string) =>
+  createRawSnippet((files: () => File[], variant: () => string, element: () => HTMLInputElement | undefined) => ({
+    render: () => `<span data-testid="${id}"></span>`,
+    setup: (node: Element) => {
+      $effect(() => {
+        node.textContent = `${files().length}:${variant()}:${element() ? "element" : "none"}`;
+      });
+    },
+  }));
+const aux = sideSnippet("aux");
+const left = sideSnippet("left");
+const right = sideSnippet("right");
 const content = createRawSnippet((files: () => File[], dragover: () => boolean, variant: () => string) => ({
   render: () => `<span data-testid="content">${files().length}:${dragover()}:${variant()}</span>`,
 }));
@@ -309,6 +312,29 @@ describe("FileField validations and bindings", () => {
     await tick();
     expect(prevented).toBe(true);
     expect(props.variant).toBe(VARIANT.INACTIVE);
+  });
+
+  test("recovers to active when files are set after an invalid submit", async () => {
+    const props = $state({
+      files: [] as File[],
+      variant: VARIANT.NEUTRAL,
+      content,
+      fileInput: { required: true },
+      name: "file-name",
+    });
+    const { container } = render(FileField, props);
+    const input = container.querySelector("input") as HTMLInputElement;
+    await tick();
+
+    input.dispatchEvent(new Event("invalid", { cancelable: true }));
+    await tick();
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+
+    props.files = [mkFile("a.png", "image/png")];
+    await tick();
+    await tick();
+
+    expect(props.variant).toBe(VARIANT.ACTIVE);
   });
 
   test("variant semantics and styling chain are applied", async () => {

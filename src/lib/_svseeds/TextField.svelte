@@ -132,7 +132,7 @@
   }
 
   // *** Reactive Handlers *** //
-  $effect.pre(() => {
+  $effect(() => {
     value;
     untrack(() => validate(true));
   });

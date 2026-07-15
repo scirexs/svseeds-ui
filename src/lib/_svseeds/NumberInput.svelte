@@ -134,7 +134,7 @@
   let repeat: ReturnType<typeof setInterval> | undefined = undefined;
 
   // *** Reactive Handlers *** //
-  $effect(() => {
+  $effect.pre(() => {
     effValue;
     focused;
     element;
@@ -230,6 +230,7 @@
     const v = bumpValue(dir);
     text = format(v);
     last = text;
+    if (element) element.value = text;
     setValue(v);
     emitChange();
   }

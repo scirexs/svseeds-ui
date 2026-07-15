@@ -210,6 +210,53 @@ describe("NumberField variant state machine and a11y", () => {
     await expect.element(invalidInput).toHaveAccessibleErrorMessage(errmsg);
   });
 
+  test("recovers to active when a value is set after an invalid submit", async () => {
+    const props = $state({
+      value: undefined as number | undefined,
+      variant: VARIANT.NEUTRAL,
+      name: "number-name",
+      numberInput: { required: true },
+    });
+    const { container } = render(NumberField, props);
+    const el = input(container);
+
+    await invalid(el);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+
+    props.value = 7;
+    await tick();
+
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+  });
+
+  test("keeps a required field active after a spin bump, with no transient alert", async () => {
+    const props = $state({
+      value: undefined as number | undefined,
+      variant: VARIANT.NEUTRAL,
+      name: "number-name",
+      numberInput: { required: true, spin: "split" as NumberInputSpin, min: 0 },
+    });
+    const { container } = render(NumberField, props);
+    const alerts: string[] = [];
+    const obs = new MutationObserver((records) => {
+      for (const record of records) {
+        for (const node of record.addedNodes) {
+          if (node instanceof HTMLElement && node.getAttribute("role") === "alert") alerts.push(node.textContent?.trim() ?? "");
+        }
+      }
+    });
+    obs.observe(container, { childList: true, subtree: true });
+
+    await userEvent.click(container.querySelector('button[aria-label="Increment"]') as HTMLButtonElement);
+    await tick();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    obs.disconnect();
+
+    expect(props.value).toBe(1);
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(alerts).toEqual([]);
+  });
+
   test("wires describedby and errormessage IDs", async () => {
     const props = $state({ bottom, value: 1 as number | undefined, validations: [() => "Invalid number"], variant: VARIANT.NEUTRAL });
     const { container } = render(NumberField, props);

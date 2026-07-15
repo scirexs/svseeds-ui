@@ -563,6 +563,19 @@ describe("Specify attrs & state transition & event handlers", () => {
     aerr(checkboxes[0]);
     expect(props.variant).toBe(VARIANT.INACTIVE);
   });
+  test("recovers to active when values are set after an invalid submit", async () => {
+    const props = $state({ options, values: [] as string[], variant: VARIANT.NEUTRAL, required: true, name: "check-name" });
+    const { getAllByRole } = render(CheckField, props);
+    const checkboxes = getAllByRole("checkbox") as HTMLInputElement[];
+
+    await fireEvent.invalid(checkboxes[0]);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+
+    props.values = ["option1"];
+    await tick();
+
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+  });
 
   test("checkbox required group is invalid until one option is selected", async () => {
     const props = $state({

@@ -133,7 +133,7 @@
     opts.length;
     untrack(() => trimElements(opts.length));
   });
-  $effect.pre(() => {
+  $effect(() => {
     values;
     untrack(() => validate(true));
   });

@@ -438,6 +438,24 @@ describe("Specify attrs & state transition & event handlers", () => {
     await expect.element(main).toHaveAccessibleErrorMessage();
     expect(props.variant).toBe(VARIANT.INACTIVE);
   });
+  test("recovers to active when a value is set after an invalid submit", async () => {
+    const optionsWithEmpty = new SvelteMap([
+      ["", "Select Option"],
+      ["val1", "Option 1"],
+    ]);
+    const props = $state({ options: optionsWithEmpty, value: "", variant: VARIANT.NEUTRAL, required: true, name: "select-name" });
+    const { container } = render(SelectField, props);
+    const main = container.querySelector("select") as HTMLSelectElement;
+
+    main.dispatchEvent(new Event("invalid", { cancelable: true }));
+    await tick();
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+
+    props.value = "val1";
+    await tick();
+
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+  });
   test("w/ required and custom validations", async () => {
     const props = $state({
       options,

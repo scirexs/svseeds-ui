@@ -461,6 +461,19 @@ describe("Specify attrs & state transition & event handlers", () => {
     expect(main).toHaveAccessibleErrorMessage();
     expect(props.variant).toBe(VARIANT.INACTIVE);
   });
+  test("recovers to active when a value is set after an invalid submit", async () => {
+    const props = $state({ value: "", variant: VARIANT.NEUTRAL, required: true, name: "text-name" });
+    const { getByRole } = render(TextField, props);
+    const main = getByRole("textbox") as HTMLInputElement;
+
+    await invalid(main);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+
+    props.value = "hello";
+    await tick();
+
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+  });
   test("w/ required and custom validations", async () => {
     const props = $state({
       bottom,

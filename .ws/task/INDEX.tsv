@@ -63,3 +63,4 @@
 20260715_k7ivoc	feat: Give ComboBox a cssvar (x/y/z) bridge with a default overlay z-index, and fix the ComboBox/DateInput whole wrapper so percentage overlay anchors resolve against the control's box
 20260714_3jk4vf feat: Add a MenuSub component for the submenu (parent -> child menu) pattern: a role=menuitem trigger hosting a nested MenuList via MenuContainerContext, guarded by a safe-triangle hover intent with a 300ms lingering timeout. MenuGroup stays the role=group labelled cluster.
 20260715_wjqacl	fix: Fix DateField deriving its variant from a stale DOM validity read, which left a valid calendar-picked date in the inactive (error) state when required and openOnFocus were set.
+20260715_ukgxqd	fix: Fix the stale-validity read that sticks TextField, SelectField, CheckField, FileField, and NumberField at INACTIVE after a programmatic value change, by validating after the DOM flush

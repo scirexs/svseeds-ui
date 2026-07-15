@@ -127,7 +127,7 @@
     ...(showPlaceholder ? [{ val: "", text: placeholder ?? "", selected: value === "" }] : []),
     ...Array.from(options, ([val, text]) => ({ val, text, selected: val === value })),
   ]);
-  $effect.pre(() => {
+  $effect(() => {
     value;
     untrack(() => validate(true));
   });
