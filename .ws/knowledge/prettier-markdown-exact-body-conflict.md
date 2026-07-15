@@ -35,3 +35,10 @@ Task `20260714_mts25u`: recurred with `.ws/decision/017-contextmenu-touch-long-p
 section scoped both `BUN_FMT` and `BUN_TEST` to only the changed source/test file
 from the start and neither `impl` nor `review` widened it — the guidance above was
 followed correctly and produced no findings, only a repeat knowledge candidate.
+
+Task `20260715_ww5zy5`: recurred with `.ws/decision/018-dateinput-overlay-default-z-index-via-cssvar.md`.
+`request.md` again scoped `fmt:check` to only the changed product files from the
+start; `review` additionally verified the exact-body contract by diffing the
+created ADR directly against the request's fenced body rather than re-reading it
+loosely. No findings — the guidance held and the diff-against-fenced-body check is
+a useful verification step for future exact-body ADR reviews.

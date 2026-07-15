@@ -59,3 +59,4 @@
 20260714_dd4y4o	feat: DateInput: reopen the calendar overlay on a pointerdown of the already-focused input (post-Escape / post-pick-return states), and change the openOnFocus default from false to true.
 20260714_xiaenh	fix: Keep focus in the editable DateInput field on open; add ArrowDown to enter the calendar
 20260714_mts25u	feat: Add 700ms touch long-press support to ContextMenu so it opens on iOS, where the contextmenu event never fires
+20260715_ww5zy5	feat: Give DateInput's calendar overlay a default z-index (1) overridable via the cssvar z key

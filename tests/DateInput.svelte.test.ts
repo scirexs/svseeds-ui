@@ -374,6 +374,25 @@ describe("_DateInput overlay overflow flip", () => {
     expectDefaultAnchor(container);
   });
 
+  test("sets a default z-index custom property fallback on the overlay", async () => {
+    const props = $state({ open: true });
+    const { container } = render(DateInputBindable, props);
+
+    await tick();
+    await tick();
+    expect(overlayStyle(container)).toMatch(/z-index:\s*var\(--svs-position-z\s*,\s*1\)/);
+  });
+
+  test("renames the overlay z-index custom property with cssvar", async () => {
+    const props = $state({ open: true, cssvar: { z: "--my-z" } });
+    const { container } = render(DateInputBindable, props);
+
+    await tick();
+    await tick();
+    expect(overlayStyle(container)).toMatch(/z-index:\s*var\(--my-z/);
+    expect(overlayStyle(container)).not.toContain("--svs-position-z");
+  });
+
   test("flips both axes when the overlay overflows at the bottom-right", async () => {
     const props = $state({ open: false });
     const { container } = render(DateInputBindable, props);

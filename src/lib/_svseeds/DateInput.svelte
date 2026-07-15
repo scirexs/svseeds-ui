@@ -27,7 +27,7 @@
     transition?: TransitionProp;
     children?: Snippet;
     calendar?: Omit<CalendarProps, "value" | "display" | "min" | "max" | "isDisabled" | "variant">;
-    cssvar?: Partial<Record<DateInputCssVar, string>>; // custom-property names for the overlay x/y offsets; absent key uses default name
+    cssvar?: Partial<Record<DateInputCssVar, string>>; // custom-property names for the overlay x/y offsets and z-index; absent key uses default name
     attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
@@ -43,7 +43,7 @@
     fn?: (node: HTMLElement, params: any, options: { direction: "in" | "out" | "both" }) => import("svelte/transition").TransitionConfig;
     params?: unknown;
   };
-  type DateInputCssVar = "x" | "y";
+  type DateInputCssVar = "x" | "y" | "z";
   ```
   ### Anatomy
   ```svelte
@@ -63,6 +63,7 @@
   - `name` is assigned only to a hidden input whose value is ISO (`Temporal.PlainDate.toString()`), not the locale-formatted control.
   - `format` and `parse` are caller-coordinated; the default locale display is not necessarily parseable by a supplied parser.
   - The overlay defaults below/left, flips per axis above/right on viewport overflow, exposes `data-svs-flip-x` / `data-svs-flip-y` on flipped axes, and reads its offsets from `cssvar` x/y custom properties (defaults `--svs-position-x` / `--svs-position-y`).
+  - The overlay carries `z-index: var(--svs-position-z, 1)` so it paints above adjacent positioned content (e.g. a following `DateInput`'s relatively-positioned root). Override it from caller CSS or rename it via the `cssvar` z key to fit a caller's own stacking order.
 -->
 <script module lang="ts">
   export interface DateInputProps extends Omit<HTMLInputAttributes, "type" | "value" | "min" | "max" | "readonly" | "list" | "name"> {
@@ -82,7 +83,7 @@
     transition?: TransitionProp;
     children?: Snippet;
     calendar?: Omit<CalendarProps, "value" | "display" | "min" | "max" | "isDisabled" | "variant">;
-    cssvar?: Partial<Record<DateInputCssVar, string>>; // custom-property names for the overlay x/y offsets; absent key uses default name
+    cssvar?: Partial<Record<DateInputCssVar, string>>; // custom-property names for the overlay x/y offsets and z-index; absent key uses default name
     attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
@@ -98,7 +99,7 @@
     fn?: (node: HTMLElement, params: any, options: { direction: "in" | "out" | "both" }) => import("svelte/transition").TransitionConfig;
     params?: unknown;
   };
-  export type DateInputCssVar = "x" | "y";
+  export type DateInputCssVar = "x" | "y" | "z";
   export type DateInputReqdProps = never;
   export type DateInputBindProps = "value" | "open" | "element";
 
@@ -208,8 +209,9 @@
   // *** Reactive Handlers *** //
   const xVar = $derived(_cssVar(cssvar, "x", "--svs-position-x"));
   const yVar = $derived(_cssVar(cssvar, "y", "--svs-position-y"));
+  const zVar = $derived(_cssVar(cssvar, "z", "--svs-position-z"));
   const overlayStyle = $derived(
-    `position:absolute;${overflow.y ? "bottom" : "top"}:var(${yVar},100%);${overflow.x ? "right" : "left"}:var(${xVar},0%);`,
+    `position:absolute;${overflow.y ? "bottom" : "top"}:var(${yVar},100%);${overflow.x ? "right" : "left"}:var(${xVar},0%);z-index:var(${zVar},1);`,
   );
   $effect(() => {
     effValue;

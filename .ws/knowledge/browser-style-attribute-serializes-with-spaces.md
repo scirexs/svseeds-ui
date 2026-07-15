@@ -23,3 +23,8 @@ assertions fail even though the style is correctly applied.
 
 Surfaced while extending `tests/Popover.svelte.test.ts` for the `arrow` →
 `overflow: visible` panel style (task 20260714_rctuws).
+
+Recurred in `tests/DateInput.svelte.test.ts` for the new `z-index:var(...)` style
+assertions (task 20260715_ww5zy5); whitespace-tolerant regexes
+(`/z-index:\s*var\(.../`) were used from the start, following the existing
+overflow-flip tests — no findings.
