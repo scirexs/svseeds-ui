@@ -355,6 +355,7 @@ describe("_DateInput declarative Calendar child", () => {
 describe("_DateInput overlay overflow flip", () => {
   const overlay = (container: HTMLElement) => container.querySelector(`.${PARTS.BOTTOM}`) as HTMLDivElement;
   const overlayStyle = (container: HTMLElement) => overlay(container).getAttribute("style") ?? "";
+  const close = (actual: number, expected: number) => expect(Math.abs(actual - expected)).toBeLessThanOrEqual(1);
   const expectDefaultAnchor = (container: HTMLElement) => {
     const style = overlayStyle(container);
     expect(style).toMatch(/top:\s*var\(--svs-position-y/);
@@ -381,6 +382,15 @@ describe("_DateInput overlay overflow flip", () => {
     await tick();
     await tick();
     expect(overlayStyle(container)).toMatch(/z-index:\s*var\(--svs-position-z\s*,\s*1\)/);
+  });
+
+  test("positions the overlay flush with the input bottom edge", async () => {
+    const props = $state({ open: true });
+    const { container } = render(DateInputBindable, props);
+
+    await tick();
+    await tick();
+    close(overlay(container).getBoundingClientRect().top, input(container).getBoundingClientRect().bottom);
   });
 
   test("renames the overlay z-index custom property with cssvar", async () => {

@@ -60,3 +60,4 @@
 20260714_xiaenh	fix: Keep focus in the editable DateInput field on open; add ArrowDown to enter the calendar
 20260714_mts25u	feat: Add 700ms touch long-press support to ContextMenu so it opens on iOS, where the contextmenu event never fires
 20260715_ww5zy5	feat: Give DateInput's calendar overlay a default z-index (1) overridable via the cssvar z key
+20260715_k7ivoc	feat: Give ComboBox a cssvar (x/y/z) bridge with a default overlay z-index, and fix the ComboBox/DateInput whole wrapper so percentage overlay anchors resolve against the control's box

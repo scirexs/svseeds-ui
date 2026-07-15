@@ -47,6 +47,7 @@
 ## Runtime & Platform
 - css-flip-animation-spurious-pointerover.md — FLIP animation slides transformed boxes over the pointer, causing the browser to fire spurious `pointerover` on just-moved drag targets and reversing a committed reorder.
 - core-browser-helper-caller-guards-ssr.md — `_core.ts` helpers touching `window` (e.g. `_detectOverflow`) carry no internal SSR guard; the calling component keeps the `typeof window === "undefined"` check before invoking them. Exception: `shouldReduceMotion()` self-guards, so callers need no outer guard.
+- browser-ul-default-margin-defeats-absolute-anchor.md — browser default UA stylesheet margin on `<ul>`/`<ol>` offsets an absolutely-positioned overlay even when the containing block and anchor percentage are both correct; reset `margin:0` on the overlay list itself.
 
 ## Integration & Data
 

@@ -47,7 +47,7 @@
   ```
   ### Anatomy
   ```svelte
-  <span class="whole" data-*>
+  <span class="whole" data-* style>
     <span class="left" conditional>{left}</span>
     <input class="main" type="text" role aria-* {...rest} />
     <span class="right" conditional>{right}</span>
@@ -62,6 +62,7 @@
   - A declarative `Calendar` child self-wires `value`, `min`, `max`, `isDisabled`, and `variant` through context and wins over the `calendar` bag.
   - `name` is assigned only to a hidden input whose value is ISO (`Temporal.PlainDate.toString()`), not the locale-formatted control.
   - `format` and `parse` are caller-coordinated; the default locale display is not necessarily parseable by a supplied parser.
+  - The `whole` wrapper is `position:relative;display:inline-block;` because the overlay anchors against it; a caller overriding its `display` owns the resulting anchor geometry.
   - The overlay defaults below/left, flips per axis above/right on viewport overflow, exposes `data-svs-flip-x` / `data-svs-flip-y` on flipped axes, and reads its offsets from `cssvar` x/y custom properties (defaults `--svs-position-x` / `--svs-position-y`).
   - The overlay carries `z-index: var(--svs-position-z, 1)` so it paints above adjacent positioned content (e.g. a following `DateInput`'s relatively-positioned root). Override it from caller CSS or rename it via the `cssvar` z key to fit a caller's own stacking order.
 -->
@@ -355,7 +356,7 @@
 
 <!---------------------------------------->
 
-<span bind:this={root} class={cls(PARTS.WHOLE, effVariant)} data-svs-dateinput={uid} style="position:relative;">
+<span bind:this={root} class={cls(PARTS.WHOLE, effVariant)} data-svs-dateinput={uid} style="position:relative;display:inline-block;">
   {#if left}
     <span class={cls(PARTS.LEFT, effVariant)}>{@render left(ctl, open, effVariant)}</span>
   {/if}

@@ -17,22 +17,24 @@
     extra?: Snippet<[boolean, string]>; // Snippet<[expanded,variant]>
     value?: string; // bindable
     expanded?: boolean; // bindable
-    search?: boolean // (true)
+    search?: boolean; // (true)
+    cssvar?: Partial<Record<ComboBoxCssVar, string>>; // custom-property names for the listbox x/y offsets and z-index; absent key uses default name
     attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
     // class & other HTMLInputAttributes are passed to <input> via ...rest (class is merged onto the control)
   }
+  type ComboBoxCssVar = "x" | "y" | "z";
   ```
   ### Anatomy
   ```svelte
-  <span class="whole">
+  <span class="whole" style>
     <input class="main" {...rest} type="text" />
-    <div class="extra" conditional>{extra}</div>
-    <ul class="bottom">
+    <div class="extra" conditional style>{extra}</div>
+    <ul class="bottom" role aria-* style data-*>
       {#each options as option}
-        <li class="label">{option}</li>
+        <li class="label" role aria-*>{option}</li>
       {/each}
     </ul>
   </span>
@@ -40,7 +42,10 @@
   ### Behavior
   - When embedded in a `ComboBoxContext`, `options`, `value`, `variant`, and fallback `styling` come from the context.
   - Closing the listbox invokes the context's `commit` hook when present.
-  Open/close animations should be layered on the `bottom` part variant classes (`active` = open) with opacity, transform, or scale; the component keeps `visibility` as its structural default.
+  - The `whole` wrapper is `position:relative;display:inline-block;` because the listbox anchors against it; a caller overriding its `display` owns the resulting anchor geometry.
+  - The listbox defaults below/left, flips per axis above/right on viewport overflow, exposes `data-svs-flip-x` / `data-svs-flip-y` on flipped axes, and reads its offsets from `cssvar` x/y custom properties (defaults `--svs-position-x` / `--svs-position-y`).
+  - The listbox carries `z-index: var(--svs-position-z, 1)` so it paints above adjacent positioned content. Override it from caller CSS or rename it via the `cssvar` z key to fit a caller's own stacking order.
+  - Open/close animations should be layered on the `bottom` part variant classes (`active` = open) with opacity, transform, or scale; the component keeps `visibility` as its structural default.
 -->
 <script module lang="ts">
   export interface ComboBoxProps extends Omit<
@@ -52,11 +57,13 @@
     value?: string; // bindable
     expanded?: boolean; // bindable
     search?: boolean; // (true)
+    cssvar?: Partial<Record<ComboBoxCssVar, string>>; // custom-property names for the listbox x/y offsets and z-index; absent key uses default name
     attach?: Attachment<HTMLInputElement>;
     element?: HTMLInputElement; // bindable
     styling?: SVSClass;
     variant?: SVSVariant; // (VARIANT.NEUTRAL)
   }
+  export type ComboBoxCssVar = "x" | "y" | "z";
   export type ComboBoxReqdProps = never;
   export type ComboBoxBindProps = "value" | "expanded" | "element";
 
@@ -72,7 +79,7 @@
   export const [_getComboBoxContext, _setComboBoxContext] = _createContext<ComboBoxContext>();
 
   import { tick } from "svelte";
-  import { VARIANT, PARTS, _detectOverflow, _fnClass, _createContext } from "./_core";
+  import { VARIANT, PARTS, _createContext, _cssVar, _detectOverflow, _fnClass } from "./_core";
   import type { Snippet } from "svelte";
   import type { Attachment } from "svelte/attachments";
   import type { SvelteSet } from "svelte/reactivity";
@@ -89,7 +96,7 @@
 
 <script lang="ts">
   // prettier-ignore
-  let { options, extra, value = $bindable(""), expanded = $bindable(false), search = true, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, onclick, onkeydown, oninput, onfocus, onblur, ...rest }: ComboBoxProps = $props();
+  let { options, extra, value = $bindable(""), expanded = $bindable(false), search = true, cssvar, attach, element = $bindable(), styling, variant = VARIANT.NEUTRAL, class: c, onclick, onkeydown, oninput, onfocus, onblur, ...rest }: ComboBoxProps = $props();
   const ctx = _getComboBoxContext();
 
   // *** Initialize *** //
@@ -110,8 +117,11 @@
   }
 
   // *** Reactive Handlers *** //
+  const xVar = $derived(_cssVar(cssvar, "x", "--svs-position-x"));
+  const yVar = $derived(_cssVar(cssvar, "y", "--svs-position-y"));
+  const zVar = $derived(_cssVar(cssvar, "z", "--svs-position-z"));
   const listboxStyle = $derived(
-    `position:absolute;cursor:default;user-select:none;visibility: ${expanded ? "visible" : "hidden"};${overflow.x ? "right:0%;" : ""}${overflow.y ? "bottom:100%;" : ""}`,
+    `position:absolute;margin:0;cursor:default;user-select:none;visibility:${expanded ? "visible" : "hidden"};${overflow.y ? "bottom" : "top"}:var(${yVar},100%);${overflow.x ? "right" : "left"}:var(${xVar},0%);z-index:var(${zVar},1);`,
   );
   const opts = $derived(effOptions ? [...effOptions.keys()] : []);
   const view = $derived(search && typed && effValue ? opts.filter((x) => x.toLowerCase().startsWith(effValue.toLowerCase())) : opts);
@@ -224,7 +234,7 @@
 <svelte:document onscroll={() => close()} />
 
 {#if effOptions?.size}
-  <span class={cls(PARTS.WHOLE, effVariant)} style="position:relative;">
+  <span class={cls(PARTS.WHOLE, effVariant)} style="position:relative;display:inline-block;">
     <input
       bind:value={() => effValue, setValue}
       bind:this={element}
@@ -255,6 +265,8 @@
       id={idList}
       role="listbox"
       style={listboxStyle}
+      data-svs-flip-x={overflow.x ? "" : undefined}
+      data-svs-flip-y={overflow.y ? "" : undefined}
     >
       {#each view as opt, i (opt)}
         {@const isSelected = i === selected}

@@ -71,6 +71,7 @@ const val = (el: HTMLInputElement, value: string) => expect(el.value).toBe(value
 const focus = (el: Element) => expect(document.activeElement).toBe(el);
 const inDoc = (el: Element | null | undefined) => expect(!!el?.isConnected).toBe(true);
 const style = (el: Element, name: keyof CSSStyleDeclaration, value: string) => expect(getComputedStyle(el)[name]).toBe(value);
+const close = (actual: number, expected: number) => expect(Math.abs(actual - expected)).toBeLessThanOrEqual(1);
 
 describe("Switching existence of elements", () => {
   const options = new Set(["option1", "option2", "option3"]);
@@ -981,6 +982,75 @@ describe("Active option visibility", () => {
     } finally {
       scroll.restore();
     }
+  });
+});
+
+describe("Overlay anchor and cssvar", () => {
+  const options = new Set(["apple", "banana", "cherry"]);
+  const listbox = (container: HTMLElement) => container.querySelector(`.${PARTS.BOTTOM}`) as HTMLUListElement;
+  const listboxStyle = (container: HTMLElement) => listbox(container).getAttribute("style") ?? "";
+  const expectDefaultAnchor = (container: HTMLElement) => {
+    const s = listboxStyle(container);
+    expect(s).toMatch(/top:\s*var\(--svs-position-y/);
+    expect(s).toMatch(/left:\s*var\(--svs-position-x/);
+    expect(s).not.toMatch(/(?:^|;)\s*bottom\s*:/);
+    expect(s).not.toMatch(/(?:^|;)\s*right\s*:/);
+    expect(listbox(container).hasAttribute("data-svs-flip-x")).toBe(false);
+    expect(listbox(container).hasAttribute("data-svs-flip-y")).toBe(false);
+  };
+
+  test("anchors below-left by default and carries the default z-index fallback", async () => {
+    const { container } = render(ComboBox, { options, expanded: true });
+
+    await tick();
+    expectDefaultAnchor(container);
+    expect(listboxStyle(container)).toMatch(/z-index:\s*var\(--svs-position-z\s*,\s*1\)/);
+  });
+
+  test("renames overlay custom properties with cssvar", async () => {
+    const { container } = render(ComboBox, { options, expanded: true, cssvar: { x: "--my-x", z: "--my-z" } });
+
+    await tick();
+    expect(listboxStyle(container)).toMatch(/left:\s*var\(--my-x/);
+    expect(listboxStyle(container)).toMatch(/z-index:\s*var\(--my-z/);
+    expect(listboxStyle(container)).not.toContain("--svs-position-x");
+    expect(listboxStyle(container)).not.toContain("--svs-position-z");
+  });
+
+  test("preserves the expanded and collapsed visibility toggle", async () => {
+    const props = $state({ options, expanded: false });
+    const { getByRole, rerender } = render(ComboBox, props);
+    const el = getByRole("listbox") as HTMLUListElement;
+
+    style(el, "visibility", "hidden");
+    props.expanded = true;
+    await rerender(props);
+    style(el, "visibility", "visible");
+  });
+
+  test("flips both axes and exposes flip attributes when the listbox overflows", async () => {
+    const { container, getByRole } = render(ComboBox, { options });
+    container.style.position = "fixed";
+    container.style.left = `${window.innerWidth - 16}px`;
+    container.style.top = `${window.innerHeight - 16}px`;
+    const combobox = getByRole("combobox") as HTMLInputElement;
+
+    combobox.focus();
+    await userEvent.keyboard("{ArrowDown}");
+    await tick();
+    await tick();
+
+    expect(listboxStyle(container)).toMatch(/right:\s*var\(--svs-position-x/);
+    expect(listboxStyle(container)).toMatch(/bottom:\s*var\(--svs-position-y/);
+    expect(listbox(container).hasAttribute("data-svs-flip-x")).toBe(true);
+    expect(listbox(container).hasAttribute("data-svs-flip-y")).toBe(true);
+  });
+
+  test("positions the listbox flush with the input bottom edge", async () => {
+    const { container, getByRole } = render(ComboBox, { options, expanded: true });
+
+    await tick();
+    close(listbox(container).getBoundingClientRect().top, (getByRole("combobox") as HTMLInputElement).getBoundingClientRect().bottom);
   });
 });
 
