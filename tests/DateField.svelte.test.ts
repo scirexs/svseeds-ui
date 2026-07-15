@@ -183,6 +183,37 @@ describe("DateField default DateInput and participant", () => {
     expect(participant(container)?.value).toBe(iso);
   });
 
+  test("keeps a required field active after picking a calendar day", async () => {
+    const props = $state({
+      value: undefined as Temporal.PlainDate | undefined,
+      variant: VARIANT.NEUTRAL,
+      required: true,
+      name: "date",
+      dateInput: { openOnFocus: true },
+    });
+    const { container } = render(DateField, props);
+    const alerts: string[] = [];
+    const obs = new MutationObserver((records) => {
+      for (const r of records) {
+        for (const n of r.addedNodes) {
+          if (n instanceof HTMLElement && n.getAttribute("role") === "alert") alerts.push(n.textContent?.trim() ?? "");
+        }
+      }
+    });
+    obs.observe(container, { childList: true, subtree: true });
+
+    visible(container).focus();
+    await tick();
+    await userEvent.click(today(container));
+    await tick();
+    await new Promise((r) => setTimeout(r, 50));
+    obs.disconnect();
+
+    expect(props.value).toBeDefined();
+    expect(props.variant).toBe(VARIANT.ACTIVE);
+    expect(alerts).toEqual([]);
+  });
+
   test("re-runs custom validations and blocks submit when a calendar day is picked", async () => {
     const props = $state({
       value: undefined as Temporal.PlainDate | undefined,
@@ -259,6 +290,27 @@ describe("DateField native mode", () => {
     expect(props.value?.toString()).toBe("2026-07-01");
     expect(el.validity.rangeOverflow).toBe(true);
     expect(props.variant).toBe(VARIANT.INACTIVE);
+  });
+
+  test("recovers to active when a native value is set after an invalid submit", async () => {
+    const props = $state({
+      value: undefined as Temporal.PlainDate | undefined,
+      variant: VARIANT.NEUTRAL,
+      required: true,
+      native: true,
+      name: "date",
+    });
+    const { container } = render(DateField, props);
+    const el = nativeInput(container) as HTMLInputElement;
+
+    await invalid(el);
+    expect(props.variant).toBe(VARIANT.INACTIVE);
+
+    props.value = d("2026-06-21");
+    await tick();
+
+    expect(el.value).toBe("2026-06-21");
+    expect(props.variant).toBe(VARIANT.ACTIVE);
   });
 });
 

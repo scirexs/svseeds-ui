@@ -162,11 +162,12 @@
     errmsg = vmsg;
   }
   function verify() {
+    if (proxyEl) proxyEl.value = value?.toString() ?? "";
     _verify(validEl, validations, value);
   }
 
   // *** Reactive Handlers *** //
-  $effect.pre(() => {
+  $effect(() => {
     value;
     untrack(() => validate(true));
   });

@@ -24,6 +24,7 @@
 - svelte-bidirectional-transition-direction-both.md — a single bidirectional `transition:fn|local` always passes `direction: "both"` to both the entering and leaving keyed element; split into `in:fn|local` + `out:fn|local` when the caller must treat enter and leave differently (e.g. overlay only the leaving element).
 - svelte-transition-directive-wrapper-widens-params.md — a component-owned `in:`/`out:` transition wrapper only needs directive call-site compatibility, not the wrapped library function's own param type; type the wrapper's params as a superset and delegate to the raw (narrower-typed) function internally.
 - svelte-effect-tick-then-read-untracked.md — a value read inside `tick().then(...)` from within an `$effect` is not added to that effect's tracked dependencies; use this to gate an async side effect on a value without making it re-trigger the whole effect.
+- svelte-effect-pre-stale-validationmessage-on-synchronous-change.md — `$effect.pre` runs before Svelte's DOM flush, so reading native `validationMessage` there is stale when a child fires a synchronous `change` before the reactive `value={...}` binding re-renders; use post-flush `$effect` or an imperative pre-sync instead.
 
 ## Build, Tooling & Dependencies
 - bun-run-check-generates-svelte-kit-dir.md — `bun run check` runs `svelte-kit sync`, (re)generating a gitignored `.svelte-kit/` build dir; leave it in place, don't clean it up.
