@@ -56,6 +56,19 @@ async function drag(origin: HTMLElement, over: HTMLElement | null, opts?: { up?:
   await tick();
 }
 
+async function pointerdown(origin: HTMLElement, pointerId: number) {
+  origin.dispatchEvent(
+    new PointerEvent("pointerdown", { pointerId, button: 0, buttons: 1, clientX: 0, clientY: 0, bubbles: true, cancelable: true }),
+  );
+  await tick();
+}
+
+function mockReleasePointerCapture(target: HTMLElement) {
+  const mock = vi.fn();
+  Object.defineProperty(target, "releasePointerCapture", { configurable: true, value: mock });
+  return mock;
+}
+
 async function press(target: HTMLElement, key: string, init?: KeyboardEventInit) {
   target.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...init }));
   await tick();
@@ -272,6 +285,46 @@ describe("_Sortable single-list drag", () => {
 
 describe("_Sortable drag handles and shadow", () => {
   beforeEach(stubReducedMotion);
+
+  test("nested child pointerdown releases capture from that child and keeps pointerover sorting", async () => {
+    const { container } = render(SortableBasic, { items: ["a", "b", "c"], noHandle: true });
+    const origin = el(container, "item-a");
+    const owner = keyed(container, "a");
+    const releaseOrigin = mockReleasePointerCapture(origin);
+    const releaseOwner = mockReleasePointerCapture(owner);
+
+    await pointerdown(origin, 31);
+
+    expect(releaseOrigin).toHaveBeenCalledWith(31);
+    expect(releaseOwner).not.toHaveBeenCalled();
+
+    window.dispatchEvent(new PointerEvent("pointermove", { buttons: 1, clientX: 20, clientY: 20, bubbles: true }));
+    el(container, "item-c").dispatchEvent(new PointerEvent("pointerover", { buttons: 1, bubbles: true }));
+    window.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+    await tick();
+
+    await expect.element(el(container, "value-readout")).toHaveTextContent("b,c,a");
+  });
+
+  test("handle pointerdown releases capture from the handle when draggable is false", async () => {
+    const { container } = render(SortableHandle, { items: ["a", "b", "c"], draggable: false });
+    const handle = el(container, "handle-a");
+    const owner = keyed(container, "a");
+    const releaseHandle = mockReleasePointerCapture(handle);
+    const releaseOwner = mockReleasePointerCapture(owner);
+
+    await pointerdown(handle, 37);
+
+    expect(releaseHandle).toHaveBeenCalledWith(37);
+    expect(releaseOwner).not.toHaveBeenCalled();
+
+    window.dispatchEvent(new PointerEvent("pointermove", { buttons: 1, clientX: 20, clientY: 20, bubbles: true }));
+    el(container, "label-b").dispatchEvent(new PointerEvent("pointerover", { buttons: 1, bubbles: true }));
+    window.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+    await tick();
+
+    await expect.element(el(container, "value-readout")).toHaveTextContent("b,a,c");
+  });
 
   test("dedicated handle starts drag while label does not", async () => {
     const { container } = render(SortableHandle, { items: ["a", "b"] });

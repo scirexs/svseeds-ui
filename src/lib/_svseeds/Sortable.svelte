@@ -959,6 +959,13 @@
     element.dataset.svsHandle = "";
     element.style.touchAction = "none";
   }
+  function releaseCapture(target: Element, pointerId: number) {
+    try {
+      target.releasePointerCapture(pointerId);
+    } catch {
+      // Browsers can throw when the target has no capture; jsdom may throw too.
+    }
+  }
   function isSelected(key: string): boolean {
     return selected.has(key);
   }
@@ -972,11 +979,7 @@
     if (hasHandle ? !insideHandle : !draggable) return;
     ev.preventDefault();
     ev.stopPropagation();
-    try {
-      li.releasePointerCapture(ev.pointerId);
-    } catch {
-      // jsdom and uncaptured pointers can throw here.
-    }
+    releaseCapture(target, ev.pointerId);
     const key = li.dataset.svsKey ?? "";
     const trigger = getTriggerNumber(ev);
     if (multiple && trigger === createTriggerNumber(triggerSelect)) {
