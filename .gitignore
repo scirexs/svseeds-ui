@@ -1,14 +1,21 @@
+# System
+.gitignorepj
+
 # Output
-/.svelte-kit/
-/build/
-/dist/
-/npm/
+.svelte-kit/
+build/
+dist/
+npm/
 .wrangler/
+wrangler.local.json
+db/*.min.sql
 *.tgz
 
-# Env
+# Env / Auth
 .env
 .env.*
+.dev.vars
+credential
 
 # Vite
 .vite/
@@ -32,8 +39,11 @@ node_modules/
 
 # Test
 *.sqlite
+*..sqlite-journal
 __screenshots__/
 .vitest-attachments/
+worker.js
+z-worker.ts
 
 # VSCode
 .devcontainer/
@@ -42,11 +52,10 @@ __screenshots__/
 
 # AI
 /.claude/
-/.codex/
 /.agents/
 CLAUDE.md
 AGENTS.md
-/SKILL.md
+SKILL.md
 /.ws/task/*/
 /.ws/task/.*
 /.ws/collaboration/
@@ -54,14 +63,25 @@ AGENTS.md
 
 # Others
 .ref/
-/zzz.ts
+.out/
+.zz/
+zz.ts
 
 # Disposable List
-## /build/
-## /dist/
-## /npm/
+## build/
+## dist/
+## npm/
+## .wrangler/
+## .dev.vars
+## wrangler.local.json
 ## .vite/
 ## *.sqlite
+## worker.js
+## z-worker.ts
 ## .vitest-attachments/
 ## __screenshots__/
 
+# Backup List
+### .gitignorepj
+### .out/
+### .zz/
