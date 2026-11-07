@@ -65,3 +65,7 @@ collaboration system, see `collaboration/agent-collaboration.md`.
   - `/.ws/task/YYYYMMDD_xxxxxx/` task directories (`/.ws/task/*/`)
   - Operation-only files in the task directory (`/.ws/task/.*`)
   - Documents shared across all projects (`/.ws/collaboration/`, `/.ws/policy/*-guide.md`)
+
+## Other references
+
+- `/mnt/projects/` — All of the owner's projects (typically `@scirexs` packages, etc.) are checked out side by side under `/mnt/projects/<name>/` such as this repository, the shared framework and the libraries it consumes.
