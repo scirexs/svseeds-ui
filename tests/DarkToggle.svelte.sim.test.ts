@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { render } from "@testing-library/svelte";
 import { compile } from "svelte/compiler";
 import DarkToggle, { setThemeToRoot, THEME } from "#svs/DarkToggle.svelte";
@@ -118,6 +118,124 @@ describe("DarkToggle - SSR and CSS scanning", () => {
 
     expect(document.head.innerHTML).toContain('matchMedia("(prefers-color-scheme: dark)")');
     expect(mockMatchMedia).not.toHaveBeenCalled();
+  });
+});
+
+describe("DarkToggle - Color-scheme selection", () => {
+  beforeEach(() => {
+    document.documentElement.className = "";
+    document.documentElement.style.cssText = "";
+    document.head.innerHTML = "";
+    mockMatchMedia.mockReturnValue({
+      matches: true,
+      media: "(prefers-color-scheme: dark)",
+    });
+    mockStyleSheets([createThemeStyleSheet()]);
+    vi.resetModules();
+  });
+
+  afterEach(async () => {
+    const { cleanup } = await import("@testing-library/svelte/pure");
+    cleanup();
+  });
+
+  test("keeps the automatic scheme at load and on mount without a dark prop", async () => {
+    // Reload the renderer too so it shares the fresh component's Svelte runtime.
+    const { render } = await import("@testing-library/svelte/pure");
+    const mod = await import("#svs/DarkToggle.svelte");
+
+    expect(document.documentElement.style.colorScheme).toBe("light dark");
+    expect(document.documentElement).toHaveClass(THEME.DARK);
+    render(mod.default);
+    expect(document.documentElement.style.colorScheme).toBe("light dark");
+    expect(document.documentElement).toHaveClass(THEME.DARK);
+  });
+
+  test("pins the scheme when selecting and toggling themes", async () => {
+    const mod = await import("#svs/DarkToggle.svelte");
+
+    mod.setTheme(false);
+    expect(document.documentElement.style.colorScheme).toBe("light");
+    expect(document.documentElement.style.getPropertyValue("--svs-bg")).toBe("white");
+    mod.toggleTheme();
+    expect(document.documentElement.style.colorScheme).toBe("dark");
+    expect(document.documentElement.style.getPropertyValue("--svs-bg")).toBe("black");
+  });
+
+  test("applies a selection even when it matches the current theme", async () => {
+    const mod = await import("#svs/DarkToggle.svelte");
+
+    mod.setTheme(true);
+    expect(document.documentElement.style.colorScheme).toBe("dark");
+    expect(document.documentElement.style.getPropertyValue("--svs-bg")).toBe("black");
+  });
+
+  test("keeps the automatic scheme when the mounted dark prop matches", async () => {
+    const { render } = await import("@testing-library/svelte/pure");
+    const mod = await import("#svs/DarkToggle.svelte");
+
+    render(mod.default, { dark: true });
+    expect(document.documentElement.style.colorScheme).toBe("light dark");
+  });
+
+  test("pins the scheme when the mounted dark prop differs", async () => {
+    const { render } = await import("@testing-library/svelte/pure");
+    const mod = await import("#svs/DarkToggle.svelte");
+
+    render(mod.default, { dark: false });
+    expect(document.documentElement.style.colorScheme).toBe("light");
+  });
+
+  test("sets the root scheme without changing the singleton or palette", async () => {
+    const mod = await import("#svs/DarkToggle.svelte");
+    const html = document.documentElement;
+
+    mod.setThemeToRoot("light");
+    expect(html.style.colorScheme).toBe("light");
+    expect(html).toHaveClass(THEME.LIGHT);
+    expect(mod.isDark()).toBe(true);
+    expect(html.style.getPropertyValue("--svs-bg")).toBe("");
+
+    mod.setThemeToRoot();
+    expect(html.style.colorScheme).toBe("light dark");
+    expect(html).toHaveClass(THEME.DARK);
+    mod.setThemeToRoot("dark");
+    expect(html.style.colorScheme).toBe("dark");
+    mod.setThemeToRoot("");
+    expect(html.style.colorScheme).toBe("light dark");
+    expect(html).toHaveClass(THEME.DARK);
+    mod.setThemeToRoot("sepia");
+    expect(html.style.colorScheme).toBe("light dark");
+    expect(html).toHaveClass("sepia");
+    expect(mod.isDark()).toBe(true);
+    expect(html.style.getPropertyValue("--svs-bg")).toBe("");
+  });
+
+  test.each([
+    ["light", true, "dark"],
+    ["dark", false, "light"],
+  ] as const)("normalizes root classes after %s then setTheme(%s)", async (name, dark, applied) => {
+    const mod = await import("#svs/DarkToggle.svelte");
+    const html = document.documentElement;
+    mod.setTheme(dark);
+    html.classList.add("app", "sepia");
+
+    mod.setThemeToRoot(name);
+    mod.setTheme(dark);
+    expect([...html.classList].filter((x) => x === THEME.LIGHT || x === THEME.DARK)).toEqual([applied]);
+    expect(html).toHaveClass("app", "sepia");
+    expect(html.style.colorScheme).toBe(applied);
+  });
+
+  test("uses an empty automatic scheme without detected theme props", async () => {
+    mockStyleSheets();
+    const mod = await import("#svs/DarkToggle.svelte");
+
+    expect(document.documentElement.style.colorScheme).toBe("");
+    mod.setTheme(true);
+    expect(document.documentElement.style.colorScheme).toBe("dark");
+    mod.setThemeToRoot();
+    expect(document.documentElement.style.colorScheme).toBe("");
   });
 });
 

@@ -65,3 +65,4 @@
 20260715_wjqacl	fix: Fix DateField deriving its variant from a stale DOM validity read, which left a valid calendar-picked date in the inactive (error) state when required and openOnFocus were set.
 20260715_ukgxqd	fix: Fix the stale-validity read that sticks TextField, SelectField, CheckField, FileField, and NumberField at INACTIVE after a programmatic value change, by validating after the DOM flush
 20260715_ikm5wb	fix: Fix Sortable touch dragging by releasing implicit pointer capture from the actual target
+20261107_da6muq	fix: Make DarkToggle set the color-scheme of the root element to the explicitly selected theme so native UI matches it regardless of the OS preference, while pages with no selection keep following the OS.

@@ -35,11 +35,18 @@
   ### Exports
   ```ts
   const THEME: { LIGHT: "light"; DARK: "dark" } // theme class-name constants
-  function setThemeToRoot(theme?: string): void // set the theme class on <html>; falls back to prefers-color-scheme when omitted
-  function setTheme(dark: boolean): void // set the page-wide (singleton) theme; updates shared state/DOM and the `dark` prop of mounted instances
+  function setThemeToRoot(name?: string): void // set the <html> class and color-scheme; omitted/empty name uses the OS class and automatic scheme, custom names use the automatic scheme
+  function setTheme(dark: boolean): void // select the page-wide theme and concrete color-scheme, even if unchanged; updates shared state/DOM and mounted instances' `dark` prop
   function toggleTheme(): void // flip the page-wide (singleton) theme
   function isDark(): boolean // whether the page-wide (singleton) theme is currently dark
   ```
+
+  ### Behavior
+  Without an explicit selection, <html> keeps the detected `color-scheme`
+  (`light dark` when both themes exist), so native UI follows the OS.
+  An explicit selection writes the concrete scheme inline on <html>, overriding
+  `color-scheme` declared for <html>/:root in CSS. Descendants' own `color-scheme`
+  still wins on those elements.
 
   SSR default theme: light.
 
@@ -57,17 +64,15 @@
   export type DarkToggleBindProps = "dark" | "variant" | "element";
 
   export const THEME = { LIGHT: "light", DARK: "dark" } as const;
-  export function setThemeToRoot(theme?: string) {
+  export function setThemeToRoot(name?: string) {
     if (typeof window === "undefined") return;
-    if (!theme) theme = Theme.getPreferTheme();
-    const html = window.document.documentElement;
-    html.classList.remove(THEME.LIGHT, THEME.DARK);
-    html.classList.add(theme);
+    setRootClass(name || Theme.getPreferTheme());
+    theme.scheme(name);
   }
   // Programmatic control of the page-wide (singleton) theme.
   // Note: updates the shared theme/DOM and the `dark` prop of every mounted instance.
   export function setTheme(dark: boolean) {
-    theme.dark = dark;
+    theme.select(dark);
   }
   export function toggleTheme() {
     theme.dark = !theme.dark;
@@ -92,6 +97,13 @@
     `e.classList.remove("light","dark");` +
     `e.classList.add(d?"dark":"light");` +
     `}catch(_){}})()<\/script>`;
+
+  function setRootClass(name: string) {
+    if (typeof window === "undefined") return;
+    const html = window.document.documentElement;
+    html.classList.remove(THEME.LIGHT, THEME.DARK);
+    html.classList.add(name);
+  }
 
   type CustomProps = Record<string, string>;
   type ThemeProps = Map<string, CustomProps>;
@@ -196,6 +208,7 @@
 
   class Theme {
     #props: ThemeProps;
+    #auto: string;
     #theme = $state<string>("");
     set dark(bool: boolean) {
       this.#switch(bool);
@@ -207,29 +220,30 @@
     constructor() {
       this.#theme = Theme.getPreferTheme();
       this.#props = getThemeProps();
-      this.#setColorScheme();
-      setThemeToRoot(this.#theme);
+      this.#auto = [...this.#props.keys()].filter((x) => x === THEME.LIGHT || x === THEME.DARK).join(" ");
+      this.scheme();
+      setRootClass(this.#theme);
+    }
+    select(dark: boolean) {
+      const to = Theme.#getThemeString(dark);
+      this.#apply(to);
+      this.#theme = to;
     }
     #switch(dark: boolean) {
-      const theme = Theme.#getThemeString(dark);
-      if (this.#theme === theme) return;
-      this.#apply(theme, this.#theme);
-      this.#theme = theme;
+      if (this.dark === dark) return;
+      this.select(dark);
     }
-    #apply(to: string, from: string) {
+    #apply(to: string) {
       if (typeof window === "undefined") return;
       const html = window.document.documentElement;
       Object.entries(this.#props.get(to) ?? {}).forEach(([name, value]) => html.style.setProperty(name, value));
-      if (html.classList.contains(from)) {
-        html.classList.replace(from, to);
-      } else {
-        html.classList.add(to);
-      }
+      setRootClass(to);
+      this.scheme(to);
     }
-    #setColorScheme() {
+    scheme(name?: string) {
       if (typeof window === "undefined") return;
-      const themes = [...this.#props.keys()].filter((x) => x === THEME.LIGHT || x === THEME.DARK);
-      window.document.documentElement.style.colorScheme = themes.join(" ");
+      const known = name === THEME.LIGHT || name === THEME.DARK;
+      window.document.documentElement.style.colorScheme = known ? name : this.#auto;
     }
 
     static #isPreferDark(): boolean {

@@ -45,6 +45,7 @@
 - createrawsnippet-fixture-reactivity-needs-effect.md — `createRawSnippet`'s `render()` runs once; wrap reactive-argument reads in `$effect` inside `setup` to keep the fixture's rendered DOM synced with later argument changes.
 - browser-style-attribute-serializes-with-spaces.md — reading a `style` attribute back via `getAttribute("style")` in a real browser re-serializes it with a space after each colon; assert `"overflow: visible"`, not the authored `"overflow:visible"`.
 - vitest-browser-userevent-click-includes-pointer-movement.md — `userEvent.click` in browser mode also synthesizes pointer movement; a single click on a hover-opened element can both trigger the hover-open path and the click's own toggle in the same sequence.
+- vitest-resetmodules-svelte-renderer-mismatch.md — after `vi.resetModules()`, a dynamically imported Svelte component uses a fresh runtime that a static `@testing-library/svelte` renderer doesn't share (`reading 'f'` error); dynamically import `@testing-library/svelte/pure` alongside it and clean it up.
 
 ## Runtime & Platform
 - pointer-capture-binds-to-actual-target.md — implicit touch pointer capture binds to the actual `pointerdown` target; releasing capture on an ancestor doesn't clear it, so boundary events (`pointerover`/`pointerenter`) stay suppressed.

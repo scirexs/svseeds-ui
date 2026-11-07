@@ -134,6 +134,7 @@ describe("DarkToggle - User interactions", () => {
     await waitFor(() => {
       expect(props.dark).toBe(false);
       has(document.documentElement, THEME.LIGHT);
+      expect(getComputedStyle(document.documentElement).colorScheme).toBe("light");
     });
 
     await userEvent.click(button);
@@ -141,6 +142,7 @@ describe("DarkToggle - User interactions", () => {
     await waitFor(() => {
       expect(props.dark).toBe(true);
       has(document.documentElement, THEME.DARK);
+      expect(getComputedStyle(document.documentElement).colorScheme).toBe("dark");
     });
 
     await userEvent.click(button);
@@ -148,6 +150,7 @@ describe("DarkToggle - User interactions", () => {
     await waitFor(() => {
       expect(props.dark).toBe(false);
       has(document.documentElement, THEME.LIGHT);
+      expect(getComputedStyle(document.documentElement).colorScheme).toBe("light");
     });
   });
 
@@ -340,6 +343,44 @@ describe("DarkToggle - Theme class management", () => {
     document.documentElement.style.cssText = "";
   });
 
+  test("sets the computed color-scheme for explicit selections", () => {
+    forceTheme(true);
+    expect(getComputedStyle(document.documentElement).colorScheme).toBe("dark");
+
+    forceTheme(false);
+    expect(getComputedStyle(document.documentElement).colorScheme).toBe("light");
+  });
+
+  test("updates the computed color-scheme when the dark prop changes", async () => {
+    forceTheme(false);
+    const props = $state({ dark: false });
+    render(DarkToggle, props);
+
+    props.dark = true;
+    await waitFor(() => {
+      expect(getComputedStyle(document.documentElement).colorScheme).toBe("dark");
+    });
+
+    props.dark = false;
+    await waitFor(() => {
+      expect(getComputedStyle(document.documentElement).colorScheme).toBe("light");
+    });
+  });
+
+  test("preserves a descendant's own color-scheme", () => {
+    forceTheme(false);
+    const child = document.createElement("div");
+    child.style.colorScheme = "dark";
+    document.body.append(child);
+
+    try {
+      expect(getComputedStyle(document.documentElement).colorScheme).toBe("light");
+      expect(getComputedStyle(child).colorScheme).toBe("dark");
+    } finally {
+      child.remove();
+    }
+  });
+
   test("applies light theme class to document root on initialization", async () => {
     forceTheme(true); // baseline dark, so initializing to light is a real transition
     render(DarkToggle, { dark: false });
@@ -385,6 +426,7 @@ describe("DarkToggle - Theme class management", () => {
     setThemeToRoot(THEME.DARK);
     await waitFor(() => {
       has(document.documentElement, THEME.DARK);
+      expect(getComputedStyle(document.documentElement).colorScheme).toBe("dark");
     });
 
     setThemeToRoot(THEME.LIGHT);
